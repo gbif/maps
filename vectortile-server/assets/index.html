@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'/>
+    <title>EUBON EBV</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no'/>
+
+    <!--script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.15.0/mapbox-gl.js'></script-->
+    <script src="./mapbox-gl_patched_issue2236.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/8.3.0/nouislider.min.js"></script>
+    <script src="https://code.jquery.com/jquery-2.2.1.min.js"
+            integrity="sha256-gvQgAFzTH6trSrAWoH1iPo9Xc96QxSZ3feW6kem+O00=" crossorigin="anonymous"></script>
+
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.15.0/mapbox-gl.css' rel='stylesheet'/>
+    <link href='nouislider.css' rel='stylesheet'/>
+    <link href='style.css' rel='stylesheet'/>
+
+</head>
+<body>
+<div id='map' class="map"></div>
+
+<div class='features features-about'>
+    <div class="logo"></div>
+    <h3>GBIF Maps v2</h3>
+    <h4>For demonstration purposes only</h4>
+</div>
+
+<div class='map-overlay top'>
+    <div class='map-overlay-inner'>
+        <fieldset>
+            <label>Year range (<span id="years">1900 - 2016</span>)</label>
+            <label id='month'></label>
+            <div id='slider'/>
+        </fieldset>
+    </div>
+</div>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiZ2JpZiIsImEiOiJjaW0xeXU1c3gwMG04dm1tNXB3cjJ3Zm12In0.8A2pUP_lgL19w4G5L0fDNw';
+
+var minYear = 1900;
+var maxYear = 2016;
+var occurrenceLayer = "http://api.gbif.org/v1/map/density/tile?x={x}&y={y}&z={z}&palette=reds&resolution=1";
+
+/**
+ * Initialises the map, taking the year slider into consideration.
+ */
+function initMap(map, minYear, maxYear) {
+    // Remove layers if they exist
+    if (map.getSource('tile')) map.removeSource('tile');
+    if (map.getLayer('tile')) map.removeLayer('tile');
+    if (map.getSource('points')) map.removeSource('points');
+    if (map.getLayer('points')) map.removeLayer('points');
+    
+    map.addSource('tile', {
+        type: 'vector',
+        "tiles": ["http://localhost:7001/api/taxon/1/{z}/{x}/{y}.pbf"]
+    });
+    map.addSource('points', {
+        type: 'vector',
+        "tiles": ["http://localhost:7001/api/point/taxon/1/{z}/{x}/{y}.pbf"]
+    });
+
+    map.addLayer({
+      "id": "tile",
+      "type": "circle",
+      "source": "tile",
+      "source-layer": "points",
+      "paint": {
+        "circle-radius": 1,
+        "circle-color": "#00F",
+        "circle-opacity": 0.5
+        }
+      });    
+    map.addLayer({
+      "id": "points",
+      "type": "circle",
+      "source": "points",
+      "source-layer": "points",
+      "paint": {
+        "circle-radius": 1,
+        "circle-color": "#F00",
+        "circle-opacity": 0.5
+        }
+      });    
+      
+}
+
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/light-v8',
+    center: [0, 0],
+    zoom: 0,
+    maxZoom: 20
+});
+map.addControl(new mapboxgl.Navigation());
+
+map.on('style.load', function () {
+    initMap(map, 1900, 2016);
+});
+
+noUiSlider.create(slider, {
+    start: [1900, 2020],
+    step: 1,
+    connect: true,
+    range: {
+        'min': 1900,
+        'max': 2016 // ok for a pilot project which uses static(!) data
+    }
+});
+slider.noUiSlider.on('update', function (vals) {
+    document.getElementById("years").innerText = Math.floor(vals[0]) + " - " + Math.floor(vals[1]);
+});
+slider.noUiSlider.on('change', function (vals) {
+    minYear = vals[0];
+    maxYear = vals[1];
+    initMap(map, Math.floor(vals[0]), Math.floor(vals[1]));
+});
+
+</script>
+</body>
+</html>

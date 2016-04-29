@@ -1,0 +1,216 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.gbif</groupId>
+    <artifactId>motherpom</artifactId>
+    <version>37</version>
+  </parent>
+
+  <groupId>org.gbif.maps</groupId>
+  <artifactId>maps-motherpom</artifactId>
+  <version>0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <description>Map services</description>
+  <url>http://github.org/gbif/maps</url>
+
+  <scm>
+    <connection>scm:git:git@github.com:gbif/maps.git</connection>
+    <url>https://github.com/gbif/maps</url>
+    <developerConnection>scm:git:git@github.com:gbif/maps.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
+
+  <distributionManagement>
+    <site>
+      <id>gh-pages</id>
+      <url>http://gbif.github.io/maps/</url>
+    </site>
+  </distributionManagement>
+
+  <properties>
+    <jdkLevel>1.7</jdkLevel>
+    <!-- Important: same version as the PBF library installed -->
+    <protoc.version>2.5.0</protoc.version>
+    <logback.version>1.1.6</logback.version>
+    <java-vector-tile.version>1.0.8</java-vector-tile.version>
+    <commons-math3.version>3.6.1</commons-math3.version>
+    <hexameter.version>2.0.0</hexameter.version>
+    <fastutil.version>7.0.12</fastutil.version>
+    <hive.version>1.1.0-cdh5.4.7</hive.version>
+    <hadoop.version>2.6.0-cdh5.4.7</hadoop.version>
+    <hbase.version>1.0.0-cdh5.4.7</hbase.version>
+
+    <scala.tools.version>2.10</scala.tools.version>
+    <scala.version>2.10.4</scala.version>
+    <spark.version>1.5.2</spark.version>
+
+    <!-- laziness: rely on transient dependencies from DW -->
+    <dropwizard.version>0.9.2</dropwizard.version>
+    <!-- Plugins -->
+    <maven-protoc-plugin.version>0.3.5</maven-protoc-plugin.version>
+    <build-helper-maven.version>1.9.1</build-helper-maven.version>
+    <maven-shade-plugin.version>1.6</maven-shade-plugin.version>
+    <!-- Plugins -->
+
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>gbif-all</id>
+      <url>http://repository.gbif.org/content/groups/gbif</url>
+    </repository>
+    <!-- For Hadoop artifacts -->
+    <repository>
+      <id>cloudera-release</id>
+      <url>http://repository.cloudera.com/artifactory/cloudera-repos/</url>
+    </repository>
+    <!-- For the vector tile library -->
+    <repository>
+      <id>ECC</id>
+      <url>https://github.com/ElectronicChartCentre/ecc-mvn-repo/raw/master/releases</url>
+    </repository>
+  </repositories>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>${jdkLevel}</source>
+          <target>${jdkLevel}</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <modules>
+    <module>vectortile-server</module>
+    <module>hive-util</module>
+    <module>common</module>
+    <module>spark-process</module>
+  </modules>
+
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.gbif.maps</groupId>
+        <artifactId>common</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-math3</artifactId>
+        <version>${commons-math3.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>it.unimi.dsi</groupId>
+        <artifactId>fastutil</artifactId>
+        <version>${fastutil.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codetome</groupId>
+        <artifactId>hexameter-core</artifactId>
+        <version>${hexameter.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>no.ecc.vectortile</groupId>
+        <artifactId>java-vector-tile</artifactId>
+        <version>${java-vector-tile.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard</groupId>
+        <artifactId>dropwizard-core</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard</groupId>
+        <artifactId>dropwizard-jersey</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard</groupId>
+        <artifactId>dropwizard-jdbi</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard</groupId>
+        <artifactId>dropwizard-assets</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>${logback.version}</version>
+        <scope>runtime</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard</groupId>
+        <artifactId>dropwizard-testing</artifactId>
+        <version>${dropwizard.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hive</groupId>
+        <artifactId>hive-hbase-handler</artifactId>
+        <version>${hive.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-common</artifactId>
+        <version>${hadoop.version}</version>
+        <!--scope>provided</scope-->
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-mapreduce-client-core</artifactId>
+        <version>${hadoop.version}</version>
+        <!--scope>provided</scope-->
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-yarn-api</artifactId>
+        <version>${hadoop.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-client</artifactId>
+        <version>${hadoop.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-client</artifactId>
+        <version>${hbase.version}</version>
+        <!--scope>provided</scope-->
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-server</artifactId>
+        <version>${hbase.version}</version>
+        <!--scope>provided</scope-->
+      </dependency>
+      <dependency>
+        <groupId>org.scala-lang</groupId>
+        <artifactId>scala-library</artifactId>
+        <version>${scala.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-core_${scala.tools.version}</artifactId>
+        <version>${spark.version}</version>
+        <!--scope>provided</scope-->
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-sql_${scala.tools.version}</artifactId>
+        <version>${spark.version}</version>
+        <!--scope>provided</scope-->
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+</project>
+

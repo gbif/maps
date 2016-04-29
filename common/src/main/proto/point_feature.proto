@@ -1,0 +1,31 @@
+package org.gbif.maps.io;
+
+option optimize_for = LITE_RUNTIME;
+
+/**
+ * A basic point feature that holds a latitude, longitude and then
+ */
+message PointFeatures {
+
+  message Feature {
+    required double latitude = 1;
+    required double longitude = 2;
+    // this should match the GBIF API
+    enum BasisOfRecord {
+      UNKNOWN = 0;
+      PRESERVED_SPECIMEN = 1;
+      FOSSIL_SPECIMEN = 2;
+      LIVING_SPECIMEN = 3;
+      OBSERVATION = 4;
+      HUMAN_OBSERVATION = 5;
+      MACHINE_OBSERVATION = 6;
+      MATERIAL_SAMPLE = 7;
+      LITERATURE = 8;
+    }
+    required BasisOfRecord basisOfRecord = 3;
+    optional uint32 year = 4;
+
+  }
+
+  repeated Feature features = 1;
+}

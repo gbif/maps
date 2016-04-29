@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <artifactId>maps-motherpom</artifactId>
+    <groupId>org.gbif.maps</groupId>
+    <version>0.1-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>common</artifactId>
+
+  <build>
+    <plugins>
+      <!-- Generate source for Protobuf definitions -->
+      <plugin>
+        <groupId>net.dongliu</groupId>
+        <artifactId>maven-protoc-plugin</artifactId>
+        <version>${maven-protoc-plugin.version}</version>
+        <configuration>
+          <protocExecutable>/usr/local/bin/protoc</protocExecutable>
+          <outputDirectory>${project.basedir}/src/main/java-generated/</outputDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Add the generated sources to the classpath for IDEs -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>${build-helper-maven.version}</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.basedir}/src/main/java-generated/</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <!--
+    This is a utility that MUST have minimal dependencies.
+    Think very carefully before adding any and DO NOT add Guava which is known to cause a multitude of issues in
+    Hadoopland.
+   -->
+  <dependencies>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>${protoc.version}</version>
+    </dependency>
+  </dependencies>
+</project>
