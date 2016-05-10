@@ -116,6 +116,11 @@
       <!--scope>provided</scope-->
     </dependency>
     <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-yarn-api</artifactId>
+      <!--scope>provided</scope-->
+    </dependency>
+    <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-client</artifactId>
       <exclusions>
@@ -157,10 +162,22 @@
       <!--scope>provided</scope-->
     </dependency>
     <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-mllib_2.11</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>no.ecc.vectortile</groupId>
       <artifactId>java-vector-tile</artifactId>
     </dependency>
 
+
+    <dependency>
+      <groupId>org.scalatest</groupId>
+      <artifactId>scalatest-funsuite_2.10</artifactId>
+      <version>3.0.0-SNAP13</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 </project>

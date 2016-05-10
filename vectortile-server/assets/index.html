@@ -54,11 +54,11 @@ function initMap(map, minYear, maxYear) {
     
     map.addSource('tile', {
         type: 'vector',
-        "tiles": ["http://localhost:7001/api/taxon/1/{z}/{x}/{y}.pbf"]
+        "tiles": ["http://localhost:7001/api/taxon/5231190/{z}/{x}/{y}.pbf"]
     });
     map.addSource('points', {
         type: 'vector',
-        "tiles": ["http://localhost:7001/api/point/taxon/1/{z}/{x}/{y}.pbf"]
+        "tiles": ["http://localhost:7001/api/point/taxon/5231190/{z}/{x}/{y}.pbf"]
     });
 
     map.addLayer({
@@ -67,9 +67,9 @@ function initMap(map, minYear, maxYear) {
       "source": "tile",
       "source-layer": "points",
       "paint": {
-        "circle-radius": 1,
+        "circle-radius": 10,
         "circle-color": "#00F",
-        "circle-opacity": 0.5
+        "circle-opacity": 1
         }
       });    
     map.addLayer({

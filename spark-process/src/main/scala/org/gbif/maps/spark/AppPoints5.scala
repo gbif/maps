@@ -8,22 +8,32 @@ import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase.{HBaseConfiguration, KeyValue}
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{HashPartitioner, SparkConf, SparkContext}
 import org.gbif.maps.common.projection.Mercator
 import org.gbif.maps.io.PointFeature
+
 import scala.collection.mutable;
 
 
 /**
   * Processes tiles.
   */
-object AppPoints3 {
+object AppPoints5 {
 
-  object VectorTileEncoderFactory {
-    def newEncoder(): VectorTileEncoder = {
-      new VectorTileEncoder(4066, 0, true)
-    }
-  }
+  // Dictionary of map types
+  private val MAPS_TYPES = Map("ALL" -> 0, "TAXON" -> 1, "DATASET" -> 2, "PUBLISHER" -> 3, "COUNTRY" -> 4,
+    "PUBLISHING_COUNTRY" -> 5)
+
+  // Dictionary mapping the GBIF API BasisOfRecord enumeration to the Protobuf versions
+  private val BASIS_OF_RECORD = Map("UNKNOWN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN,
+    "PRESERVED_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.PRESERVED_SPECIMEN,
+    "FOSSIL_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.FOSSIL_SPECIMEN,
+    "LIVING_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.LIVING_SPECIMEN,
+    "OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.OBSERVATION,
+    "HUMAN_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.HUMAN_OBSERVATION,
+    "MACHINE_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MACHINE_OBSERVATION,
+    "MATERIAL_SAMPLE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MATERIAL_SAMPLE,
+    "LITERATURE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.LITERATURE)
 
   def main(args: Array[String]) {
     val conf = new SparkConf().setAppName("Map tile processing").setMaster("local[2]")
@@ -32,10 +42,7 @@ object AppPoints3 {
     val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 
     // Read the source data
-    //val df = sqlContext.read.parquet("/Users/tim/dev/data/map.parquet")
-    //val df = sqlContext.read.parquet("/Users/tim/dev/data/all_point1_deg")
-    val df = sqlContext.read.parquet("/user/hive/warehouse/tim.db/occurrence_map_source_sample")
-
+    val df = sqlContext.read.parquet("/user/hive/warehouse/tim.db/occurrence_map_source")
     df.repartition(100);
 
     // Number of points to put into the single cell in HBase.
@@ -43,20 +50,7 @@ object AppPoints3 {
     val pointThreshold = 100000;
     val mercator = new Mercator(4096)
     val GEOMETRY_FACTORY = new GeometryFactory()
-
-    // Dictionary of type to code
-    // TODO: Perhaps a Java API?
-    val MAPS_TYPES = Map("ALL" -> 0, "TAXON" -> 1, "DATASET" -> 2, "PUBLISHER" -> 3, "COUNTRY" -> 4,
-      "PUBLISHING_COUNTRY" -> 5)
-    val BASIS_OF_RECORD = Map("UNKNOWN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN,
-      "PRESERVED_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.PRESERVED_SPECIMEN,
-      "FOSSIL_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.FOSSIL_SPECIMEN,
-      "LIVING_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.LIVING_SPECIMEN,
-      "OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.OBSERVATION,
-      "HUMAN_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.HUMAN_OBSERVATION,
-      "MACHINE_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MACHINE_OBSERVATION,
-      "MATERIAL_SAMPLE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MATERIAL_SAMPLE,
-      "LITERATURE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.LITERATURE)
+    val MAX_HFILES_PER_CF_PER_REGION = 32 // defined in HBase's LoadIncrementalHFiles
 
     val initialCounts = df.flatMap(row => {
       // note that everything is lowercase (important)
@@ -81,32 +75,65 @@ object AppPoints3 {
         ((MAPS_TYPES("TAXON"), speciesKey, lat, lng, year, basisOfRecord), 1),
         ((MAPS_TYPES("TAXON"), kingdomKey, lat, lng, year, basisOfRecord), 1),
         ((MAPS_TYPES("ALL"), 0, lat, lng, year, basisOfRecord), 1))
-    }).reduceByKey((x, y) => (x + y))
+    }).reduceByKey(_ + _).repartition(500)
 
     initialCounts.cache();
 
+
+    // an alternative option, where we limit shuffling but is subject to blowing memory
+    /*
+    initialCounts.map(r => {
+      ((r._1._1 + ":" + r._1._2), (r._1._3, r._1._4, r._1._5, r._1._6, r._2))
+
+    }).aggregateByKey(new BoundedList[(Double, Double, Int, String, Int)](pointThreshold))((agg, v) => {
+      agg.appendElem(v)
+      agg
+    },((agg1,agg2) => {
+      agg1++=agg2 // (append all of agg2 to agg1)
+      agg1
+    }))
+      .map(r => {
+        val builder = PointFeature.PointFeatures.newBuilder();
+        r._2.foreach(f => {
+          val fb = PointFeature.PointFeatures.Feature.newBuilder();
+          fb.setLatitude(f._1)
+          fb.setLongitude(f._2)
+          fb.setYear(f._3)
+          fb.setBasisOfRecord(BASIS_OF_RECORD(f._4)) // convert to the protobuf type
+          builder.addFeatures(fb)
+        })
+        (r._1, builder.build().toByteArray)
+      }).repartitionAndSortWithinPartitions(new HashPartitioner(32)).map(r => {
+      val k = new ImmutableBytesWritable(Bytes.toBytes(r._1))
+      val row = new KeyValue(Bytes.toBytes(r._1), // key
+        Bytes.toBytes("wgs84"), // column family
+        Bytes.toBytes("features"), // cell
+        r._2 // cell value
+      )
+      (k, row)
+    })
+    */
+
     // take the First N records from each group and collect them suitable for HFile writing
     val pointData = initialCounts.map(r => {
-      ((r._1._1, r._1._2), (r._1._3, r._1._4, r._1._5, r._1._6))
+      ((r._1._1 + ":" + r._1._2), (r._1._3, r._1._4, r._1._5, r._1._6))
 
-    }).groupByKey().map(r => {
-      (r._1, r._2.take(pointThreshold))
-
-    }).map(r => {
-      val key = r._1._1 + ":" + r._1._2
+    }).groupByKey().mapValues(r => {
       val builder = PointFeature.PointFeatures.newBuilder();
-      r._2.foreach(f => {
+      var runningCount = 0
+      val iter = r.iterator
+      while (iter.hasNext && runningCount < pointThreshold) {
+        val f = iter.next()
         val fb = PointFeature.PointFeatures.Feature.newBuilder();
         fb.setLatitude(f._1)
         fb.setLongitude(f._2)
         fb.setYear(f._3)
         fb.setBasisOfRecord(BASIS_OF_RECORD(f._4)) // convert to the protobuf type
         builder.addFeatures(fb)
-      })
-
-      val value = r._2.iterator.mkString(",")
-      (key, builder.build().toByteArray)
-    }).repartition(32).sortByKey(true).map(r => {
+        runningCount += 1
+      }
+      builder.build().toByteArray
+    }).repartitionAndSortWithinPartitions(new HashPartitioner(MAX_HFILES_PER_CF_PER_REGION)).map(r => {
       val k = new ImmutableBytesWritable(Bytes.toBytes(r._1))
       val row = new KeyValue(Bytes.toBytes(r._1), // key
         Bytes.toBytes("wgs84"), // column family
@@ -137,7 +164,7 @@ object AppPoints3 {
         val basisOfRecord = r._1._6
         val count = r._2
 
-        (0 to 1).flatMap(z => {
+        (2 to 4).flatMap(z => {
           // TODO: BoR
           val x = mercator.longitudeToTileX(lng, z.asInstanceOf[Byte])
           val y = mercator.latitudeToTileY(lat, z.asInstanceOf[Byte])
@@ -174,7 +201,7 @@ object AppPoints3 {
       })
       //val result = encoder.encode()
       ((key, r._1._3 + ":" + r._1._4 + ":" + r._1._5), encoder.encode())
-    }).repartition(32).sortByKey(true).map(r => {
+    }).repartitionAndSortWithinPartitions(new HashPartitioner(MAX_HFILES_PER_CF_PER_REGION)).map(r => {
       val k = new ImmutableBytesWritable(Bytes.toBytes(r._1._1))
       val cell = r._1._2
       val cellData = r._2
@@ -200,10 +227,10 @@ object AppPoints3 {
       conf
     }
 
-    pointData.saveAsNewAPIHadoopFile("hdfs://c1n1.gbif.org:8020/tmp/zp6", classOf[ImmutableBytesWritable],
+    pointData.saveAsNewAPIHadoopFile("hdfs://c1n1.gbif.org:8020/tmp/zp9", classOf[ImmutableBytesWritable],
         classOf[KeyValue], classOf[HFileOutputFormat], outputConf)
 
-    tilePyramid.saveAsNewAPIHadoopFile("hdfs://c1n1.gbif.org:8020/tmp/zt6", classOf[ImmutableBytesWritable],
+    tilePyramid.saveAsNewAPIHadoopFile("hdfs://c1n1.gbif.org:8020/tmp/zt10", classOf[ImmutableBytesWritable],
         classOf[KeyValue], classOf[HFileOutputFormat], outputConf)
 
   }

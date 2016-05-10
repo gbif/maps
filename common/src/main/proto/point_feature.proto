@@ -8,8 +8,6 @@ option optimize_for = LITE_RUNTIME;
 message PointFeatures {
 
   message Feature {
-    required double latitude = 1;
-    required double longitude = 2;
     // this should match the GBIF API
     enum BasisOfRecord {
       UNKNOWN = 0;
@@ -22,8 +20,13 @@ message PointFeatures {
       MATERIAL_SAMPLE = 7;
       LITERATURE = 8;
     }
+
+    required double latitude = 1;
+    required double longitude = 2;
     required BasisOfRecord basisOfRecord = 3;
     optional uint32 year = 4;
+    // TODO: add count
+    //required uint32 count = 5;
 
   }
 
