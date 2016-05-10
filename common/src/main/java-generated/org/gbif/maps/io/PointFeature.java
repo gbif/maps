@@ -147,10 +147,20 @@ public final class PointFeature {
       // optional uint32 year = 4;
       /**
        * <code>optional uint32 year = 4;</code>
+       *
+       * <pre>
+       * TODO: add count
+       *required uint32 count = 5;
+       * </pre>
        */
       boolean hasYear();
       /**
        * <code>optional uint32 year = 4;</code>
+       *
+       * <pre>
+       * TODO: add count
+       *required uint32 count = 5;
+       * </pre>
        */
       int getYear();
     }
@@ -424,12 +434,22 @@ public final class PointFeature {
       private int year_;
       /**
        * <code>optional uint32 year = 4;</code>
+       *
+       * <pre>
+       * TODO: add count
+       *required uint32 count = 5;
+       * </pre>
        */
       public boolean hasYear() {
         return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
        * <code>optional uint32 year = 4;</code>
+       *
+       * <pre>
+       * TODO: add count
+       *required uint32 count = 5;
+       * </pre>
        */
       public int getYear() {
         return year_;
@@ -801,18 +821,33 @@ public final class PointFeature {
         private int year_ ;
         /**
          * <code>optional uint32 year = 4;</code>
+         *
+         * <pre>
+         * TODO: add count
+         *required uint32 count = 5;
+         * </pre>
          */
         public boolean hasYear() {
           return ((bitField0_ & 0x00000008) == 0x00000008);
         }
         /**
          * <code>optional uint32 year = 4;</code>
+         *
+         * <pre>
+         * TODO: add count
+         *required uint32 count = 5;
+         * </pre>
          */
         public int getYear() {
           return year_;
         }
         /**
          * <code>optional uint32 year = 4;</code>
+         *
+         * <pre>
+         * TODO: add count
+         *required uint32 count = 5;
+         * </pre>
          */
         public Builder setYear(int value) {
           bitField0_ |= 0x00000008;
@@ -822,6 +857,11 @@ public final class PointFeature {
         }
         /**
          * <code>optional uint32 year = 4;</code>
+         *
+         * <pre>
+         * TODO: add count
+         *required uint32 count = 5;
+         * </pre>
          */
         public Builder clearYear() {
           bitField0_ = (bitField0_ & ~0x00000008);
