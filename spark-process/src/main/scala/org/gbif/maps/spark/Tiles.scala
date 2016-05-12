@@ -5,14 +5,15 @@ import no.ecc.vectortile.VectorTileEncoder
 import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.RDD
 import org.gbif.maps.common.projection.Mercator
-import org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord
+import org.gbif.maps.io.PointFeature.PointFeatures.Feature
 
 import scala.collection.mutable
+import scala.collection.mutable.{Map => MMap}
 
 object Tiles extends Serializable {
 
   // Utility classes for data structures
-  case class BoRYearRecord(mapType: Int, mapKey: Any, lat: Double, lng: Double, basisOfRecord: BasisOfRecord, year: Int, count: Int)
+  case class BoRYearRecord(mapType: Int, mapKey: Any, lat: Double, lng: Double, basisOfRecord: Feature.BasisOfRecord, year: Int, count: Int)
   case class TileKey(mapType: Int, mapKey: Any, z: Int, x: Long, y: Long) extends Ordered[TileKey] {
     // Requires lexicographic ordering (since used in HBase keys)
     def compare(that: TileKey): Int = {
@@ -32,7 +33,7 @@ object Tiles extends Serializable {
     * @param maxZoom The zoom level at which we are tiling
     * @return A KVP RDD where the value contains data per pixel
     */
-  def toMercatorTiles(rdd: RDD[BoRYearRecord], zoom: Int): RDD[(TileKey, mutable.Map[(Int, Int), mutable.Map[Int, Int]])] = {
+  def toMercatorTilesOrig(rdd: RDD[BoRYearRecord], zoom: Int): RDD[(TileKey, mutable.Map[(Int, Int), mutable.Map[Int, Int]])] = {
     rdd.map(r => {
       val x = MERCATOR.longitudeToTileX(r.lng, zoom.asInstanceOf[Byte])
       val y = MERCATOR.latitudeToTileY(r.lat, zoom.asInstanceOf[Byte])
@@ -49,6 +50,25 @@ object Tiles extends Serializable {
     }, (agg1, agg2) => {
       // merge and convert into a mutable object
       mutable.Map() ++ Maps.merge(agg1, agg2)
+    })
+  }
+
+  /**
+    * TEST!
+    */
+  def toMercatorTiles(rdd: RDD[BoRYearRecord], zoom: Int) : RDD[(TileKey, ((Int,Int),(Feature.BasisOfRecord,Int,Int)))] = {
+    rdd.map(r => {
+      val x = MERCATOR.longitudeToTileX(r.lng, zoom.asInstanceOf[Byte])
+      val y = MERCATOR.latitudeToTileY(r.lat, zoom.asInstanceOf[Byte])
+      val px = MERCATOR.longitudeToTileLocalPixelX(r.lng, zoom.asInstanceOf[Byte])
+      val py = MERCATOR.latitudeToTileLocalPixelY(r.lat, zoom.asInstanceOf[Byte])
+      ((r.mapType, r.mapKey, x, y, px, py, r.basisOfRecord, r.year),r.count)
+
+    }).reduceByKey(_ + _).map( r => {
+      val k = r._1
+      val v = r._2
+      // TileKey : Pixel : Year+BoR+Count
+      (new TileKey(k._1, k._2, zoom, k._3, k._4), ((k._5, k._6),(k._7, k._8, v)))
     })
   }
 
@@ -87,12 +107,31 @@ object Tiles extends Serializable {
     * @param rdd A key value RDD to convert
     * @return A new RDD keyed the same, but with the values all encoded as vector tiles
     */
-  def toVectorTile(rdd: RDD[(TileKey, mutable.Map[(Int, Int), mutable.Map[Int, Int]])]) : RDD[(TileKey, Array[Byte])] = {
+  def toVectorTileOrig(rdd: RDD[(TileKey, mutable.Map[(Int, Int), mutable.Map[Int, Int]])]) : RDD[(TileKey, Array[Byte])] = {
     rdd.map(r => {
       val encoder = new VectorTileEncoder(4096, 0, false); // for each entry (a pixel, px) we have a year:count Map
 
       r._2.foreach(px => {
         val point = GEOMETRY_FACTORY.createPoint(new Coordinate(px._1._1.toDouble, px._1._2.toDouble));
+        val meta = new java.util.HashMap[String, Any]() // TODO: add metadata(!)
+        encoder.addFeature("points", meta, point);
+      })
+
+      (r._1, encoder.encode())
+    })
+  }
+
+  /**
+    * TEST!
+    */
+  def toVectorTile(rdd: RDD[(TileKey, ((Int,Int),(Feature.BasisOfRecord,Int,Int)))]) : RDD[(TileKey, Array[Byte])] = {
+    rdd.groupByKey().map(r => {
+      val encoder = new VectorTileEncoder(4096, 0, false); // for each entry (a pixel, px) we have a year:count Map
+
+      r._2.toMap.keys.foreach(px => {
+
+      //r._2.foreach(px => {
+        val point = GEOMETRY_FACTORY.createPoint(new Coordinate(px._1.toDouble, px._2.toDouble));
         val meta = new java.util.HashMap[String, Any]() // TODO: add metadata(!)
         encoder.addFeature("points", meta, point);
       })

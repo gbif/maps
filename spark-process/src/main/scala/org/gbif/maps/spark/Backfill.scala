@@ -163,7 +163,7 @@ object Backfill {
     println("Tiles at z0: " + z0.count())
     */
 
-    (0 to 2).foreach(z => {
+    (0 to 1).foreach(z => {
       var tiles = Tiles.toMercatorTiles(recordsToTile, z)
       persist(Tiles.toVectorTile(tiles), z, sourceField);
     })
