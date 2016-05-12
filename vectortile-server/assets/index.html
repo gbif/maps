@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset='utf-8'/>
-    <title>EUBON EBV</title>
+    <title>Maps</title>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no'/>
 
     <!--script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.15.0/mapbox-gl.js'></script-->
@@ -54,7 +54,7 @@ function initMap(map, minYear, maxYear) {
     
     map.addSource('tile', {
         type: 'vector',
-        "tiles": ["http://localhost:7001/api/taxon/2492321/{z}/{x}/{y}.pbf"]
+        "tiles": ["http://localhost:7001/api/taxon/212/{z}/{x}/{y}.pbf"]
     });
     map.addSource('points', {
         type: 'vector',

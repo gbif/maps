@@ -61,45 +61,24 @@ object Backfill {
 
 
   def main(args: Array[String]) {
-    val conf = new SparkConf().setAppName("Map processing").set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+    val conf = new SparkConf().setAppName("Map processing")
+      .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+    conf.setIfMissing("spark.master", "local[2]") // 2 threads for local dev, ignored in production
     val sc = new SparkContext(conf)
     val sqlContext = new org.apache.spark.sql.SQLContext(sc)
     val df = sqlContext.read.parquet("/user/hive/warehouse/tim.db/occurrence_map_source")
+    //val df = sqlContext.read.parquet("/Users/tim/dev/data/map.parquet")
     build(sc, df)
   }
 
   def build(sc :SparkContext, df : DataFrame): Unit = {
-    build(sc, df, "TAXON", "genuskey")
-  }
-
-  def persist(tilePyramid: RDD[((Int, Any, Int, Long, Long), mutable.Map[(Int, Int), mutable.Map[Int, Int]])],
-    z: Int, sourceField: String) = {
-    val tiles = tilePyramid.map(r => {
-      // type:key:zoom:x:y as a string
-      val key = r._1._1 + ":" + r._1._2
-      val encoder = new VectorTileEncoder(4096, 0, false);
-      //val encoder = () => VectorTileEncoderFactory.newEncoder()
-      // for each entry (a pixel, px) we have a year:count Map
-      r._2.foreach(px => {
-        val point = GEOMETRY_FACTORY.createPoint(new Coordinate(px._1._1.toDouble, px._1._2.toDouble));
-        val meta = new java.util.HashMap[String, Any]()
-        // TODO: add years to the VT
-        encoder.addFeature("points", meta, point);
-      })
-      //val result = encoder.encode()
-      ((key, r._1._3 + ":" + r._1._4 + ":" + r._1._5), encoder.encode())
-    }).repartitionAndSortWithinPartitions(new HashPartitioner(MAX_HFILES_PER_CF_PER_REGION)).map(r => {
-      val k = new ImmutableBytesWritable(Bytes.toBytes(r._1._1))
-      val cell = r._1._2
-      val cellData = r._2
-      val row = new KeyValue(Bytes.toBytes(r._1._1), // key
-        Bytes.toBytes("merc_tiles"), // column family
-        Bytes.toBytes(cell), // cell
-        cellData)
-      (k, row)
-    })
-    tiles.saveAsNewAPIHadoopFile(TARGET_DIR + "/tiles/" + sourceField + "/" + z, classOf[ImmutableBytesWritable],
-      classOf[KeyValue], classOf[HFileOutputFormat], outputConf)
+    //build(sc, df, "TAXON", "kingdomkey")
+    //build(sc, df, "TAXON", "phylumkey")
+    build(sc, df, "TAXON", "classkey")
+    //build(sc, df, "TAXON", "orderkey")
+    //build(sc, df, "TAXON", "familykey")
+    //build(sc, df, "TAXON", "genuskey")
+    //build(sc, df, "TAXON", "specieskey")
   }
 
   def build(sc : SparkContext, df : DataFrame, mapType : String, sourceField : String): Unit = {
@@ -107,7 +86,8 @@ object Backfill {
       if (!row.isNullAt(row.fieldIndex(sourceField))) {
         var year = null.asInstanceOf[Int]
         if (!row.isNullAt(row.fieldIndex("year"))) year = row.getInt(row.fieldIndex("year"))
-        List(((MAPS_TYPES(mapType),
+        List((
+          (MAPS_TYPES(mapType),
           row.get(row.fieldIndex(sourceField)),
           row.getDouble(row.fieldIndex("decimallatitude")),
           row.getDouble(row.fieldIndex("decimallongitude")),
@@ -125,13 +105,20 @@ object Backfill {
     // share the lookup among the cluster to allow distributed filtering
     val b_largeVals = sc.broadcast(largeVals)
 
+    //println(mapType + ": initial counts " + initialCounts.count() + " reduced to " + largeVals.size)
+
+
+    // TODO DECIDE: We can either take a sample (which will result in maps for all) or only prepare point data for
+    // those which are not tiled
+    //val res = MLPairRDDFunctions.fromPairRDD(pointSource).topByKey(POINT_THRESHOLD).mapValues(r => {
+
 
     // prepare the point data filtering out those that need tile pyramids
     val pointSource = initialCounts.filter(r => {!b_largeVals.value.contains((r._1._1, r._1._2))}).map(r => {
       ((r._1._1 + ":" + r._1._2), (r._1._3, r._1._4, r._1._5, r._1._6, r._2))
     })
 
-    val res = MLPairRDDFunctions.fromPairRDD(pointSource).topByKey(POINT_THRESHOLD).mapValues(r => {
+    val res = pointSource.groupByKey().mapValues(r => {
       val builder = PointFeature.PointFeatures.newBuilder();
       r.foreach(f => {
         val fb = PointFeature.PointFeatures.Feature.newBuilder();
@@ -151,56 +138,47 @@ object Backfill {
       )
       (k, row)
     })
+    /*
     res.saveAsNewAPIHadoopFile(TARGET_DIR + "/points/" + sourceField, classOf[ImmutableBytesWritable],
       classOf[KeyValue], classOf[HFileOutputFormat], outputConf)
+      */
+
+
+    // Prepare the RDD for the data to be tiled, limiting to only those which breach the threshold
+    val recordsToTile  = initialCounts.filter(r => {b_largeVals.value.contains((r._1._1, r._1._2))}).map(r => {
+      (new Tiles.BoRYearRecord(r._1._1, r._1._2, r._1._3, r._1._4, BASIS_OF_RECORD(r._1._6), r._1._5, r._2))
+    }).repartition(200).cache()
+
 
     /*
-    val tiles = initialCounts.filter(r => {b_largeVals.value.contains((r._1._1, r._1._2))}).map(r => {
-      val mapType = r._1._1
-      val mapKey = r._1._2
-      val lat = r._1._3
-      val lng = r._1._4
-      val year = r._1._5
-      val basisOfRecord = r._1._6
-      val count = r._2
-      val x = MERCATOR.longitudeToTileX(lng, MAX_ZOOM.asInstanceOf[Byte])
-      val y = MERCATOR.latitudeToTileY(lat, MAX_ZOOM.asInstanceOf[Byte])
-      val px = MERCATOR.longitudeToTileLocalPixelX(lng, MAX_ZOOM.asInstanceOf[Byte])
-      val py = MERCATOR.latitudeToTileLocalPixelY(lat, MAX_ZOOM.asInstanceOf[Byte])
-      ((mapType, mapKey, MAX_ZOOM, x, y),(px, py,year, count))
+    val z4 = Tiles.toMercatorTiles(recordsToTile, 4)
+    println("Tiles at z4: " + z4.count())
+    val z3 = Tiles.downscale(z4)
+    println("Tiles at z3: " + z3.count())
+    val z2 = Tiles.downscale(z3)
+    println("Tiles at z2: " + z2.count())
+    val z1 = Tiles.downscale(z2)
+    println("Tiles at z1: " + z1.count())
+    val z0 = Tiles.downscale(z1)
+    println("Tiles at z0: " + z0.count())
+    */
+
+    (0 to 2).foreach(z => {
+      var tiles = Tiles.toMercatorTiles(recordsToTile, z)
+      persist(Tiles.toVectorTile(tiles), z, sourceField);
     })
 
-    (MAX_ZOOM to 0).foreach(z => {
-      // downscale if requires
-      if (z < MAX_ZOOM) {
-        tiles = tiles.map(t => {
-          val oldX = t._1._4;
-          val oldY = t._1._5;
-          val x = (t._1._4/2).asInstanceOf[Int];
-          val y = (t._1._5/2).asInstanceOf[Int];
-          val px = (t._2._1/2).asInstanceOf[Int] + (oldX-x)
-
-          ((t._1._1, t._1._2, t._1._3,(t._1._4/2).asInstanceOf[Int], (t._1._5/2).asInstanceOf[Int]),
-            (t._2._1 + ))
-        })
-      }
-      val t = tiles.aggregateByKey(
-        // now aggregate by the key to combine data in a tile
-        mutable.Map[(Int, Int), mutable.Map[Int, Int]]())((agg, v) => {
-        // px:py to year:count
-        agg.put((v._1, v._2), mutable.Map(v._3 -> v._4))
-        agg
-      }, (agg1, agg2) => {
-        // merge and convert into a mutable object
-        mutable.Map() ++ Maps.merge(agg1, agg2)
-      })
-
-      persist(t, z, sourceField);
-
+    /*
+    var tiles = Tiles.toMercatorTiles(recordsToTile, 10)
+    persist(Tiles.toVectorTile(tiles), 10, sourceField);
+    (0 to 9).reverse.foreach(z => {
+      tiles = Tiles.downscale(tiles)
+      persist(Tiles.toVectorTile(tiles), z, sourceField);
     })
     */
 
     // only build the tile cache for those that breach the threshold
+    /*
     (0 to MAX_ZOOM).foreach(z => {
       val tilePyramid = initialCounts.filter(r => {b_largeVals.value.contains((r._1._1, r._1._2))}).map(r => {
         val mapType = r._1._1
@@ -228,6 +206,20 @@ object Backfill {
 
       persist(tilePyramid, z, sourceField);
     })
+    */
+  }
 
+  def persist(tilePyramid: RDD[(Tiles.TileKey, Array[Byte])], z: Int, sourceField: String) = {
+    tilePyramid.repartitionAndSortWithinPartitions(new HashPartitioner(MAX_HFILES_PER_CF_PER_REGION)).map(t => {
+      val k = new ImmutableBytesWritable(Bytes.toBytes(t._1.mapType + ":" + t._1.mapKey))
+      val cell = t._1.z + ":" + t._1.x + ":" + t._1.y
+      val cellData = t._2
+      val row = new KeyValue(Bytes.toBytes(t._1.mapType + ":" + t._1.mapKey), // key
+        Bytes.toBytes("merc_tiles"), // column family
+        Bytes.toBytes(cell), // cell
+        cellData)
+      (k, row)
+    }).saveAsNewAPIHadoopFile(TARGET_DIR + "/tiles/" + sourceField + "/" + z, classOf[ImmutableBytesWritable],
+      classOf[KeyValue], classOf[HFileOutputFormat], outputConf)
   }
 }
