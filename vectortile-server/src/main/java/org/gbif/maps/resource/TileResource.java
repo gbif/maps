@@ -84,6 +84,19 @@ public final class TileResource {
     return fromHBase(Joiner.on(":").join(1,key), Joiner.on(":").join(z,x,y));
   }
 
+
+  @GET
+  @Path("all/{z}/{x}/{y}.pbf")
+  @Timed
+  @Produces("application/x-protobuf")
+  public byte[] all(
+    @PathParam("z") int z, @PathParam("x") int x, @PathParam("y") int y,
+    @Context HttpServletResponse response
+  ) throws IOException {
+    prepare(response);
+    return fromHBase(Joiner.on(":").join(0,0), Joiner.on(":").join(z,x,y));
+  }
+
   @GET
   @Path("point/all/{z}/{x}/{y}.pbf")
   @Timed

@@ -39,7 +39,8 @@ object BackfillTiles {
   private val MERCATOR = new Mercator(4096)
   private val GEOMETRY_FACTORY = new GeometryFactory()
   private val MAX_HFILES_PER_CF_PER_REGION = 32 // defined in HBase's LoadIncrementalHFiles
-  private val MAX_ZOOM = 4;
+  private val MAX_ZOOM = 14;
+  private val MIN_ZOOM = 9;
 
   private val TARGET_DIR = "hdfs://c1n1.gbif.org:8020/tmp/tim_maps"
 
@@ -113,8 +114,6 @@ object BackfillTiles {
 
   def build(sc :SparkContext, df : DataFrame): Unit = {
 
-    val MAX_ZOOM = 8;
-
     // Determine and broadcast which of the views we consider suitable for tiling
     val keysToTile = sc.broadcast(largeViews(df).keySet)
 
@@ -150,6 +149,7 @@ object BackfillTiles {
       // Here we only emit views that are deemed to be suitable for tiling
       // By doing this here, we do not result in as much data to shuffle sort and filter later
       val res = mutable.ArrayBuffer[((Int,Any,Int,Long,Long,Int,Int,Int,Feature.BasisOfRecord),Int)]()
+      /*
       if (keysToTile.value.contains((MAPS_TYPES("ALL"), 0)))
         res += (((MAPS_TYPES("ALL"), 0, z, x, y, px, py, year, bor), 1))
       if (keysToTile.value.contains((MAPS_TYPES("DATASET"), datasetKey)))
@@ -160,14 +160,17 @@ object BackfillTiles {
         res += (((MAPS_TYPES("COUNTRY"), country, z, x, y, px, py, year, bor), 1))
       if (keysToTile.value.contains((MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry)))
         res += (((MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry, z, x, y, px, py, year, bor), 1))
+      */
+
       taxonIDs.foreach(id => {
         if (keysToTile.value.contains((MAPS_TYPES("TAXON"), id)))
           res += (((MAPS_TYPES("TAXON"), id, z, x, y, px, py, year, bor), 1))
       })
 
+
       res
     }).reduceByKey(_ + _).map(r => {
-      // regroup to the tile : pixel+features
+      // regroup to the tile(typeKey, ZXY) : pixel+features
       ((r._1._1 + ":" + r._1._2, r._1._3 + ":" + r._1._4 + ":" + r._1._5), (r._1._6, r._1._7, r._1._8, r._1._9, r._2))
     })
 
@@ -183,10 +186,61 @@ object BackfillTiles {
       m
     }
     val mergePartitionMaps = (p1: mutable.Map[(Int,Int),mutable.ArrayBuffer[(Int, Feature.BasisOfRecord, Int)]], p2: mutable.Map[(Int,Int),mutable.ArrayBuffer[(Int, Feature.BasisOfRecord, Int)]]) => p1 ++= p2
-    val v = tiles.aggregateByKey(initialMap)(appendToMap, mergePartitionMaps)
+    var v = tiles.aggregateByKey(initialMap)(appendToMap, mergePartitionMaps)
 
     //println("Total tile count: " + v.keys.count())
 
+    val TILE_SIZE = 4096
+
+    (MIN_ZOOM to MAX_ZOOM).reverse.foreach(z => {
+      // downscale if needed
+      if (z!=MAX_ZOOM) {
+        v = v.map(r => {
+          val key = r._1._1
+          val zxy = r._1._2.split(":")
+          val z = zxy(0).toInt
+          val x = zxy(1).toInt
+          val y = zxy(2).toInt
+
+          val pixels = mutable.Map.empty[(Int,Int), mutable.ArrayBuffer[(Int, Feature.BasisOfRecord, Int)]]
+          r._2.foreach(e => {
+            val px = e._1._1 /2 + TILE_SIZE/2 * (x%2)
+            val py = e._1._2 /2 + TILE_SIZE/2 * (y%2)
+            val pixel = (px,py)
+            if (pixels.contains(pixel)) {
+              pixels.get(pixel).get ++= (e._2)
+
+            } else pixels += (pixel -> e._2)
+          })
+
+          ((key,(z-1 + ":" + x/2 + ":" + y/2)), pixels)
+        }).reduceByKey((a,b) => a ++= b)
+      }
+
+
+      val vectorTiles = v.mapValues(r => {
+        val encoder = new VectorTileEncoder(4096, 0, false); // for each entry (a pixel, px) we have a year:count Map
+
+        r.foreach(pixel => {
+          val point = GEOMETRY_FACTORY.createPoint(new Coordinate(pixel._1._1.toDouble, pixel._1._2.toDouble));
+          val meta = new java.util.HashMap[String, Any]() // TODO: add metadata(!)
+          encoder.addFeature("points", meta, point);
+        })
+        encoder.encode()
+      }).repartitionAndSortWithinPartitions(new HashPartitioner(MAX_HFILES_PER_CF_PER_REGION)).map( r => {
+        val k = new ImmutableBytesWritable(Bytes.toBytes(r._1._1))
+        val cell = r._1._2
+        val cellData = r._2
+        val row = new KeyValue(Bytes.toBytes(r._1._1), // key
+          Bytes.toBytes("merc_tiles"), // column family
+          Bytes.toBytes(cell), // cell
+          cellData)
+        (k, row)
+      }).saveAsNewAPIHadoopFile(TARGET_DIR + "/tiles/z" + z, classOf[ImmutableBytesWritable],
+        classOf[KeyValue], classOf[HFileOutputFormat], outputConf)
+    })
+
+    /*
     val vectorTiles = v.mapValues(r => {
       val encoder = new VectorTileEncoder(4096, 0, false); // for each entry (a pixel, px) we have a year:count Map
 
@@ -207,6 +261,8 @@ object BackfillTiles {
       (k, row)
     }).saveAsNewAPIHadoopFile(TARGET_DIR + "/tiles/z0", classOf[ImmutableBytesWritable],
       classOf[KeyValue], classOf[HFileOutputFormat], outputConf)
+
+      */
 
       /*
 
