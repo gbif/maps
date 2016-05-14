@@ -15,10 +15,9 @@ import org.gbif.maps.common.projection.Mercator
 import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature
 
-import scala.collection.immutable.Nil
 import scala.collection.mutable
 
-object BackfillTiles {
+object BackfillTiles2 {
 
   // Dictionary of map types
   private val MAPS_TYPES = Map("ALL" -> 0, "TAXON" -> 1, "DATASET" -> 2, "PUBLISHER" -> 3, "COUNTRY" -> 4,
@@ -39,8 +38,8 @@ object BackfillTiles {
   private val MERCATOR = new Mercator(4096)
   private val GEOMETRY_FACTORY = new GeometryFactory()
   private val MAX_HFILES_PER_CF_PER_REGION = 32 // defined in HBase's LoadIncrementalHFiles
-  private val MAX_ZOOM = 14;
-  private val MIN_ZOOM = 15; // deliberate
+  private val MAX_ZOOM = 6;
+  private val MIN_ZOOM = 0;
 
   private val TARGET_DIR = "hdfs://c1n1.gbif.org:8020/tmp/tim_maps"
 
@@ -117,63 +116,6 @@ object BackfillTiles {
     // Determine and broadcast which of the views we consider suitable for tiling
     val keysToTile = sc.broadcast(largeViews(df).keySet)
 
-    val tiles = df.flatMap(row => {
-      val lat = row.getDouble(row.fieldIndex("decimallatitude"))
-      val lng = row.getDouble(row.fieldIndex("decimallongitude"))
-      val bor = BASIS_OF_RECORD(row.getString(row.fieldIndex("basisofrecord")))
-      val year = if (row.isNullAt(row.fieldIndex("year"))) null.asInstanceOf[Int]
-        else row.getInt((row.fieldIndex("year")))
-      val datasetKey = row.getString(row.fieldIndex("datasetkey"))
-      val publisherKey = row.getString(row.fieldIndex("publishingorgkey"))
-      val country = row.getString(row.fieldIndex("countrycode"))
-      val publishingCountry = row.getString(row.fieldIndex("publishingcountry"))
-
-      var taxonIDs = Set[Int]()
-      if (!row.isNullAt(row.fieldIndex("kingdomkey"))) taxonIDs+=row.getInt(row.fieldIndex("kingdomkey"))
-      if (!row.isNullAt(row.fieldIndex("phylumkey"))) taxonIDs+=row.getInt(row.fieldIndex("phylumkey"))
-      if (!row.isNullAt(row.fieldIndex("classkey"))) taxonIDs+=row.getInt(row.fieldIndex("classkey"))
-      if (!row.isNullAt(row.fieldIndex("orderkey"))) taxonIDs+=row.getInt(row.fieldIndex("orderkey"))
-      if (!row.isNullAt(row.fieldIndex("familykey"))) taxonIDs+=row.getInt(row.fieldIndex("familykey"))
-      if (!row.isNullAt(row.fieldIndex("genuskey"))) taxonIDs+=row.getInt(row.fieldIndex("genuskey"))
-      if (!row.isNullAt(row.fieldIndex("specieskey"))) taxonIDs+=row.getInt(row.fieldIndex("specieskey"))
-      if (!row.isNullAt(row.fieldIndex("taxonkey"))) taxonIDs+=row.getInt(row.fieldIndex("taxonkey"))
-
-      // It is more efficient to do this now, than emit multiple features for each record and then do it repeatedly
-      // for the same location
-      val z = MAX_ZOOM.asInstanceOf[Byte]
-      val x = MERCATOR.longitudeToTileX(lng, z)
-      val y = MERCATOR.latitudeToTileY(lat, z)
-      val px = MERCATOR.longitudeToTileLocalPixelX(lng, z)
-      val py = MERCATOR.latitudeToTileLocalPixelY(lat, z)
-
-      // Here we only emit views that are deemed to be suitable for tiling
-      // By doing this here, we do not result in as much data to shuffle sort and filter later
-      val res = mutable.ArrayBuffer[((Int,Any,Int,Long,Long,Int,Int,Int,Feature.BasisOfRecord),Int)]()
-      if (keysToTile.value.contains((MAPS_TYPES("ALL"), 0)))
-        res += (((MAPS_TYPES("ALL"), 0, z, x, y, px, py, year, bor), 1))
-      if (keysToTile.value.contains((MAPS_TYPES("DATASET"), datasetKey)))
-        res += (((MAPS_TYPES("DATASET"), datasetKey, z, x, y, px, py, year, bor), 1))
-      if (keysToTile.value.contains((MAPS_TYPES("PUBLISHER"), publisherKey)))
-        res += (((MAPS_TYPES("PUBLISHER"), publisherKey, z, x, y, px, py, year, bor), 1))
-      if (keysToTile.value.contains((MAPS_TYPES("COUNTRY"), country)))
-        res += (((MAPS_TYPES("COUNTRY"), country, z, x, y, px, py, year, bor), 1))
-      if (keysToTile.value.contains((MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry)))
-        res += (((MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry, z, x, y, px, py, year, bor), 1))
-
-      taxonIDs.foreach(id => {
-        if (keysToTile.value.contains((MAPS_TYPES("TAXON"), id)))
-          res += (((MAPS_TYPES("TAXON"), id, z, x, y, px, py, year, bor), 1))
-      })
-
-
-      res
-    }).reduceByKey(_ + _).map(r => {
-      // regroup to the tile(typeKey, ZXY) : pixel+features
-      ((r._1._1 + ":" + r._1._2, r._1._3 + ":" + r._1._4 + ":" + r._1._5), (r._1._6, r._1._7, r._1._8, r._1._9, r._2))
-    })
-
-
-
     val initialMap = mutable.Map.empty[(Int,Int), mutable.ArrayBuffer[(Int, Feature.BasisOfRecord, Int)]]
     val appendToMap = (m: mutable.Map[(Int,Int),mutable.ArrayBuffer[(Int, Feature.BasisOfRecord, Int)]], r: (Int,Int,Int,Feature.BasisOfRecord,Int)) => {
       val pixel = (r._1,r._2)
@@ -184,13 +126,76 @@ object BackfillTiles {
       m
     }
     val mergePartitionMaps = (p1: mutable.Map[(Int,Int),mutable.ArrayBuffer[(Int, Feature.BasisOfRecord, Int)]], p2: mutable.Map[(Int,Int),mutable.ArrayBuffer[(Int, Feature.BasisOfRecord, Int)]]) => p1 ++= p2
-    var v = tiles.aggregateByKey(initialMap)(appendToMap, mergePartitionMaps)
 
 
 
-    println("Total record count: " + v.count())
+    val tiles = df.map(row => {
+      val lat = row.getDouble(row.fieldIndex("decimallatitude"))
+      val lng = row.getDouble(row.fieldIndex("decimallongitude"))
+      val bor = BASIS_OF_RECORD(row.getString(row.fieldIndex("basisofrecord")))
+      val year = if (row.isNullAt(row.fieldIndex("year"))) null.asInstanceOf[Int]
+        else row.getInt((row.fieldIndex("year")))
 
-    val TILE_SIZE = 4096
+      val z = MAX_ZOOM.asInstanceOf[Byte]
+      val x = MERCATOR.longitudeToTileX(lng, z)
+      val y = MERCATOR.latitudeToTileY(lat, z)
+      val px = MERCATOR.longitudeToTileLocalPixelX(lng, z)
+      val py = MERCATOR.latitudeToTileLocalPixelY(lat, z)
+
+      // determine the views that this record should influence
+      var mapViews = Set[(Int,Any)]()
+      if (keysToTile.value.contains((MAPS_TYPES("ALL"), 0))) mapViews += ((MAPS_TYPES("ALL"), 0))
+
+      val datasetKey = row.getString(row.fieldIndex("datasetkey"))
+      if (keysToTile.value.contains((MAPS_TYPES("DATASET"), datasetKey))) mapViews += ((MAPS_TYPES("DATASET"), datasetKey))
+
+      val publisherKey = row.getString(row.fieldIndex("publishingorgkey"))
+      if (keysToTile.value.contains((MAPS_TYPES("PUBLISHER"), publisherKey))) mapViews += ((MAPS_TYPES("PUBLISHER"), publisherKey))
+
+      val country = row.getString(row.fieldIndex("countrycode"))
+      if (keysToTile.value.contains((MAPS_TYPES("COUNTRY"), country))) mapViews += ((MAPS_TYPES("COUNTRY"), country))
+
+      val publishingCountry = row.getString(row.fieldIndex("publishingcountry"))
+      if (keysToTile.value.contains((MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry))) mapViews += ((MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry))
+
+      var taxonIDs = Set[Int]()
+      if (!row.isNullAt(row.fieldIndex("kingdomkey"))) taxonIDs+=row.getInt(row.fieldIndex("kingdomkey"))
+      if (!row.isNullAt(row.fieldIndex("phylumkey"))) taxonIDs+=row.getInt(row.fieldIndex("phylumkey"))
+      if (!row.isNullAt(row.fieldIndex("classkey"))) taxonIDs+=row.getInt(row.fieldIndex("classkey"))
+      if (!row.isNullAt(row.fieldIndex("orderkey"))) taxonIDs+=row.getInt(row.fieldIndex("orderkey"))
+      if (!row.isNullAt(row.fieldIndex("familykey"))) taxonIDs+=row.getInt(row.fieldIndex("familykey"))
+      if (!row.isNullAt(row.fieldIndex("genuskey"))) taxonIDs+=row.getInt(row.fieldIndex("genuskey"))
+      if (!row.isNullAt(row.fieldIndex("specieskey"))) taxonIDs+=row.getInt(row.fieldIndex("specieskey"))
+      if (!row.isNullAt(row.fieldIndex("taxonkey"))) taxonIDs+=row.getInt(row.fieldIndex("taxonkey"))
+      taxonIDs.foreach(id => {
+        if (keysToTile.value.contains((MAPS_TYPES("TAXON"), id))) mapViews += ((MAPS_TYPES("TAXON"), id))
+      })
+
+      ((z,x,y), (px, py, year, bor, mapViews))
+    }).flatMapValues(r => {
+      var res = mutable.ArrayBuffer[((Int,Any),(Int, Int, Int, Feature.BasisOfRecord, Int))]()
+      r._5.foreach(mapType => {
+        res += (((mapType),(r._1, r._2, r._3, r._4, 1)))
+      })
+      res
+    }).map(r => {
+      ((r._2._1._1 + ":" + r._2._1._1, r._1._1 + ":" +  r._1._2 + ":" +  r._1._3),(r._2._2))
+    }).aggregateByKey(initialMap)(appendToMap, mergePartitionMaps);
+
+
+
+
+      /*
+    c.map(r => {
+      r
+    })
+    */
+
+    var v = tiles;
+
+    //println("Total tile count: " + v.keys.count())
+
+    val TILE_SIZE = 4096;
 
     (MIN_ZOOM to MAX_ZOOM).reverse.foreach(z => {
       // downscale if needed
@@ -204,9 +209,10 @@ object BackfillTiles {
 
           val pixels = mutable.Map.empty[(Int,Int), mutable.ArrayBuffer[(Int, Feature.BasisOfRecord, Int)]]
           r._2.foreach(e => {
+
             val px = e._1._1 /2 + TILE_SIZE/2 * (x%2)
             val py = e._1._2 /2 + TILE_SIZE/2 * (y%2)
-            val pixel = (px,py)
+            val pixel = (px.toInt, py.toInt)
             if (pixels.contains(pixel)) {
               pixels.get(pixel).get ++= (e._2)
 
@@ -216,7 +222,6 @@ object BackfillTiles {
           ((key,(z-1 + ":" + x/2 + ":" + y/2)), pixels)
         }).reduceByKey((a,b) => a ++= b)
       }
-
 
       val vectorTiles = v.mapValues(r => {
         val encoder = new VectorTileEncoder(4096, 0, false); // for each entry (a pixel, px) we have a year:count Map

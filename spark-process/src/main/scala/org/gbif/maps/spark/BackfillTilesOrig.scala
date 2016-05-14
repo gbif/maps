@@ -15,10 +15,9 @@ import org.gbif.maps.common.projection.Mercator
 import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature
 
-import scala.collection.immutable.Nil
 import scala.collection.mutable
 
-object BackfillTiles {
+object BackfillTilesOrig {
 
   // Dictionary of map types
   private val MAPS_TYPES = Map("ALL" -> 0, "TAXON" -> 1, "DATASET" -> 2, "PUBLISHER" -> 3, "COUNTRY" -> 4,
@@ -40,7 +39,7 @@ object BackfillTiles {
   private val GEOMETRY_FACTORY = new GeometryFactory()
   private val MAX_HFILES_PER_CF_PER_REGION = 32 // defined in HBase's LoadIncrementalHFiles
   private val MAX_ZOOM = 14;
-  private val MIN_ZOOM = 15; // deliberate
+  private val MIN_ZOOM = 9;
 
   private val TARGET_DIR = "hdfs://c1n1.gbif.org:8020/tmp/tim_maps"
 
@@ -149,6 +148,7 @@ object BackfillTiles {
       // Here we only emit views that are deemed to be suitable for tiling
       // By doing this here, we do not result in as much data to shuffle sort and filter later
       val res = mutable.ArrayBuffer[((Int,Any,Int,Long,Long,Int,Int,Int,Feature.BasisOfRecord),Int)]()
+      /*
       if (keysToTile.value.contains((MAPS_TYPES("ALL"), 0)))
         res += (((MAPS_TYPES("ALL"), 0, z, x, y, px, py, year, bor), 1))
       if (keysToTile.value.contains((MAPS_TYPES("DATASET"), datasetKey)))
@@ -159,6 +159,7 @@ object BackfillTiles {
         res += (((MAPS_TYPES("COUNTRY"), country, z, x, y, px, py, year, bor), 1))
       if (keysToTile.value.contains((MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry)))
         res += (((MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry, z, x, y, px, py, year, bor), 1))
+      */
 
       taxonIDs.foreach(id => {
         if (keysToTile.value.contains((MAPS_TYPES("TAXON"), id)))
@@ -172,7 +173,7 @@ object BackfillTiles {
       ((r._1._1 + ":" + r._1._2, r._1._3 + ":" + r._1._4 + ":" + r._1._5), (r._1._6, r._1._7, r._1._8, r._1._9, r._2))
     })
 
-
+    //println("Total record count: " + tiles.keys.count())
 
     val initialMap = mutable.Map.empty[(Int,Int), mutable.ArrayBuffer[(Int, Feature.BasisOfRecord, Int)]]
     val appendToMap = (m: mutable.Map[(Int,Int),mutable.ArrayBuffer[(Int, Feature.BasisOfRecord, Int)]], r: (Int,Int,Int,Feature.BasisOfRecord,Int)) => {
@@ -186,9 +187,7 @@ object BackfillTiles {
     val mergePartitionMaps = (p1: mutable.Map[(Int,Int),mutable.ArrayBuffer[(Int, Feature.BasisOfRecord, Int)]], p2: mutable.Map[(Int,Int),mutable.ArrayBuffer[(Int, Feature.BasisOfRecord, Int)]]) => p1 ++= p2
     var v = tiles.aggregateByKey(initialMap)(appendToMap, mergePartitionMaps)
 
-
-
-    println("Total record count: " + v.count())
+    //println("Total tile count: " + v.keys.count())
 
     val TILE_SIZE = 4096
 
