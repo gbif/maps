@@ -8,17 +8,15 @@ import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase.{HBaseConfiguration, KeyValue}
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.{HashPartitioner, SparkConf, SparkContext}
 import org.gbif.maps.common.projection.Mercator
 import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature
 
-import scala.collection.immutable.Nil
 import scala.collection.mutable
 
-object BackfillTiles5 {
+object BackfillTiles6 {
 
 
   // Dictionary of map types
@@ -40,8 +38,8 @@ object BackfillTiles5 {
   val MERCATOR = new Mercator(4096)
   val GEOMETRY_FACTORY = new GeometryFactory()
   val MAX_HFILES_PER_CF_PER_REGION = 32 // defined in HBase's LoadIncrementalHFiles
-  val MAX_ZOOM = 4 // 4 worked well - killed 8 at around 40 mins (50%)
-  val MIN_ZOOM = 0
+  val MAX_ZOOM = 15
+  val MIN_ZOOM = 15
 
   private val TARGET_DIR = "hdfs://c1n1.gbif.org:8020/tmp/tim_maps"
 
@@ -176,34 +174,19 @@ object BackfillTiles5 {
     })
 
     // Notes to Tim:
-    // [tim@prodgateway-vh ~]$ ~/spark/bin/spark-submit --master yarn --jars $HIVE_CLASSPATH /opt/cloudera/parcels/CDH/lib/hbase/lib/htrace-core-3.1.0-incubating.jar --num-executors 25 --executor-memory 10g --executor-cores 5  --deploy-mode cluster --class "org.gbif.maps.spark.BackfillTiles5" spark-process-0.1-SNAPSHOT.jar
-    // println("Total record count: " + tiles.count())
-    // On a quiet cluster (total job time, including approx 1 min initial count):
-    // 0 -> 1 = Total record count: 1,259,651,030
-    // 15 -> 15 = Total record count: 987,290,949  (a. 11mins, 35sec   b.  11mins, 17sec)
-    // Timings above not including the Encoding or saving as HFiles
+    // [tim@prodgateway-vh ~]$ ~/spark/bin/spark-submit --master yarn --jars $HIVE_CLASSPATH /opt/cloudera/parcels/CDH/lib/hbase/lib/htrace-core-3.1.0-incubating.jar --num-executors 25 --executor-memory 10g --executor-cores 5  --deploy-mode cluster --class "org.gbif.maps.spark.BackfillTiles6" spark-process-0.1-SNAPSHOT.jar
 
-    // Suspect timings above were clever enough to not do the reduce by key!!!
-    // Yes - started failing when adding the encoding bits.
-    // Repartitioning to 1000: took 22 mins, and shuffled 130GB twice - seen on ganglia
-    // Perhaps that included the reduceByKey()?
+    // On a quiet cluster
+    // 0-1:
 
-
-    // collect the pixels per tile (for a test here only - need to collect properly(!))
-    // option 1: collect to the final structure
-    // option 2: push a collection of data to tile in the encoding bit later (suggest this first)
-
-    val appendVal = (m: mutable.Set[(Int,Int)], v: (Int,Int,Int,Feature.BasisOfRecord,Int)) => {m+=((v._1, v._2))}
-    val merge = (m1: mutable.Set[(Int,Int)], m2: mutable.Set[(Int,Int)]) => {m1++=m2}
-    val tiles2 = tiles.aggregateByKey(mutable.Set[(Int,Int)]().empty)(appendVal, merge)
+    val appendVal = (m: DensityTile, v: (Int,Int,Int,Feature.BasisOfRecord,Int)) => {m.collect((v._1, v._2), v._4, v._3, v._5)}
+    val merge = (m1: DensityTile, m2: DensityTile) => {m1.merge(m2)}
+    val tiles2 = tiles.aggregateByKey(new DensityTile)(appendVal, merge)
 
     tiles2.mapValues(tile => {
-      val pixels = mutable.Set[(Int,Int)]().empty
-      tile.foreach(p => {pixels+=((p._1,p._2))})
       val encoder = new VectorTileEncoder(4096, 0, false); // for each entry (a pixel, px) we have a year:count Map
-
-      pixels.foreach(pixel => {
-        val point = GEOMETRY_FACTORY.createPoint(new Coordinate(pixel._1.toDouble, pixel._2.toDouble));
+      tile.build().foreach(f => {
+        val point = GEOMETRY_FACTORY.createPoint(new Coordinate(f._1._1.toDouble, f._1._2.toDouble));
         val meta = new java.util.HashMap[String, Any]() // TODO: add metadata(!)
         encoder.addFeature("points", meta, point);
       })

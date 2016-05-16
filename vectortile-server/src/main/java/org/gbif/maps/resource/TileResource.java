@@ -105,7 +105,7 @@ public final class TileResource {
                       @PathParam("z") int z, @PathParam("x") int x, @PathParam("y") int y,
                       @Context HttpServletResponse response) throws IOException {
     prepare(response);
-    try (Table table = connection.getTable(TableName.valueOf("tim_test"))) {
+    try (Table table = connection.getTable(TableName.valueOf("tim_test2"))) {
 
       synchronized (lock) {
 
@@ -176,7 +176,7 @@ public final class TileResource {
                       @PathParam("z") int z, @PathParam("x") int x, @PathParam("y") int y,
                       @Context HttpServletResponse response) throws IOException {
     prepare(response);
-    try (Table table = connection.getTable(TableName.valueOf("tim_test"))) {
+    try (Table table = connection.getTable(TableName.valueOf("tim_test2"))) {
 
       synchronized (lock) {
 
@@ -246,7 +246,7 @@ public final class TileResource {
   }
 
   private byte[] fromHBase(String key) throws IOException {
-    try (Table table = connection.getTable(TableName.valueOf("tim_test"))) {
+    try (Table table = connection.getTable(TableName.valueOf("tim_test2"))) {
       Get get = new Get(Bytes.toBytes(key));
       get.addColumn(Bytes.toBytes("merc"), Bytes.toBytes("tile"));
       Result result = table.get(get);
@@ -255,7 +255,7 @@ public final class TileResource {
   }
 
   private byte[] fromHBase(String key, String cell) throws IOException {
-    try (Table table = connection.getTable(TableName.valueOf("tim_test"))) {
+    try (Table table = connection.getTable(TableName.valueOf("tim_test2"))) {
       Get get = new Get(Bytes.toBytes(key));
       get.addColumn(Bytes.toBytes("merc_tiles"), Bytes.toBytes(cell));
       Result result = table.get(get);
