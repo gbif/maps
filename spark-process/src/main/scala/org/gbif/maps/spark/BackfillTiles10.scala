@@ -18,7 +18,7 @@ import org.gbif.maps.io.PointFeature.PointFeatures.Feature
 import scala.collection.mutable
 import scala.collection.mutable.{Map => MMap}
 
-object BackfillTiles9 {
+object BackfillTiles10 {
 
   // Dictionary of map types
   private val MAPS_TYPES = Map("ALL" -> 0, "TAXON" -> 1, "DATASET" -> 2, "PUBLISHER" -> 3, "COUNTRY" -> 4,
@@ -93,7 +93,7 @@ object BackfillTiles9 {
   def build(sc :SparkContext, df : DataFrame): Unit = {
 
     var tiles = df.flatMap(row => {
-      val res = mutable.ArrayBuffer[((String, Int, Feature.BasisOfRecord, Short),Int)]()
+      val res = mutable.ArrayBuffer[((String, String, Int, Feature.BasisOfRecord, Short),Int)]()
       val lat = row.getDouble(row.fieldIndex("decimallatitude"))
       if (lat >= -85 && lat <= 85) {
         val lng = row.getDouble(row.fieldIndex("decimallongitude"))
@@ -110,13 +110,32 @@ object BackfillTiles9 {
         val pixel = encodePixel(px, py)
 
         val key = z + ":" + x + ":" + y
+        res += ((("0:0", key, pixel, bor, year), 1))
 
-        res += (((key, pixel, bor, year), 1))
+        // TODO: this stuff(!)
+        if (!row.isNullAt(row.fieldIndex("kingdomkey"))){
+          val taxon = row.getInt((row.fieldIndex("kingdomkey")))
+          res += ((("1:" + taxon, key, pixel, bor, year), 1))
+        }
+        if (!row.isNullAt(row.fieldIndex("classkey"))){
+          val taxon = row.getInt((row.fieldIndex("classkey")))
+          res += ((("1:" + taxon, key, pixel, bor, year), 1))
+        }
+        if (!row.isNullAt(row.fieldIndex("orderkey"))){
+          val taxon = row.getInt((row.fieldIndex("orderkey")))
+          res += ((("1:" + taxon, key, pixel, bor, year), 1))
+        }
+        if (!row.isNullAt(row.fieldIndex("datasetkey"))){
+          val id = row.getString((row.fieldIndex("datasetkey")))
+          res += ((("2:" + id, key, pixel, bor, year), 1))
+        }
+
+
       }
       res
-    }).reduceByKey(_+_).map(r => {
-      // key, bor : pixel,year,count
-      ((r._1._1, r._1._3),(r._1._2,r._1._4,r._2))
+    }).reduceByKey(_+_, 200).map(r => {
+      // type, zxy, bor : pixel,year,count
+      ((r._1._1, r._1._2, r._1._4),(r._1._3,r._1._5,r._2))
     })
 
     // collect a map of pixelYear -> count
@@ -151,7 +170,7 @@ object BackfillTiles9 {
 
     }
     var tiles3 = tiles2.map(r => {
-      (r._1._1,(r._1._2, r._2))
+      ((r._1._1,r._1._2),(r._1._3, r._2))
     }).aggregateByKey(MMap[Feature.BasisOfRecord,MMap[Long,Int]]().empty)(appendVal2, merge2)
 
     (MIN_ZOOM to MAX_ZOOM).reverse.foreach(z => {
@@ -160,7 +179,7 @@ object BackfillTiles9 {
       if (z != MAX_ZOOM) {
 
         tiles3 = tiles3.map(t => {
-          val zxy = t._1.split(":")
+          val zxy = t._1._2.split(":")
           val zoom = zxy(0).toInt
           val x = zxy(1).toInt
           val y = zxy(2).toInt
@@ -180,7 +199,7 @@ object BackfillTiles9 {
             })
           })
 
-          ((z + ":" + x/2 + ":" + y/2), newTile)
+          ((t._1._1, z + ":" + x/2 + ":" + y/2), newTile)
 
         }).reduceByKey((a,b) => {
           // deep copy
@@ -217,10 +236,10 @@ object BackfillTiles9 {
 
         encoder.encode()
       }).repartitionAndSortWithinPartitions(new HashPartitioner(MAX_HFILES_PER_CF_PER_REGION)).map( r => {
-        val k = new ImmutableBytesWritable(Bytes.toBytes("0:0"))
-        val cell = r._1
+        val k = new ImmutableBytesWritable(Bytes.toBytes(r._1._1))
+        val cell = r._1._2
         val cellData = r._2
-        val row = new KeyValue(Bytes.toBytes("0:0"), // key
+        val row = new KeyValue(Bytes.toBytes(r._1._1), // key
           Bytes.toBytes("merc_tiles"), // column family
           Bytes.toBytes(cell), // cell
           cellData)
@@ -230,5 +249,4 @@ object BackfillTiles9 {
 
   }
 }
-
 
