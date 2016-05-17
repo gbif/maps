@@ -39,7 +39,7 @@ public class CategoryDensityTileTest {
                       + "0,1,0,2000,2\\n"
                       + "1,1,1,2000,1\\n";
 
-    assertEquals("Collecting not as expected", expected, t1.collectAll(t2).toDebugString());
+    assertEquals("Collecting not as expected", expected, CategoryDensityTile.collectAll(t1,t2).toDebugString());
   }
 
   @Test
@@ -49,7 +49,7 @@ public class CategoryDensityTileTest {
     t1.collect(11,11,0,2001,1);
     t1.collect(21,3,0,2000,1);
 
-    CategoryDensityTile t2 = t1.downscale(1, 1, 0, 4096);
+    CategoryDensityTile t2 = CategoryDensityTile.downscale(t1, 1, 1, 0, 4096);
 
     String expected = "2053,0,0,2000,1\\n"
                       + "2053,5,0,2001,1\\n"

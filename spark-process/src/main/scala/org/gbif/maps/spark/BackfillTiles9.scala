@@ -1,6 +1,7 @@
 package org.gbif.maps.spark
 
-import com.vividsolutions.jts.geom.GeometryFactory
+import com.vividsolutions.jts.geom.{Coordinate, GeometryFactory}
+import no.ecc.vectortile.VectorTileEncoder
 import org.apache.hadoop.hbase.client.HTable
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat
@@ -15,9 +16,9 @@ import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature
 
 import scala.collection.mutable
+import scala.collection.mutable.{Map => MMap}
 
 object BackfillTiles9 {
-
 
   // Dictionary of map types
   private val MAPS_TYPES = Map("ALL" -> 0, "TAXON" -> 1, "DATASET" -> 2, "PUBLISHER" -> 3, "COUNTRY" -> 4,
@@ -34,12 +35,14 @@ object BackfillTiles9 {
     "MATERIAL_SAMPLE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MATERIAL_SAMPLE,
     "LITERATURE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.LITERATURE)
 
-  val POINT_THRESHOLD = 100000;
-  val MERCATOR = new Mercator(4096)
-  val GEOMETRY_FACTORY = new GeometryFactory()
-  val MAX_HFILES_PER_CF_PER_REGION = 32 // defined in HBase's LoadIncrementalHFiles
-  val MAX_ZOOM = 2
-  val MIN_ZOOM = 0
+  private val POINT_THRESHOLD = 100000;
+  private val TILE_SIZE = 4096
+  private val MERCATOR = new Mercator(TILE_SIZE)
+  private val GEOMETRY_FACTORY = new GeometryFactory()
+  private val MAX_HFILES_PER_CF_PER_REGION = 32 // defined in HBase's LoadIncrementalHFiles
+  private val MAX_ZOOM = 15
+  private val MIN_ZOOM = 0
+
 
   private val TARGET_DIR = "hdfs://c1n1.gbif.org:8020/tmp/tim_maps"
 
@@ -54,7 +57,7 @@ object BackfillTiles9 {
     val job = new Job(conf, "Map tile builder")
     job.setMapOutputKeyClass(classOf[ImmutableBytesWritable]);
     job.setMapOutputValueClass(classOf[KeyValue]);
-    val table = new HTable(conf, "tim_test2")
+    val table = new HTable(conf, "tim_test")
     HFileOutputFormat.configureIncrementalLoad(job, table);
     conf
   }
@@ -62,149 +65,169 @@ object BackfillTiles9 {
 
   def main(args: Array[String]) {
     val conf = new SparkConf().setAppName("Map processing")
-      .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+    //.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     conf.setIfMissing("spark.master", "local[2]") // 2 threads for local dev, ignored in production
     val sc = new SparkContext(conf)
     val sqlContext = new org.apache.spark.sql.SQLContext(sc)
     val df = sqlContext.read.parquet("/user/hive/warehouse/tim.db/occurrence_map_source")
-    //val df = sqlContext.read.parquet("/Users/tim/dev/data/map.parquet")
     build(sc, df)
   }
 
-  def largeViews(df : DataFrame) : Map[(Int,Any),Long] = {
-    var largeViews = df.flatMap(row => {
-      val lat = row.getDouble(row.fieldIndex("decimallatitude"))
-      val lng = row.getDouble(row.fieldIndex("decimallongitude"))
-      val bor = BASIS_OF_RECORD(row.getString(row.fieldIndex("basisofrecord")))
-      val year = if (row.isNullAt(row.fieldIndex("year"))) null.asInstanceOf[Int]
-      else row.getInt((row.fieldIndex("year")))
-      val datasetKey = row.getString(row.fieldIndex("datasetkey"))
-      val publisherKey = row.getString(row.fieldIndex("publishingorgkey"))
-      val country = row.getString(row.fieldIndex("countrycode"))
-      val publishingCountry = row.getString(row.fieldIndex("publishingcountry"))
-
-      var taxonIDs = Set[Int]()
-      if (!row.isNullAt(row.fieldIndex("kingdomkey"))) taxonIDs+=row.getInt(row.fieldIndex("kingdomkey"))
-      if (!row.isNullAt(row.fieldIndex("phylumkey"))) taxonIDs+=row.getInt(row.fieldIndex("phylumkey"))
-      if (!row.isNullAt(row.fieldIndex("classkey"))) taxonIDs+=row.getInt(row.fieldIndex("classkey"))
-      if (!row.isNullAt(row.fieldIndex("orderkey"))) taxonIDs+=row.getInt(row.fieldIndex("orderkey"))
-      if (!row.isNullAt(row.fieldIndex("familykey"))) taxonIDs+=row.getInt(row.fieldIndex("familykey"))
-      if (!row.isNullAt(row.fieldIndex("genuskey"))) taxonIDs+=row.getInt(row.fieldIndex("genuskey"))
-      if (!row.isNullAt(row.fieldIndex("specieskey"))) taxonIDs+=row.getInt(row.fieldIndex("specieskey"))
-      if (!row.isNullAt(row.fieldIndex("taxonkey"))) taxonIDs+=row.getInt(row.fieldIndex("taxonkey"))
-
-      val res = mutable.ArrayBuffer(
-        ((MAPS_TYPES("ALL"), 0), 1),
-        ((MAPS_TYPES("DATASET"), datasetKey), 1),
-        ((MAPS_TYPES("PUBLISHER"), publisherKey), 1),
-        ((MAPS_TYPES("COUNTRY"), country), 1),
-        ((MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry), 1)
-      )
-
-      taxonIDs.foreach(id => {
-        res += (((MAPS_TYPES("TAXON"), id), 1))
-      })
-      res
-    }).countByKey().filter(r => {r._2>=POINT_THRESHOLD}).toMap
-
-    largeViews.foreach(r => {println("Tiling Type[" + r._1._1 + "] Key[" + r._1._2 + "] with [" + r._2 + "] records")})
-    largeViews
+  def encodePixel(x: Short, y: Short): Int = {
+    x.toInt << 16 | y
   }
+
+  def decodePixel(p: Int): (Short,Short) = {
+    ((p >> 16).asInstanceOf[Short], p.asInstanceOf[Short])
+  }
+
+  def encodePixelYear(p: Int, y: Short): Long = {
+    p.toLong << 32 | y
+  }
+
+  def decodePixelYear(py: Long): (Int,Short) = {
+    ((py >> 32).asInstanceOf[Int], py.asInstanceOf[Short])
+  }
+
 
   def build(sc :SparkContext, df : DataFrame): Unit = {
 
-    // Determine and broadcast which of the views we consider suitable for tiling
-    val keysToTile = sc.broadcast(largeViews(df).keySet)
-
-    val tiles = df.flatMap(row => {
+    var tiles = df.flatMap(row => {
+      val res = mutable.ArrayBuffer[((String, Int, Feature.BasisOfRecord, Short),Int)]()
       val lat = row.getDouble(row.fieldIndex("decimallatitude"))
-      val lng = row.getDouble(row.fieldIndex("decimallongitude"))
-      val bor = BASIS_OF_RECORD(row.getString(row.fieldIndex("basisofrecord")))
-      val year = if (row.isNullAt(row.fieldIndex("year"))) null.asInstanceOf[Int]
-      else row.getInt((row.fieldIndex("year")))
-      val datasetKey = row.getString(row.fieldIndex("datasetkey"))
-      val publisherKey = row.getString(row.fieldIndex("publishingorgkey"))
-      val country = row.getString(row.fieldIndex("countrycode"))
-      val publishingCountry = row.getString(row.fieldIndex("publishingcountry"))
+      if (lat >= -85 && lat <= 85) {
+        val lng = row.getDouble(row.fieldIndex("decimallongitude"))
+        val bor = BASIS_OF_RECORD(row.getString(row.fieldIndex("basisofrecord")))
+        val year = if (row.isNullAt(row.fieldIndex("year"))) null.asInstanceOf[Short]
+        else row.getInt((row.fieldIndex("year"))).asInstanceOf[Short]
 
-      var taxonIDs = Set[Int]()
-      if (!row.isNullAt(row.fieldIndex("kingdomkey"))) taxonIDs+=row.getInt(row.fieldIndex("kingdomkey"))
-      if (!row.isNullAt(row.fieldIndex("phylumkey"))) taxonIDs+=row.getInt(row.fieldIndex("phylumkey"))
-      if (!row.isNullAt(row.fieldIndex("classkey"))) taxonIDs+=row.getInt(row.fieldIndex("classkey"))
-      if (!row.isNullAt(row.fieldIndex("orderkey"))) taxonIDs+=row.getInt(row.fieldIndex("orderkey"))
-      if (!row.isNullAt(row.fieldIndex("familykey"))) taxonIDs+=row.getInt(row.fieldIndex("familykey"))
-      if (!row.isNullAt(row.fieldIndex("genuskey"))) taxonIDs+=row.getInt(row.fieldIndex("genuskey"))
-      if (!row.isNullAt(row.fieldIndex("specieskey"))) taxonIDs+=row.getInt(row.fieldIndex("specieskey"))
-      if (!row.isNullAt(row.fieldIndex("taxonkey"))) taxonIDs+=row.getInt(row.fieldIndex("taxonkey"))
-
-      val res = mutable.ArrayBuffer[((Int,Any,Int,Long,Long,Int,Int,Int,Feature.BasisOfRecord),Int)]()
-      //(MAX_ZOOM to MAX_ZOOM).map(zoom => {
         val z = MAX_ZOOM.asInstanceOf[Byte]
-        //val z = zoom.asInstanceOf[Byte]
-        val x = MERCATOR.longitudeToTileX(lng, z)
-        val y = MERCATOR.latitudeToTileY(lat, z)
-        val px = MERCATOR.longitudeToTileLocalPixelX(lng, z)
-        val py = MERCATOR.latitudeToTileLocalPixelY(lat, z)
+        val x = MERCATOR.longitudeToTileX(lng, z).asInstanceOf[Int] // max z15!
+        val y = MERCATOR.latitudeToTileY(lat, z).asInstanceOf[Int]
 
-        if (keysToTile.value.contains((MAPS_TYPES("ALL"), 0)))
-          res += (((MAPS_TYPES("ALL"), 0, z, x, y, px, py, year, bor), 1))
-        if (keysToTile.value.contains((MAPS_TYPES("DATASET"), datasetKey)))
-          res += (((MAPS_TYPES("DATASET"), datasetKey, z, x, y, px, py, year, bor), 1))
-        if (keysToTile.value.contains((MAPS_TYPES("PUBLISHER"), publisherKey)))
-          res += (((MAPS_TYPES("PUBLISHER"), publisherKey, z, x, y, px, py, year, bor), 1))
-        if (keysToTile.value.contains((MAPS_TYPES("COUNTRY"), country)))
-          res += (((MAPS_TYPES("COUNTRY"), country, z, x, y, px, py, year, bor), 1))
-        if (keysToTile.value.contains((MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry)))
-          res += (((MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry, z, x, y, px, py, year, bor), 1))
+        val px = MERCATOR.longitudeToTileLocalPixelX(lng, z).asInstanceOf[Short]
+        val py = MERCATOR.latitudeToTileLocalPixelY(lat, z).asInstanceOf[Short]
+        val pixel = encodePixel(px, py)
 
-        taxonIDs.foreach(id => {
-          if (keysToTile.value.contains((MAPS_TYPES("TAXON"), id)))
-            res += (((MAPS_TYPES("TAXON"), id, z, x, y, px, py, year, bor), 1))
-        })
-      //})
+        val key = z + ":" + x + ":" + y
+
+        res += (((key, pixel, bor, year), 1))
+      }
       res
-
-    }).reduceByKey(_ + _, 500).map(r => {
-      ((r._1._1 + ":" + r._1._2, r._1._3 + ":" + r._1._4 + ":" + r._1._5), (r._1._6, r._1._7, r._1._8, r._1._9, r._2))
+    }).reduceByKey(_+_).map(r => {
+      // key, bor : pixel,year,count
+      ((r._1._1, r._1._3),(r._1._2,r._1._4,r._2))
     })
 
-    // Notes to Tim:
-    // [tim@prodgateway-vh ~]$ ~/spark/bin/spark-submit --master yarn --jars $HIVE_CLASSPATH /opt/cloudera/parcels/CDH/lib/hbase/lib/htrace-core-3.1.0-incubating.jar --num-executors 25 --executor-memory 10g --executor-cores 5  --deploy-mode cluster --class "org.gbif.maps.spark.BackfillTiles6" spark-process-0.1-SNAPSHOT.jar
-
-    val appendVal = (m: CategoryDensityTile, v: (Int,Int,Int,Feature.BasisOfRecord,Int)) => {
-      m.collect(v._1, v._2, v._4.getNumber, v._3, v._5)
+    // collect a map of pixelYear -> count
+    val appendVal = (m: MMap[Long,Int], v: (Int,Short,Int)) => {
+      val py = encodePixelYear(v._1,v._2)
+      m+=((py, v._3))
     }
-    val merge = (m1: CategoryDensityTile, m2: CategoryDensityTile) => {m1.collectAll(m2)}
-    var tiles2 = tiles.aggregateByKey(new CategoryDensityTile())(appendVal, merge)
+    val merge = (m1: MMap[Long,Int], m2: MMap[Long,Int]) => {
+      // deep copy
+      var result = MMap[Long,Int]()
+      result ++= m1
+      m2.foreach(e => {
+        result(e._1) = result.getOrElse(e._1, 0) + e._2
+      })
+      result
+    }
+    val tiles2 = tiles.aggregateByKey(MMap[Long,Int]().empty)(appendVal, merge)
 
+    // collect a map of category -> pixelYear -> count
+    val appendVal2 = (m: MMap[Feature.BasisOfRecord,MMap[Long,Int]], v: (Feature.BasisOfRecord,MMap[Long,Int])) => {m+=((v._1, v._2))}
+    val merge2 = (m1: MMap[Feature.BasisOfRecord,MMap[Long,Int]], m2:MMap[Feature.BasisOfRecord,MMap[Long,Int]]) => {
+      // deep copy
+      var result = MMap[Feature.BasisOfRecord, MMap[Long,Int]]()
+      result ++= m1
+      m2.foreach(e => {
+        val bor = result.getOrElseUpdate(e._1, MMap[Long,Int]())
+        e._2.foreach( f => {
+          bor(f._1) = bor.getOrElse(f._1, 0) + f._2
+        })
+      })
+      result
+
+    }
+    var tiles3 = tiles2.map(r => {
+      (r._1._1,(r._1._2, r._2))
+    }).aggregateByKey(MMap[Feature.BasisOfRecord,MMap[Long,Int]]().empty)(appendVal2, merge2)
 
     (MIN_ZOOM to MAX_ZOOM).reverse.foreach(z => {
+
       // downscale if needed
       if (z != MAX_ZOOM) {
-        tiles2 = tiles2.map(t => {
-          val zxy = t._1._2.split(":")
+
+        tiles3 = tiles3.map(t => {
+          val zxy = t._1.split(":")
           val zoom = zxy(0).toInt
           val x = zxy(1).toInt
           val y = zxy(2).toInt
-          //val newTile = t._2.downscale(zoom, x, y, 4096)
-          //((t._1._1, zoom-1 + ":" + x/2 + ":" + y/2),newTile)
-          ((t._1._1, zoom-1 + ":" + x/2 + ":" + y/2), t._2)
-        }).reduceByKey((a,b) => {a.collectAll(b)}, 250)
+
+          val newTile = MMap[Feature.BasisOfRecord, MMap[Long,Int]]()
+          t._2.foreach(keyVal => {
+            val bor = newTile.getOrElseUpdate(keyVal._1, MMap[Long,Int]())
+            keyVal._2.foreach(feature => {
+              val decoded = decodePixelYear(feature._1)
+              val pixel = decodePixel(decoded._1)
+              val year = decoded._2
+              val px = (pixel._1/2 + TILE_SIZE/2 * (x%2)).asInstanceOf[Short]
+              val py = (pixel._2/2 + TILE_SIZE/2 * (y%2)).asInstanceOf[Short]
+              val newKey = encodePixelYear(encodePixel(px,py), year)
+
+              bor(newKey) = bor.getOrElse(newKey, 0) + feature._2
+            })
+          })
+
+          ((z + ":" + x/2 + ":" + y/2), newTile)
+
+        }).reduceByKey((a,b) => {
+          // deep copy
+          var result = MMap[Feature.BasisOfRecord, MMap[Long,Int]]()
+          result ++= a
+          b.foreach(e => {
+            val bor = result.getOrElseUpdate(e._1, MMap[Long,Int]())
+            e._2.foreach( f => {
+              bor(f._1) = bor.getOrElse(f._1, 0) + f._2
+            })
+          })
+          result
+        })
       }
 
-      tiles2.mapValues(tile => {tile.toVectorTile})
-        .repartitionAndSortWithinPartitions(new HashPartitioner(MAX_HFILES_PER_CF_PER_REGION)).map( r => {
-          val k = new ImmutableBytesWritable(Bytes.toBytes(r._1._1))
-          val cell = r._1._2
-          val cellData = r._2
-          val row = new KeyValue(Bytes.toBytes(r._1._1), // key
-            Bytes.toBytes("merc_tiles"), // column family
-            Bytes.toBytes(cell), // cell
-            cellData)
-          (k, row)
-      }).saveAsNewAPIHadoopFile(TARGET_DIR + "/tiles/z" + z, classOf[ImmutableBytesWritable],
-        classOf[KeyValue], classOf[HFileOutputFormat], outputConf)
+      // write the tile
+      tiles3.mapValues(tile => {
+        val encoder = new VectorTileEncoder(TILE_SIZE, 0, false);
+
+        tile.keySet.foreach(bor => {
+          val pixelYears = tile.get(bor)
+
+          pixelYears.get.foreach(py => {
+            val x = decodePixelYear(py._1)
+            val pixel = decodePixel(x._1)
+            val year = x._2
+
+            val point = GEOMETRY_FACTORY.createPoint(new Coordinate(pixel._1.toDouble, pixel._2.toDouble));
+            val meta = new java.util.HashMap[String, Any]() // TODO: add metadata(!)
+
+            encoder.addFeature("points", meta, point);
+          })
+        })
+
+        encoder.encode()
+      }).repartitionAndSortWithinPartitions(new HashPartitioner(MAX_HFILES_PER_CF_PER_REGION)).map( r => {
+        val k = new ImmutableBytesWritable(Bytes.toBytes("0:0"))
+        val cell = r._1
+        val cellData = r._2
+        val row = new KeyValue(Bytes.toBytes("0:0"), // key
+          Bytes.toBytes("merc_tiles"), // column family
+          Bytes.toBytes(cell), // cell
+          cellData)
+        (k, row)
+      }).saveAsNewAPIHadoopFile(TARGET_DIR + "/tiles/z" + z, classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat], outputConf)
     })
+
   }
 }
 
