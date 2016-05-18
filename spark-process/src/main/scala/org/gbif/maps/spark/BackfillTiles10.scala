@@ -36,7 +36,7 @@ object BackfillTiles10 {
     "LITERATURE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.LITERATURE)
 
   private val POINT_THRESHOLD = 100000;
-  private val TILE_SIZE = 1024 // good compromise between performance and visuals
+  private val TILE_SIZE = 512 // good compromise between performance and visuals and fits retina tiles
   private val MERCATOR = new Mercator(TILE_SIZE)
   private val GEOMETRY_FACTORY = new GeometryFactory()
   private val MAX_HFILES_PER_CF_PER_REGION = 32 // defined in HBase's LoadIncrementalHFiles
@@ -1694,7 +1694,7 @@ object BackfillTiles10 {
 
       }
       res
-    }).reduceByKey(_+_, 500).map(r => {
+    }).reduceByKey(_+_, 200).map(r => {
       // type, zxy, bor : pixel,year,count
       ((r._1._1, r._1._2, r._1._4),(r._1._3,r._1._5,r._2))
     })
