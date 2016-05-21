@@ -51,7 +51,7 @@ function initMap(map, minYear, maxYear) {
     if (map.getLayer('tile')) map.removeLayer('tile');
     if (map.getSource('points')) map.removeSource('points');
     if (map.getLayer('points')) map.removeLayer('points');
-    
+
     map.addSource('tile', {
         type: 'vector',
         //"tiles": ["http://localhost:7001/api/taxon/6/{z}/{x}/{y}.pbf"]
@@ -66,13 +66,13 @@ function initMap(map, minYear, maxYear) {
       "id": "tile",
       "type": "circle",
       "source": "tile",
-      "source-layer": "points",
+      "source-layer": "OBSERVATION",
       "paint": {
-        "circle-radius": 0.75,
+        "circle-radius": 1,
         "circle-color": "#00F",
         "circle-opacity": 1
         }
-      });    
+      });
     /*
     map.addLayer({
       "id": "points",
@@ -84,7 +84,7 @@ function initMap(map, minYear, maxYear) {
         "circle-color": "#F00",
         "circle-opacity": 0.5
         }
-      });    
+      });
       */
 }
 

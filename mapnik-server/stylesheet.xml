@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Map srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over" background-color="#00000000" maximum-extent="-20037508.34,-20037508.34,20037508.34,20037508.34">
+
+    <!-- Does not work, since we've already pixilated in processing -->
+  <Style name="points" image-filters="colorize-alpha(#000000, #00FF00, #FFFFFF)" >
+    <Rule>
+      <MarkersSymbolizer marker-type="ellipse" fill="#FF0000" opacity="0.25" width="3" allow-overlap="true" placement="point"/>
+    </Rule>
+  </Style>
+
+  <Style name="heat" image-filters="colorize-alpha(blue, cyan, green, yellow , orange, red)" >
+    <Rule>
+      <MarkersSymbolizer marker-type="ellipse" fill="#FF0000" opacity="0.2" width="5" allow-overlap="true" placement="point"/>
+    </Rule>
+  </Style>
+
+
+  <Style name="gbif" >
+    <Rule>
+      <MarkersSymbolizer marker-type="ellipse" stroke-width="0" fill="#CC0000" opacity="1" width="2" allow-overlap="true" placement="point"/>
+    </Rule>
+    <Rule>
+      <Filter>([count] &lt;= 100000)</Filter>
+      <MarkersSymbolizer marker-type="ellipse" stroke-width="0" fill="#ff3300" opacity="1" width="2" allow-overlap="true" placement="point"/>
+    </Rule>
+    <Rule>
+      <Filter>([count] &lt;= 10000)</Filter>
+      <MarkersSymbolizer marker-type="ellipse" stroke-width="0" fill="#ff6600" opacity="1" width="2" allow-overlap="true" placement="point"/>
+    </Rule>
+    <Rule>
+      <Filter>([count] &lt;= 1000)</Filter>
+      <MarkersSymbolizer marker-type="ellipse" stroke-width="0" fill="#ff9900" opacity="1" width="2" allow-overlap="true" placement="point"/>
+    </Rule>
+    <Rule>
+      <Filter>([count] &lt;= 100)</Filter>
+      <MarkersSymbolizer marker-type="ellipse" stroke-width="0" fill="#ffcc00" opacity="1" width="2" allow-overlap="true" placement="point"/>
+    </Rule>
+    <Rule>
+      <Filter>([count] &lt;= 10)</Filter>
+      <MarkersSymbolizer marker-type="ellipse" stroke-width="0" fill="#ffff00" opacity="1" width="2" allow-overlap="true" placement="point"/>
+    </Rule>
+
+</Style>
+
+  <Style name="hsb" >
+    <Rule>
+      <MarkersSymbolizer marker-type="ellipse" stroke-width="0" fill="#FFFFFF" opacity="1" width="2" allow-overlap="true" placement="point"/>
+    </Rule>
+    <Rule>
+      <Filter>([count] &lt;= 100000)</Filter>
+      <MarkersSymbolizer marker-type="ellipse" stroke-width="0" fill="#EDC8F1" opacity="1" width="2" allow-overlap="true" placement="point"/>
+    </Rule>
+    <Rule>
+      <Filter>([count] &lt;= 10000)</Filter>
+      <MarkersSymbolizer marker-type="ellipse" stroke-width="0" fill="#E0A1E6" opacity="1" width="2" allow-overlap="true" placement="point"/>
+    </Rule>
+    <Rule>
+      <Filter>([count] &lt;= 1000)</Filter>
+      <MarkersSymbolizer marker-type="ellipse" stroke-width="0" fill="#DF9EE5" opacity="1" width="2" allow-overlap="true" placement="point"/>
+    </Rule>
+    <Rule>
+      <Filter>([count] &lt;= 100)</Filter>
+      <MarkersSymbolizer marker-type="ellipse" stroke-width="0" fill="#C75DD0" opacity="1" width="2" allow-overlap="true" placement="point"/>
+    </Rule>
+    <Rule>
+      <Filter>([count] &lt;= 10)</Filter>
+      <MarkersSymbolizer marker-type="ellipse" stroke-width="0" fill="#A20BAF" opacity="1" width="2" allow-overlap="true" placement="point"/>
+    </Rule>
+
+  </Style>
+
+
+
+    <Layer name="OBSERVATION" srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over">
+        <StyleName>gbif</StyleName>
+    </Layer>
+
+</Map>

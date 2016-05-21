@@ -1,0 +1,39 @@
+{
+  "attribution": "GBIF",
+  "bounds": [
+    -180,
+    -85.0511,
+    180,
+    85.0511
+  ],
+  "center": [
+    0,
+    0,
+    0
+  ],
+  "format": "pbf",
+  "maxzoom": 14,
+  "minzoom": 0,
+  "name": "gbif",
+  "scheme": "xyz",
+  "tilejson": "2.0.0",
+  "tiles": [
+    "http://localhost:7001/api/all/{z}/{x}/{y}.pbf"
+  ],
+  "vector_layers": [
+    {
+      "description": "OBSERVATION",
+      "fields": {
+        "class": "OBSERVATION"
+      },
+      "id": "OBSERVATION",
+      "maxzoom": 16,
+      "minzoom": 0,
+      "source": "gbif",
+      "source_name": "OBSERVATION"
+    }
+  ],
+  "id": "gbif",
+  "description": "gbif",
+  "Layer": []
+}

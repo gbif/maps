@@ -25,6 +25,7 @@ object BackfillTiles10 {
     "PUBLISHING_COUNTRY" -> 5)
 
   // Dictionary mapping the GBIF API BasisOfRecord enumeration to the Protobuf versions
+  /*
   private val BASIS_OF_RECORD = Map("UNKNOWN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN,
     "PRESERVED_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.PRESERVED_SPECIMEN,
     "FOSSIL_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.FOSSIL_SPECIMEN,
@@ -34,6 +35,18 @@ object BackfillTiles10 {
     "MACHINE_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MACHINE_OBSERVATION,
     "MATERIAL_SAMPLE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MATERIAL_SAMPLE,
     "LITERATURE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.LITERATURE)
+  */
+
+  private val BASIS_OF_RECORD = Map("UNKNOWN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN,
+    "PRESERVED_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.PRESERVED_SPECIMEN,
+    "FOSSIL_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.FOSSIL_SPECIMEN,
+    "LIVING_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN,
+    "OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.OBSERVATION,
+    "HUMAN_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.OBSERVATION,
+    "MACHINE_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.OBSERVATION,
+    "MATERIAL_SAMPLE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.PRESERVED_SPECIMEN,
+    "LITERATURE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN)
+
 
   private val POINT_THRESHOLD = 100000;
   private val TILE_SIZE = 512 // good compromise between performance and visuals and fits retina tiles
@@ -1800,15 +1813,26 @@ object BackfillTiles10 {
         tile.keySet.foreach(bor => {
           val pixelYears = tile.get(bor)
 
-          pixelYears.get.foreach(py => {
-            val x = decodePixelYear(py._1)
-            val pixel = decodePixel(x._1)
-            val year = x._2
+          // for now just get the pixels
+          // TODO: All the metadata!
+          var pixels = MMap[Int, Int]();
 
+          pixelYears.get.foreach(p => {
+            val py = decodePixelYear(p._1)
+            if (pixels.contains(py._1)) {
+              val c = pixels.get(py._1).get + p._2
+              pixels(py._1) = c
+            } else {
+              pixels += py._1->p._2
+            }
+          })
+
+          pixels.foreach(p => {
+            val pixel = decodePixel(p._1)
             val point = GEOMETRY_FACTORY.createPoint(new Coordinate(pixel._1.toDouble, pixel._2.toDouble));
             val meta = new java.util.HashMap[String, Any]() // TODO: add metadata(!)
-
-            encoder.addFeature("points", meta, point);
+            meta.put("count", p._2)
+            encoder.addFeature(bor.toString(), meta, point);
           })
         })
 

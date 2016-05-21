@@ -1,0 +1,25 @@
+_prefs:
+  mapid: ''
+  saveCenter: true
+_properties: {}
+attribution: ''
+bounds:
+  - -180
+  - -85.0511
+  - 180
+  - 85.0511
+center:
+  - 60.293
+  - 4.2149
+  - 1
+description: ''
+format: "png8:m=h"
+interactivity_layer: ''
+layers: null
+maxzoom: 16
+minzoom: 1
+name: ''
+source: "tilejson+http://localhost:3000/metadata3.json"
+styles:
+  - style.mss
+template: ''
