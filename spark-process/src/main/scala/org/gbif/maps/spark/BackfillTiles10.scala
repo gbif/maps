@@ -9,11 +9,14 @@ import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase.{HBaseConfiguration, KeyValue}
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.{HashPartitioner, SparkConf, SparkContext}
+import org.apache.spark.{HashPartitioner, Partitioner, SparkConf, SparkContext}
 import org.gbif.maps.common.model.CategoryDensityTile
 import org.gbif.maps.common.projection.Mercator
 import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature
+import org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord
+
+import org.apache.spark.util.{CollectionsUtils, Utils}
 
 import scala.collection.mutable
 import scala.collection.mutable.{Map => MMap}
@@ -56,6 +59,19 @@ object BackfillTiles10 {
   private val MAX_ZOOM = 16
   private val MIN_ZOOM = 0
 
+  // Put pixels in the same category together
+  class TileGroupPartitioner[K,V](partitions: Int) extends Partitioner {
+
+    def getPartition(key: Any): Int = {
+      val k = key.asInstanceOf[(String,String,Feature.BasisOfRecord)]
+      // skip ZXY, as that would mean we can't downscale
+      var hc = (k._1 + k._3).hashCode()
+      if (hc < 0) hc *= -1
+      return hc%numPartitions
+    }
+
+    override def numPartitions: Int = partitions
+  }
 
   private val TARGET_DIR = "hdfs://c1n1.gbif.org:8020/tmp/tim_maps"
 
@@ -1710,7 +1726,7 @@ object BackfillTiles10 {
     }).reduceByKey(_+_, 200).map(r => {
       // type, zxy, bor : pixel,year,count
       ((r._1._1, r._1._2, r._1._4),(r._1._3,r._1._5,r._2))
-    })
+    }).partitionBy(new TileGroupPartitioner(200))
 
     // collect a map of pixelYear -> count
     val appendVal = (m: MMap[Long,Int], v: (Int,Short,Int)) => {

@@ -89,7 +89,10 @@ var server = http.createServer(function(req, res) {
 
 
       // TODO: this sucks that we load it every request... move this out
-      tilelive.load('tilejson+file:///Users/tim/dev/git/gbif/maps/mapnik-server/metadata.json?timeout=10000', function(err, source) {
+      //tilelive.load('tilejson+file:///Users/tim/dev/git/gbif/maps/mapnik-server/metadata.json?timeout=10000', function(err, source) {
+      tilelive.load('tilejson+http://localhost:7001/api/all.json', function(err, source) {
+
+
         if (err) throw err;
 
         source.getTile(parseInt(query.z),parseInt(query.x),parseInt(query.y), function(err, tile, headers) {

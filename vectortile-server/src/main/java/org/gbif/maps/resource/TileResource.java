@@ -13,6 +13,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Joiner;
@@ -95,6 +96,25 @@ public final class TileResource {
   ) throws IOException {
     prepare(response);
     return fromHBase(Joiner.on(":").join(0,0), Joiner.on(":").join(z,x,y));
+  }
+
+  @GET
+  @Path("all.json")
+  @Timed
+  @Produces(MediaType.APPLICATION_JSON)
+  public TileJson allTileJson(@Context HttpServletResponse response) throws IOException {
+    prepare(response);
+    return TileJson.TileJsonBuilder
+      .newBuilder()
+      .withAttribution("GBIF")
+      .withDescription("The tileset for all data")
+      .withId("GBIF:all")
+      .withName("GBIF All Data")
+      .withVectorLayers(new TileJson.VectorLayer[] {
+        new TileJson.VectorLayer("OBSERVATION", "The observation data")
+      })
+      .withTiles(new String[]{"http://localhost:7001/api/all/{z}/{x}/{y}.pbf"})
+      .build();
   }
 
   @GET

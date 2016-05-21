@@ -9,26 +9,26 @@
   <Style name="OBSERVATION" filter-mode="first">
     <Rule>
       <Filter>([count] &lt;= 10)</Filter>
-      <MarkersSymbolizer fill="#ffff00" fill-opacity="1" stroke-width="0" placement="point" marker-type="ellipse" width="1" allow-overlap="true" />
+      <MarkersSymbolizer fill="#ffff00" fill-opacity="1" stroke-width="0" placement="point" marker-type="ellipse" width="2" allow-overlap="true" />
     </Rule>
     <Rule>
       <Filter>([count] &lt;= 100)</Filter>
-      <MarkersSymbolizer fill="#ffcc00" fill-opacity="1" stroke-width="0" placement="point" marker-type="ellipse" width="1" allow-overlap="true" />
+      <MarkersSymbolizer fill="#ffcc00" fill-opacity="1" stroke-width="0" placement="point" marker-type="ellipse" width="2" allow-overlap="true" />
     </Rule>
     <Rule>
       <Filter>([count] &lt;= 1000)</Filter>
-      <MarkersSymbolizer fill="#ff9900" fill-opacity="1" stroke-width="0" placement="point" marker-type="ellipse" width="1" allow-overlap="true" />
+      <MarkersSymbolizer fill="#ff9900" fill-opacity="1" stroke-width="0" placement="point" marker-type="ellipse" width="2" allow-overlap="true" />
     </Rule>
     <Rule>
       <Filter>([count] &lt;= 10000)</Filter>
-      <MarkersSymbolizer fill="#ff6600" fill-opacity="1" stroke-width="0" placement="point" marker-type="ellipse" width="1" allow-overlap="true" />
+      <MarkersSymbolizer fill="#ff6600" fill-opacity="1" stroke-width="0" placement="point" marker-type="ellipse" width="2" allow-overlap="true" />
     </Rule>
     <Rule>
       <Filter>([count] &lt;= 100000)</Filter>
-      <MarkersSymbolizer fill="#ff3300" fill-opacity="1" stroke-width="0" placement="point" marker-type="ellipse" width="1" allow-overlap="true" />
+      <MarkersSymbolizer fill="#ff3300" fill-opacity="1" stroke-width="0" placement="point" marker-type="ellipse" width="2" allow-overlap="true" />
     </Rule>
     <Rule>
-      <MarkersSymbolizer fill-opacity="1" stroke-width="0" placement="point" marker-type="ellipse" width="1" fill="#cc0000" allow-overlap="true" />
+      <MarkersSymbolizer fill-opacity="1" stroke-width="0" placement="point" marker-type="ellipse" width="2" fill="#cc0000" allow-overlap="true" />
     </Rule>
   </Style>
   <Layer name="OBSERVATION"
