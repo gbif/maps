@@ -1,9 +1,12 @@
+.DS_Store
+
 *.class
 *.iml
 .idea/
+
 **/target/
-.DS_Store
-checklistbank*/logs
 **/logs/
 **/dependency-reduced-pom.xml
+**/*.log
+
 **/node_modules/
