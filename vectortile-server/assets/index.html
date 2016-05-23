@@ -55,7 +55,8 @@ function initMap(map, minYear, maxYear) {
     map.addSource('tile', {
         type: 'vector',
         //"tiles": ["http://localhost:7001/api/taxon/6/{z}/{x}/{y}.pbf"]
-        "tiles": ["http://localhost:7001/api/all/{z}/{x}/{y}.pbf"]
+        //"tiles": ["http://localhost:7001/api/all/{z}/{x}/{y}.pbf"]
+        "tiles": ["http://localhost:7001/api/test/{z}/{x}/{y}.pbf"]
     });
     map.addSource('points', {
         type: 'vector',
@@ -68,7 +69,7 @@ function initMap(map, minYear, maxYear) {
       "source": "tile",
       "source-layer": "OBSERVATION",
       "paint": {
-        "circle-radius": 1,
+        "circle-radius": 100,
         "circle-color": "#00F",
         "circle-opacity": 1
         }

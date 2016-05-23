@@ -2,7 +2,7 @@
   marker-fill-opacity: 1;
   marker-line-width: 0;
   marker-type: ellipse;
-  marker-width: 2;
+  marker-width: 1.5;
   marker-fill: #CC0000;
   marker-allow-overlap: true;
 }
