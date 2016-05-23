@@ -1,11 +1,7 @@
 var mapnik = require('mapnik')
   , tm = require('./tm')
   , _ = require('underscore')
-  , tilelive = require('tilelive')
   , carto = require('carto');
-
-// configure tilelive to a) use Mapnik and b) tilejson to find the vector tiles through config
-require('tilejson').registerProtocols(tilelive);
 
 var parser = {}
 
@@ -13,16 +9,11 @@ var parser = {}
  * Method originally taken from mapbox and then stripped of much logic to reduce to a simple parser.
  * https://github.com/mapbox/mapbox-studio-classic/blob/mb-pages/lib/style.js#L192
  *
- * Requires data to contain 2 fields:
- * - source: The http location of a tilejson metadata document, declared using tilejson+http://
- * - styles: An array of JSON Strings each containing CartoCSS
+ * Requires:
+ * - styles: An array of Strings each containing the CartoCSS
+ * - tilejson: A String of tilejson metadata
  *
- * An example might be:
- *
- * var data = {
- *  source: 'tilejson+http://localhost:7001/api/taxon/1/metadata.json',
- *  styles: [fs.readFileSync('gbif-classic.mss','utf8')]
- * }
+ * Returns mapnik stylesheet XML.
  */
 
 parser.parseToXML = function(styles, tilejson) {
