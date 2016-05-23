@@ -188,6 +188,51 @@ public final class TileResource {
     return null;
   }
 
+
+  @GET
+  @Path("test.json")
+  @Timed
+  @Produces(MediaType.APPLICATION_JSON)
+  public TileJson testTileJson(@Context HttpServletResponse response) throws IOException {
+    prepare(response);
+    return TileJson.TileJsonBuilder
+      .newBuilder()
+      .withAttribution("GBIF")
+      .withDescription("The tileset for all data")
+      .withId("GBIF:all")
+      .withName("GBIF All Data")
+      .withVectorLayers(new TileJson.VectorLayer[] {
+        new TileJson.VectorLayer("OBSERVATION", "The observation data")
+      })
+      .withTiles(new String[]{"http://localhost:7001/api/test/{z}/{x}/{y}.pbf"})
+      .build();
+  }
+
+  private void add(double x, double y, BufferedVectorTileEncoder encoder) {
+    Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(x, y));
+    Map<String, Object> meta = new HashMap();
+    encoder.addFeature("OBSERVATION", meta, point);
+  }
+
+
+  @GET
+  @Path("test/{z}/{x}/{y}.pbf")
+  @Timed
+  @Produces("application/x-protobuf")
+  public byte[] test(@PathParam("z") int z, @PathParam("x") int x, @PathParam("y") int y,
+                      @Context HttpServletResponse response) throws IOException {
+    prepare(response);
+    BufferedVectorTileEncoder encoder = new BufferedVectorTileEncoder(512, 200, false);
+    add(2,2,encoder);
+       add(-2,150,encoder);
+    add(509,150,encoder);
+    add(509,361,encoder);
+    add(2,509, encoder);
+
+    return encoder.encode();
+  }
+
+
   @GET
   @Path("point/taxon/{key}/{z}/{x}/{y}.pbf")
   @Timed
