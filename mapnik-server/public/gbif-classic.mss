@@ -1,9 +1,8 @@
 #OBSERVATION {
   marker-fill-opacity: 1;
   marker-line-width: 0;
-  marker-placement: point;
   marker-type: ellipse;
-  marker-width: 1;
+  marker-width: 2;
   marker-fill: #CC0000;
   marker-allow-overlap: true;
 }

@@ -5,6 +5,8 @@
 var tm = {};
 
 // Return an object with sorted keys, ignoring case.
+// Note: We don't use this, as it results in infinite loop since the exception is not thrown, but we leave the
+// method in case we need this again.  See the end of carto.js for it's only use.
 tm.sortkeys = function(obj) {
     try {
         return obj.map(tm.sortkeys);

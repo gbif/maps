@@ -4,9 +4,11 @@
   "description": "An express based server rendering PNGs using Mapnik, from a MVT backend",
   "main": "index.js",
   "dependencies": {
+    "async": "^2.0.0-rc.5",
     "carto": "^0.16.2",
     "mapnik": "^3.5.13",
     "node-yaml": "^2.0.1",
+    "request": "^2.72.0",
     "tilejson": "^1.0.1",
     "tilelive": "^5.12.2",
     "tilelive-file": "0.0.3",
