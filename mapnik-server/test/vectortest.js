@@ -15,7 +15,10 @@ var map = new mapnik.Map(512, 512, mercator.proj4);
 map.fromStringSync(mapnikStylesheet); // load in the style we parsed
 
 var vt = new mapnik.VectorTile(0,0,0);
-vt.addDataSync(encoded);
+vt.setData(fs.readFileSync('0.pbf'))
+//console.log(JSON.stringify(JSON.parse(vt.toGeoJSON('__all__')),null,1))
+//vt.addDataSync(encoded);
+
 console.timeEnd("setup");
 
 console.time("render");

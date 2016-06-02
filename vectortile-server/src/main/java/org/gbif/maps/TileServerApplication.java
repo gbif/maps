@@ -1,6 +1,8 @@
 package org.gbif.maps;
 
 import org.gbif.maps.resource.DensityResource;
+import org.gbif.maps.resource.HexDensityResource;
+import org.gbif.maps.resource.PointResource;
 import org.gbif.maps.resource.TileResource;
 
 import java.io.IOException;
@@ -36,6 +38,9 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
   public final void run(TileServerConfiguration configuration, Environment environment) throws IOException {
     environment.jersey().register(new TileResource());
     environment.jersey().register(new DensityResource());
+    environment.jersey().register(new HexDensityResource());
+    environment.jersey().register(new PointResource());
+
     //environment.jersey().setUrlPattern("/api/*");
 
   }

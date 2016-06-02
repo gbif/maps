@@ -52,8 +52,12 @@ var server = http.createServer(function(req, res) {
 
       // TODO: of course...
       //var tilejsonURL = "tilejson+http://localhost:7001/api/all.json";
+      // timeout can be added in the tilejson response? TODO...
       var tilejsonURL = "tilejson+http://localhost:7001/api/density/all.json?timeout=30000";
-      var cartoURL = "http://localhost:3000/gbif-classic.mss"
+      //var cartoURL = "http://localhost:3000/gbif-classic.mss"
+      var cartoURL = "http://localhost:3000/gbif-hot2.mss"
+
+      console.time("getAssets");
 
       // Collect the CartoCSS styling document, metadata about the tiles and generate the image using mapnik
       async.parallel({
@@ -76,50 +80,57 @@ var server = http.createServer(function(req, res) {
         }
 
       }, function(err, results) {
+        console.timeEnd("getAssets");
         if (err) throw err;
 
         // convert the carto into mapnik style
         var xmlStylesheet = parser.parseToXML([results.carto], results.tilejson);
 
         // load the tile which is located from the tilejson metadata
-        results.tilejson.getTile(parseInt(query.z),parseInt(query.x),parseInt(query.y), function(err, tile, headers) {
+        console.time("getTile");
 
+        results.tilejson.getTile(parseInt(query.z),parseInt(query.x),parseInt(query.y), function(err, tile, headers) {
+          console.timeEnd("getTile");
 
           var map = new mapnik.Map(512, 512, mercator.proj4);
-          console.log(map);
-          map.bufferSize=200;
-          map.buffer_size=200;
-          console.log(map);
-
-
           map.fromStringSync(xmlStylesheet); // load in the style we parsed
 
+
           var vt = new mapnik.VectorTile(parseInt(query.z),parseInt(query.x),parseInt(query.y));
-          vt.addDataSync(tile);
-          console.log(vt.tileSize, vt.bufferSize);
+          if (tile) {
+            vt.addDataSync(tile);
+            //console.log(vt.tileSize, vt.bufferSize);
 
-          console.log(mapnik.VectorTile.info(tile));
-          var extent = vt.extent();
-          console.log(extent);
+            //console.log(mapnik.VectorTile.info(tile));
+            //var extent = vt.extent();
+            //console.log(extent);
 
-          // important to include a buffer, to catch the overlaps
-          // let's assume points will never be 50 pixels in radius
-          vt.render(map, new mapnik.Image(512,512), {"buffer_size":25}, function(err, image) {
-            if (err) {
-              res.end(err.message);
-            } else {
-              res.writeHead(200, {
-                'Content-Type': 'image/png'
-              });
-              image.encode('png', function(err,buffer) {
-                if (err) {
-                  res.end(err.message);
-                } else {
-                  res.end(buffer);
-                }
-              });
-            }
-          });
+            // important to include a buffer, to catch the overlaps
+            console.time("render");
+            vt.render(map, new mapnik.Image(512,512), {"buffer_size":5}, function(err, image) {
+              if (err) {
+                res.end(err.message);
+              } else {
+                res.writeHead(200, {
+                  'Content-Type': 'image/png'
+                });
+                image.encode('png', function(err,buffer) {
+                  console.timeEnd("render");
+                  if (err) {
+                    res.end(err.message);
+                  } else {
+                    res.end(buffer);
+                  }
+                });
+              }
+            });
+          } else {
+            // no tile
+            res.writeHead(404, {
+              'Content-Type': 'image/png'
+            });
+            res.end();
+          }
         })
       })
 

@@ -34,7 +34,11 @@ public class BufferedVectorTileEncoder extends VectorTileEncoder {
   @Override
   protected Geometry clipGeometry(Geometry geometry) {
     if(geometry instanceof Point) {
-      return polygonClipGeometry.intersection(geometry);
+      if (polygonClipGeometry.covers((Point)geometry)) {
+        return geometry;
+      } else {
+        return new GeometryFactory().createPoint((Coordinate) null);
+      }
     } else {
       return super.clipGeometry(geometry);
     }

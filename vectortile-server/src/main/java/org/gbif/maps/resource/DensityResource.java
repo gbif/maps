@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -18,6 +20,12 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
+import com.google.common.base.Stopwatch;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.ForwardingCache;
+import com.google.common.cache.LoadingCache;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -49,8 +57,14 @@ public final class DensityResource {
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final Mercator MERCATOR = new Mercator(TILE_SIZE);
 
+  private static final int BUFFER_SIZE = 25;
+  private static final VectorTileDecoder decoder = new VectorTileDecoder();
+  static {
+    decoder.setAutoScale(false); // important to avoid auto scaling to 256 tiles
+  }
+
   private final Connection connection;
-  private final int bufferSize = 25;
+
 
   public DensityResource() throws IOException {
     Configuration conf = HBaseConfiguration.create();
@@ -59,6 +73,29 @@ public final class DensityResource {
     connection = ConnectionFactory.createConnection(conf);
   }
 
+  LoadingCache<String, Optional<VectorTileDecoder.FeatureIterable>> datasource = CacheBuilder
+    .newBuilder()
+    .maximumSize(1000)
+    .expireAfterWrite(1, TimeUnit.MINUTES)
+    .build(
+      new CacheLoader<String, Optional<VectorTileDecoder.FeatureIterable>>() {
+        @Override
+        public Optional<VectorTileDecoder.FeatureIterable> load(String cell) throws Exception {
+          try (Table table = connection.getTable(TableName.valueOf("tim_test"))) {
+            Get get = new Get(Bytes.toBytes("0:0"));
+            get.addColumn(Bytes.toBytes("merc_tiles"), Bytes.toBytes(cell));
+            Result result = table.get(get);
+            if (result != null) {
+              byte[] encoded = result.getValue(Bytes.toBytes("merc_tiles"), Bytes.toBytes(cell));
+              return encoded != null ? Optional.of(decoder.decode(encoded)) : Optional.<VectorTileDecoder.FeatureIterable>absent();
+            } else {
+              return Optional.absent();
+            }
+          }
+        }
+      }
+    );
+
   @GET
   @Path("all/{z}/{x}/{y}.pbf")
   @Timed
@@ -66,8 +103,10 @@ public final class DensityResource {
   public byte[] all(
     @PathParam("z") int z, @PathParam("x") int x, @PathParam("y") int y,
     @Context HttpServletResponse response
-  ) throws IOException {
+  ) throws IOException, ExecutionException {
     prepare(response);
+    LOG.info("{},{},{}", z, x, y);
+    Stopwatch timer = new Stopwatch().start();
 
     String[] cells = new String[]{
       Joiner.on(":").join(z,x-1,y-1),  // NW
@@ -81,6 +120,8 @@ public final class DensityResource {
       Joiner.on(":").join(z,x+1,y+1)   // SE
     };
 
+    /*
+    // Proves slower than single calls and cache
     Result result = null;
     try (Table table = connection.getTable(TableName.valueOf("tim_test"))) {
       Get get = new Get(Bytes.toBytes("0:0"));
@@ -89,41 +130,54 @@ public final class DensityResource {
       }
       result = table.get(get);
     }
+    */
+
+    BufferedVectorTileEncoder encoder = new BufferedVectorTileEncoder(TILE_SIZE, BUFFER_SIZE, false);
 
     VectorTile tile = null;
-    BufferedVectorTileEncoder encoder = new BufferedVectorTileEncoder(TILE_SIZE, bufferSize, false);
-    VectorTileDecoder decoder = new VectorTileDecoder();
-    decoder.setAutoScale(false); // important to avoid auto scaling to 256 tiles
     for (int i=0; i<cells.length; i++) {
+    //for (int i=4; i<5; i++) {
 
       // depending on the tile (NE,N,NW...) determine the offset from the center tile
       int offsetX = TILE_SIZE * ((i%3)-1);
       int offsetY = TILE_SIZE * (((int)(i/3))-1);
 
+
       String cell = cells[i];
-      byte[] encoded  = result.getValue(Bytes.toBytes("merc_tiles"),Bytes.toBytes(cell));
-      if (encoded != null) {
-        VectorTileDecoder.FeatureIterable iterable = decoder.decode(encoded);
+      //byte[] encoded  = result.getValue(Bytes.toBytes("merc_tiles"),Bytes.toBytes(cell));
+
+
+      Optional<VectorTileDecoder.FeatureIterable> o = datasource.get(cell);
+      if (o.isPresent()) {
+        VectorTileDecoder.FeatureIterable iterable = o.get();
+        //VectorTileDecoder.FeatureIterable iterable = decoder.decode(encoded);
         if (iterable != null) {
-          LOG.info("Merging data from tile {}", cell);
+          //LOG.info("Merging data from tile {}", cell);
+
           for (VectorTileDecoder.Feature f : iterable) {
             Geometry geom = f.getGeometry();
             if (geom instanceof Point) {
-              int px = (int)((Point)geom).getX() + offsetX;
-              int py = (int)((Point)geom).getY() + offsetY;
+              int px = (int) ((Point) geom).getX() + offsetX;
+              int py = (int) ((Point) geom).getY() + offsetY;
 
-              if (px > -bufferSize && px < TILE_SIZE + bufferSize
-                  && py > -bufferSize && py < TILE_SIZE + bufferSize) {
+              if (px > -BUFFER_SIZE && px < TILE_SIZE + BUFFER_SIZE
+                  && py > -BUFFER_SIZE && py < TILE_SIZE + BUFFER_SIZE
+                  && "OBSERVATION".equals(f.getLayerName())) {
 
-                encoder.addFeature(f.getLayerName(), f.getAttributes(), GEOMETRY_FACTORY.createPoint(new Coordinate(px,py)));
+                encoder.addFeature(f.getLayerName(),
+                                   f.getAttributes(),
+                                   GEOMETRY_FACTORY.createPoint(new Coordinate(px, py)));
               }
             }
           }
         }
       }
     }
-
-    return encoder.encode();
+    LOG.info("Accumulated in {}", timer.elapsedMillis());
+    timer.reset();
+    byte[] result = encoder.encode();
+    LOG.info("Encoded in {}", timer.elapsedMillis());
+    return result;
   }
 
   @GET

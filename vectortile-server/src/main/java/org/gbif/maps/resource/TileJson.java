@@ -16,8 +16,8 @@ public class TileJson {
   private String filesize;
   private String format = "pbf";
   private String id;
-  private int maskLevel = 23;
-  private int maxzoom = 23;
+  private int maskLevel = 22;
+  private int maxzoom = 22;
   private int minzoom = 0;
   private String name;
   @JsonProperty("private")
@@ -195,8 +195,8 @@ public class TileJson {
     private String filesize;
     private String format = "pbf";
     private String id;
-    private int maskLevel = 23;
-    private int maxzoom = 23;
+    private int maskLevel = 22;
+    private int maxzoom = 22;
     private int minzoom = 0;
     private String name;
     private boolean private_;

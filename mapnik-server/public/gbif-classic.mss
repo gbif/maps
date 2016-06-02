@@ -1,17 +1,14 @@
 #OBSERVATION {
-  marker-fill-opacity: 1;
-  marker-line-width: 0;
-  marker-type: ellipse;
-  marker-width: 1.5;
-  marker-fill: #CC0000;
-  marker-allow-overlap: true;
+  dot-width: 2;
+  dot-opacity: 1;
+  dot-fill: #CC0000;
 }
 
 #OBSERVATION {
-  [count <= 100000] { marker-fill: #FF3300;  }
-  [count <= 10000] { marker-fill: #FF6600;  }
-  [count <= 1000] { marker-fill: #FF9900;  }
-  [count <= 100] { marker-fill: #FFCC00;  }
-  [count <= 10] { marker-fill: #FFFF00;  }
+  [count <= 100000] { dot-fill: #FF3300;  }
+  [count <= 10000] { dot-fill: #FF6600;  }
+  [count <= 1000] { dot-fill: #FF9900;  }
+  [count <= 100] { dot-fill: #FFCC00;  }
+  [count <= 10] { dot-fill: #FFFF00;  }
 }
 
