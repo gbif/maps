@@ -52,39 +52,44 @@ function initMap(map, minYear, maxYear) {
     if (map.getSource('points')) map.removeSource('points');
     if (map.getLayer('points')) map.removeLayer('points');
 
-    map.addSource('tile', {
-        type: 'vector',
-        //"tiles": ["http://localhost:7001/api/taxon/6/{z}/{x}/{y}.pbf"]
-        "tiles": ["http://localhost:7001/api/all/{z}/{x}/{y}.pbf"]
-        //"tiles": ["http://localhost:7001/api/test/{z}/{x}/{y}.pbf"]
-    });
+
     map.addSource('points', {
         type: 'vector',
         "tiles": ["http://localhost:7001/api/point/all/{z}/{x}/{y}.pbf"]
     });
 
-    map.addLayer({
-      "id": "tile",
-      "type": "circle",
-      "source": "tile",
-      "source-layer": "HUMAN_OBSERVATION",
-      "paint": {
-        "circle-radius": 1,
-        "circle-color": "#00F",
-        "circle-opacity": 1
-        }
-      });
-    map.addLayer({
-      "id": "points",
-      "type": "circle",
-      "source": "points",
-      "source-layer": "OBSERVATION",
-      "paint": {
-        "circle-radius": 5,
-        "circle-color": "#F00",
-        "circle-opacity": 0.5
-        }
-      });
+  map.addLayer({
+    "id": "points1",
+    "type": "circle",
+    "source": "points",
+    "source-layer": "OBSERVATION",
+    "paint": {
+      "circle-radius": 2,
+      "circle-color": "#FFFF00",
+      "circle-opacity": 1,
+      //"filter": count <= 10
+    }
+  });
+  map.addLayer({
+    "id": "points2",
+    "type": "circle",
+    "source": "points",
+    "source-layer": "OBSERVATION",
+    "paint": {
+      "circle-radius": 5,
+      "circle-color": "#FFCC00",
+      "circle-opacity": 1
+    }
+  });
+
+  /*
+#OBSERVATION {
+    [count <= 100000] { dot-fill: #FF3300;  }
+    [count <= 10000] { dot-fill: #FF6600;  }
+    [count <= 1000] { dot-fill: #FF9900;  }
+    [count <= 100] { dot-fill: #FFCC00;  }
+    [count <= 10] { dot-fill: #FFFF00;  }
+*/
 }
 
 var map = new mapboxgl.Map({

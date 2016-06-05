@@ -1,17 +1,6 @@
 package org.gbif.maps.common.projection;
 
-import java.io.Serializable;
-
-/**
- * Spherical Mercator projection utilities which work at a given tile size.
- * Only 256, 512, 1024, 2048 and 4096 sized tiles are supported.
- *
- * Serializable so that it can be distributed among workers in Spark.
- *
- * This class is threadsafe, and use in a Singleton pattern is encouraged.
- */
-public class Mercator implements Serializable {
-
+public class Mercator {
   private final int tileSize;
 
   public Mercator(int tileSize) {

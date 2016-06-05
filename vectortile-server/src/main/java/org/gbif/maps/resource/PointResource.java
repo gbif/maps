@@ -1,6 +1,9 @@
 package org.gbif.maps.resource;
 
 import org.gbif.maps.common.projection.Mercator;
+import org.gbif.maps.common.projection.TileProjection;
+import org.gbif.maps.common.projection.TileProjections;
+import org.gbif.maps.common.projection.Tiles;
 import org.gbif.maps.io.PointFeature;
 
 import java.awt.geom.AffineTransform;
@@ -82,6 +85,9 @@ public final class PointResource {
         public Optional<PointFeature.PointFeatures> load(String cell) throws Exception {
           try (Table table = connection.getTable(TableName.valueOf("tim_test"))) {
             Get get = new Get(Bytes.toBytes("1:2730240"));
+            //Get get = new Get(Bytes.toBytes("1:5231190")); // P. domesticus (TEST!)
+            //Get get = new Get(Bytes.toBytes("1:212")); // Aves (TEST!)
+
             get.addColumn(Bytes.toBytes("wgs84"), Bytes.toBytes(cell));
             Result result = table.get(get);
             if (result != null) {
@@ -151,10 +157,10 @@ public final class PointResource {
   }
 
   @GET
-  @Path("all/{z}/{x}/{y}.pbf")
+  @Path("all3/{z}/{x}/{y}.pbf")
   @Timed
   @Produces("application/x-protobuf")
-  public byte[] all(
+  public byte[] all3(
     @PathParam("z") int z, @PathParam("x") int x, @PathParam("y") int y,
     @Context HttpServletResponse response
   ) throws Exception {
@@ -218,6 +224,72 @@ public final class PointResource {
         }
 
 
+      }
+    }
+    LOG.info("Accumulated in {}", timer.elapsedMillis());
+    timer.reset();
+    byte[] result = encoder.encode();
+    LOG.info("Encoded in {}", timer.elapsedMillis());
+    return result;
+  }
+
+  @GET
+  @Path("all/{z}/{x}/{y}.pbf")
+  @Timed
+  @Produces("application/x-protobuf")
+  public byte[] all(
+    @PathParam("z") int z, @PathParam("x") long x, @PathParam("y") long y,
+    @Context HttpServletResponse response
+  ) throws Exception {
+    prepare(response);
+    LOG.info("{},{},{}", z, x, y);
+    Stopwatch timer = new Stopwatch().start();
+
+    BufferedVectorTileEncoder encoder = new BufferedVectorTileEncoder(TILE_SIZE, BUFFER_SIZE, false);
+
+    Optional<PointFeature.PointFeatures> o = datasource.get("features");
+    LOG.info("Found points: {}", o.isPresent());
+    if (o.isPresent()) {
+
+      PointFeature.PointFeatures features = o.get();
+
+      TileProjection projection = TileProjections.fromEPSG("EPSG:3575", TILE_SIZE);
+      //TileProjection projection = TileProjections.fromEPSG("EPSG:3857", TileProjections.TileSize.SIZE_512);
+
+      // world pixel addressing of the tile boundary, with 0,0 at top left
+      //Point2D.Double upperLeftPixel = projection.upperLeftPixel(x,y);
+      //Point2D.Double lowerRightPixel = projection.lowerRightPixel(x,y);
+      long minTilePixelX = TILE_SIZE * x;
+      long minTilePixelY = TILE_SIZE * y;
+
+
+      for (PointFeature.PointFeatures.Feature f : features.getFeaturesList()) {
+
+        if (projection.isPlottable(f.getLatitude(), f.getLongitude())) {
+          Point2D.Double pixelXY = projection.toGlobalPixelXY(f.getLatitude(), f.getLongitude(), z);
+
+          // clip to the tile
+          //if (pixelXY.getX() >= minTilePixelX && pixelXY.getX() <= minTilePixelX+TILE_SIZE
+          //    && pixelXY.getY() >= minTilePixelY && pixelXY.getY() <= minTilePixelY+TILE_SIZE) {
+
+          if (TileProjections.tileContains(x, y, TILE_SIZE, pixelXY, BUFFER_SIZE)) {
+
+  //       if (pixelXY.getX() >= upperLeftPixel.getX() && pixelXY.getX() <= lowerRightPixel.getX()
+  //          && pixelXY.getY() >= upperLeftPixel.getY() && pixelXY.getY() <= lowerRightPixel.getY()) {
+            // modulus operation to convert to tile local pixel addressing
+            //java.awt.Point tileLocalPixelXY = projection.toTileLocalPixelXY(pixelXY);
+
+            //double localX = pixelXY.getX() - (x*TILE_SIZE);
+            //double localY = pixelXY.getY() - (y*TILE_SIZE);
+            Point2D.Double tileLocalXY = TileProjections.toTileLocalXY(pixelXY, x, y, TILE_SIZE);
+
+
+            //Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(tileLocalPixelXY.getX(), tileLocalPixelXY.getY()));
+            Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(tileLocalXY.getX(), tileLocalXY.getY()));
+            Map<String, Object> meta = new HashMap();
+            encoder.addFeature(f.getBasisOfRecord().toString(), meta, point);
+          }
+        }
       }
     }
     LOG.info("Accumulated in {}", timer.elapsedMillis());

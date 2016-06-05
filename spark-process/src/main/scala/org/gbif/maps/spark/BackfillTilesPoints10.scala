@@ -1499,7 +1499,7 @@ object BackfillTilesPoints10 {
       "1:4481" -> 109313,
       "1:4844128" -> 1063609,
       "1:2498352" -> 214325,
-      "1:212" -> 24641452,
+      //"1:212" -> 24641452,
       "1:2492942" -> 152748,
       "1:5229388" -> 120220,
       "4:DK" -> 625447,
@@ -1730,7 +1730,11 @@ object BackfillTilesPoints10 {
         r._2 // cell value
       )
       (k, row)
-    }).saveAsNewAPIHadoopFile(TARGET_DIR + "/wgs84_points", classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat], outputConf)
+    })
+
+
+    res.saveAsNewAPIHadoopFile(TARGET_DIR + "/points-wgs84", classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat], outputConf)
+
   }
 }
 

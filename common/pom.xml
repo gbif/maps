@@ -79,5 +79,13 @@
       <groupId>no.ecc.vectortile</groupId>
       <artifactId>java-vector-tile</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.geotools</groupId>
+      <artifactId>gt-render</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.geotools</groupId>
+      <artifactId>gt-geometry</artifactId>
+    </dependency>
   </dependencies>
 </project>
