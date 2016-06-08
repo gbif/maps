@@ -53,7 +53,7 @@ function initMap(map, minYear, maxYear) {
     map.addSource('tile', {
         type: 'vector',
         //"tiles": ["http://localhost:7001/api/taxon/6/{z}/{x}/{y}.pbf"]
-        "tiles": ["http://localhost:7001/api/density/all/{z}/{x}/{y}.pbf"]
+        "tiles": ["http://localhost:7001/api/occurrence/density/{z}/{x}/{y}.mvt?taxonKey=9703"]
         //"tiles": ["http://localhost:7001/api/test/{z}/{x}/{y}.pbf"]
     });
 
@@ -61,9 +61,9 @@ function initMap(map, minYear, maxYear) {
       "id": "tile",
       "type": "circle",
       "source": "tile",
-      "source-layer": "HUMAN_OBSERVATION",
+      "source-layer": "occurrence",
       "paint": {
-        "circle-radius": 1,
+        "circle-radius": 10,
         "circle-color": "#00F",
         "circle-opacity": 1
         }
@@ -77,6 +77,38 @@ var map = new mapboxgl.Map({
     zoom: 0,
     maxZoom: 20
 });
+
+/*var map = new mapboxgl.Map({
+    container: 'map', // container id
+    style: {
+        "version": 8,
+        "sources": 
+          {
+            "raster-tiles": {
+                "type": "raster",
+                //"tiles": ["https://cartocdn-ashbu.global.ssl.fastly.net/timrobertson100/api/v1/map/3e127c115ef0e2402e33507e3020819f:1464545514828/0/{z}/{x}/{y}.png?map_key=0384d12bac420293b443cc236120862f3dd75ac1&cache_policy=persist"],
+                // "tiles": ["https://cartocdn-ashbu.global.ssl.fastly.net/andrew/api/v1/map/c5f32eea3763c57bd7ed208f0f5ffc72:1419089843154/0/{z}/{x}/{y}.png"],                
+                "tiles": ["http://b.tiles.arcticconnect.org/osm_3575/{z}/{x}/{y}.png"],                
+                
+                "tileSize": 256
+            }
+          },
+        "layers": [{
+            "id": "simple-tiles",
+            "type": "raster",
+            "source": "raster-tiles",
+            "minzoom": 0,
+            "maxzoom": 22
+        },
+
+        ]
+    },
+    center: [80, 45], // starting position
+    zoom: 0 // starting zoom
+});
+*/
+
+
 map.addControl(new mapboxgl.Navigation());
 
 map.on('style.load', function () {

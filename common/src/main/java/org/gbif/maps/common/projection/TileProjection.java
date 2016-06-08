@@ -1,8 +1,9 @@
 package org.gbif.maps.common.projection;
 
-import java.awt.*;
-import java.awt.geom.Point2D;
-
+/**
+ * Defines the interface for dealing with conversations between WGS84 referenced coordinates and pixels within tiles
+ * at various zoom levels.
+ */
 public interface TileProjection {
 
   /**
@@ -12,13 +13,7 @@ public interface TileProjection {
    * @param zoom The zoom level
    * @return The pixel location addressed globally
    */
-  Point.Double toGlobalPixelXY(double latitude, double longitude, int zoom);
+  Double2D toGlobalPixelXY(double latitude, double longitude, int zoom);
 
   boolean isPlottable(double latitude, double longitude);
-
-  LongPoint toTileXY(Point2D.Double globalPixelXY, int zoom);
-
-  Point2D.Double upperLeftPixel(long tileX, long tileY);
-
-  Point2D.Double lowerRightPixel(long tileX, long tileY);
 }

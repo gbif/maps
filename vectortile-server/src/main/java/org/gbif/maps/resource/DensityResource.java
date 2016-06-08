@@ -135,8 +135,8 @@ public final class DensityResource {
     BufferedVectorTileEncoder encoder = new BufferedVectorTileEncoder(TILE_SIZE, BUFFER_SIZE, false);
 
     VectorTile tile = null;
-    for (int i=0; i<cells.length; i++) {
-    //for (int i=4; i<5; i++) {
+    //for (int i=0; i<cells.length; i++) {
+    for (int i=4; i<5; i++) {
 
       // depending on the tile (NE,N,NW...) determine the offset from the center tile
       int offsetX = TILE_SIZE * ((i%3)-1);
@@ -161,8 +161,8 @@ public final class DensityResource {
               int py = (int) ((Point) geom).getY() + offsetY;
 
               if (px > -BUFFER_SIZE && px < TILE_SIZE + BUFFER_SIZE
-                  && py > -BUFFER_SIZE && py < TILE_SIZE + BUFFER_SIZE
-                  && "OBSERVATION".equals(f.getLayerName())) {
+                  && py > -BUFFER_SIZE && py < TILE_SIZE + BUFFER_SIZE) {
+                  //&& "OBSERVATION".equals(f.getLayerName())) {
 
                 encoder.addFeature(f.getLayerName(),
                                    f.getAttributes(),

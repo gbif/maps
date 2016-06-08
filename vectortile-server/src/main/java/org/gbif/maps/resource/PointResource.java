@@ -1,8 +1,8 @@
 package org.gbif.maps.resource;
 
+import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.Mercator;
 import org.gbif.maps.common.projection.TileProjection;
-import org.gbif.maps.common.projection.TileProjections;
 import org.gbif.maps.common.projection.Tiles;
 import org.gbif.maps.io.PointFeature;
 
@@ -11,7 +11,6 @@ import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletResponse;
@@ -23,17 +22,14 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
-import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
-import no.ecc.vectortile.VectorTileDecoder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
@@ -45,12 +41,10 @@ import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
-import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import vector_tile.VectorTile;
 
 /**
  * Hacky tests for now.
@@ -253,38 +247,15 @@ public final class PointResource {
 
       PointFeature.PointFeatures features = o.get();
 
-      TileProjection projection = TileProjections.fromEPSG("EPSG:3575", TILE_SIZE);
-      //TileProjection projection = TileProjections.fromEPSG("EPSG:3857", TileProjections.TileSize.SIZE_512);
-
-      // world pixel addressing of the tile boundary, with 0,0 at top left
-      //Point2D.Double upperLeftPixel = projection.upperLeftPixel(x,y);
-      //Point2D.Double lowerRightPixel = projection.lowerRightPixel(x,y);
-      long minTilePixelX = TILE_SIZE * x;
-      long minTilePixelY = TILE_SIZE * y;
-
+      TileProjection projection = Tiles.fromEPSG("EPSG:3575", TILE_SIZE);
 
       for (PointFeature.PointFeatures.Feature f : features.getFeaturesList()) {
 
         if (projection.isPlottable(f.getLatitude(), f.getLongitude())) {
-          Point2D.Double pixelXY = projection.toGlobalPixelXY(f.getLatitude(), f.getLongitude(), z);
+          Double2D pixelXY = projection.toGlobalPixelXY(f.getLatitude(), f.getLongitude(), z);
+          if (Tiles.tileContains(x, y, TILE_SIZE, pixelXY, BUFFER_SIZE)) {
+            Double2D tileLocalXY = Tiles.toTileLocalXY(pixelXY, x, y, TILE_SIZE);
 
-          // clip to the tile
-          //if (pixelXY.getX() >= minTilePixelX && pixelXY.getX() <= minTilePixelX+TILE_SIZE
-          //    && pixelXY.getY() >= minTilePixelY && pixelXY.getY() <= minTilePixelY+TILE_SIZE) {
-
-          if (TileProjections.tileContains(x, y, TILE_SIZE, pixelXY, BUFFER_SIZE)) {
-
-  //       if (pixelXY.getX() >= upperLeftPixel.getX() && pixelXY.getX() <= lowerRightPixel.getX()
-  //          && pixelXY.getY() >= upperLeftPixel.getY() && pixelXY.getY() <= lowerRightPixel.getY()) {
-            // modulus operation to convert to tile local pixel addressing
-            //java.awt.Point tileLocalPixelXY = projection.toTileLocalPixelXY(pixelXY);
-
-            //double localX = pixelXY.getX() - (x*TILE_SIZE);
-            //double localY = pixelXY.getY() - (y*TILE_SIZE);
-            Point2D.Double tileLocalXY = TileProjections.toTileLocalXY(pixelXY, x, y, TILE_SIZE);
-
-
-            //Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(tileLocalPixelXY.getX(), tileLocalPixelXY.getY()));
             Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(tileLocalXY.getX(), tileLocalXY.getY()));
             Map<String, Object> meta = new HashMap();
             encoder.addFeature(f.getBasisOfRecord().toString(), meta, point);

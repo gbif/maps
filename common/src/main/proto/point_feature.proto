@@ -3,12 +3,12 @@ package org.gbif.maps.io;
 option optimize_for = LITE_RUNTIME;
 
 /**
- * A basic point feature that holds a latitude, longitude and then
+ * A basic point feature that holds a latitude, longitude, basisOfRecord, year and the count.
  */
 message PointFeatures {
 
   message Feature {
-    // this should match the GBIF API
+    // this should hold the same values that the GBIF API support for consistency
     enum BasisOfRecord {
       UNKNOWN = 0;
       PRESERVED_SPECIMEN = 1;
@@ -24,10 +24,8 @@ message PointFeatures {
     required double latitude = 1;
     required double longitude = 2;
     required BasisOfRecord basisOfRecord = 3;
-    optional uint32 year = 4;
-    // TODO: add count
-    //required uint32 count = 5;
-
+    optional uint32 year = 4 [default = 0];
+    optional uint32 count = 5 [default = 1];
   }
 
   repeated Feature features = 1;

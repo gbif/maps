@@ -1,5 +1,7 @@
 package org.gbif.maps.common.projection;
 
+// Use SphericalMercator instead
+@Deprecated
 public class Mercator {
   private final int tileSize;
 

@@ -24,7 +24,6 @@ object BackfillTilesPoints10 {
     "PUBLISHING_COUNTRY" -> 5)
 
   // Dictionary mapping the GBIF API BasisOfRecord enumeration to the Protobuf versions
-  /*
   private val BASIS_OF_RECORD = Map("UNKNOWN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN,
     "PRESERVED_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.PRESERVED_SPECIMEN,
     "FOSSIL_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.FOSSIL_SPECIMEN,
@@ -34,8 +33,8 @@ object BackfillTilesPoints10 {
     "MACHINE_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MACHINE_OBSERVATION,
     "MATERIAL_SAMPLE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MATERIAL_SAMPLE,
     "LITERATURE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.LITERATURE)
-  */
 
+  /*
   private val BASIS_OF_RECORD = Map("UNKNOWN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN,
     "PRESERVED_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.PRESERVED_SPECIMEN,
     "FOSSIL_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.FOSSIL_SPECIMEN,
@@ -45,7 +44,7 @@ object BackfillTilesPoints10 {
     "MACHINE_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.OBSERVATION,
     "MATERIAL_SAMPLE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.PRESERVED_SPECIMEN,
     "LITERATURE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN)
-
+  */
 
   private val POINT_THRESHOLD = 100000;
   private val TILE_SIZE = 512 // good compromise between performance and visuals and fits retina tiles
@@ -94,7 +93,8 @@ object BackfillTilesPoints10 {
     conf.setIfMissing("spark.master", "local[2]") // 2 threads for local dev, ignored in production
     val sc = new SparkContext(conf)
     val sqlContext = new org.apache.spark.sql.SQLContext(sc)
-    val df = sqlContext.read.parquet("/user/hive/warehouse/tim.db/occurrence_map_source")
+    //val df = sqlContext.read.parquet("/user/hive/warehouse/tim.db/occurrence_map_source")
+    val df = sqlContext.read.parquet("/Users/tim/dev/data/map.parquet")
     build(sc, df)
   }
 

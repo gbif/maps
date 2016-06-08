@@ -43,19 +43,20 @@ object BackfillTiles10 {
   private val BASIS_OF_RECORD = Map("UNKNOWN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN,
     "PRESERVED_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.PRESERVED_SPECIMEN,
     "FOSSIL_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.FOSSIL_SPECIMEN,
-    "LIVING_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN,
+    "LIVING_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.LIVING_SPECIMEN,
     "OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.OBSERVATION,
-    "HUMAN_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.OBSERVATION,
-    "MACHINE_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.OBSERVATION,
-    "MATERIAL_SAMPLE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.PRESERVED_SPECIMEN,
-    "LITERATURE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN)
+    "HUMAN_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.HUMAN_OBSERVATION,
+    "MACHINE_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MACHINE_OBSERVATION,
+    "MATERIAL_SAMPLE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MATERIAL_SAMPLE,
+    "LITERATURE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.LITERATURE)
 
 
   private val POINT_THRESHOLD = 100000;
   private val TILE_SIZE = 512 // good compromise between performance and visuals and fits retina tiles
   private val MERCATOR = new Mercator(TILE_SIZE)
   private val GEOMETRY_FACTORY = new GeometryFactory()
-  private val MAX_HFILES_PER_CF_PER_REGION = 32 // defined in HBase's LoadIncrementalHFiles
+  //private val MAX_HFILES_PER_CF_PER_REGION = 32 // defined in HBase's LoadIncrementalHFiles
+  private val MAX_HFILES_PER_CF_PER_REGION = 200 // defined in HBase's LoadIncrementalHFiles
   private val MAX_ZOOM = 16
   private val MIN_ZOOM = 0
 

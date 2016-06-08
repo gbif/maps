@@ -3,7 +3,8 @@ package org.gbif.maps.common.projection;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 
-import com.vividsolutions.jts.geom.*;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
@@ -17,6 +18,7 @@ import org.opengis.referencing.operation.TransformException;
  * @see https://epsg.io/3575
  */
 class NorthPoleLAEAEurope extends AbstractTileProjection {
+  static final String EPSG_CODE = "EPSG:3575";
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
 
   // An affine transform to move world coorindates into positive space addressing, so the lowest is 0,0
@@ -34,12 +36,12 @@ class NorthPoleLAEAEurope extends AbstractTileProjection {
     }
   }
 
-  public NorthPoleLAEAEurope(int tileSize) {
+  NorthPoleLAEAEurope(int tileSize) {
     super(tileSize);
   }
 
   @Override
-  public Point2D.Double toGlobalPixelXY(double latitude, double longitude, int zoom) {
+  public Double2D toGlobalPixelXY(double latitude, double longitude, int zoom) {
     try {
       // NOTE: Axis order for EPSG:4326 is lat,lng so invert X=latitude, Y=longitude
       // Proven with if( CRS.getAxisOrder(sourceCRS) == CRS.AxisOrder.LAT_LON) {...}
@@ -50,7 +52,7 @@ class NorthPoleLAEAEurope extends AbstractTileProjection {
       Point2D.Double p2 = new Point2D.Double(p.getX(), p.getY());
       transformToWorldPixels(zoom).transform(p2,p2); // overwrites the source
 
-      return p2;
+      return new Double2D(p2.getX(), p2.getY());
 
     } catch (Exception e) {
       throw new IllegalStateException("Unable to reproject coordinates", e);

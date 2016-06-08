@@ -31,7 +31,7 @@ public final class PointFeature {
    *
    * <pre>
    **
-   * A basic point feature that holds a latitude, longitude and then
+   * A basic point feature that holds a latitude, longitude, basisOfRecord, year and the count.
    * </pre>
    */
   public static final class PointFeatures extends
@@ -144,25 +144,25 @@ public final class PointFeature {
        */
       org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord getBasisOfRecord();
 
-      // optional uint32 year = 4;
+      // optional uint32 year = 4 [default = 0];
       /**
-       * <code>optional uint32 year = 4;</code>
-       *
-       * <pre>
-       * TODO: add count
-       *required uint32 count = 5;
-       * </pre>
+       * <code>optional uint32 year = 4 [default = 0];</code>
        */
       boolean hasYear();
       /**
-       * <code>optional uint32 year = 4;</code>
-       *
-       * <pre>
-       * TODO: add count
-       *required uint32 count = 5;
-       * </pre>
+       * <code>optional uint32 year = 4 [default = 0];</code>
        */
       int getYear();
+
+      // optional uint32 count = 5 [default = 1];
+      /**
+       * <code>optional uint32 count = 5 [default = 1];</code>
+       */
+      boolean hasCount();
+      /**
+       * <code>optional uint32 count = 5 [default = 1];</code>
+       */
+      int getCount();
     }
     /**
      * Protobuf type {@code org.gbif.maps.io.PointFeatures.Feature}
@@ -231,6 +231,11 @@ public final class PointFeature {
                 year_ = input.readUInt32();
                 break;
               }
+              case 40: {
+                bitField0_ |= 0x00000010;
+                count_ = input.readUInt32();
+                break;
+              }
             }
           }
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -261,7 +266,7 @@ public final class PointFeature {
        * Protobuf enum {@code org.gbif.maps.io.PointFeatures.Feature.BasisOfRecord}
        *
        * <pre>
-       * this should match the GBIF API
+       * this should hold the same values that the GBIF API support for consistency
        * </pre>
        */
       public enum BasisOfRecord
@@ -429,30 +434,36 @@ public final class PointFeature {
         return basisOfRecord_;
       }
 
-      // optional uint32 year = 4;
+      // optional uint32 year = 4 [default = 0];
       public static final int YEAR_FIELD_NUMBER = 4;
       private int year_;
       /**
-       * <code>optional uint32 year = 4;</code>
-       *
-       * <pre>
-       * TODO: add count
-       *required uint32 count = 5;
-       * </pre>
+       * <code>optional uint32 year = 4 [default = 0];</code>
        */
       public boolean hasYear() {
         return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
-       * <code>optional uint32 year = 4;</code>
-       *
-       * <pre>
-       * TODO: add count
-       *required uint32 count = 5;
-       * </pre>
+       * <code>optional uint32 year = 4 [default = 0];</code>
        */
       public int getYear() {
         return year_;
+      }
+
+      // optional uint32 count = 5 [default = 1];
+      public static final int COUNT_FIELD_NUMBER = 5;
+      private int count_;
+      /**
+       * <code>optional uint32 count = 5 [default = 1];</code>
+       */
+      public boolean hasCount() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>optional uint32 count = 5 [default = 1];</code>
+       */
+      public int getCount() {
+        return count_;
       }
 
       private void initFields() {
@@ -460,6 +471,7 @@ public final class PointFeature {
         longitude_ = 0D;
         basisOfRecord_ = org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN;
         year_ = 0;
+        count_ = 1;
       }
       private byte memoizedIsInitialized = -1;
       public final boolean isInitialized() {
@@ -497,6 +509,9 @@ public final class PointFeature {
         if (((bitField0_ & 0x00000008) == 0x00000008)) {
           output.writeUInt32(4, year_);
         }
+        if (((bitField0_ & 0x00000010) == 0x00000010)) {
+          output.writeUInt32(5, count_);
+        }
       }
 
       private int memoizedSerializedSize = -1;
@@ -520,6 +535,10 @@ public final class PointFeature {
         if (((bitField0_ & 0x00000008) == 0x00000008)) {
           size += com.google.protobuf.CodedOutputStream
             .computeUInt32Size(4, year_);
+        }
+        if (((bitField0_ & 0x00000010) == 0x00000010)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeUInt32Size(5, count_);
         }
         memoizedSerializedSize = size;
         return size;
@@ -620,6 +639,8 @@ public final class PointFeature {
           bitField0_ = (bitField0_ & ~0x00000004);
           year_ = 0;
           bitField0_ = (bitField0_ & ~0x00000008);
+          count_ = 1;
+          bitField0_ = (bitField0_ & ~0x00000010);
           return this;
         }
 
@@ -659,6 +680,10 @@ public final class PointFeature {
             to_bitField0_ |= 0x00000008;
           }
           result.year_ = year_;
+          if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+            to_bitField0_ |= 0x00000010;
+          }
+          result.count_ = count_;
           result.bitField0_ = to_bitField0_;
           return result;
         }
@@ -676,6 +701,9 @@ public final class PointFeature {
           }
           if (other.hasYear()) {
             setYear(other.getYear());
+          }
+          if (other.hasCount()) {
+            setCount(other.getCount());
           }
           return this;
         }
@@ -817,37 +845,22 @@ public final class PointFeature {
           return this;
         }
 
-        // optional uint32 year = 4;
+        // optional uint32 year = 4 [default = 0];
         private int year_ ;
         /**
-         * <code>optional uint32 year = 4;</code>
-         *
-         * <pre>
-         * TODO: add count
-         *required uint32 count = 5;
-         * </pre>
+         * <code>optional uint32 year = 4 [default = 0];</code>
          */
         public boolean hasYear() {
           return ((bitField0_ & 0x00000008) == 0x00000008);
         }
         /**
-         * <code>optional uint32 year = 4;</code>
-         *
-         * <pre>
-         * TODO: add count
-         *required uint32 count = 5;
-         * </pre>
+         * <code>optional uint32 year = 4 [default = 0];</code>
          */
         public int getYear() {
           return year_;
         }
         /**
-         * <code>optional uint32 year = 4;</code>
-         *
-         * <pre>
-         * TODO: add count
-         *required uint32 count = 5;
-         * </pre>
+         * <code>optional uint32 year = 4 [default = 0];</code>
          */
         public Builder setYear(int value) {
           bitField0_ |= 0x00000008;
@@ -856,16 +869,44 @@ public final class PointFeature {
           return this;
         }
         /**
-         * <code>optional uint32 year = 4;</code>
-         *
-         * <pre>
-         * TODO: add count
-         *required uint32 count = 5;
-         * </pre>
+         * <code>optional uint32 year = 4 [default = 0];</code>
          */
         public Builder clearYear() {
           bitField0_ = (bitField0_ & ~0x00000008);
           year_ = 0;
+          
+          return this;
+        }
+
+        // optional uint32 count = 5 [default = 1];
+        private int count_ = 1;
+        /**
+         * <code>optional uint32 count = 5 [default = 1];</code>
+         */
+        public boolean hasCount() {
+          return ((bitField0_ & 0x00000010) == 0x00000010);
+        }
+        /**
+         * <code>optional uint32 count = 5 [default = 1];</code>
+         */
+        public int getCount() {
+          return count_;
+        }
+        /**
+         * <code>optional uint32 count = 5 [default = 1];</code>
+         */
+        public Builder setCount(int value) {
+          bitField0_ |= 0x00000010;
+          count_ = value;
+          
+          return this;
+        }
+        /**
+         * <code>optional uint32 count = 5 [default = 1];</code>
+         */
+        public Builder clearCount() {
+          bitField0_ = (bitField0_ & ~0x00000010);
+          count_ = 1;
           
           return this;
         }
@@ -1029,7 +1070,7 @@ public final class PointFeature {
      *
      * <pre>
      **
-     * A basic point feature that holds a latitude, longitude and then
+     * A basic point feature that holds a latitude, longitude, basisOfRecord, year and the count.
      * </pre>
      */
     public static final class Builder extends

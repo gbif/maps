@@ -87,5 +87,9 @@
       <groupId>org.geotools</groupId>
       <artifactId>gt-geometry</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.geotools</groupId>
+      <artifactId>gt-epsg-hsql</artifactId>
+    </dependency>
   </dependencies>
 </project>
