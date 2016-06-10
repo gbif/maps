@@ -55,9 +55,9 @@ object BackfillTiles10 {
   private val TILE_SIZE = 512 // good compromise between performance and visuals and fits retina tiles
   private val MERCATOR = new Mercator(TILE_SIZE)
   private val GEOMETRY_FACTORY = new GeometryFactory()
-  //private val MAX_HFILES_PER_CF_PER_REGION = 32 // defined in HBase's LoadIncrementalHFiles
-  private val MAX_HFILES_PER_CF_PER_REGION = 200 // defined in HBase's LoadIncrementalHFiles
-  private val MAX_ZOOM = 16
+  private val MAX_HFILES_PER_CF_PER_REGION = 32 // defined in HBase's LoadIncrementalHFiles
+  //private val MAX_HFILES_PER_CF_PER_REGION = 200 // defined in HBase's LoadIncrementalHFiles
+  private val MAX_ZOOM = 3
   private val MIN_ZOOM = 0
 
   // Put pixels in the same category together
@@ -99,7 +99,8 @@ object BackfillTiles10 {
     conf.setIfMissing("spark.master", "local[2]") // 2 threads for local dev, ignored in production
     val sc = new SparkContext(conf)
     val sqlContext = new org.apache.spark.sql.SQLContext(sc)
-    val df = sqlContext.read.parquet("/user/hive/warehouse/tim.db/occurrence_map_source")
+    //val df = sqlContext.read.parquet("/user/hive/warehouse/tim.db/occurrence_map_source")
+    val df = sqlContext.read.parquet("/Users/tim/dev/data/map.parquet")
     build(sc, df)
   }
 

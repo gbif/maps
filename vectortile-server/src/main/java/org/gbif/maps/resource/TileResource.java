@@ -1,23 +1,14 @@
 package org.gbif.maps.resource;
 
-import org.gbif.maps.common.filter.TileFilters;
-import org.gbif.maps.common.projection.Double2D;
-import org.gbif.maps.common.projection.Mercator;
+import org.gbif.maps.common.filter.PointFeatureFilters;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.Tiles;
 import org.gbif.maps.io.PointFeature;
 
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Point2D;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -32,17 +23,14 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
-import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
-import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.Point;
+import no.ecc.vectortile.VectorTileDecoder;
 import no.ecc.vectortile.VectorTileEncoder;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
@@ -50,10 +38,6 @@ import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.geotools.geometry.jts.JTS;
-import org.geotools.referencing.CRS;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.operation.MathTransform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,6 +53,11 @@ public final class TileResource {
   private static final int POINT_TILE_SIZE = 4096;
   private static final int POINT_TILE_BUFFER = 25;
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
+  private static final VectorTileDecoder DECODER = new VectorTileDecoder();
+  static {
+    DECODER.setAutoScale(false); // important to avoid auto scaling to 256 tiles
+  }
+
 
   // Maps the http parameter for the type to the HBase row key prefix for that map.
   // This aligns with the Spark processing that populates HBase of course, but maps the internal key to the
@@ -109,6 +98,30 @@ public final class TileResource {
               byte[] encoded = result.getValue(Bytes.toBytes("wgs84"), Bytes.toBytes("features"));
 
               return encoded != null ? Optional.of(PointFeature.PointFeatures.parseFrom(encoded)) : Optional.<PointFeature.PointFeatures>absent();
+            } else {
+              return Optional.absent();
+            }
+          }
+        }
+      }
+    );
+
+  LoadingCache<String[], Optional<byte[]>> datasourceTile = CacheBuilder
+    .newBuilder()
+    .maximumSize(1000)
+    .expireAfterWrite(1, TimeUnit.MINUTES)
+    .build(
+      new CacheLoader<String[], Optional<byte[]>>() {
+        @Override
+        public Optional<byte[]> load(String[] rowCell) throws Exception {
+          try (Table table = connection.getTable(TableName.valueOf("tim_test"))) {
+            Get get = new Get(Bytes.toBytes(rowCell[0]));
+            get.addColumn(Bytes.toBytes("merc_tiles"), Bytes.toBytes(rowCell[1]));
+            Result result = table.get(get);
+            if (result != null) {
+              byte[] encoded = result.getValue(Bytes.toBytes("merc_tiles"), Bytes.toBytes(rowCell[1]));
+              // TODO: We can push down the BoR layers as filters!
+              return encoded != null ? Optional.of(encoded) : Optional.<byte[]>absent();
             } else {
               return Optional.absent();
             }
@@ -187,23 +200,28 @@ public final class TileResource {
     String mapKey = mapKey(request);
     LOG.info("MapKey: {}", mapKey);
 
-
     final TileProjection projection = Tiles.fromEPSG(srs, tileSize);
 
     // Try and load the point features first, before defaulting to tile views
     Optional<PointFeature.PointFeatures> optionalFeatures = datasource.get(mapKey);
     if (optionalFeatures.isPresent()) {
-      final VectorTileEncoder encoder = new VectorTileEncoder(POINT_TILE_SIZE, POINT_TILE_BUFFER, false);
       PointFeature.PointFeatures features = optionalFeatures.get();
-
+      final VectorTileEncoder encoder = new VectorTileEncoder(POINT_TILE_SIZE, POINT_TILE_BUFFER, false);
       Integer[] years = toMinMaxYear(year);
-      TileFilters.collectInVectorTile(encoder, "occurrence", features.getFeaturesList(),
-                                      projection, z, x, y, tileSize, bufferSize,
-                                      years[0], years[1], null);
+      PointFeatureFilters.collectInVectorTile(encoder, "occurrence", features.getFeaturesList(),
+                                              projection, z, x, y, tileSize, bufferSize,
+                                              years[0], years[1], basisOfRecord);
 
       return encoder.encode();
     } else {
-      throw new IllegalArgumentException("TODO of course");
+
+      // try and load a prepared tile from HBase
+      Optional<byte[]> encoded = datasourceTile.get(new String[]{mapKey, z+":"+x+":"+y});
+      if (encoded.isPresent()) {
+        LOG.info("Found tile with encoded length of: " + encoded.get().length);
+        return encoded.get();
+      }
+      throw new IllegalArgumentException("No tile found");
     }
   }
 

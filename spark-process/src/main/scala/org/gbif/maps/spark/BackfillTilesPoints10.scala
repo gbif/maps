@@ -1708,7 +1708,7 @@ object BackfillTilesPoints10 {
       res
     }).reduceByKey(_+_, 200).map(r => {
       // type: lat,lng,bor,year,count
-      (r._1._1,(r._1._2,r._1._3,r._1._4,r._1._5,r._2))
+      (r._1._1,(r._1._2,r._1._3,r._1._4,r._1._5,r._2.asInstanceOf[Int]))
     })
 
     val res = pointSource.groupByKey().mapValues(r => {
@@ -1719,6 +1719,7 @@ object BackfillTilesPoints10 {
         fb.setLongitude(f._2)
         fb.setBasisOfRecord(f._3)
         fb.setYear(f._4)
+        fb.setCount(f._5)
         builder.addFeatures(fb)
       })
       builder.build().toByteArray

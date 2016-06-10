@@ -19,15 +19,15 @@ import no.ecc.vectortile.VectorTileEncoder;
 import static org.gbif.maps.io.PointFeature.PointFeatures.Feature;
 
 /**
- * Vector tile utilities.
+ * Filters and converters for PointFeature based tiles.
  */
-public class TileFilters {
+public class PointFeatureFilters {
   private static final int NULL_INT_VALUE = 0; // as specified in the protobuf file
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
 
   /**
-   * Collects the features in to the VT encoder that fall within the buffered tile space when projected and also
-   * satisfy the given filters.
+   * Encoders the features that fall within the buffered tile space when projected while also satisfying the given
+   * year and basisOfRecord filters.
    *
    * @param encoder To collect into
    * @param layerName The layer within the VT to collect to
@@ -50,7 +50,7 @@ public class TileFilters {
     // Note:  This projects the coordinates twice: once for filtering to the tile and secondly when collecting the
     //        tile features.  This could be optimized by calculating the WGS84 lat,lng of the tile+buffer extent and
     //        filtering the incoming stream using that.  At the time of writing the TileProjection does not offer that
-    //        inverse capability.
+    //        inverse capability and performance is in sub 5 msecs, so not considered worthwhile (yet).
     source.stream()
           .filter(filterFeatureByBasisOfRecord(basisOfRecords))
           .filter(filterFeatureByYear(minYear, maxYear))
@@ -65,6 +65,11 @@ public class TileFilters {
             Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(pixel.getX(), pixel.getY()));
             Map<String, Object> meta = Maps.newHashMap();
             yearCounts.forEach((year, count) -> meta.put(String.valueOf(year), count));
+
+            // add a total value across all years
+            int sum = meta.values().stream().mapToInt(v -> (Integer)v).sum();
+            meta.put("total", sum);
+
             encoder.addFeature(layerName, meta, point);
     });
   }

@@ -53,7 +53,7 @@ function initMap(map, minYear, maxYear) {
     map.addSource('tile', {
         type: 'vector',
         //"tiles": ["http://localhost:7001/api/taxon/6/{z}/{x}/{y}.pbf"]
-        "tiles": ["http://localhost:7001/api/occurrence/density/{z}/{x}/{y}.mvt?taxonKey=9703"]
+        "tiles": ["http://localhost:7001/api/occurrence/density/{z}/{x}/{y}.mvt?taxonKey=1"]
         //"tiles": ["http://localhost:7001/api/test/{z}/{x}/{y}.pbf"]
     });
 
@@ -61,7 +61,7 @@ function initMap(map, minYear, maxYear) {
       "id": "tile",
       "type": "circle",
       "source": "tile",
-      "source-layer": "occurrence",
+      "source-layer": "HUMAN_OBSERVATION",
       "paint": {
         "circle-radius": 10,
         "circle-color": "#00F",
