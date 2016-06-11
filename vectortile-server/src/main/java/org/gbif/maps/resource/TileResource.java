@@ -1,12 +1,16 @@
 package org.gbif.maps.resource;
 
 import org.gbif.maps.common.filter.PointFeatureFilters;
+import org.gbif.maps.common.filter.Range;
+import org.gbif.maps.common.filter.VectorTileFilters;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.Tiles;
 import org.gbif.maps.io.PointFeature;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import javax.inject.Singleton;
@@ -27,6 +31,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import no.ecc.vectortile.VectorTileDecoder;
 import no.ecc.vectortile.VectorTileEncoder;
@@ -50,8 +55,11 @@ public final class TileResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(TileResource.class);
   private static final Pattern COMMA = Pattern.compile(",");
+
+  // we always use hi resolution tiles for the point data, which is by definition small
   private static final int POINT_TILE_SIZE = 4096;
   private static final int POINT_TILE_BUFFER = 25;
+
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final VectorTileDecoder DECODER = new VectorTileDecoder();
   static {
@@ -157,9 +165,9 @@ public final class TileResource {
    * @return An array of length 2, with the min and max year values, which may be NULL
    * @throws IllegalArgumentException if the year is unparsable
    */
-  private static Integer[] toMinMaxYear(String encodedYear) {
+  private static Range toMinMaxYear(String encodedYear) {
     if (encodedYear == null) {
-      return new Integer[]{null,null};
+      return new Range(null,null);
     } else if (encodedYear.contains(",")) {
       String[] years = COMMA.split(encodedYear);
       if (years.length == 2) {
@@ -171,11 +179,11 @@ public final class TileResource {
         if (years[1].length() > 0) {
           max = Integer.parseInt(years[1]);
         }
-        return new Integer[] {min, max};
+        return new Range(min, max);
       }
     } else {
       int year = Integer.parseInt(encodedYear);
-      return new Integer[] {year, year};
+      return new Range(year, year);
     }
     throw new IllegalArgumentException("Year must contain a single or a comma separated minimum and maximum value.  "
                                        + "Supplied: " + encodedYear);
@@ -190,7 +198,7 @@ public final class TileResource {
     @PathParam("x") long x,
     @PathParam("y") long y,
     @DefaultValue("EPSG:3857") @QueryParam("srs") String srs,  // default as SphericalMercator
-    @QueryParam("basisOfRecord") String basisOfRecord, // TODO: what if there are more than 1?
+    @QueryParam("basisOfRecord") List<String> basisOfRecord, // TODO: what if there are more than 1?
     @QueryParam("year") String year,
     @Context HttpServletResponse response,
     @Context HttpServletRequest request
@@ -200,17 +208,21 @@ public final class TileResource {
     String mapKey = mapKey(request);
     LOG.info("MapKey: {}", mapKey);
 
-    final TileProjection projection = Tiles.fromEPSG(srs, tileSize);
+
 
     // Try and load the point features first, before defaulting to tile views
     Optional<PointFeature.PointFeatures> optionalFeatures = datasource.get(mapKey);
     if (optionalFeatures.isPresent()) {
+      TileProjection projection = Tiles.fromEPSG(srs, POINT_TILE_SIZE);
+
       PointFeature.PointFeatures features = optionalFeatures.get();
+      LOG.info("Found {} features", features.getFeaturesCount());
       final VectorTileEncoder encoder = new VectorTileEncoder(POINT_TILE_SIZE, POINT_TILE_BUFFER, false);
-      Integer[] years = toMinMaxYear(year);
+      Range years = toMinMaxYear(year);
+      Set<String> bors = basisOfRecord.isEmpty() ? null : Sets.newHashSet(basisOfRecord);
       PointFeatureFilters.collectInVectorTile(encoder, "occurrence", features.getFeaturesList(),
-                                              projection, z, x, y, tileSize, bufferSize,
-                                              years[0], years[1], basisOfRecord);
+                                              projection, z, x, y, POINT_TILE_SIZE, bufferSize,
+                                              years, bors);
 
       return encoder.encode();
     } else {
@@ -219,7 +231,16 @@ public final class TileResource {
       Optional<byte[]> encoded = datasourceTile.get(new String[]{mapKey, z+":"+x+":"+y});
       if (encoded.isPresent()) {
         LOG.info("Found tile with encoded length of: " + encoded.get().length);
-        return encoded.get();
+
+        Range years = toMinMaxYear(year);
+        Set<String> bors = basisOfRecord.isEmpty() ? null : Sets.newHashSet(basisOfRecord);
+        VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
+        VectorTileFilters.collectInVectorTile(encoder, "occurrence", encoded.get(),
+                                              z, x, y, x, y, tileSize, bufferSize,
+                                              years, bors);
+
+
+        return encoder.encode();
       }
       throw new IllegalArgumentException("No tile found");
     }

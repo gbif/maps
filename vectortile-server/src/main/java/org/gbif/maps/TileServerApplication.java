@@ -57,7 +57,8 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
     conf.setInt("hbase.zookeeper.property.clientPort", 2181);
     environment.jersey().register(new SolrResource(conf, 512, 25, httpClient));
 
-    environment.jersey().register(new TileResource(conf, 4096, 25));
+    // tileSize must match the preprocessed tiles in HBase
+    environment.jersey().register(new TileResource(conf, 512, 25));
 
   }
 }

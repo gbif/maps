@@ -27,11 +27,14 @@ import com.vividsolutions.jts.geom.Point;
 import no.ecc.vectortile.Filter;
 import no.ecc.vectortile.VectorTileDecoder;
 import no.ecc.vectortile.VectorTileEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Filters and converters for dealing with VectorTiles.
  */
 public class VectorTileFilters {
+  private static final Logger LOG = LoggerFactory.getLogger(VectorTileFilters.class);
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final VectorTileDecoder DECODER = new VectorTileDecoder();
   static {
@@ -40,14 +43,13 @@ public class VectorTileFilters {
 
 
   public static void collectInVectorTile(VectorTileEncoder encoder, String layerName, byte[] sourceTile,
-                                         int z, int x, int y, int sourceX, int sourceY, int tileSize, int bufferSize,
-                                         Integer minYear, Integer maxYear, String... basisOfRecords)
+                                         int z, long x, long y, long sourceX, long sourceY, int tileSize, int bufferSize,
+                                         Range years, Set<String> basisOfRecords)
     throws IOException {
 
-    // We can filter the layers of interest at decode time so only those which meet the basisOfRecord
-    // requirements are presented
+    // We can push down the predicate for the basis of record filter into the decoder if it is supplied
     VectorTileDecoder.FeatureIterable features = basisOfRecords == null ? DECODER.decode(sourceTile) :
-      DECODER.decode(sourceTile, Sets.newHashSet(basisOfRecords));
+      DECODER.decode(sourceTile, basisOfRecords);
 
     // convert the features to a stream source
     Iterable<VectorTileDecoder.Feature> iterable = () -> features.iterator();
@@ -57,16 +59,16 @@ public class VectorTileFilters {
     Map<Double2D, Map<String, Integer>> pixels =
       featureStream
         .filter(filterFeatureByTile(x,y,sourceX,sourceY,tileSize,bufferSize))
-        .filter(filterFeatureByYear(minYear,maxYear))
+        .filter(filterFeatureByYear(years))
         .collect(
           // accumulate counts by year, for each pixel
-          // (we need to accumulate because the same pixel can be present in different layers in the source tile)
           Collectors.toMap(
             toTileLocalPixelXY(),
-            attributesPrunedToYears(minYear, maxYear),
+            attributesPrunedToYears(years),
             (m1,m2) -> {
               m2.forEach((k, v) -> m1.merge(k, v, (v1, v2) -> {
-                // accumulate by year
+                // accumulate because the same pixel can be present in different layers (basisOfRecords) in the
+                // source tile
                 return ((Integer)v1).intValue() + ((Integer)v2).intValue();
               }));
               return m1;
@@ -86,6 +88,8 @@ public class VectorTileFilters {
       int sum = yearCounts.values().stream().mapToInt(v -> (Integer)v).sum();
       yearCounts.put("total", sum);
 
+      LOG.info("Adding {} to {}", tileLocalXY, layerName);
+
       // If another feature exists at that pixel it is not our concern (there should not be)
       encoder.addFeature(layerName, yearCounts, point);
 
@@ -93,17 +97,22 @@ public class VectorTileFilters {
   }
 
 
-  public static Function<VectorTileDecoder.Feature, Map<String, Integer>> attributesPrunedToYears(final Integer minYear,
-                                                                                                  final Integer maxYear) {
+  public static Function<VectorTileDecoder.Feature, Map<String, Integer>> attributesPrunedToYears(final Range years) {
     return new Function<VectorTileDecoder.Feature, Map<String, Integer>>() {
 
       @Override
       public Map<String, Integer> apply(VectorTileDecoder.Feature feature) {
         Map<String, Integer> result = Maps.newHashMap();
         for(Map.Entry<String, Object> e : feature.getAttributes().entrySet()) {
-          Integer year = Integer.parseInt(e.getKey());
-          if (rangeContains(minYear, maxYear, year)) {
-            result.put(e.getKey(), (Integer) e.getValue());
+          try {
+            Integer year = Integer.parseInt(e.getKey());
+            if (years.isContained(year)) {
+              result.put(e.getKey(), (Integer) e.getValue());
+            }
+          } catch (NumberFormatException nfe) {
+            // TODO: drop to debug
+            LOG.warn("Unexpected non integer metadata entry {}:{}", e.getKey(), e.getValue());
+            result.put("2016", 100); // HACK for demo
           }
         }
         return result;
@@ -143,13 +152,10 @@ public class VectorTileFilters {
    * @param maxYear maximum year acceptable (inclusive) or null for unbounded
    * @return true if the conditions all pass, of false otherwise.
    */
-  public static Predicate<VectorTileDecoder.Feature> filterFeatureByYear(final Integer minYear, final Integer maxYear) {
+  public static Predicate<VectorTileDecoder.Feature> filterFeatureByYear(final Range years) {
     return new Predicate<VectorTileDecoder.Feature>() {
       @Override
       public boolean test(VectorTileDecoder.Feature f) {
-        if (minYear == null && maxYear == null) {
-          return true;
-        }
 
         // determine the extent of the year range within the tile
         int minFeatureYear = Integer.MAX_VALUE;
@@ -166,8 +172,7 @@ public class VectorTileFilters {
         }
 
         // some of the years must overlap the filter range
-        return rangeContains(minYear, maxYear, minFeatureYear)
-               || rangeContains(minYear, maxYear, maxFeatureYear);
+        return years.isContained(minFeatureYear) || years.isContained(maxFeatureYear);
       }
     };
   }
@@ -186,7 +191,7 @@ public class VectorTileFilters {
    * @return
    */
   public static Predicate<VectorTileDecoder.Feature> filterFeatureByTile(final long x, final long y,
-                                                                         final int sourceX, final int sourceY,
+                                                                         final long sourceX, final long sourceY,
                                                                          final int tileSize, final int bufferSize) {
     return new Predicate<VectorTileDecoder.Feature>() {
       @Override

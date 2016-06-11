@@ -4,8 +4,10 @@ import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.Tiles;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -38,14 +40,13 @@ public class PointFeatureFilters {
    * @param y The target tile Y address
    * @param tileSize The tile size at which we are operating
    * @param buffer The buffer in pixels around the tile to support (typically same as that used in the encoder)
-   * @param minYear The minimum year which must be satisfied if supplied
-   * @param maxYear The maximum year which must be satisfied if supplied
-   * @param basisOfRecords The BoRs that are supported
+   * @param years The range of years that are to be included
+   * @param basisOfRecords The basis of records that are to be included
    */
   public static void collectInVectorTile(VectorTileEncoder encoder, String layerName,
                                          List<Feature> source, TileProjection projection,
                                          int z, long x, long y, int tileSize, int buffer,
-                                         Integer minYear, Integer maxYear, String... basisOfRecords) {
+                                         Range years, Set<String> basisOfRecords) {
 
     // Note:  This projects the coordinates twice: once for filtering to the tile and secondly when collecting the
     //        tile features.  This could be optimized by calculating the WGS84 lat,lng of the tile+buffer extent and
@@ -53,7 +54,7 @@ public class PointFeatureFilters {
     //        inverse capability and performance is in sub 5 msecs, so not considered worthwhile (yet).
     source.stream()
           .filter(filterFeatureByBasisOfRecord(basisOfRecords))
-          .filter(filterFeatureByYear(minYear, maxYear))
+          .filter(filterFeatureByYear(years))
           .filter(filterFeatureByTile(projection, z, x, y, tileSize, buffer)) // filter to the tile
           .collect(
             // accumulate counts by year, for each pixel
@@ -126,12 +127,12 @@ public class PointFeatureFilters {
    * @param bors if provided gives the acceptable values
    * @return true if the conditions all pass, of false otherwise
    */
-  public static Predicate<Feature> filterFeatureByBasisOfRecord(final String... bors) {
+  public static Predicate<Feature> filterFeatureByBasisOfRecord(final Set<String> bors) {
     return new Predicate<Feature>() {
       @Override
       public boolean test(Feature f) {
 
-        if (bors != null && bors.length > 0) {
+        if (bors != null) {
           for (String bor : bors) {
             if (bor.equalsIgnoreCase(f.getBasisOfRecord().toString())) {
               return true;
@@ -146,25 +147,16 @@ public class PointFeatureFilters {
   }
 
   /**
-   * Provides a predicate which can be used to filter Features for a year range.  If a min or max year bound is
-   * given, then the feature must have a year present.
+   * Provides a predicate which can be used to filter Features for a year range.
    *
-   * @param minYear minimum year acceptable (inclusive) or null for unbounded
-   * @param maxYear maximum year acceptable (inclusive) or null for unbounded
-   * @return true if the conditions all pass, of false otherwise.
+   * @param years The range of years which are to be filtered
+   * @return true if the provided range is null or contains the feature year
    */
-  public static Predicate<Feature> filterFeatureByYear(final Integer minYear, final Integer maxYear) {
+  public static Predicate<Feature> filterFeatureByYear(final Range years) {
     return new Predicate<Feature>() {
       @Override
       public boolean test(Feature f) {
-
-        if (minYear != null && (f.getYear() == NULL_INT_VALUE || f.getYear() < minYear)) {
-          return false;
-        } else if (maxYear != null && (f.getYear() == NULL_INT_VALUE || f.getYear() > maxYear)) {
-          return false;
-        } else {
-          return true;
-        }
+        return years.isContained(f.getYear());
       }
     };
   }
