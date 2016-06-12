@@ -5,7 +5,14 @@ package org.gbif.maps.common.projection;
  */
 public class Tiles {
 
-  public static TileProjection fromEPSG(String epsg, int size) {
+  /**
+   * Factory of TileProjection for the given ESPG code.
+   * @param epsg That defines the projection
+   * @param size Of the tile in use
+   * @return The Tileprojection for the EPSG
+   * @throws IllegalArgumentException If the EPSG is not supported
+   */
+  public static TileProjection fromEPSG(String epsg, int size) throws IllegalArgumentException {
     if (SphericalMercator.EPSG_CODE.equals(epsg)) {
       return new SphericalMercator(size);
 

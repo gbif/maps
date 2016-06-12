@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -17,6 +18,8 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import no.ecc.vectortile.VectorTileEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.gbif.maps.io.PointFeature.PointFeatures.Feature;
 
@@ -24,6 +27,7 @@ import static org.gbif.maps.io.PointFeature.PointFeatures.Feature;
  * Filters and converters for PointFeature based tiles.
  */
 public class PointFeatureFilters {
+  private static final Logger LOG = LoggerFactory.getLogger(PointFeatureFilters.class);
   private static final int NULL_INT_VALUE = 0; // as specified in the protobuf file
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
 
@@ -52,6 +56,7 @@ public class PointFeatureFilters {
     //        tile features.  This could be optimized by calculating the WGS84 lat,lng of the tile+buffer extent and
     //        filtering the incoming stream using that.  At the time of writing the TileProjection does not offer that
     //        inverse capability and performance is in sub 5 msecs, so not considered worthwhile (yet).
+    AtomicInteger features = new AtomicInteger();
     source.stream()
           .filter(filterFeatureByBasisOfRecord(basisOfRecords))
           .filter(filterFeatureByYear(years))
@@ -62,6 +67,8 @@ public class PointFeatureFilters {
                                   Collectors.groupingBy(Feature::getYear,Collectors.summingInt(Feature::getCount)))
           )
           .forEach((pixel, yearCounts) -> {
+            LOG.debug("Adding pixel {}", pixel);
+
             // collect the year:count values as a feature within the VT for the pixel
             Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(pixel.getX(), pixel.getY()));
             Map<String, Object> meta = Maps.newHashMap();
@@ -70,9 +77,10 @@ public class PointFeatureFilters {
             // add a total value across all years
             int sum = meta.values().stream().mapToInt(v -> (Integer)v).sum();
             meta.put("total", sum);
-
+            features.incrementAndGet();
             encoder.addFeature(layerName, meta, point);
     });
+    LOG.debug("Collected {} features in the tile", features.get());
   }
 
   /**
