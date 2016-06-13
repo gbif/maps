@@ -41,7 +41,6 @@ public class VectorTileFilters {
     DECODER.setAutoScale(false); // important to avoid auto scaling to 256 tiles
   }
 
-
   public static void collectInVectorTile(VectorTileEncoder encoder, String layerName, byte[] sourceTile,
                                          int z, long x, long y, long sourceX, long sourceY, int tileSize, int bufferSize,
                                          Range years, Set<String> basisOfRecords)
@@ -162,10 +161,9 @@ public class VectorTileFilters {
         // determine the extent of the year range within the tile
         int minFeatureYear = Integer.MAX_VALUE;
         int maxFeatureYear = Integer.MIN_VALUE;
-        for (Map.Entry<String, Object> attribute : f.getAttributes().entrySet()) {
-          // our tile attributes are expected to be in the form of year:count
+        for (String yearAsStream : f.getAttributes().keySet()) {
           try {
-            int y = Integer.parseInt(attribute.getKey());
+            int y = Integer.parseInt(yearAsStream);
             minFeatureYear = minFeatureYear > y ? y : minFeatureYear;
             maxFeatureYear = maxFeatureYear < y ? y : maxFeatureYear;
           } catch (Exception e) {

@@ -53,12 +53,12 @@ public class Tiles {
   }
 
   /**
-   * Returns true if the global pixel falls on the tile located at x,y or within the given buffer.  A common buffer
-   * might be 16 pixels when using 4096 tiles for example.
+   * Returns true if the global pixel falls on the tile located at x,y or within the given buffer.
+   * A common buffer might be 16 pixels when using 4096 tiles for example.
    *
    * @param x             The tile X address
    * @param y             The tile Y address
-   * @param globalPixelXY The pixel address to test
+   * @param globalPixelXY The pixel address to test which should be at the corresponding zoom level of X,Y
    * @param bufferPixels  The buffer area to consider (negative values will not throw error but should be used with
    *                      extreme caution and are unexpected)
    *
