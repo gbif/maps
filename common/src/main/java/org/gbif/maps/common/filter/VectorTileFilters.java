@@ -56,20 +56,21 @@ public class VectorTileFilters {
     Stream<VectorTileDecoder.Feature> featureStream = StreamSupport.stream(iterable.spliterator(), false);
 
     // filter and merge the data into yearCounts by pixels
-    Map<Double2D, Map<String, Integer>> pixels =
+    Map<Double2D, Map<String, Long>> pixels =
       featureStream
         .filter(filterFeatureByTile(x,y,sourceX,sourceY,tileSize,bufferSize))
         .filter(filterFeatureByYear(years))
         .collect(
           // accumulate counts by year, for each pixel
           Collectors.toMap(
-            toTileLocalPixelXY(),
+            toTileLocalPixelXY(x, y, sourceX, sourceY, tileSize),
             attributesPrunedToYears(years),
             (m1,m2) -> {
               m2.forEach((k, v) -> m1.merge(k, v, (v1, v2) -> {
                 // accumulate because the same pixel can be present in different layers (basisOfRecords) in the
                 // source tile
-                return ((Integer)v1).intValue() + ((Integer)v2).intValue();
+                Long.valueOf(v1).longValue();
+                return ((Long)v1).longValue() + ((Long)v2).longValue();
               }));
               return m1;
             }
@@ -78,17 +79,13 @@ public class VectorTileFilters {
     // add the pixel to the encoder
     pixels.forEach((pixel, yearCounts) -> {
 
-      // find the tile local pixel address on the target tile (pixel may be coming from an adjacent tile)
-      Double2D pixelXY = new Double2D(tileSize * sourceX + pixel.getX(), tileSize * sourceY + pixel.getY());
-      Double2D tileLocalXY = Tiles.toTileLocalXY(pixelXY, x, y, tileSize);
-
-      Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(tileLocalXY.getX(), tileLocalXY.getY()));
+      Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(pixel.getX(), pixel.getY()));
 
       // add a total value across all years
-      int sum = yearCounts.values().stream().mapToInt(v -> (Integer)v).sum();
+      long sum = yearCounts.values().stream().mapToLong(v -> (Long)v).sum();
       yearCounts.put("total", sum);
 
-      LOG.info("Adding {} to {}", tileLocalXY, layerName);
+      LOG.trace("Adding {} to {}", pixel, layerName);
 
       // If another feature exists at that pixel it is not our concern (there should not be)
       encoder.addFeature(layerName, yearCounts, point);
@@ -97,22 +94,22 @@ public class VectorTileFilters {
   }
 
 
-  public static Function<VectorTileDecoder.Feature, Map<String, Integer>> attributesPrunedToYears(final Range years) {
-    return new Function<VectorTileDecoder.Feature, Map<String, Integer>>() {
+  public static Function<VectorTileDecoder.Feature, Map<String, Long>> attributesPrunedToYears(final Range years) {
+    return new Function<VectorTileDecoder.Feature, Map<String, Long>>() {
 
       @Override
-      public Map<String, Integer> apply(VectorTileDecoder.Feature feature) {
-        Map<String, Integer> result = Maps.newHashMap();
+      public Map<String, Long> apply(VectorTileDecoder.Feature feature) {
+        Map<String, Long> result = Maps.newHashMap();
         for(Map.Entry<String, Object> e : feature.getAttributes().entrySet()) {
           try {
             Integer year = Integer.parseInt(e.getKey());
             if (years.isContained(year)) {
-              result.put(e.getKey(), (Integer) e.getValue());
+              result.put(e.getKey(), (Long) e.getValue());
             }
           } catch (NumberFormatException nfe) {
-            // TODO: drop to debug
+            // TODO: drop to debug after we start putting in real data is spark!
             LOG.warn("Unexpected non integer metadata entry {}:{}", e.getKey(), e.getValue());
-            result.put("2016", 100); // HACK for demo
+            result.put("2016", 100l); // HACK for demo
           }
         }
         return result;
@@ -130,13 +127,18 @@ public class VectorTileFilters {
    * Gets the X,Y point for the feature.
    * @return The function to convert the feature to the location.
    */
-  public static Function<VectorTileDecoder.Feature, Double2D> toTileLocalPixelXY() {
+  public static Function<VectorTileDecoder.Feature, Double2D> toTileLocalPixelXY(final long x, final long y,
+                                                                                 final long sourceX, final long sourceY,
+                                                                                 final int tileSize) {
     return new Function<VectorTileDecoder.Feature, Double2D>() {
       @Override
       public Double2D apply(VectorTileDecoder.Feature f) {
         if (f.getGeometry() instanceof Point) {
           Point p = (Point) f.getGeometry();
-          return new Double2D(p.getX(),p.getY());
+
+          // find the tile local pixel address on the target tile (pixel may be coming from an adjacent tile)
+          Double2D pixelXY = new Double2D(tileSize * sourceX + p.getX(), tileSize * sourceY + p.getY());
+          return Tiles.toTileLocalXY(pixelXY, x, y, tileSize);
         } else {
           throw new IllegalStateException("Only point geometries are supported");
         }
