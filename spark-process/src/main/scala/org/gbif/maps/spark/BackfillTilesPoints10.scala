@@ -68,7 +68,7 @@ object BackfillTilesPoints10 {
     override def numPartitions: Int = partitions
   }
 
-  private val TARGET_DIR = "hdfs://c1n1.gbif.org:8020/tmp/tim_maps"
+  private val TARGET_DIR = "hdfs://nameservice1/tmp/tim_maps"
 
   /**
     * TODO: fix this
@@ -94,7 +94,8 @@ object BackfillTilesPoints10 {
     val sc = new SparkContext(conf)
     val sqlContext = new org.apache.spark.sql.SQLContext(sc)
     //val df = sqlContext.read.parquet("/user/hive/warehouse/tim.db/occurrence_map_source")
-    val df = sqlContext.read.parquet("/Users/tim/dev/data/map.parquet")
+    //val df = sqlContext.read.parquet("/Users/tim/dev/data/map.parquet")
+    val df = sqlContext.read.parquet("/user/hive/warehouse/tim.db/occurrence_map_source_tenth")
     build(sc, df)
   }
 
@@ -1723,7 +1724,7 @@ object BackfillTilesPoints10 {
         builder.addFeatures(fb)
       })
       builder.build().toByteArray
-    }).repartitionAndSortWithinPartitions(new HashPartitioner(200)).map(r => {
+    }).repartitionAndSortWithinPartitions(new HashPartitioner(1000)).map(r => {
       val k = new ImmutableBytesWritable(Bytes.toBytes(r._1))
       val row = new KeyValue(Bytes.toBytes(r._1), // key
         Bytes.toBytes("wgs84"), // column family

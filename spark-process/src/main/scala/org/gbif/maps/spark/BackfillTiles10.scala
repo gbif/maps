@@ -28,18 +28,6 @@ object BackfillTiles10 {
     "PUBLISHING_COUNTRY" -> 5)
 
   // Dictionary mapping the GBIF API BasisOfRecord enumeration to the Protobuf versions
-  /*
-  private val BASIS_OF_RECORD = Map("UNKNOWN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN,
-    "PRESERVED_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.PRESERVED_SPECIMEN,
-    "FOSSIL_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.FOSSIL_SPECIMEN,
-    "LIVING_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.LIVING_SPECIMEN,
-    "OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.OBSERVATION,
-    "HUMAN_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.HUMAN_OBSERVATION,
-    "MACHINE_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MACHINE_OBSERVATION,
-    "MATERIAL_SAMPLE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MATERIAL_SAMPLE,
-    "LITERATURE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.LITERATURE)
-  */
-
   private val BASIS_OF_RECORD = Map("UNKNOWN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN,
     "PRESERVED_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.PRESERVED_SPECIMEN,
     "FOSSIL_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.FOSSIL_SPECIMEN,
@@ -52,12 +40,11 @@ object BackfillTiles10 {
 
 
   private val POINT_THRESHOLD = 100000;
-  private val TILE_SIZE = 512 // good compromise between performance and visuals and fits retina tiles
+  private val TILE_SIZE = 512 // good compromise between performance and visuals and supports retina tiles
   private val MERCATOR = new Mercator(TILE_SIZE)
   private val GEOMETRY_FACTORY = new GeometryFactory()
-  private val MAX_HFILES_PER_CF_PER_REGION = 32 // defined in HBase's LoadIncrementalHFiles
-  //private val MAX_HFILES_PER_CF_PER_REGION = 200 // defined in HBase's LoadIncrementalHFiles
-  private val MAX_ZOOM = 3
+  private val MAX_HFILES_PER_CF_PER_REGION = 1000
+  private val MAX_ZOOM = 8
   private val MIN_ZOOM = 0
 
   // Put pixels in the same category together
@@ -74,7 +61,7 @@ object BackfillTiles10 {
     override def numPartitions: Int = partitions
   }
 
-  private val TARGET_DIR = "hdfs://c1n1.gbif.org:8020/tmp/tim_maps"
+  private val TARGET_DIR = "hdfs://nameservice1/tmp/tim_maps"
 
   /**
     * TODO: fix this
@@ -100,7 +87,8 @@ object BackfillTiles10 {
     val sc = new SparkContext(conf)
     val sqlContext = new org.apache.spark.sql.SQLContext(sc)
     //val df = sqlContext.read.parquet("/user/hive/warehouse/tim.db/occurrence_map_source")
-    val df = sqlContext.read.parquet("/Users/tim/dev/data/map.parquet")
+    //val df = sqlContext.read.parquet("/Users/tim/dev/data/map.parquet")
+    val df = sqlContext.read.parquet("/user/hive/warehouse/tim.db/occurrence_map_source_tenth")
     build(sc, df)
   }
 
@@ -1831,25 +1819,30 @@ object BackfillTiles10 {
         tile.keySet.foreach(bor => {
           val pixelYears = tile.get(bor)
 
-          // for now just get the pixels
-          // TODO: All the metadata!
-          var pixels = MMap[Int, Int]();
-
+          // unpack the encoded pixel years and create a map with pixels and the metadata
+          var pixels = MMap[Int, MMap[Short,Int]]();
           pixelYears.get.foreach(p => {
             val py = decodePixelYear(p._1)
+            val year = py._2
+            val count = p._2
             if (pixels.contains(py._1)) {
-              val c = pixels.get(py._1).get + p._2
-              pixels(py._1) = c
+              var pixelMeta = pixels.get(py._1).get
+              pixelMeta.update(year, pixelMeta.getOrElse(year, 0) + count)
             } else {
-              pixels += py._1->p._2
+              val pixelMeta = MMap[Short,Int]()
+              pixelMeta += (year -> count)
+              pixels.put(py._1, pixelMeta)
             }
           })
 
           pixels.foreach(p => {
             val pixel = decodePixel(p._1)
             val point = GEOMETRY_FACTORY.createPoint(new Coordinate(pixel._1.toDouble, pixel._2.toDouble));
-            val meta = new java.util.HashMap[String, Any]() // TODO: add metadata(!)
-            meta.put("count", p._2)
+            // VectorTiles want String:Object format
+            val meta = new java.util.HashMap[String, Any]()
+            p._2.foreach(yearCount => {
+              meta.put(String.valueOf(yearCount._1), yearCount._2)
+            })
             encoder.addFeature(bor.toString(), meta, point);
           })
         })

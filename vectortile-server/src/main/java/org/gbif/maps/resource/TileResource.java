@@ -56,7 +56,11 @@ public final class TileResource {
   private static final Logger LOG = LoggerFactory.getLogger(TileResource.class);
   private static final Pattern COMMA = Pattern.compile(",");
 
-  // we always use hi resolution tiles for the point data, which is by definition small
+  // VectorTile layer name for the composite layer produced when merging basis of record
+  // layers together
+  private static final String LAYER_OCCURRENCE = "occurrence";
+
+  // we always use high resolution tiles for the point data which are small by definition
   private static final int POINT_TILE_SIZE = 4096;
   private static final int POINT_TILE_BUFFER = 25;
 
@@ -198,7 +202,7 @@ public final class TileResource {
     @PathParam("x") long x,
     @PathParam("y") long y,
     @DefaultValue("EPSG:3857") @QueryParam("srs") String srs,  // default as SphericalMercator
-    @QueryParam("basisOfRecord") List<String> basisOfRecord, // TODO: what if there are more than 1?
+    @QueryParam("basisOfRecord") List<String> basisOfRecord,
     @QueryParam("year") String year,
     @Context HttpServletResponse response,
     @Context HttpServletRequest request
@@ -207,8 +211,6 @@ public final class TileResource {
     prepare(response); // headers (e.g. allow XSS)
     String mapKey = mapKey(request);
     LOG.info("MapKey: {}", mapKey);
-
-
 
     // Try and load the point features first, before defaulting to tile views
     Optional<PointFeature.PointFeatures> optionalFeatures = datasource.get(mapKey);
@@ -220,7 +222,7 @@ public final class TileResource {
       final VectorTileEncoder encoder = new VectorTileEncoder(POINT_TILE_SIZE, POINT_TILE_BUFFER, false);
       Range years = toMinMaxYear(year);
       Set<String> bors = basisOfRecord.isEmpty() ? null : Sets.newHashSet(basisOfRecord);
-      PointFeatureFilters.collectInVectorTile(encoder, "occurrence", features.getFeaturesList(),
+      PointFeatureFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, features.getFeaturesList(),
                                               projection, z, x, y, POINT_TILE_SIZE, bufferSize,
                                               years, bors);
 
@@ -235,7 +237,7 @@ public final class TileResource {
         Range years = toMinMaxYear(year);
         Set<String> bors = basisOfRecord.isEmpty() ? null : Sets.newHashSet(basisOfRecord);
         VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
-        VectorTileFilters.collectInVectorTile(encoder, "occurrence", encoded.get(),
+        VectorTileFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, encoded.get(),
                                               z, x, y, x, y, tileSize, bufferSize,
                                               years, bors);
 
