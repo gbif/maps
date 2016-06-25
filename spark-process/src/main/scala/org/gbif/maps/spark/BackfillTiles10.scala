@@ -82,7 +82,6 @@ object BackfillTiles10 {
 
   def main(args: Array[String]) {
     val conf = new SparkConf().setAppName("Map processing")
-    //.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     conf.setIfMissing("spark.master", "local[2]") // 2 threads for local dev, ignored in production
     val sc = new SparkContext(conf)
     val sqlContext = new org.apache.spark.sql.SQLContext(sc)

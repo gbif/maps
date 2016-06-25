@@ -106,21 +106,13 @@ public class VectorTileFilters {
               result.put(e.getKey(), (Long) e.getValue());
             }
           } catch (NumberFormatException nfe) {
-            // TODO: drop to debug after we start putting in real data is spark!
             LOG.warn("Unexpected non integer metadata entry {}:{}", e.getKey(), e.getValue());
-            result.put("2016", 100l); // HACK for demo
           }
         }
         return result;
       }
     };
   }
-
-  private static boolean rangeContains(Integer minYear, Integer maxYear, int year) {
-    return (minYear == null || year >= minYear) && (maxYear == null || year <= minYear);
-  }
-
-
 
   /**
    * Gets the X,Y point for the feature.

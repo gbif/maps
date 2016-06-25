@@ -1,5 +1,8 @@
 package org.gbif.maps.spark
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.google.common.io.Resources
 import com.vividsolutions.jts.geom.{Coordinate, GeometryFactory}
 import no.ecc.vectortile.VectorTileEncoder
 import org.apache.hadoop.hbase.client.HTable
