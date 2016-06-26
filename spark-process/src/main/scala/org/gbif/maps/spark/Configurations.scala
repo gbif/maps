@@ -33,16 +33,17 @@ object Configurations {
     * Returns a configured Hadoop job configuration suitable for writing HFiles using the table and cluster defined in the
     * application configuration.
     * @param appConfig Which defines the HBase parameters
+    * @param tableName To write to
     * @return A populated Hadoop configuration suitable for writing HFiles
     */
-  def hfileOutputConfiguration(appConfig: MapConfiguration) : Configuration = {
+  def hfileOutputConfiguration(appConfig: MapConfiguration, tableName: String) : Configuration = {
     val conf = HBaseConfiguration.create()
     conf.set("hbase.zookeeper.quorum", appConfig.hbase.zkQuorum);
     conf.set("mapred.output.compression.codec","org.apache.hadoop.io.compress.SnappyCodec")
     val job = new Job(conf, appConfig.appName) // name not actually used since we don't submit MR
     job.setMapOutputKeyClass(classOf[ImmutableBytesWritable]);
     job.setMapOutputValueClass(classOf[KeyValue]);
-    val table = new HTable(conf, appConfig.hbase.tableName)
+    val table = new HTable(conf, tableName)
     HFileOutputFormat.configureIncrementalLoad(job, table);
     conf
   }
@@ -59,7 +60,7 @@ class MapConfiguration (
   @JsonProperty("hbase") _hbase: HBaseConfiguration,
   @JsonProperty("pointFeatures") _pointFeatures: PointFeaturesConfiguration,
   @JsonProperty("tilePyramid") _tilePyramid: TilePyramidConfiguration
-) {
+) extends Serializable {
   val appName = Preconditions.checkNotNull(_appName, "appName cannot be null" : Object)
   val sourceFile = Preconditions.checkNotNull(_sourceFile, "sourceFile cannot be null" : Object)
   val targetDirectory = Preconditions.checkNotNull(_targetDirectory, "targetDirectory cannot be null" : Object)
@@ -75,7 +76,8 @@ class MapConfiguration (
 class PointFeaturesConfiguration (
   @JsonProperty("numTasks") _numTasks: Int,
   @JsonProperty("tableName") _tableName: String,
-  @JsonProperty("hfileCount") _hfileCount: Int) {
+  @JsonProperty("hfileCount") _hfileCount: Int
+) extends Serializable {
   val numTasks = Preconditions.checkNotNull(_numTasks, "pointNumTasks cannot be null" : Object)
   val tableName = Preconditions.checkNotNull(_tableName, "tableName cannot be null" : Object)
   val hfileCount = Preconditions.checkNotNull(_hfileCount, "hfileCount cannot be null" : Object)
@@ -85,25 +87,39 @@ class PointFeaturesConfiguration (
   * Configuraiton specific to the tile pyramiding.
   */
 class TilePyramidConfiguration (
+  @JsonProperty("tableName") _tableName: String,
+  @JsonProperty("hfileCount") _hfileCount: Int,
+  @JsonProperty("projections") _projections: Array[ProjectionConfig]
+) extends Serializable {
+  //val tileSize = Preconditions.checkNotNull(_tileSize, "tileSize cannot be null" : Object)
+  //val minZoom = Preconditions.checkNotNull(_minZoom, "minZoom cannot be null" : Object)
+  //val maxZoom = Preconditions.checkNotNull(_maxZoom, "maxZoom cannot be null" : Object)
+  //val srs = Preconditions.checkNotNull(_srs, "maxZoom cannot be null" : Object).split(",")
+  val tableName = Preconditions.checkNotNull(_tableName, "tableName cannot be null" : Object)
+  val hfileCount = Preconditions.checkNotNull(_hfileCount, "hfileCount cannot be null" : Object)
+  val projections = Preconditions.checkNotNull(_projections, "projections cannot be null" : Object)
+}
+
+/**
+  * Configuration specific to a project used in a tile pyramid.
+  */
+class ProjectionConfig  (
   @JsonProperty("tileSize") _tileSize: Int,
   @JsonProperty("minZoom") _minZoom: Int,
   @JsonProperty("maxZoom") _maxZoom: Int,
-  @JsonProperty("srs") _srs: String,
-  @JsonProperty("tableName") _tableName: String,
-  @JsonProperty("hfileCount") _hfileCount: Int) {
+  @JsonProperty("srs") _srs: String
+) extends Serializable {
   val tileSize = Preconditions.checkNotNull(_tileSize, "tileSize cannot be null" : Object)
   val minZoom = Preconditions.checkNotNull(_minZoom, "minZoom cannot be null" : Object)
   val maxZoom = Preconditions.checkNotNull(_maxZoom, "maxZoom cannot be null" : Object)
-  val srs = Preconditions.checkNotNull(_srs, "maxZoom cannot be null" : Object).split(",")
-  val tableName = Preconditions.checkNotNull(_tableName, "tableName cannot be null" : Object)
-  val hfileCount = Preconditions.checkNotNull(_hfileCount, "hfileCount cannot be null" : Object)
+  val srs = Preconditions.checkNotNull(_srs, "maxZoom cannot be null" : Object)
 }
-
 
 /**
   * Configuration specific to the HBase.
   */
 class HBaseConfiguration (
-  @JsonProperty("zkQuorum") _zkQuorum: String) {
+  @JsonProperty("zkQuorum") _zkQuorum: String
+) extends Serializable {
   val zkQuorum = Preconditions.checkNotNull(_zkQuorum, "zkQuorum cannot be null" : Object)
 }

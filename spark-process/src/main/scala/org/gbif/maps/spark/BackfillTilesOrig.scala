@@ -388,7 +388,7 @@ object BackfillTilesOrig {
 
     // Prepare the RDD for the data to be tiled, limiting to only those which breach the threshold
     val recordsToTile  = initialCounts.filter(r => {b_largeVals.value.contains((r._1._1, r._1._2))}).map(r => {
-      (new Tiles.BoRYearRecord(r._1._1, r._1._2, r._1._3, r._1._4, BASIS_OF_RECORD(r._1._6), r._1._5, r._2))
+      (new TilesDELME.BoRYearRecord(r._1._1, r._1._2, r._1._3, r._1._4, BASIS_OF_RECORD(r._1._6), r._1._5, r._2))
     }).repartition(200).cache()
 
 
@@ -406,8 +406,8 @@ object BackfillTilesOrig {
     */
 
     (0 to 1).foreach(z => {
-      var tiles = Tiles.toMercatorTiles(recordsToTile, z)
-      persist(Tiles.toVectorTile(tiles), z, sourceField);
+      var tiles = TilesDELME.toMercatorTiles(recordsToTile, z)
+      persist(TilesDELME.toVectorTile(tiles), z, sourceField);
     })
 
     /*
@@ -451,7 +451,7 @@ object BackfillTilesOrig {
     */
   }
 
-  def persist(tilePyramid: RDD[(Tiles.TileKey, Array[Byte])], z: Int, sourceField: String) = {
+  def persist(tilePyramid: RDD[(TilesDELME.TileKey, Array[Byte])], z: Int, sourceField: String) = {
     tilePyramid.repartitionAndSortWithinPartitions(new HashPartitioner(MAX_HFILES_PER_CF_PER_REGION)).map(t => {
       val k = new ImmutableBytesWritable(Bytes.toBytes(t._1.mapType + ":" + t._1.mapKey))
       val cell = t._1.z + ":" + t._1.x + ":" + t._1.y

@@ -10,7 +10,7 @@ import org.gbif.maps.io.PointFeature.PointFeatures.Feature
 import scala.collection.mutable
 import scala.collection.mutable.{Map => MMap}
 
-object Tiles extends Serializable {
+object TilesDELME extends Serializable {
 
   // Utility classes for data structures
   case class BoRYearRecord(mapType: Int, mapKey: Any, lat: Double, lng: Double, basisOfRecord: Feature.BasisOfRecord, year: Int, count: Int)

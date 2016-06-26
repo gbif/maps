@@ -23,13 +23,27 @@ pointFeatures:
 
 # TilePyramid applies to views where there are more records than the tilesThreshold
 # Notes:
-#   SRS is a comma separated list
 #   For hfileCount > 32 you must use -Dhbase.mapreduce.bulkload.max.hfiles.perRegion.perFamily=XXX when bulk loading
 tilePyramid:
-  minZoom: 0
-  maxZoom: 15
-  tileSize: 512
-  srs: EPSG:3575
   tableName: tim_test
   hfileCount: 100
+  projections:
+    # Web Mercator (e.g. like google maps)
+    -  minZoom: 0
+       maxZoom: 3
+       tileSize: 512
+       srs: EPSG:3857
+    # WGS84 unprojected
+    #-  minZoom: 0
+    #   maxZoom: 3
+    #   tileSize: 512
+    #   srs: EPSG:4326
+    # North Pole LAEA (e.g. Arctic)
+    -  minZoom: 0
+       maxZoom: 3
+       tileSize: 512
+       srs: EPSG:3575
+
+
+
 

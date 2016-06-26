@@ -27,7 +27,7 @@ object BackfillPoints {
 
     // collect a count by location, bor and year for each mapKey
     var pointSource = df.flatMap(row => {
-      // extract the keys for the record and filter to only those that are supported
+      // extract the keys for the record and filter to only those that have been determined as suitable
       val mapKeys = MapUtils.mapKeysForRecord(row).intersect(keys)
 
       // extract the dimensions of interest from the record
@@ -75,7 +75,7 @@ object BackfillPoints {
     })
 
     // save the results
-    res.saveAsNewAPIHadoopFile(config.targetDirectory + "/points-wgs84", classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat], Configurations.hfileOutputConfiguration(config))
+    res.saveAsNewAPIHadoopFile(config.targetDirectory + "/points-wgs84", classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat], Configurations.hfileOutputConfiguration(config, config.pointFeatures.tableName))
 
   }
 }
