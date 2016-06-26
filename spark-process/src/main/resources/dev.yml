@@ -11,17 +11,25 @@ targetDirectory: hdfs://nameservice1/tmp/tim_maps
 # The max record count allowed before the view is built into a tile pyramid
 tilesThreshold: 100000
 
-# Target HBase table details
-# For hfileCount > 32 you must use -Dhbase.mapreduce.bulkload.max.hfiles.perRegion.perFamily=XXX when bulk loading
+# Target HBase details
 hbase:
   zkQuorum: c1n1.gbif.org,c1n2.gbif.org,c1n3.gbif.org
+
+# Applies only to those map views that have few enough records to be stored as features
+pointFeatures:
+  numTasks: 200 # controls the parallelism
   tableName: tim_test
-  hfileCount: 1000
+  hfileCount: 32
 
 # TilePyramid applies to views where there are more records than the tilesThreshold
-# Note: SRS is a comma separated list
+# Notes:
+#   SRS is a comma separated list
+#   For hfileCount > 32 you must use -Dhbase.mapreduce.bulkload.max.hfiles.perRegion.perFamily=XXX when bulk loading
 tilePyramid:
   minZoom: 0
   maxZoom: 15
   tileSize: 512
   srs: EPSG:3575
+  tableName: tim_test
+  hfileCount: 100
+

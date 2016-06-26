@@ -38,9 +38,9 @@
     <commons-math3.version>3.6.1</commons-math3.version>
     <hexameter.version>2.0.0</hexameter.version>
     <fastutil.version>7.0.12</fastutil.version>
-    <hive.version>1.1.0-cdh5.4.7</hive.version>
-    <hadoop.version>2.6.0-cdh5.4.7</hadoop.version>
-    <hbase.version>1.0.0-cdh5.4.7</hbase.version>
+    <hive.version>1.1.0-cdh5.4.10</hive.version>
+    <hadoop.version>2.6.0-cdh5.4.10</hadoop.version>
+    <hbase.version>1.0.0-cdh5.4.10</hbase.version>
     <hexameter.version>2.0.0</hexameter.version>
     <geotools.version>15.0</geotools.version>
 

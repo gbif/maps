@@ -5,53 +5,19 @@ import org.apache.spark.{SparkConf, SparkContext}
 
 /**
   * This is the driver for backfilling HBase maps.
+  * A typical invocation during development would look like this:
+  * <pre>
+  * ~/spark/bin/spark-submit --master yarn --jars $HIVE_CLASSPATH --num-executors 7 --executor-memory 6g --executor-cores 5 --deploy-mode client --class "org.gbif.maps.spark.Backfill" --driver-class-path . spark-process-0.1-SNAPSHOT.jar all dev.yml
+  * </pre>
   */
 object Backfill {
   val usage = "Usage: [all,tiles,points] configFile"
 
   /**
-    * Reads the dataframe and returns a map of mapKey:recordCount
+    * The main entry point to backfilling.
+    * @param args Expects 2 args: [all,tiles,points] configFile
     */
-  def countsByMapKey(df : DataFrame): scala.collection.Map[String,Long] = {
-    df.flatMap(MapUtils.mapKeysForRecord(_)).countByValue()
-
-    /*
-    df.flatMap(row => {
-      val mapKeys = MapUtils.mapKeysForRecord(row)
-      mapKeys.foreach(key => {(key,1)})
-      // TODO
-
-      val datasetKey = row.getString(row.fieldIndex("datasetkey"))
-      val publisherKey = row.getString(row.fieldIndex("publishingorgkey"))
-      val country = row.getString(row.fieldIndex("countrycode"))
-      val publishingCountry = row.getString(row.fieldIndex("publishingcountry"))
-
-      var taxonIDs = Set[Int]()
-      if (!row.isNullAt(row.fieldIndex("kingdomkey"))) taxonIDs+=row.getInt(row.fieldIndex("kingdomkey"))
-      if (!row.isNullAt(row.fieldIndex("phylumkey"))) taxonIDs+=row.getInt(row.fieldIndex("phylumkey"))
-      if (!row.isNullAt(row.fieldIndex("classkey"))) taxonIDs+=row.getInt(row.fieldIndex("classkey"))
-      if (!row.isNullAt(row.fieldIndex("orderkey"))) taxonIDs+=row.getInt(row.fieldIndex("orderkey"))
-      if (!row.isNullAt(row.fieldIndex("familykey"))) taxonIDs+=row.getInt(row.fieldIndex("familykey"))
-      if (!row.isNullAt(row.fieldIndex("genuskey"))) taxonIDs+=row.getInt(row.fieldIndex("genuskey"))
-      if (!row.isNullAt(row.fieldIndex("specieskey"))) taxonIDs+=row.getInt(row.fieldIndex("specieskey"))
-      if (!row.isNullAt(row.fieldIndex("taxonkey"))) taxonIDs+=row.getInt(row.fieldIndex("taxonkey"))
-
-      val res = mutable.ArrayBuffer(
-        (toMapKey(MAPS_TYPES("DATASET"), datasetKey), 1),
-        (toMapKey(MAPS_TYPES("PUBLISHER"), publisherKey), 1),
-        (toMapKey(MAPS_TYPES("DATASET"), country), 1),
-        (toMapKey(MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry), 1)
-      )
-      taxonIDs.foreach(id => {
-        res += ((toMapKey(MAPS_TYPES("TAXON"), id), 1))
-      })
-      res
-    }).countByKey()
-    */
-
-  }
-
-  def main(args: Array[String]): Unit = {
+  def main(args: Array[String]) = {
     checkArgs(args) // sanitize input
 
     // load application config
@@ -59,32 +25,32 @@ object Backfill {
 
     // setup and read the source
     val conf = new SparkConf().setAppName(config.appName)
-    conf.setIfMissing("spark.master", "local[2]") // 2 threads for local dev, ignored when run on cluster
+    conf.setIfMissing("spark.master", "local[2]") // 2 threads for local dev in IDE, ignored when run on a cluster
     val sc = new SparkContext(conf)
     val sqlContext = new org.apache.spark.sql.SQLContext(sc)
     val df = sqlContext.read.parquet(config.sourceFile)
 
     // get a count of records per mapKey
-    val counts = countsByMapKey(df)
+    val counts = df.flatMap(MapUtils.mapKeysForRecord(_)).countByValue()
 
     if (Set("all","points").contains(args(0))) {
       // upto the threshold we can store points
       val mapKeys = counts.filter(r => {r._2<config.tilesThreshold})
-      println("MapKeys suitable for point maps: " + mapKeys.size)
-      // TODO: build points
+      println("MapKeys suitable for storing as point maps: " + mapKeys.size)
+      BackfillPoints.build(sc,df,mapKeys.keySet,config)
     }
 
     if (Set("all","tiles").contains(args(0))) {
       // above the threshold we build a pyramid
       val mapKeys = counts.filter(r => {r._2>=config.tilesThreshold})
-      println("MapKeys suitable for tile pyramid maps: " + mapKeys.size)
+      println("MapKeys suitable for creating tile pyramid maps: " + mapKeys.size)
       // TODO: build tiles
     }
 
   }
 
   /**
-    * Sanitize application arguments.
+    * Sanitizes application arguments.
     */
   private def checkArgs(args: Array[String]) = {
     assert(args !=null && args.length==2, usage)

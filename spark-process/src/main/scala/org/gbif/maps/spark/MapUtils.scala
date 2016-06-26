@@ -1,5 +1,11 @@
 package org.gbif.maps.spark
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.hbase.client.HTable
+import org.apache.hadoop.hbase.{HBaseConfiguration, KeyValue}
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable
+import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat
+import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.sql.DataFrame
 import org.gbif.maps.io.PointFeature
 import org.apache.spark.sql.Row
@@ -93,4 +99,6 @@ object MapUtils {
     })
     res.toSet // immutable
   }
+
+
 }
