@@ -68,10 +68,10 @@
 
     <div class="form-group col-sm-12">
       <label class="radio-inline">
-        <input type="radio" name="srs" id="srsWGS84" value="EPSG:4326"> WGS84
+        <input type="radio" name="srs" id="srs3857" value="EPSG:3857" checked> Mercator
       </label>
       <label class="radio-inline">
-        <input type="radio" name="srs" id="srs3857" value="EPSG:3857" checked> Mercator
+        <input type="radio" name="srs" id="srsWGS84" value="EPSG:4326"> WGS84
       </label>
       <label class="radio-inline">
         <input type="radio" name="srs" id="srs3575" value="EPSG:3575"> Arctic
@@ -143,8 +143,8 @@
       <div class="col-sm-9">
         <textarea id="_style" style="font-family: monospace" rows="5" cols="35">{
   "circle-radius": 1.5,
-  "circle-color": "#009",
-  "circle-opacity": 0.75
+  "circle-color": "#9F9",
+  "circle-opacity": 0.5
 }</textarea>
       </div>
     </div>
@@ -192,43 +192,139 @@ function initMap(map) {
   var queryString = params.join("&");
   console.log(queryString);
 
-  // if it is arctic
+  // baseLayer raster
+  var baseURL = "http://a.tiles.mapbox.com/v4/gbif.dec5e9ae/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZ2JpZiIsImEiOiJjaWxhZ2oxNWQwMDBxd3FtMjhzNjRuM2lhIn0.g1IE8EfqwzKTkJ4ptv3zNQ";
   if (params.indexOf("srs=EPSG:3575")!=-1) {
-    map.addSource('base', {
-      type: 'raster',
-      "tiles": ["http://b.tiles.arcticconnect.org/osm_3575/{z}/{x}/{y}.png"],
-      "tileSize": 256
-    });
-    map.addLayer({
-      "id": "base",
-      "type": "raster",
-      "source": "base",
-      "minzoom": 0,
-      "maxzoom": 12
-    });
+    baseURL = "http://b.tiles.arcticconnect.org/osm_3575/{z}/{x}/{y}.png"; // arctic
+  } else if (params.indexOf("srs=EPSG:4326")!=-1) {
+    // GBIF classic
+    baseURL = "https://cartocdn-ashbu.global.ssl.fastly.net/timrobertson100/api/v1/map/f5e2229b2f03a3679e9767ce57aeeccc:1466969734331/0/{z}/{x}/{y}.png?map_key=0384d12bac420293b443cc236120862f3dd75ac1&cache_policy=persist"; // WGS84
+    // morten
+    baseURL = "http://b.ashbu.cartocdn.com/timrobertson100/api/v1/map/3a222bf37b6c105e0c7c6e3a2a1d6ecc:1467147536105/0/{z}/{x}/{y}.png?cache_policy=persist"
   }
+  map.addSource('base', {
+    type: 'raster',
+    "tiles": [baseURL],
+    "tileSize": 256
+  });
+  map.addLayer({
+    "id": "base",
+    "type": "raster",
+    "source": "base",
+    "minzoom": 0,
+    "maxzoom": 12
+  });
+
+  //var tileLayer = "http://localhost:7001/api/occurrence/density"
+  var tileLayer = "http://localhost:7001/api/solr"
 
   map.addSource('tile', {
     type: 'vector',
-    "tiles": ["http://localhost:7001/api/occurrence/density/{z}/{x}/{y}.mvt?" + queryString]
+    "tiles": [tileLayer + "/{z}/{x}/{y}.mvt?" + queryString]
   });
 
   var paint = JSON.parse($("#_style").val());
-  console.log(paint);
+
 
   map.addLayer({
-    "id": "tile",
-    "type": "circle",
+    "id": "p1",
+    "type": "fill",
     "source": "tile",
     "source-layer": "occurrence",
-    "paint": paint
-    });
+    "paint": {
+      "fill-color": "#FFFF00",
+      "fill-opacity": 0.8,
+      "fill-outline-color": "#999999"
+    },
+    "filter": [">", "total", 0]
+  });
+
+  map.addLayer({
+    "id": "p10",
+    "type": "fill",
+    "source": "tile",
+    "source-layer": "occurrence",
+    "paint": {
+      "fill-color": "#FFCC00",
+      "fill-opacity": 0.8,
+      "fill-outline-color": "#999999"
+    },
+    "filter": [">", "total", 10]
+  });
+  map.addLayer({
+    "id": "p100",
+    "type": "fill",
+    "source": "tile",
+    "source-layer": "occurrence",
+    "paint": {
+      "fill-color": "#FF9900",
+      "fill-opacity": 0.8,
+      "fill-outline-color": "#999999"
+    },
+    "filter": [">", "total", 100]
+  });
+  map.addLayer({
+    "id": "p1000",
+    "type": "fill",
+    "source": "tile",
+    "source-layer": "occurrence",
+    "paint": {
+      "fill-color": "#FF6600",
+      "fill-opacity": 0.8,
+      "fill-outline-color": "#999999"
+    },
+    "filter": [">", "total", 1000]
+  });
+  map.addLayer({
+    "id": "p10000",
+    "type": "fill",
+    "source": "tile",
+    "source-layer": "occurrence",
+    "paint": {
+      "fill-color": "#FF3300",
+      "fill-opacity": 0.8,
+      "fill-outline-color": "#999999"
+    },
+    "filter": [">", "total", 10000]
+  });
+  map.addLayer({
+    "id": "p100000",
+    "type": "fill",
+    "source": "tile",
+    "source-layer": "occurrence",
+    "paint": {
+      "fill-color": "#FF0000",
+      "fill-opacity": 0.8,
+      "fill-outline-color": "#999999"
+    },
+    "filter": [">", "total", 100000]
+  });
+
+  /*
+  map.addLayer({
+    "id": "p1-l",
+    "type": "line",
+    "source": "tile",
+    "source-layer": "occurrence",
+    "paint": {
+      "line-color": "#999999",
+      "line-width": 0.25
+    }
+  });
+  */
+
 
 }
 
 var map = new mapboxgl.Map({
   container: 'map',
-  style: 'mapbox://styles/mapbox/light-v8',
+  //style: 'mapbox://styles/mapbox/light-v8',
+  // default with no style
+  style: {
+    "version": 8,
+    "sources": {},
+    "layers": []
+  },
   center: [0.13, 51.5],
   zoom: 0,
   maxZoom: 20
@@ -252,6 +348,11 @@ noUiSlider.create(slider, {
 // any input change of the form triggers a map reload
 $("#config :input").change(function() {
   initMap(map);
+});
+
+slider.noUiSlider.on('update', function (vals) {
+  // only adjust the range the user can see
+  document.getElementById("years").innerText = Math.floor(vals[0]) + " - " + Math.floor(vals[1]);
 });
 
 slider.noUiSlider.on('change', function (vals) {

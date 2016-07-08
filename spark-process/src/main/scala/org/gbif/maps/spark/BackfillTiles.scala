@@ -99,8 +99,7 @@ object BackfillTiles {
           bor(f._1) = bor.getOrElse(f._1, 0) + f._2
         })
       })
-      m1  // TODO: Can we reuse or not?
-
+      m1
     }
     var tiles3 = tiles2.map(r => {
       ((r._1._1,r._1._2),(r._1._3, r._2))
@@ -191,11 +190,11 @@ object BackfillTiles {
         val cell = r._1._2
         val cellData = r._2
         val row = new KeyValue(Bytes.toBytes(r._1._1), // key
-          Bytes.toBytes("merc_tiles"), // column family
+          Bytes.toBytes(projectionConfig.srs.replaceAll(":", "_")), // column family (e.g. epsg_4326)
           Bytes.toBytes(cell), // cell
           cellData)
         (k, row)
-      }).saveAsNewAPIHadoopFile(config.targetDirectory + "/" + projectionConfig.srs.replaceAll(":", "_") + "/tiles/z" + z, classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat], Configurations.hfileOutputConfiguration(config, config.tilePyramid.tableName))
+      }).saveAsNewAPIHadoopFile(config.targetDirectory + "/tiles/" + projectionConfig.srs.replaceAll(":", "_") + "/z" + z, classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat], Configurations.hfileOutputConfiguration(config, config.tilePyramid.tableName))
     })
   }
 }

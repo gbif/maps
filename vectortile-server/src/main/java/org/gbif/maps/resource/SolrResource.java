@@ -5,13 +5,21 @@ import org.gbif.maps.common.projection.Mercator;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.Tiles;
 import org.gbif.maps.io.PointFeature;
+import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapRequest;
+import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapRequestProvider;
+import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapResponse;
+import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapsService;
 
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -25,7 +33,9 @@ import javax.ws.rs.core.MediaType;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -35,6 +45,7 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
+import no.ecc.vectortile.VectorTileEncoder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
@@ -62,52 +73,22 @@ public final class SolrResource {
   private static final Logger LOG = LoggerFactory.getLogger(SolrResource.class);
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
 
-
-  private final Connection connection;
   private final int tileSize;
   private final int bufferSize;
-  private final HttpClient httpClient;
-  private final Mercator mercator;
+  private final TileProjection projection;
+  private final OccurrenceHeatmapsService solrService;
 
 
-
-  public SolrResource(Configuration conf, int tileSize, int bufferSize, HttpClient httpClient) throws IOException {
-    connection = ConnectionFactory.createConnection(conf);
+  public SolrResource(Configuration conf, int tileSize, int bufferSize,
+                      OccurrenceHeatmapsService solrService) throws IOException {
     this.tileSize = tileSize;
     this.bufferSize = bufferSize;
-    this.httpClient = httpClient;
-    mercator = new Mercator(tileSize);
+    this.solrService = solrService;
+    projection = Tiles.fromEPSG("EPSG:4326", tileSize);
   }
 
-  LoadingCache<String, Optional<PointFeature.PointFeatures>> datasource = CacheBuilder
-    .newBuilder()
-    .maximumSize(1000)
-    .expireAfterAccess(1, TimeUnit.MINUTES)
-    .build(
-      new CacheLoader<String, Optional<PointFeature.PointFeatures>>() {
-        @Override
-        public Optional<PointFeature.PointFeatures> load(String cell) throws Exception {
-          try (Table table = connection.getTable(TableName.valueOf("tim_test"))) {
-            Get get = new Get(Bytes.toBytes("1:2730240"));
-            //Get get = new Get(Bytes.toBytes("1:5231190")); // P. domesticus (TEST!)
-            //Get get = new Get(Bytes.toBytes("1:212")); // Aves (TEST!)
-
-            get.addColumn(Bytes.toBytes("wgs84"), Bytes.toBytes(cell));
-            Result result = table.get(get);
-            if (result != null) {
-              byte[] encoded = result.getValue(Bytes.toBytes("wgs84"), Bytes.toBytes(cell));
-
-              return encoded != null ? Optional.of(PointFeature.PointFeatures.parseFrom(encoded)) : Optional.<PointFeature.PointFeatures>absent();
-            } else {
-              return Optional.absent();
-            }
-          }
-        }
-      }
-    );
-
   @GET
-  @Path("/{z}/{x}/{y}.pbf")
+  @Path("/{z}/{x}/{y}.mvt")
   @Timed
   @Produces("application/x-protobuf")
   public byte[] all(
@@ -116,101 +97,108 @@ public final class SolrResource {
     @PathParam("z") int z,
     @PathParam("x") long x,
     @PathParam("y") long y,
-    @QueryParam("taxon_key") String taxonKey,
-    @Context HttpServletResponse response
-  ) throws Exception {
+    @DefaultValue("EPSG:4326") @QueryParam("srs") String srs,
+    @Context HttpServletResponse response,
+    @Context HttpServletRequest request
+    ) throws Exception {
     prepare(response);
+    Preconditions.checkArgument("EPSG:4326".equalsIgnoreCase(srs),
+                                "Adhoc search maps are currently only available in EPSG:4326");
+    OccurrenceHeatmapRequest heatmapRequest = OccurrenceHeatmapRequestProvider.buildOccurrenceHeatmapRequest(request);
+    //heatmapRequest.setZoom(z);
+    // Tim note: by testing in production index, we determine that 4 is a sensible performance choice
+    // every 4 zoom levels the grid resolution increases
+    int solrLevel = ((int)(z/4))*4;
+    heatmapRequest.setZoom(solrLevel);
 
-    // TODO: what follows is very (!) hacky tests
+    heatmapRequest.setGeometry(solrSearchGeom(z, x, y));
+    LOG.info("SOLR request:{}", heatmapRequest.toString());
+    OccurrenceHeatmapResponse solrResponse = solrService.searchHeatMap(heatmapRequest);
 
-    String query = taxonKey == null ? "*:*" : "taxon_key:" + taxonKey;
-    Stopwatch timer = new Stopwatch().start();
+    VectorTileEncoder encoder = new VectorTileEncoder (tileSize, bufferSize, false);
 
-    HttpGet httpGet = new HttpGet("http://prodsolr05-vh.gbif.org:8983/solr/occurrencef/select?q=" + query +
-                                  "&facet=true&facet.heatmap=coordinate&rows=0&facet.heatmap.distErrPct=0.1&wt=json");
-    HttpResponse solrResponse = httpClient.execute(httpGet);
-    HttpEntity entity = solrResponse.getEntity();
-    byte[] json = EntityUtils.toByteArray(entity);
+    final Rectangle2D.Double tileBoundary = tileBoundaryWGS84(z, x, y); // TODO: merge with solrSearchGeom
+    final Point2D tileBoundarySW = new Point2D.Double(tileBoundary.getMinX(), tileBoundary.getMinY());
+    final Point2D tileBoundaryNE = new Point2D.Double(tileBoundary.getMaxX(), tileBoundary.getMaxY());
 
 
-    ObjectMapper objectMapper = new ObjectMapper();
-    JsonNode rootNode = objectMapper.readTree(json);
-    JsonNode facet_counts = rootNode.path("facet_counts");
-    JsonNode facet_heatmaps = facet_counts.path("facet_heatmaps");
-    JsonNode coordinate = facet_heatmaps.path("coordinate");
-    Iterator<JsonNode> coordinates = coordinate.elements();
+   // iterate the data structure from SOLR painting cells
+    final List<List<Integer>> countsInts = solrResponse.getCountsInts2D();
+    for (int row = 0; row < countsInts.size(); row++) {
+      if (countsInts.get(row) != null) {
+        for (int column = 0; column < countsInts.get(row).size(); column++) {
+          Integer count = countsInts.get(row).get(column);
+          if (count != null && count > 0) {
 
-    // read the header
-    coordinates.next();
-    int gridLevel = coordinates.next().asInt();
-    coordinates.next();
-    int columns = coordinates.next().asInt();
-    coordinates.next();
-    int rows = coordinates.next().asInt();
-    coordinates.next(); // minX
-    coordinates.next(); // minX
-    coordinates.next(); // maxX
-    coordinates.next(); // maxX
-    coordinates.next(); // minY
-    coordinates.next(); // minY
-    coordinates.next(); // maxY
-    coordinates.next(); // maxY
-    coordinates.next(); // counts_ints2D label
+            final Rectangle2D.Double cell = new Rectangle2D.Double(solrResponse.getMinLng(column),
+                                                                   solrResponse.getMinLat(row),
+                                                                   solrResponse.getMaxLng(column)
+                                                                   - solrResponse.getMinLng(column),
+                                                                   solrResponse.getMaxLat(row) - solrResponse.getMinLat(
+                                                                     row));
 
-    // because the grid is in WGS84:
-    double degreesPerGridX = 360d / columns;
-    double degreesPerGridY = 180d / rows;
+            // get the extent of the cell
+            final Point2D cellSW = new Point2D.Double(cell.getMinX(), cell.getMinY());
+            final Point2D cellNE = new Point2D.Double(cell.getMaxX(), cell.getMaxY());
 
-    LOG.info("rows[{}] cols[{}] degsX[{}] degsY[{}]", rows, columns, degreesPerGridX, degreesPerGridY);
+            // only paint if the cell falls on the tile (noting again higher Y means further south).
+            if (cellNE.getX() > tileBoundarySW.getX() && cellSW.getX() < tileBoundaryNE.getX()
+                && cellNE.getY() > tileBoundarySW.getY() && cellSW.getY() < tileBoundaryNE.getY()) {
 
-    Iterator<JsonNode> dataRows = coordinates.next().iterator();
+              // clip normalized pixel locations to the edges of the cell
+              double minXAsNorm = Math.max(cellSW.getX(), tileBoundarySW.getX());
+              double maxXAsNorm = Math.min(cellNE.getX(), tileBoundaryNE.getX());
+              double minYAsNorm = Math.max(cellSW.getY(), tileBoundarySW.getY());
+              double maxYAsNorm = Math.min(cellNE.getY(), tileBoundaryNE.getY());
 
-    Map<Geometry, Integer> cellsAsWGS84 = Maps.newHashMap();
+              // convert the lat,lng into pixel coordinates
+              Double2D swGlobalXY = projection.toGlobalPixelXY(maxYAsNorm, minXAsNorm, z);
+              Double2D neGlobalXY = projection.toGlobalPixelXY(minYAsNorm, maxXAsNorm, z);
+              Double2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, x, y, tileSize);
+              Double2D neTileXY = Tiles.toTileLocalXY(neGlobalXY, x, y, tileSize);
 
-    double y1 = 90;
-    while(dataRows.hasNext()) {
-      double x1 = -180;
-      Iterator<JsonNode> dataCols = dataRows.next().iterator();
-      while(dataCols.hasNext()) {
-        int val = dataCols.next().asInt();
+              int minX = (int) swTileXY.getX();
+              int maxX = (int) neTileXY.getX();
+              // tiles are indexed 0->255, but if the right of the cell (maxX) is on the tile boundary, this
+              // will be detected (correctly) as the index 0 for the next tile.  Reset that.
+              maxX = (minX > maxX) ? tileSize - 1 : maxX;
 
-        // skip last row for bug
-        if (val>0 && dataCols.hasNext()) {
-          Coordinate[] coords = new Coordinate[5];
-          coords[0] = new Coordinate(mercator.longitudeToTileLocalPixelX(x1, (byte) z),
-                                     mercator.latitudeToTileLocalPixelY(y1, (byte) z));
-          coords[1] = new Coordinate(mercator.longitudeToTileLocalPixelX(x1 + degreesPerGridX, (byte) z),
-                                     mercator.latitudeToTileLocalPixelY(y1, (byte) z));
-          coords[2] = new Coordinate(mercator.longitudeToTileLocalPixelX(x1 + degreesPerGridX, (byte) z),
-                                     mercator.latitudeToTileLocalPixelY(y1 - degreesPerGridY, (byte) z));
-          coords[3] = new Coordinate(mercator.longitudeToTileLocalPixelX(x1, (byte) z),
-                                     mercator.latitudeToTileLocalPixelY(y1 - degreesPerGridY, (byte) z));
-          coords[4] = coords[0];
+              int minY = (int) swTileXY.getY();
+              int maxY = (int) neTileXY.getY();
+              // tiles are indexed 0->255, but if the bottom of the cell (maxY) is on the tile boundary, this
+              // will be detected (correctly) as the index 0 for the next tile.  Reset that.
+              maxY = (minY > maxY) ? tileSize - 1 : maxY;
 
-          cellsAsWGS84.put(GEOMETRY_FACTORY.createPolygon(coords), val);
+              // Clip the extent to the tile.  At this point e.g. max can be 256px, but tile pixels can only be
+              // addressed at 0 to 255.  If we don't clip, 256 will actually spill over into the second row / column
+              // and result in strange lines.  Note the importance of the clipping, as the min values are the left, or
+              // top of the cell, but the max values are the right or bottom.
+              minX = clip(minX, 0, tileSize-1);
+              maxX = clip(maxX, 1, tileSize-1);
+              //minY = clip(minY, 0, TILE_SIZE_1); // produces hard lines on tiles for some unknown reason
+              //maxY = clip(maxY, 1, TILE_SIZE_1);
+
+              Coordinate[] coords = new Coordinate[] {
+                new Coordinate(swTileXY.getX(), swTileXY.getY()),
+                new Coordinate(neTileXY.getX(), swTileXY.getY()),
+                new Coordinate(neTileXY.getX(), neTileXY.getY()),
+                new Coordinate(swTileXY.getX(), neTileXY.getY()),
+                new Coordinate(swTileXY.getX(), swTileXY.getY())
+              };
+
+              Map<String, Object> meta = new HashMap();
+              meta.put("total", count);
+              encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPolygon(coords));
+            }
+          }
         }
-
-        x1+=degreesPerGridX;
-
       }
-
-      y1-=degreesPerGridY;
     }
+    return encoder.encode();
+  }
 
-    LOG.info("SOLR response in {}msecs", timer.elapsedMillis());
-
-    BufferedVectorTileEncoder encoder = new BufferedVectorTileEncoder(tileSize, bufferSize, false);
-
-    for (Map.Entry<Geometry, Integer> e : cellsAsWGS84.entrySet()) {
-      Map<String, Object> meta = new HashMap();
-      meta.put("count", e.getValue());
-      encoder.addFeature("OBSERVATION", meta, e.getKey());  // TODO: OBSERVATION is obviously nonsense
-    }
-
-    timer.reset();
-    byte[] result = encoder.encode();
-    LOG.info("Encoded in {}", timer.elapsedMillis());
-    return result;
+  private static int clip(int value, int lower, int upper) {
+    return  Math.min(Math.max(value, lower), upper);
   }
 
   // TODO: This sucks
@@ -227,7 +215,7 @@ public final class SolrResource {
       .withId("GBIF:all")
       .withName("GBIF All Data")
       .withVectorLayers(new TileJson.VectorLayer[] {
-        new TileJson.VectorLayer("OBSERVATION", "The observation data")
+        new TileJson.VectorLayer("occurrence", "The observation data")
       })
       .withTiles(new String[]{"http://localhost:7001/api/all/{z}/{x}/{y}.pbf"})
       .build();
@@ -237,5 +225,37 @@ public final class SolrResource {
   private void prepare(HttpServletResponse response) {
     response.addHeader("Allow-Control-Allow-Methods", "GET,OPTIONS");
     response.addHeader("Access-Control-Allow-Origin", "*");
+  }
+
+  /**
+   * Returns a SOLR search string for the geometry in WGS84 CRS for the tile.
+   */
+  private static String solrSearchGeom(int z, long x, long y) {
+    int tilesPerZoom = 1 << z;
+    double degsPerTile = 360d/tilesPerZoom;
+
+    double minLng = degsPerTile * x - 180;
+    double maxLat = 180 - (degsPerTile * y); // note EPSG:4326 covers only half the space vertically hence 180
+
+    // clip to the world extent
+    maxLat = Math.min(maxLat,90);
+    double minLat = Math.max(maxLat-degsPerTile,-90);
+    return "[" + minLng + " " + minLat + " TO "
+           + (minLng+degsPerTile) + " " + maxLat + "]";
+  }
+
+  /**
+   * Returns a SOLR search string for the geometry in WGS84 CRS for the tile.
+   */
+  private static Rectangle2D.Double tileBoundaryWGS84(int z, long x, long y) {
+    int tilesPerZoom = 1 << z;
+    double degsPerTile = 360d/tilesPerZoom;
+    double minLng = degsPerTile * x - 180;
+    double maxLat = 180 - (degsPerTile * y); // note EPSG:4326 covers only half the space vertically hence 180
+
+    // clip to the world extent
+    maxLat = Math.min(maxLat,90);
+    double minLat = Math.max(maxLat-degsPerTile,-90);
+    return new Rectangle2D.Double(minLng, minLat, degsPerTile, maxLat - minLat);
   }
 }

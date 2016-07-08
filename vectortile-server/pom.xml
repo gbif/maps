@@ -54,18 +54,32 @@
   </build>
 
   <dependencies>
-    <!--
-      Important (!)
-      Fix to HBase client, and bring in MoreObjects into this project to allow DW to run.
-    -->
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>12.0</version>
+      <!--
+        Important (!)
+        Fix to HBase client, and bring in MoreObjects into this project to allow DW to run.
+      -->
+      <!--version>12.0</version-->
+      <version>18.0</version>
     </dependency>
     <dependency>
       <groupId>org.gbif.maps</groupId>
       <artifactId>common</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.gbif.occurrence</groupId>
+      <artifactId>occurrence-heatmaps</artifactId>
+      <!-- TODO -->
+      <version>0.47</version>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>servlet-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!--dependency>

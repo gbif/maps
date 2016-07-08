@@ -33,6 +33,7 @@ import com.vividsolutions.jts.geom.LinearRing;
 import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
 import no.ecc.vectortile.VectorTileDecoder;
+import no.ecc.vectortile.VectorTileEncoder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
@@ -54,7 +55,7 @@ import org.slf4j.LoggerFactory;
 import vector_tile.VectorTile;
 
 /**
- * Very very hacky tests for now.
+ * Very very hacky tests for now. (!)
  */
 @Path("/hex")
 @Singleton
@@ -113,7 +114,6 @@ public final class HexDensityResource {
   ) throws IOException, ExecutionException {
     prepare(response);
     LOG.info("{},{},{}", z, x, y);
-    Stopwatch timer = new Stopwatch().start();
 
     String[] cells = new String[]{
       Joiner.on(":").join(z,x-1,y-1),  // NW
@@ -221,10 +221,8 @@ public final class HexDensityResource {
         }
       }
     }
-    LOG.info("Accumulated  {} hexagons in {}", dataCells.size(), timer.elapsedMillis());
-    timer.reset();
 
-    BufferedVectorTileEncoder encoder = new BufferedVectorTileEncoder(TILE_SIZE, BUFFER_SIZE, false);
+    VectorTileEncoder encoder = new VectorTileEncoder(TILE_SIZE, BUFFER_SIZE, false);
     for (Hexagon hexagon : dataCells) {
       Coordinate[] coordinates = new Coordinate[7];
       int i=0;
@@ -257,7 +255,6 @@ public final class HexDensityResource {
     }
 
     byte[] result = encoder.encode();
-    LOG.info("Encoded in {}", timer.elapsedMillis());
     return result;
   }
 

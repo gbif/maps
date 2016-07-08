@@ -30,17 +30,17 @@ tilePyramid:
   projections:
     # Web Mercator (e.g. like google maps)
     -  minZoom: 0
-       maxZoom: 3
+       maxZoom: 16
        tileSize: 512
        srs: EPSG:3857
-    # WGS84 unprojected
-    #-  minZoom: 0
-    #   maxZoom: 3
-    #   tileSize: 512
-    #   srs: EPSG:4326
+    # WGS84 "unprojected"
+    -  minZoom: 0
+       maxZoom: 16
+       tileSize: 512
+       srs: EPSG:4326
     # North Pole LAEA (e.g. Arctic)
     -  minZoom: 0
-       maxZoom: 3
+       maxZoom: 16
        tileSize: 512
        srs: EPSG:3575
 

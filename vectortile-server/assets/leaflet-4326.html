@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Leaflet Quick Start Guide Example</title>
+  <meta charset="utf-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+</head>
+<body>
+  <div id="map" style="width: 1024px; height: 512px"></div>
+
+  <script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+  <script src="http://spatialserver.github.io/Leaflet.MapboxVectorTile/dist/Leaflet.MapboxVectorTile.js"></script>
+
+  <script>
+    var map = new L.Map('map', {
+      'center': [0, 0],
+      'zoom': 2,
+      'crs': L.CRS.EPSG4326,
+      'layers': [
+        L.tileLayer.wms('http://demo.boundlessgeo.com/geoserver/wms', {
+          layers: 'ne:NE1_HR_LC_SR_W_DR',
+          format: 'image/png',
+          transparent: true
+        })
+      ]
+    });
+
+    //L.tileLayer('http://api.gbif.org/v1/map/density/tile?x={x}&y={y}&z={z}&type=TAXON&key=1&palette=yellows_reds').addTo(map);
+
+
+    var mvtSource = new L.TileLayer.MVTSource({
+      //url: "http://aspatialserver.spatialdev.com/services/vector-tiles/GAUL_FSP/{z}/{x}/{y}.pbf",
+      url: "http://localhost:7001/api/occurrence/density/{z}/{x}/{y}.mvt?srs=EPSG:4326&taxonKey=9703",
+      //debug: true,
+      getIDForLayerFeature: function(feature) {
+        return feature.properties.id;
+      },
+
+      /**
+       * The filter function gets called when iterating though each vector tile feature (vtf). You have access
+       * to every property associated with a given feature (the feature, and the layer). You can also filter
+       * based of the context (each tile that the feature is drawn onto).
+       *
+       * Returning false skips over the feature and it is not drawn.
+       *
+       * @param feature
+       * @returns {boolean}
+       */
+      filter: function(feature, context) {
+        if (feature.layer.name === 'occurrence') {
+          return true;
+        }
+        return false;
+      },
+
+      style: function (feature) {
+        var style = {};
+
+        var type = feature.type;
+        switch (type) {
+          case 1: //'Point'
+            style.color = '#00F';
+            style.radius = 5;
+            style.selected = {
+              color: 'rgba(255,255,0,0.5)',
+              radius: 6
+            };
+            break;
+          case 2: //'LineString'
+            style.color = 'rgba(161,217,155,0.8)';
+            style.size = 3;
+            style.selected = {
+              color: 'rgba(255,25,0,0.5)',
+              size: 4
+            };
+            break;
+          case 3: //'Polygon'
+            style.color = fillColor;
+            style.outline = {
+              color: strokeColor,
+              size: 1
+            };
+            style.selected = {
+              color: 'rgba(255,140,0,0.3)',
+              outline: {
+                color: 'rgba(255,140,0,1)',
+                size: 2
+              }
+            };
+            break;
+        }
+        return style;
+      }
+
+    });
+
+    //Globals that we can change later.
+    var fillColor = 'rgba(149,139,255,0.4)';
+    var strokeColor = 'rgb(20,20,20)';
+
+    //Add layer
+    map.addLayer(mvtSource);
+
+
+  </script>
+</body>
+</html>

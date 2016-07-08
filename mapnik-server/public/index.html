@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css" />
 </head>
 <body>
-  <div id="map" style="width: 100%; height: 600px"></div>
+  <div id="map" style="width: 2048px; height: 1024px; background-color: #000"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
   <script>
@@ -18,12 +18,13 @@
     var map = L.map('map').setView([51.505, -0.09], 0);
 
 
+    L.tileLayer('https://cartocdn-ashbu.global.ssl.fastly.net/timrobertson100/api/v1/map/f5e2229b2f03a3679e9767ce57aeeccc:1466969734331/0/{z}/{x}/{y}.png?map_key=0384d12bac420293b443cc236120862f3dd75ac1&cache_policy=persist', {
     //L.tileLayer('http://a.tiles.mapbox.com/v4/gbif.dec5e9ae/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZ2JpZiIsImEiOiJjaWxhZ2oxNWQwMDBxd3FtMjhzNjRuM2lhIn0.g1IE8EfqwzKTkJ4ptv3zNQ', {
 
     //L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/light-v8/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZ2JpZiIsImEiOiJjaWxhZ2oxNWQwMDBxd3FtMjhzNjRuM2lhIn0.g1IE8EfqwzKTkJ4ptv3zNQ', {
 
 
-    L.tileLayer('http://a.tiles.mapbox.com/v4/gbif.faa58830/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZ2JpZiIsImEiOiJjaWxhZ2oxNWQwMDBxd3FtMjhzNjRuM2lhIn0.g1IE8EfqwzKTkJ4ptv3zNQ', {
+    //L.tileLayer('http://a.tiles.mapbox.com/v4/gbif.faa58830/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZ2JpZiIsImEiOiJjaWxhZ2oxNWQwMDBxd3FtMjhzNjRuM2lhIn0.g1IE8EfqwzKTkJ4ptv3zNQ', {
 
       maxZoom: 16,
       attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +

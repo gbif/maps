@@ -1,0 +1,58 @@
+
+-- setting up mapnik and node
+
+sudo yum -y install apache git python clang
+sudo yum -y install make automake gcc gcc-c++ kernel-devel harfbuzz boost
+sudo yum -y install freetype freetype-devel
+sudo yum -y install libicu-devel
+sudo yum -y install harfbuzz-devel
+sudo yum -y install boost-devel
+sudo yum -y install cairo cairo-devel
+sudo yum -y install postgresql postgresql-devel
+
+sudo su -c 'rpm -Uvh http://download.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-7.noarch.rpm'
+
+
+-- sudo yum -y install gdal-devel
+
+sudo yum -y install postgresql-server postgresql-devel
+
+sudo yum -y install wget
+sudo wget ftp://ftp.remotesensing.org/proj/proj-4.8.0.tar.gz
+sudo tar -zxvf proj-4.8.0.tar.gz
+sudo chown vagrant proj-4.8.0
+cd proj-4.8.0
+sudo ./configure
+sudo make install
+
+
+-- export LD_LIBRARY_PATH=/usr/local/lib
+
+
+git clone https://github.com/mapnik/mapnik mapnik-3.x
+cd mapnik-3.x
+
+-- from a config var
+sudo git checkout tags/v3.0.11
+
+-- need to do this
+git submodule update --init deps/mapbox/variant
+
+
+source bootstrap.sh
+./configure CUSTOM_CXXFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
+
+
+make
+-- Quite a lot of errors.
+-- make test
+sudo make install
+
+
+# Install the repository
+sudo rpm -Uvh https://rpm.nodesource.com/pub_4.x/el/7/x86_64/nodesource-release-el7-1.noarch.rpm
+
+# Install NodeJS
+sudo yum install nodejs
+
+

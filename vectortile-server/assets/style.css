@@ -1,5 +1,5 @@
 body { margin:0; padding:0; font-size: 12px; line-height: 1.85; -webkit-font-smoothing: antialiased;}
-.map { position:absolute; top:0; bottom:0; width: calc(100% - 500px); }
+.map { position:absolute; top:0; bottom:0; width: calc(100% - 500px); background-color:#848A8E}
 #slider {margin: 15px 0 15px 10px}
 
 hr {width: 100%; color: darkgray; height: 1px; background-color:darkgray;}

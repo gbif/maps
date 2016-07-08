@@ -53,9 +53,9 @@ var server = http.createServer(function(req, res) {
       // TODO: of course...
       //var tilejsonURL = "tilejson+http://localhost:7001/api/all.json";
       // timeout can be added in the tilejson response? TODO...
-      var tilejsonURL = "tilejson+http://localhost:7001/api/density/all.json?timeout=30000";
-      //var cartoURL = "http://localhost:3000/gbif-classic.mss"
-      var cartoURL = "http://localhost:3000/gbif-hot2.mss"
+      var tilejsonURL = "tilejson+http://localhost:7001/api/occurrence/density.json?timeout=30000&srs=EPSG:4326";
+      var cartoURL = "http://localhost:3000/gbif-classic.mss"
+      //var cartoURL = "http://localhost:3000/gbif-hot2.mss"
 
       console.time("getAssets");
 
@@ -65,6 +65,7 @@ var server = http.createServer(function(req, res) {
         carto: function(callback) {
           request.get(cartoURL, function (error, response, body) {
             if (!error && response.statusCode == 200) {
+
               callback(null, body)
             } else {
               callback(error)
@@ -85,19 +86,20 @@ var server = http.createServer(function(req, res) {
 
         // convert the carto into mapnik style
         var xmlStylesheet = parser.parseToXML([results.carto], results.tilejson);
+        //console.log(xmlStylesheet)
 
         // load the tile which is located from the tilejson metadata
         console.time("getTile");
 
         results.tilejson.getTile(parseInt(query.z),parseInt(query.x),parseInt(query.y), function(err, tile, headers) {
           console.timeEnd("getTile");
-
-          var map = new mapnik.Map(512, 512, mercator.proj4);
+                                                                                          1
+          var map = new mapnik.Map(256, 256, mercator.proj4);
           map.fromStringSync(xmlStylesheet); // load in the style we parsed
 
 
           var vt = new mapnik.VectorTile(parseInt(query.z),parseInt(query.x),parseInt(query.y));
-          if (tile) {
+          if (tile && tile.length>0) {
             vt.addDataSync(tile);
             //console.log(vt.tileSize, vt.bufferSize);
 
@@ -107,7 +109,7 @@ var server = http.createServer(function(req, res) {
 
             // important to include a buffer, to catch the overlaps
             console.time("render");
-            vt.render(map, new mapnik.Image(512,512), {"buffer_size":5}, function(err, image) {
+            vt.render(map, new mapnik.Image(256,256), {"buffer_size":25}, function(err, image) {
               if (err) {
                 res.end(err.message);
               } else {

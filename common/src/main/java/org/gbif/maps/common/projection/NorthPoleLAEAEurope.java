@@ -21,7 +21,7 @@ class NorthPoleLAEAEurope extends AbstractTileProjection {
   static final String EPSG_CODE = "EPSG:3575";
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
 
-  // An affine transform to move world coorindates into positive space addressing, so the lowest is 0,0
+  // An affine transform to move world coordinates into positive space addressing, so the lowest is 0,0
   private static final AffineTransform OFFSET_TRANSFORM = AffineTransform.getTranslateInstance(
       AbstractTileProjection.EARTH_CIRCUMFERENCE / 2,
       AbstractTileProjection.EARTH_CIRCUMFERENCE / 2);

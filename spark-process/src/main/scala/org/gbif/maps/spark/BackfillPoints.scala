@@ -67,7 +67,7 @@ object BackfillPoints {
       // HFiles must be sorted
       val k = new ImmutableBytesWritable(Bytes.toBytes(r._1))
       val row = new KeyValue(Bytes.toBytes(r._1), // key
-        Bytes.toBytes("wgs84"), // column family
+        Bytes.toBytes("EPSG_4326"), // column family
         Bytes.toBytes("features"), // cell
         r._2 // cell value
       )
@@ -75,7 +75,7 @@ object BackfillPoints {
     })
 
     // save the results
-    res.saveAsNewAPIHadoopFile(config.targetDirectory + "/points-wgs84", classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat], Configurations.hfileOutputConfiguration(config, config.pointFeatures.tableName))
+    res.saveAsNewAPIHadoopFile(config.targetDirectory + "/points/EPSG_4326", classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat], Configurations.hfileOutputConfiguration(config, config.pointFeatures.tableName))
 
   }
 }

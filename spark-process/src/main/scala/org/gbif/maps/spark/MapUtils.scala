@@ -1,17 +1,13 @@
 package org.gbif.maps.spark
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.client.HTable
-import org.apache.hadoop.hbase.{HBaseConfiguration, KeyValue}
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable
-import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat
-import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.sql.DataFrame
 import org.gbif.maps.io.PointFeature
 import org.apache.spark.sql.Row
 
 import scala.collection.mutable
 
+/**
+  * TODO: Consider moving much of this to Java and into the common project
+  */
 object MapUtils {
   // Dictionary of map types
   val MAPS_TYPES = Map(
@@ -91,7 +87,7 @@ object MapUtils {
       toMapKey(MAPS_TYPES("ALL"), 0),
       toMapKey(MAPS_TYPES("DATASET"), datasetKey),
       toMapKey(MAPS_TYPES("PUBLISHER"), publisherKey),
-      toMapKey(MAPS_TYPES("DATASET"), country),
+      toMapKey(MAPS_TYPES("COUNTRY"), country),
       toMapKey(MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry)
     )
     taxonIDs.foreach(id => {

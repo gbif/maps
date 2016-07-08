@@ -1,0 +1,14 @@
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "centos/7"
+
+  # disable the rsync option, which causes error on mac
+  config.vm.synced_folder ".", "/home/vagrant/sync", disabled: true
+
+  # configure the machine
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "site.yml"
+    ansible.sudo = true
+  end
+end

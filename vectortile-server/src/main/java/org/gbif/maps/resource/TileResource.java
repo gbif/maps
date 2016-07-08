@@ -46,6 +46,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.gbif.maps.resource.Params.*;
 /**
  * The tile resource for the simple gbif data layers (i.e. HBase sourced, preprocessed).
  */
@@ -54,7 +55,6 @@ import org.slf4j.LoggerFactory;
 public final class TileResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(TileResource.class);
-  private static final Pattern COMMA = Pattern.compile(",");
 
   // VectorTile layer name for the composite layer produced when merging basis of record
   // layers together
@@ -70,127 +70,21 @@ public final class TileResource {
     DECODER.setAutoScale(false); // important to avoid auto scaling to 256 tiles
   }
 
-
-  // Maps the http parameter for the type to the HBase row key prefix for that map.
-  // This aligns with the Spark processing that populates HBase of course, but maps the internal key to the
-  // http parameter.
-  private static final Map<String, String> MAP_TYPES = ImmutableMap.of(
-    "taxonKey","1",
-    "datasetKey","2",
-    "publishingOrganizationKey", "3",
-    "country", "4",
-    "publishingCountry", "5"
-  );
-  private static final String ALL_MAP_KEY = "0:0";
-
-  private final Connection connection;
+  private final HBaseMaps hbaseMaps;
   private final int tileSize;
   private final int bufferSize;
 
-  public TileResource(Configuration conf, int tileSize, int bufferSize) throws IOException {
-    connection = ConnectionFactory.createConnection(conf);
+  /**
+   * Construct the resource
+   * @param conf The application configuration
+   * @param tileSize The tile size for the preprocessed tiles (not point tiles which are always full resolution)
+   * @param bufferSize The buffer size for preprocessed tiles
+   * @throws IOException If HBase cannot be reached
+   */
+  public TileResource(Configuration conf, String hbaseTableName, int tileSize, int bufferSize) throws IOException {
+    this.hbaseMaps = new HBaseMaps(conf, hbaseTableName);
     this.tileSize = tileSize;
     this.bufferSize = bufferSize;
-  }
-
-  // TODO - of course
-  LoadingCache<String, Optional<PointFeature.PointFeatures>> datasource = CacheBuilder
-    .newBuilder()
-    .maximumSize(1000)
-    .expireAfterAccess(1, TimeUnit.MINUTES)
-    .build(
-      new CacheLoader<String, Optional<PointFeature.PointFeatures>>() {
-        @Override
-        public Optional<PointFeature.PointFeatures> load(String rowKey) throws Exception {
-          try (Table table = connection.getTable(TableName.valueOf("tim_test"))) {
-            Get get = new Get(Bytes.toBytes(rowKey));
-            get.addColumn(Bytes.toBytes("wgs84"), Bytes.toBytes("features"));
-            Result result = table.get(get);
-            if (result != null) {
-              byte[] encoded = result.getValue(Bytes.toBytes("wgs84"), Bytes.toBytes("features"));
-
-              return encoded != null ? Optional.of(PointFeature.PointFeatures.parseFrom(encoded)) : Optional.<PointFeature.PointFeatures>absent();
-            } else {
-              return Optional.absent();
-            }
-          }
-        }
-      }
-    );
-
-  LoadingCache<String[], Optional<byte[]>> datasourceTile = CacheBuilder
-    .newBuilder()
-    .maximumSize(1000)
-    .expireAfterWrite(1, TimeUnit.MINUTES)
-    .build(
-      new CacheLoader<String[], Optional<byte[]>>() {
-        @Override
-        public Optional<byte[]> load(String[] rowCell) throws Exception {
-          try (Table table = connection.getTable(TableName.valueOf("tim_test"))) {
-            Get get = new Get(Bytes.toBytes(rowCell[0]));
-            get.addColumn(Bytes.toBytes("merc_tiles"), Bytes.toBytes(rowCell[1]));
-            Result result = table.get(get);
-            if (result != null) {
-              byte[] encoded = result.getValue(Bytes.toBytes("merc_tiles"), Bytes.toBytes(rowCell[1]));
-              // TODO: We can push down the BoR layers as filters!
-              return encoded != null ? Optional.of(encoded) : Optional.<byte[]>absent();
-            } else {
-              return Optional.absent();
-            }
-          }
-        }
-      }
-    );
-
-  /**
-   * Extracts the mapType:Key identifier from the request.
-   * If an invalid request is provided (e.g. containing 2 types) then an IAE is thrown.
-   * If no type is found, then the key for the all data map is given.
-   */
-  private static String mapKey(HttpServletRequest request) {
-    Map<String, String[]> queryParams = request.getParameterMap();
-    String mapKey = null;
-    for (Map.Entry<String, String[]> param : queryParams.entrySet()) {
-      if (MAP_TYPES.containsKey(param.getKey())) {
-        if (mapKey != null || param.getValue().length!=1) {
-          throw new IllegalArgumentException("Invalid request: Only one type of map may be requested.  "
-                                             + "Hint: Perhaps you need to use ad hoc mapping?");
-        } else {
-          mapKey = MAP_TYPES.get(param.getKey()) + ":" + param.getValue()[0];
-        }
-      }
-    }
-    return mapKey == null ? ALL_MAP_KEY : mapKey;
-  }
-
-  /**
-   * Converts the nullable encoded year into an array containing a minimum and maximum bounded range.
-   * @param encodedYear Comma separated in min,max format (as per GBIF API)
-   * @return An array of length 2, with the min and max year values, which may be NULL
-   * @throws IllegalArgumentException if the year is unparsable
-   */
-  private static Range toMinMaxYear(String encodedYear) {
-    if (encodedYear == null) {
-      return new Range(null,null);
-    } else if (encodedYear.contains(",")) {
-      String[] years = COMMA.split(encodedYear);
-      if (years.length == 2) {
-        Integer min = null;
-        Integer max = null;
-        if (years[0].length() > 0) {
-          min = Integer.parseInt(years[0]);
-        }
-        if (years[1].length() > 0) {
-          max = Integer.parseInt(years[1]);
-        }
-        return new Range(min, max);
-      }
-    } else {
-      int year = Integer.parseInt(encodedYear);
-      return new Range(year, year);
-    }
-    throw new IllegalArgumentException("Year must contain a single or a comma separated minimum and maximum value.  "
-                                       + "Supplied: " + encodedYear);
   }
 
   @GET
@@ -208,12 +102,12 @@ public final class TileResource {
     @Context HttpServletRequest request
     ) throws Exception {
 
-    prepare(response); // headers (e.g. allow XSS)
+    enableCORS(response);
     String mapKey = mapKey(request);
-    LOG.info("MapKey: {}", mapKey);
+    LOG.debug("MapKey: {}", mapKey);
 
     // Try and load the point features first, before defaulting to tile views
-    Optional<PointFeature.PointFeatures> optionalFeatures = datasource.get(mapKey);
+    Optional<PointFeature.PointFeatures> optionalFeatures = hbaseMaps.getPoints(mapKey);
     if (optionalFeatures.isPresent()) {
       TileProjection projection = Tiles.fromEPSG(srs, POINT_TILE_SIZE);
 
@@ -228,33 +122,34 @@ public final class TileResource {
 
       return encoder.encode();
     } else {
+      VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
 
-      // try and load a prepared tile from HBase
-      Optional<byte[]> encoded = datasourceTile.get(new String[]{mapKey, z+":"+x+":"+y});
-      if (encoded.isPresent()) {
-        LOG.info("Found tile with encoded length of: " + encoded.get().length);
+      // try and load a prepared tiles from HBase, using adjacent tiles to populate the buffer
+      Range years = toMinMaxYear(year);
+      Set<String> bors = basisOfRecord.isEmpty() ? null : Sets.newHashSet(basisOfRecord);
 
-        Range years = toMinMaxYear(year);
-        Set<String> bors = basisOfRecord.isEmpty() ? null : Sets.newHashSet(basisOfRecord);
-        VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
-        VectorTileFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, encoded.get(),
-                                              z, x, y, x, y, tileSize, bufferSize,
-                                              years, bors);
+      for (long y1=y-1; y1<=y+1; y1++) {
+        for (long x1=x-1; x1<=x+1; x1++) {
+          Optional<byte[]> encoded = hbaseMaps.getTile(mapKey, srs, z, x1, y1);
+          if (encoded.isPresent()) {
+            LOG.debug("Found tile with encoded length of: " + encoded.get().length);
 
-
-        return encoder.encode();
+            VectorTileFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, encoded.get(),
+                                                  z, x, y, x1, y1, tileSize, bufferSize,
+                                                  years, bors);
+          }
+        }
       }
-      throw new IllegalArgumentException("No tile found");
+      return encoder.encode(); // could be empty(!)
     }
   }
 
-  // TODO: This sucks
   @GET
   @Path("/occurrence/density.json")
   @Timed
   @Produces(MediaType.APPLICATION_JSON)
-  public TileJson allTileJson(@Context HttpServletResponse response) throws IOException {
-    prepare(response);
+  public TileJson allTileJson(@Context HttpServletResponse response, @Context HttpServletRequest request) throws IOException {
+    enableCORS(response);
     return TileJson.TileJsonBuilder
       .newBuilder()
       .withAttribution("GBIF")
@@ -264,13 +159,9 @@ public final class TileResource {
       .withVectorLayers(new TileJson.VectorLayer[] {
         new TileJson.VectorLayer("occurrence", "The GBIF occurrence data")
       })
-      .withTiles(new String[]{"http://localhost:7001/api/occurrence/density/{z}/{x}/{y}.mvt"})
+      .withTiles(new String[]{"http://localhost:7001/api/occurrence/density/{z}/{x}/{y}.mvt?" + request.getQueryString()})
       .build();
   }
 
-  // open the tiles to the world (especially your friendly localhost developer!)
-  private void prepare(HttpServletResponse response) {
-    response.addHeader("Allow-Control-Allow-Methods", "GET,OPTIONS");
-    response.addHeader("Access-Control-Allow-Origin", "*");
-  }
+
 }

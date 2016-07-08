@@ -1,0 +1,3 @@
+---
+- name: Apache (latest version)
+  yum: name=httpd state=latest

@@ -19,6 +19,8 @@ public class Tiles {
     } else if (NorthPoleLAEAEurope.EPSG_CODE.equals(epsg)) {
       return new NorthPoleLAEAEurope(size);
 
+    } else if (WGS84.EPSG_CODE.equalsIgnoreCase(epsg)) {
+      return new WGS84(size);
     }
     throw new IllegalArgumentException("Unsupported EPSG supplied: " + epsg);
   }
