@@ -1,0 +1,102 @@
+{
+  "version": 8,
+  "name": "SOLR",
+  "sources": {
+    "solr": {
+      "type": "vector",
+      "maxzoom": 4,
+      "tiles": [
+        "http://localhost:7001/api/solr/{z}/{x}/{y}.mvt?taxonKey=5231190"
+      ]
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#848A8E"
+      }
+    },
+    {
+      "id": "p1",
+      "type": "fill",
+      "source": "solr",
+      "source-layer": "occurrence",
+      "paint": {
+        "fill-color": "#FFFF00",
+        "fill-antialias": true,
+        "fill-opacity": 0.8,
+        "fill-outline-color": "#999999"
+      },
+      "filter": [">", "total", 0]
+    }
+  ,{
+      "id": "p10",
+      "type": "fill",
+      "source": "solr",
+      "source-layer": "occurrence",
+      "paint": {
+        "fill-color": "#FFCC00",
+        "fill-antialias": true,
+        "fill-opacity": 0.8,
+        "fill-outline-color": "#999999"
+      },
+      "filter": [">", "total", 10]
+    }
+  ,{
+      "id": "p100",
+      "type": "fill",
+      "source": "solr",
+      "source-layer": "occurrence",
+      "paint": {
+        "fill-color": "#FF9900",
+        "fill-antialias": true,
+        "fill-opacity": 0.8,
+        "fill-outline-color": "#999999"
+      },
+      "filter": [">", "total", 100]
+    }
+  ,{
+      "id": "p1000",
+      "type": "fill",
+      "source": "solr",
+      "source-layer": "occurrence",
+      "paint": {
+        "fill-color": "#FF6600",
+        "fill-antialias": true,
+        "fill-opacity": 0.8,
+        "fill-outline-color": "#999999"
+      },
+      "filter": [">", "total", 1000]
+    }
+  ,{
+      "id": "p10000",
+      "type": "fill",
+      "source": "solr",
+      "source-layer": "occurrence",
+      "paint": {
+        "fill-color": "#FF3300",
+        "fill-opacity": 0.8,
+        "fill-antialias": true,
+        "fill-outline-color": "#999999"
+      },
+      "filter": [">", "total", 10000]
+    }
+  ,{
+      "id": "p100000",
+      "type": "fill",
+      "source": "solr",
+      "source-layer": "occurrence",
+      "paint": {
+        "fill-color": "#FF0000",
+        "fill-antialias": true,
+        "fill-opacity": 0.8,
+        "fill-outline-color": "#999999"
+      },
+      "filter": [">", "total", 100000]
+    }
+
+  ]
+}
+

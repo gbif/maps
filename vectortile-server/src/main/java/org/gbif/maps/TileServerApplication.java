@@ -39,6 +39,9 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
   @Override
   public final void run(TileServerConfiguration configuration, Environment environment) throws IOException {
     Configuration conf = HBaseConfiguration.create();
+
+    // TODO: configurify!
+
     conf.set("hbase.zookeeper.quorum", "c1n2.gbif.org:2181,c1n3.gbif.org:2181,c1n1.gbif.org:2181");
     conf.setInt("hbase.zookeeper.property.clientPort", 2181);
     SolrClient client = new CloudSolrServerBuilder()
@@ -49,7 +52,7 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
     environment.jersey().register(new SolrResource(conf, 512, 25, solrService));
 
     // tileSize must match the preprocessed tiles in HBase
-    String tableName = "tim_test"; // TODO!!!
+    String tableName = "tim_test";
 
     environment.jersey().register(new TileResource(conf, tableName, 512, 25));
     environment.jersey().register(new SolrResource(conf, 512, 25, solrService));

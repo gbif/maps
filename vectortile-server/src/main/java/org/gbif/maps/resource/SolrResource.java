@@ -78,6 +78,10 @@ public final class SolrResource {
   private final TileProjection projection;
   private final OccurrenceHeatmapsService solrService;
 
+  /**
+   * TODO: move this - this is just a test
+   */
+  Map<String, OccurrenceHeatmapResponse> cache = Maps.newHashMap();
 
   public SolrResource(Configuration conf, int tileSize, int bufferSize,
                       OccurrenceHeatmapsService solrService) throws IOException {
@@ -113,14 +117,19 @@ public final class SolrResource {
 
     heatmapRequest.setGeometry(solrSearchGeom(z, x, y));
     LOG.info("SOLR request:{}", heatmapRequest.toString());
-    OccurrenceHeatmapResponse solrResponse = solrService.searchHeatMap(heatmapRequest);
+
+    //OccurrenceHeatmapResponse solrResponse = solrService.searchHeatMap(heatmapRequest);
+    // quick test!
+    if (!cache.containsKey(heatmapRequest.toString())) {
+      cache.put(heatmapRequest.toString(), solrService.searchHeatMap(heatmapRequest));
+    }
+    OccurrenceHeatmapResponse solrResponse = cache.get(heatmapRequest.toString());
 
     VectorTileEncoder encoder = new VectorTileEncoder (tileSize, bufferSize, false);
 
     final Rectangle2D.Double tileBoundary = tileBoundaryWGS84(z, x, y); // TODO: merge with solrSearchGeom
     final Point2D tileBoundarySW = new Point2D.Double(tileBoundary.getMinX(), tileBoundary.getMinY());
     final Point2D tileBoundaryNE = new Point2D.Double(tileBoundary.getMaxX(), tileBoundary.getMaxY());
-
 
    // iterate the data structure from SOLR painting cells
     final List<List<Integer>> countsInts = solrResponse.getCountsInts2D();
