@@ -79,7 +79,7 @@ public final class SolrResource {
   private final OccurrenceHeatmapsService solrService;
 
   /**
-   * TODO: move this - this is just a test
+   * TODO: remove this - this is just a test
    */
   Map<String, OccurrenceHeatmapResponse> cache = Maps.newHashMap();
 
@@ -118,12 +118,14 @@ public final class SolrResource {
     heatmapRequest.setGeometry(solrSearchGeom(z, x, y));
     LOG.info("SOLR request:{}", heatmapRequest.toString());
 
-    //OccurrenceHeatmapResponse solrResponse = solrService.searchHeatMap(heatmapRequest);
+    OccurrenceHeatmapResponse solrResponse = solrService.searchHeatMap(heatmapRequest);
     // quick test!
+    /*
     if (!cache.containsKey(heatmapRequest.toString())) {
       cache.put(heatmapRequest.toString(), solrService.searchHeatMap(heatmapRequest));
     }
     OccurrenceHeatmapResponse solrResponse = cache.get(heatmapRequest.toString());
+    */
 
     VectorTileEncoder encoder = new VectorTileEncoder (tileSize, bufferSize, false);
 
@@ -184,8 +186,6 @@ public final class SolrResource {
               // top of the cell, but the max values are the right or bottom.
               minX = clip(minX, 0, tileSize-1);
               maxX = clip(maxX, 1, tileSize-1);
-              //minY = clip(minY, 0, TILE_SIZE_1); // produces hard lines on tiles for some unknown reason
-              //maxY = clip(maxY, 1, TILE_SIZE_1);
 
               Coordinate[] coords = new Coordinate[] {
                 new Coordinate(swTileXY.getX(), swTileXY.getY()),
@@ -242,7 +242,6 @@ public final class SolrResource {
   private static String solrSearchGeom(int z, long x, long y) {
     int tilesPerZoom = 1 << z;
     double degsPerTile = 360d/tilesPerZoom;
-
     double minLng = degsPerTile * x - 180;
     double maxLat = 180 - (degsPerTile * y); // note EPSG:4326 covers only half the space vertically hence 180
 

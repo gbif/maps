@@ -95,7 +95,6 @@
 
   <modules>
     <module>vectortile-server</module>
-    <module>hive-util</module>
     <module>common</module>
     <module>spark-process</module>
   </modules>
