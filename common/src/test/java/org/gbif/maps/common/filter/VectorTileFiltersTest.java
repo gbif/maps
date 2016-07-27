@@ -99,30 +99,22 @@ public class VectorTileFiltersTest {
     assertTrue("Pixel 1 missing", result.containsKey(px1));
     Map<String, Object> m1 = result.get(px1);
     assertEquals("Pixel 1 meta invalid - total", 9l, m1.get("total"));
-    assertEquals("Pixel 1 meta invalid - 2012", 3l, m1.get("2012"));
-    assertEquals("Pixel 1 meta invalid - 2013", 6l, m1.get("2013"));
 
     // pixel 2
     assertTrue("Pixel 2 missing", result.containsKey(px2));
     Map<String, Object> m2 = result.get(px2);
     assertEquals("Pixel 2 meta invalid - total", 3l, m2.get("total"));
-    assertEquals("Pixel 2 meta invalid - 2012", 1l, m2.get("2012"));
-    assertEquals("Pixel 2 meta invalid - 2013", 2l, m2.get("2013"));
 
     // pixel 3
     assertTrue("Pixel 3 missing", result.containsKey(px3));
     Map<String, Object> m3 = result.get(px3);
     assertEquals("Pixel 3 meta invalid - total", 3l, m3.get("total"));
-    assertEquals("Pixel 3 meta invalid - 2012", 1l, m3.get("2012"));
-    assertEquals("Pixel 3 meta invalid - 2013", 2l, m3.get("2013"));
 
     // pixel 4 (comes in to buffer zone from the NW quadrant tile)
     Double2D px4 = new Double2D(-1,50);
     assertTrue("Pixel 4 missing (the buffer pixel)", result.containsKey(px4));
     Map<String, Object> m4 = result.get(px4);
     assertEquals("Pixel 3 meta invalid - total", 3l, m4.get("total"));
-    assertEquals("Pixel 3 meta invalid - 2012", 1l, m4.get("2012"));
-    assertEquals("Pixel 3 meta invalid - 2013", 2l, m4.get("2013"));
 
   }
 
