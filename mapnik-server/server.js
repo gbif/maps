@@ -86,7 +86,7 @@ var server = http.createServer(function(req, res) {
 
         // convert the carto into mapnik style
         var xmlStylesheet = parser.parseToXML([results.carto], results.tilejson);
-        //console.log(xmlStylesheet)
+        console.log(xmlStylesheet)
 
         // load the tile which is located from the tilejson metadata
         console.time("getTile");
@@ -94,7 +94,7 @@ var server = http.createServer(function(req, res) {
         results.tilejson.getTile(parseInt(query.z),parseInt(query.x),parseInt(query.y), function(err, tile, headers) {
           console.timeEnd("getTile");
                                                                                           1
-          var map = new mapnik.Map(256, 256, mercator.proj4);
+          var map = new mapnik.Map(512, 512, mercator.proj4);
           map.fromStringSync(xmlStylesheet); // load in the style we parsed
 
 
@@ -109,15 +109,16 @@ var server = http.createServer(function(req, res) {
 
             // important to include a buffer, to catch the overlaps
             console.time("render");
-            vt.render(map, new mapnik.Image(256,256), {"buffer_size":25}, function(err, image) {
+            vt.render(map, new mapnik.Image(512,512), {"buffer_size":25}, function(err, image) {
               if (err) {
                 res.end(err.message);
               } else {
                 res.writeHead(200, {
                   'Content-Type': 'image/png'
                 });
+                console.timeEnd("render");
                 image.encode('png', function(err,buffer) {
-                  console.timeEnd("render");
+
                   if (err) {
                     res.end(err.message);
                   } else {

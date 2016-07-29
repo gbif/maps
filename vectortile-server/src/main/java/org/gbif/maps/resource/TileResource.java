@@ -136,7 +136,7 @@ public final class TileResource {
 
             VectorTileFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, encoded.get(),
                                                   z, x, y, x1, y1, tileSize, bufferSize,
-                                                  years, bors);
+                                                  years, bors, false);
           }
         }
       }

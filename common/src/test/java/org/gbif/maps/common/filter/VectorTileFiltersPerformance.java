@@ -66,27 +66,27 @@ public class VectorTileFiltersPerformance {
     while (true) {
       Range years = new Range(1900, 2100);
       VectorTileEncoder encoder = new VectorTileEncoder(TILE_SIZE, 0, false); // no buffer (like our HBase tiles)
-      VectorTileFilters.collectInVectorTile(encoder, "occurrence", sample, 0, 0, 0, 0, 0, TILE_SIZE, 20, years, BASIS_OF_RECORDS);
+      VectorTileFilters.collectInVectorTile(encoder, "occurrence", sample, 0, 0, 0, 0, 0, TILE_SIZE, 20, years, BASIS_OF_RECORDS, false);
       LOG.info("Time to filter all years {}ms", timer.elapsed(TimeUnit.MILLISECONDS));
       timer.reset().start();
 
       years = new Range(1980, 1981);
       encoder = new VectorTileEncoder(TILE_SIZE, 0, false);
-      VectorTileFilters.collectInVectorTile(encoder, "occurrence", sample, 0, 0, 0, 0, 0, TILE_SIZE, 20, years, BASIS_OF_RECORDS);
+      VectorTileFilters.collectInVectorTile(encoder, "occurrence", sample, 0, 0, 0, 0, 0, TILE_SIZE, 20, years, BASIS_OF_RECORDS, false);
       LOG.info("Time to filter 1 year {}ms", timer.elapsed(TimeUnit.MILLISECONDS));
       timer.reset().start();
 
       years = new Range(1980, 1981);
       Set<String> bor = ImmutableSet.of("observation");
       encoder = new VectorTileEncoder(TILE_SIZE, 0, false);
-      VectorTileFilters.collectInVectorTile(encoder, "occurrence", sample, 0, 0, 0, 0, 0, TILE_SIZE, 20, years, BASIS_OF_RECORDS);
+      VectorTileFilters.collectInVectorTile(encoder, "occurrence", sample, 0, 0, 0, 0, 0, TILE_SIZE, 20, years, BASIS_OF_RECORDS, false);
       LOG.info("Time to filter 1 year, 1 bor {}ms", timer.elapsed(TimeUnit.MILLISECONDS));
       timer.reset().start();
 
       years = new Range(1900, 2100);
       bor = ImmutableSet.of("specimen");
       encoder = new VectorTileEncoder(TILE_SIZE, 0, false);
-      VectorTileFilters.collectInVectorTile(encoder, "occurrence", sample, 0, 0, 0, 0, 0, TILE_SIZE, 20, years, BASIS_OF_RECORDS);
+      VectorTileFilters.collectInVectorTile(encoder, "occurrence", sample, 0, 0, 0, 0, 0, TILE_SIZE, 20, years, BASIS_OF_RECORDS, false);
       LOG.info("Time to filter all years, 1 bor {}ms", timer.elapsed(TimeUnit.MILLISECONDS));
       timer.reset().start();
     }

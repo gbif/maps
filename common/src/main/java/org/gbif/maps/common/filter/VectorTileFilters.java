@@ -59,56 +59,87 @@ public class VectorTileFilters {
    * @param bufferSize The buffer size to use for the source tile
    * @param years The year range filter to apply
    * @param basisOfRecords The basisOfRecords to flatter
+   * @param verbose If true then individual years for each point will be included, otherwise only the totals
+   *
    * @throws IOException
    */
   public static void collectInVectorTile(VectorTileEncoder encoder, String layerName, byte[] sourceTile,
                                          int z, long x, long y, long sourceX, long sourceY, int tileSize, int bufferSize,
-                                         Range years, Set<String> basisOfRecords)
+                                         Range years, Set<String> basisOfRecords, boolean verbose)
     throws IOException {
 
     // We can push down the predicate for the basis of record filter into the decoder if it is supplied
     VectorTileDecoder.FeatureIterable features = basisOfRecords == null ? DECODER.decode(sourceTile) :
       DECODER.decode(sourceTile, basisOfRecords);
 
-    // convert the features to a stream source
+    // convert the features to a stream source filtering only to those on the tile and within the year range
     Iterable<VectorTileDecoder.Feature> iterable = () -> features.iterator();
-    Stream<VectorTileDecoder.Feature> featureStream = StreamSupport.stream(iterable.spliterator(), false);
+    Stream<VectorTileDecoder.Feature> featureStream =
+      StreamSupport.stream(iterable.spliterator(), false)
+                   .filter(filterFeatureByTile(x,y,sourceX,sourceY,tileSize,bufferSize))
+                   .filter(filterFeatureByYear(years));
 
-    // filter and merge the data into yearCounts by pixels
-    Map<Double2D, Long> pixels =
-      featureStream
-        .filter(filterFeatureByTile(x,y,sourceX,sourceY,tileSize,bufferSize))
-        .filter(filterFeatureByYear(years))
-        .collect(
-          // accumulate counts by year, for each pixel
-          Collectors.toMap(
-            toTileLocalPixelXY(x, y, sourceX, sourceY, tileSize),
-            totalCountForYears(years), // note: we throw away year values here
-            (m1,m2) -> {
-              // simply accumulate totals
-              return m1 + m2;
-            }
-          ));
+    if (verbose) {
+      // merge the data into yearCounts by pixels
+      Map<Double2D, Map<String, Long>> pixels = featureStream.collect(
+        // accumulate counts by year, for each pixel
+        Collectors.toMap(
+          toTileLocalPixelXY(x, y, sourceX, sourceY, tileSize),
+          attributesPrunedToYears(years),
+          (m1,m2) -> {
+            m2.forEach((k, v) -> m1.merge(k, v, (v1, v2) -> {
+              // accumulate because the same pixel can be present in different layers (basisOfRecords) in the
+              // source tile
+              Long.valueOf(v1).longValue();
+              return ((Long)v1).longValue() + ((Long)v2).longValue();
+            }));
+            return m1;
+          }
+        ));
 
-    // add the pixel to the encoder
-    pixels.forEach((pixel, total) -> {
+      // add the pixel to the encoder
+      pixels.forEach((pixel, yearCounts) -> {
 
-      Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(pixel.getX(), pixel.getY()));
+        Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(pixel.getX(), pixel.getY()));
 
-      // add a total value across all years
-      //long sum = yearCounts.values().stream().mapToLong(v -> (Long)v).sum();
-      //yearCounts.put("total", sum);
-      Map<String, Object> meta = Maps.newHashMap();
-      meta.put(TOTAL_KEY, total);
+        // add a total value across all years
+        long sum = yearCounts.values().stream().mapToLong(v -> (Long)v).sum();
+        yearCounts.put(TOTAL_KEY, sum);
 
-      LOG.trace("Adding {} to {}", pixel, layerName);
+        // If another feature exists at that pixel it is not our concern (there should not be)
+        LOG.trace("Adding {} to {}", pixel, layerName);
+        encoder.addFeature(layerName, yearCounts, point);
 
-      // If another feature exists at that pixel it is not our concern (there should not be)
-      encoder.addFeature(layerName, meta, point);
+      });
 
-    });
+    } else {
+      // merge the data into total counts only by pixels
+      Map<Double2D, Long> pixels = featureStream.collect(
+        // accumulate totals for each pixel
+        Collectors.toMap(
+          toTileLocalPixelXY(x, y, sourceX, sourceY, tileSize),
+          totalCountForYears(years), // note: we throw away year values here
+          (m1,m2) -> {
+            // simply accumulate totals
+            return m1 + m2;
+          }
+        ));
+
+      // add the pixel to the encoder
+      pixels.forEach((pixel, total) -> {
+
+        Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(pixel.getX(), pixel.getY()));
+
+        Map<String, Object> meta = Maps.newHashMap();
+        meta.put(TOTAL_KEY, total);
+
+        // If another feature exists at that pixel it is not our concern (there should not be)
+        LOG.trace("Adding {} to {}", pixel, layerName);
+        encoder.addFeature(layerName, meta, point);
+
+      });
+    }
   }
-
 
   /**
    * Provides a function to accumulate the count within the year range (inclusive)
@@ -131,6 +162,30 @@ public class VectorTileFilters {
           }
         }
         return runningCount;
+      }
+    };
+  }
+
+  /**
+   * Provides a function to accumulate trim attributes to only include the year range desired.
+   */
+  public static Function<VectorTileDecoder.Feature, Map<String, Long>> attributesPrunedToYears(final Range years) {
+    return new Function<VectorTileDecoder.Feature, Map<String, Long>>() {
+
+      @Override
+      public Map<String, Long> apply(VectorTileDecoder.Feature feature) {
+        Map<String, Long> result = Maps.newHashMap();
+        for(Map.Entry<String, Object> e : feature.getAttributes().entrySet()) {
+          try {
+            Integer year = Integer.parseInt(e.getKey());
+            if (years.isContained(year)) {
+              result.put(e.getKey(), (Long) e.getValue());
+            }
+          } catch (NumberFormatException nfe) {
+            LOG.warn("Unexpected non integer metadata entry {}:{}", e.getKey(), e.getValue());
+          }
+        }
+        return result;
       }
     };
   }

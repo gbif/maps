@@ -135,7 +135,7 @@ public final class SolrResource {
 
    // iterate the data structure from SOLR painting cells
     final List<List<Integer>> countsInts = solrResponse.getCountsInts2D();
-    for (int row = 0; row < countsInts.size(); row++) {
+    for (int row = 0; countsInts!=null && row < countsInts.size(); row++) {
       if (countsInts.get(row) != null) {
         for (int column = 0; column < countsInts.get(row).size(); column++) {
           Integer count = countsInts.get(row).get(column);
@@ -226,7 +226,7 @@ public final class SolrResource {
       .withVectorLayers(new TileJson.VectorLayer[] {
         new TileJson.VectorLayer("occurrence", "The observation data")
       })
-      .withTiles(new String[]{"http://localhost:7001/api/all/{z}/{x}/{y}.pbf"})
+      .withTiles(new String[]{"http://tiletest.gbif.org:9001/api/solr/{z}/{x}/{y}.mvt"})
       .build();
   }
 

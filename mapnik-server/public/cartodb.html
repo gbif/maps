@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Leaflet example | CartoDB.js</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <link rel="shortcut icon" href="http://cartodb.com/assets/favicon.ico" />
+    <style>
+      html, body, #map {
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        background-color: #7173AB;
+      }
+    </style>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <!-- include cartodb.js library -->
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    <script src="http://libs.cartocdn.com/cartodb.js/v3/3.15/cartodb.core.js"></script>
+
+    <script>
+      function main() {
+
+        var map = new L.Map('map', {
+          zoomControl: false,
+          center: [0, 0],
+          zoom: 0
+        });
+
+        var sqlWGS84 = "SELECT ST_SCALE(the_geom, 111319.44444444444444, 111319.44444444444444) AS the_geom_webmercator FROM world_borders_hd_copy";
+        var cartoCssGBIF = "#layer { polygon-fill: #02393D; polygon-opacity: 1; line-width:0}";
+
+        cartodb.Tiles.getTiles({
+          user_name: 'timrobertson100',
+          sublayers: [
+          {
+             sql: sqlWGS84,
+             cartocss: cartoCssGBIF
+          }
+          ]
+        }, function(tileTemplate) {
+
+
+         L.tileLayer(tileTemplate.tiles[0], {
+           attribution: 'Natural Earth data, map by CartoDB'
+         }).addTo(map);
+
+          L.tileLayer("http://localhost:8080/map/occurrence/tile.png?x={x}&y={y}&z={z}&taxonKey=6&basis_of_record=PRESERVED_SPECIMEN&srs=EPSG:4326", {
+            attribution: 'GBIF'
+          }).addTo(map);
+
+
+        })
+
+      }
+
+      // you could use $(window).load(main);
+      window.onload = main;
+    </script>
+  </body>
+</html>

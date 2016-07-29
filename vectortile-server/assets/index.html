@@ -5,15 +5,19 @@
   <title>Maps</title>
   <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no'/>
 
-  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.20.0/mapbox-gl.js'></script>
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.js'></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/8.3.0/nouislider.min.js"></script>
   <script src="https://code.jquery.com/jquery-2.2.1.min.js"
       integrity="sha256-gvQgAFzTH6trSrAWoH1iPo9Xc96QxSZ3feW6kem+O00=" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
       integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
-  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.20.0/mapbox-gl.css' rel='stylesheet'/>
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.css' rel='stylesheet'/>
   <link href='nouislider.css' rel='stylesheet'/>
   <link href='style.css' rel='stylesheet'/>
+
+  <!-- include cartodb.js needed only so we can get the BaseURLs -->
+  <script src="http://libs.cartocdn.com/cartodb.js/v3/3.15/cartodb.core.js"></script>
+
 
 </head>
 <body>
@@ -57,7 +61,7 @@
       <div class="col-sm-3 small">
         <ul class="list-unstyled">
           <li><a href="#" onclick="$('#_mapKey').val('datasetKey=4fa7b334-ce0d-4e88-aaae-2e0c138d049e'); $('#_mapKey').change();">eBird</a></li>
-          <li><a href="#" onclick="$('#_mapKey').val('publishingCountry=DK'); $('#_mapKey').change();">Danish published</a></li>
+          <li><a href="#" onclick="$('#_mapKey').val('taxonKey=2435098'); $('#_mapKey').change();">Puma</a></li>
           <li><a href="#" onclick="$('#_mapKey').val('publishingOrganizationKey=57254bd0-8256-11d8-b7ed-b8a03c50a862'); $('#_mapKey').change();">BGBM</a></li>
         </ul>
       </div>
@@ -136,18 +140,19 @@
       </div>
     </div>
 
-    <hr/>
+    <!--hr/>
 
     <div class="form-group col-sm-12">
-      <label for="style" class="col-sm-3 control-label">Style</label>
-      <div class="col-sm-9">
-        <textarea id="_style" style="font-family: monospace" rows="5" cols="35">{
+      <label for="style" class="control-label">Style</label>
+      <div class="col-sm-12">
+        <textarea id="_style" style="font-family: monospace" rows="15" cols="50">{
   "circle-radius": 1.5,
   "circle-color": "#9F9",
   "circle-opacity": 0.5
-}</textarea>
+}
+        </textarea>
       </div>
-    </div>
+    </div-->
 
   </form>
 </div>
@@ -178,35 +183,73 @@ function queryParams() {
   return config.params;
 }
 
+// Use the SQL API of CartoDB to get the base layers
+var baseURLs = {};
+function setBaseURL(propertyName, sql) {
+  cartodb.Tiles.getTiles({
+    user_name: 'timrobertson100',
+    sublayers: [
+      {
+        sql: sql,
+        cartocss: "#layer { polygon-fill: #4D5258; polygon-opacity: 1; line-width:0}"
+      }
+    ]
+  }, function(tileTemplate) {
+    baseURLs[propertyName]=tileTemplate.tiles[0];
+    initMap(map); // super ugly hack while we lack events(!)
+  });
+}
+function initCDBBaseURLs() {
+  setBaseURL("epsg3857", "SELECT cartodb_id,the_geom_webmercator FROM world_borders_hd_copy");
+  setBaseURL("epsg4326", "SELECT ST_SCALE(the_geom, 111319.44444444444444, 111319.44444444444444) AS the_geom_webmercator " +
+             "FROM world_borders_hd_copy");
+  setBaseURL("epsg3575", "SELECT cartodb_id,ST_Transform(ST_INTERSECTION(the_geom," +
+             "ST_GeomFromText('POLYGON((-180 0, -180 90, 180 90, 180 0, -180 0))', 4326)),3575) AS the_geom_webmercator " +
+             "FROM world_borders_hd_copy");
+}
+
 /**
  * Initialises the map.
  */
 function initMap(map) {
+  // ugly hack for now
+  if (baseURLs.epsg4326 === undefined || baseURLs.epsg3575 === undefined || baseURLs.epsg3857 === undefined) {
+    return; // baseURLs not ready
+  }
+
+
   // Remove layers if they exist
-  if (map.getSource('base')) map.removeSource('base');
-  if (map.getLayer('base')) map.removeLayer('base');
-  if (map.getSource('tile')) map.removeSource('tile');
-  if (map.getLayer('tile')) map.removeLayer('tile');
+  while(map._gbif_sources.length > 0) {
+    var s = map._gbif_sources.pop();
+    if (map.getSource(s)) map.removeSource(s);
+  }
+  while(map._gbif_layers.length > 0) {
+    var s = map._gbif_layers.pop();
+    if (map.getLayer(s)) map.removeLayer(s);
+  }
 
   var params = queryParams();
   var queryString = params.join("&");
-  console.log(queryString);
+  //console.log(queryString);
 
   // baseLayer raster
-  var baseURL = "http://a.tiles.mapbox.com/v4/gbif.dec5e9ae/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZ2JpZiIsImEiOiJjaWxhZ2oxNWQwMDBxd3FtMjhzNjRuM2lhIn0.g1IE8EfqwzKTkJ4ptv3zNQ";
+  var baseURL = baseURLs.epsg3857;
   if (params.indexOf("srs=EPSG:3575")!=-1) {
-    baseURL = "http://b.tiles.arcticconnect.org/osm_3575/{z}/{x}/{y}.png"; // arctic
+    baseURL = baseURLs.epsg3575;
   } else if (params.indexOf("srs=EPSG:4326")!=-1) {
-    // GBIF classic
-    baseURL = "https://cartocdn-ashbu.global.ssl.fastly.net/timrobertson100/api/v1/map/f5e2229b2f03a3679e9767ce57aeeccc:1466969734331/0/{z}/{x}/{y}.png?map_key=0384d12bac420293b443cc236120862f3dd75ac1&cache_policy=persist"; // WGS84
-    // morten
-    baseURL = "http://b.ashbu.cartocdn.com/timrobertson100/api/v1/map/3a222bf37b6c105e0c7c6e3a2a1d6ecc:1467147536105/0/{z}/{x}/{y}.png?cache_policy=persist"
+    baseURL = baseURLs.epsg4326;
   }
   map.addSource('base', {
     type: 'raster',
-    "tiles": [baseURL],
+    "tiles": [
+      baseURL.replace("{s}", "a"),
+      baseURL.replace("{s}", "b"),
+      baseURL.replace("{s}", "c"),
+      baseURL.replace("{s}", "d")
+    ],
     "tileSize": 256
   });
+  map._gbif_sources.push("base");
   map.addLayer({
     "id": "base",
     "type": "raster",
@@ -214,120 +257,88 @@ function initMap(map) {
     "minzoom": 0,
     "maxzoom": 12
   });
+  map._gbif_layers.push("base");
 
   var backend = $('input[name="_type"]:checked').val();
   var tileLayer = backend == "simple" ? "http://localhost:7001/api/occurrence/density" : "http://localhost:7001/api/solr"
-
   map.addSource('tile', {
     type: 'vector',
     "tiles": [tileLayer + "/{z}/{x}/{y}.mvt?" + queryString]
   });
+  map._gbif_sources.push("tile");
 
-  // HBase maps
-  if ("simple" == backend) {
-    var paint = JSON.parse($("#_style").val());
+  var styles = {
+    "purple-yellow": {
+      colors: ["#5e0063", "#851362", "#a42e61", "#be4c60", "#d26b63", "#e28b6b", "#eeab79", "#f7cb8e", "#ffebaa"],
+      filters: [
+        ["<=", "total", 5],
+        ["all",[">", "total", 5],["<=", "total", 10]],
+        ["all",[">", "total", 10],["<=", "total", 50]],
+        ["all",[">", "total", 50],["<=", "total", 100]],
+        ["all",[">", "total", 100],["<=", "total", 500]],
+        ["all",[">", "total", 500],["<=", "total", 1000]],
+        ["all",[">", "total", 1000],["<=", "total", 5000]],
+        ["all",[">", "total", 5000],["<=", "total", 10000]],
+        [">", "total", 10000]
+      ]
+    },
+    "yellow-red": {
+      colors: ["#FFFF00", "#FFCC00", "#FF9900", "#FF6600", "#FF3300", "#FF0000"],
+      filters: [
+        ["<=", "total", 10],
+        ["all",[">", "total", 10],["<=", "total", 100]],
+        ["all",[">", "total", 100],["<=", "total", 1000]],
+        ["all",[">", "total", 1000],["<=", "total", 10000]],
+        ["all",[">", "total", 10000],["<=", "total", 100000]],
+        [">", "total", 100000]
+      ]
+    }
+  }
 
-    map.addLayer({
-      "id": "tile",
-      "type": "circle",
-      "source": "tile",
-      "source-layer": "occurrence",
-      "paint": paint
-    });
-  } else {
-    // SOLR maps
-    map.addLayer({
-      "id": "p1",
-      "type": "fill",
-      "source": "tile",
-      "source-layer": "occurrence",
-      "paint": {
-        "fill-color": "#FFFF00",
-        "fill-opacity": 0.8,
-        "fill-outline-color": "#999999"
-      },
-      "filter": [">", "total", 0]
-    });
+  // chose the style
+  //var style = styles["purple-yellow"];
+  var style = styles["yellow-red"];
 
-    map.addLayer({
-      "id": "p10",
-      "type": "fill",
-      "source": "tile",
-      "source-layer": "occurrence",
-      "paint": {
-        "fill-color": "#FFCC00",
-        "fill-opacity": 0.8,
-        "fill-outline-color": "#999999"
-      },
-      "filter": [">", "total", 10]
-    });
-    map.addLayer({
-      "id": "p100",
-      "type": "fill",
-      "source": "tile",
-      "source-layer": "occurrence",
-      "paint": {
-        "fill-color": "#FF9900",
-        "fill-opacity": 0.8,
-        "fill-outline-color": "#999999"
-      },
-      "filter": [">", "total", 100]
-    });
-    map.addLayer({
-      "id": "p1000",
-      "type": "fill",
-      "source": "tile",
-      "source-layer": "occurrence",
-      "paint": {
-        "fill-color": "#FF6600",
-        "fill-opacity": 0.8,
-        "fill-outline-color": "#999999"
-      },
-      "filter": [">", "total", 1000]
-    });
-    map.addLayer({
-      "id": "p10000",
-      "type": "fill",
-      "source": "tile",
-      "source-layer": "occurrence",
-      "paint": {
-        "fill-color": "#FF3300",
-        "fill-opacity": 0.8,
-        "fill-outline-color": "#999999"
-      },
-      "filter": [">", "total", 10000]
-    });
-    map.addLayer({
-      "id": "p100000",
-      "type": "fill",
-      "source": "tile",
-      "source-layer": "occurrence",
-      "paint": {
-        "fill-color": "#FF0000",
-        "fill-opacity": 0.8,
-        "fill-outline-color": "#999999"
-      },
-      "filter": [">", "total", 100000]
-    });
+  var simple = "simple" == backend ? true : false; // true if HBase, false if SOLR
+  for (i=0; i<style.colors.length; i++) {
+    if (simple) {
+      map.addLayer({
+        "id": "simple-" + i,
+        "type": "circle",
+        "source": "tile",
+        "source-layer": "occurrence",
+        "paint": {
+          "circle-radius": 1.5,
+          "circle-color": style.colors[i],
+          "circle-opacity": 1
+        },
+        "filter": style.filters[i]
+      });
+      map._gbif_layers.push("simple-" + i);
 
-    /*
-     map.addLayer({
-     "id": "p1-l",
-     "type": "line",
-     "source": "tile",
-     "source-layer": "occurrence",
-     "paint": {
-     "line-color": "#999999",
-     "line-width": 0.25
-     }
-     });
-     */
+    } else {
+      map.addLayer({
+        "id": "adhoc-" + i,
+        "type": "fill",
+        "source": "tile",
+        "source-layer": "occurrence",
+        "paint": {
+          "fill-color": style.colors[i],
+          "fill-opacity": 0.75,
+          "fill-outline-color": "#999999"
+        },
+        "filter": style.filters[i]
+      });
+      map._gbif_layers.push("adhoc-" + i);
+    }
   }
 }
 
+// race condition here...
+initCDBBaseURLs();
+
 var map = new mapboxgl.Map({
   container: 'map',
-  //style: 'mapbox://styles/mapbox/light-v8',
   // default with no style
   style: {
     "version": 8,
@@ -336,8 +347,12 @@ var map = new mapboxgl.Map({
   },
   center: [0.13, 51.5],
   zoom: 0,
-  maxZoom: 20
+  maxZoom: 20,
 });
+// maintain our stack of sources to make it easy to clear them (there appears no way to get a list of sources)
+map._gbif_sources = [];
+map._gbif_layers = [];
+
 map.addControl(new mapboxgl.Navigation());
 
 map.on('style.load', function () {

@@ -13,7 +13,7 @@ tilesThreshold: 100000
 
 # Target HBase details
 hbase:
-  zkQuorum: c1n1.gbif.org,c1n2.gbif.org,c1n3.gbif.org
+  zkQuorum: c1n1.gbif.org,c1n2.gbif.org,c1n6.gbif.org
 
 # Applies only to those map views that have few enough records to be stored as features
 pointFeatures:

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE Map[]>
+<Map>
+
+  <Parameters>
+    <Parameter name="0"><![CDATA[name]]></Parameter>
+    <Parameter name="1"><![CDATA[description]]></Parameter>
+    <Parameter name="2"><![CDATA[attribution]]></Parameter>
+    <Parameter name="3"><![CDATA[bounds]]></Parameter>
+    <Parameter name="4"><![CDATA[center]]></Parameter>
+    <Parameter name="5"><![CDATA[format]]></Parameter>
+    <Parameter name="6"><![CDATA[minzoom]]></Parameter>
+    <Parameter name="7"><![CDATA[maxzoom]]></Parameter>
+    <Parameter name="8"><![CDATA[source]]></Parameter>
+    <Parameter name="9"><![CDATA[template]]></Parameter>
+  </Parameters>
+
+
+  <Style name="occurrence" filter-mode="first">
+    <!--Rule>
+      <DotSymbolizer fill="#ff3300" width="2" opacity="1" />
+    </Rule-->
+
+    <!--Rule>
+      <Filter>([total] &gt; 10000) and ([total] &lt;= 100000)</Filter>
+      <DotSymbolizer fill="#ff3300" width="2" opacity="1" />
+    </Rule>
+    <Rule>
+      <Filter>([total] &gt; 1000) and ([total] &lt;= 10000)</Filter>
+      <DotSymbolizer fill="#ff6600" width="2" opacity="1" />
+    </Rule>
+    <Rule>
+      <Filter>([total] &gt; 100) and ([total] &lt;= 1000)</Filter>
+      <DotSymbolizer fill="#ff9900" width="2" opacity="1" />
+    </Rule>
+    <Rule>
+      <Filter>([total] &gt; 10) and ([total] &lt;= 100)</Filter>
+      <DotSymbolizer fill="#ffcc00" width="2" opacity="1" />
+    </Rule>
+    <Rule>
+      <Filter>([total] &lt;= 10)</Filter>
+      <DotSymbolizer fill="#ffff00" width="2" opacity="1" />
+    </Rule-->
+
+    <Rule>
+      <Filter>([total] &lt;= 10)</Filter>
+      <DotSymbolizer fill="#ffff00" width="2" opacity="1" />
+    </Rule>
+    <Rule>
+      <Filter>([total] &lt;= 100)</Filter>
+      <DotSymbolizer fill="#ffcc00" width="2" opacity="1" />
+    </Rule>
+    <Rule>
+      <Filter>([total] &lt;= 1000)</Filter>
+      <DotSymbolizer fill="#ff9900" width="2" opacity="1" />
+    </Rule>
+    <Rule>
+      <Filter>([total] &lt;= 10000)</Filter>
+      <DotSymbolizer fill="#ff6600" width="2" opacity="1" />
+    </Rule>
+    <Rule>
+      <Filter>([total] &lt;= 100000)</Filter>
+      <DotSymbolizer fill="#ff3300" width="2" opacity="1" />
+    </Rule>
+    <Rule>
+      <DotSymbolizer width="2" opacity="1" fill="#cc0000" />
+    </Rule>
+  </Style>
+  <Layer name="occurrence"
+         srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over">
+    <StyleName>occurrence</StyleName>
+  </Layer>
+</Map>
