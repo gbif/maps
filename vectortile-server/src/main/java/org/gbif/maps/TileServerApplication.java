@@ -42,7 +42,8 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
 
     // TODO: configurify!
 
-    conf.set("hbase.zookeeper.quorum", "c1n2.gbif.org:2181,c1n3.gbif.org:2181,c1n1.gbif.org:2181");
+    //conf.set("hbase.zookeeper.quorum", "c1n2.gbif.org:2181,c1n3.gbif.org:2181,c1n1.gbif.org:2181");
+    conf.set("hbase.zookeeper.quorum", "prodmaster1-vh.gbif.org:2181,prodmaster2-vh.gbif.org:2181,prodmaster3-vh.gbif.org:2181");
     conf.setInt("hbase.zookeeper.property.clientPort", 2181);
     SolrClient client = new CloudSolrServerBuilder()
       .withZkHost("prodmaster1-vh.gbif.org:2181,prodmaster2-vh.gbif.org:2181,prodmaster3-vh.gbif.org:2181/prodsolr")
@@ -54,7 +55,13 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
     // tileSize must match the preprocessed tiles in HBase
     String tableName = "tim_test";
 
-    environment.jersey().register(new TileResource(conf, tableName, 512, 25));
+    // 3000 maps are tile pyramided
+
+    //environment.jersey().register(new TileResource(conf, tableName, 4096, 25));  // Too big @ 1MB
+    //environment.jersey().register(new TileResource(conf, tableName, 1024, 25));  // Too slow still
+    //environment.jersey().register(new TileResource(conf, tableName, 512, 25)); // 1.5MB unc., 500KB comp.
+    environment.jersey().register(new TileResource(conf, tableName, 512, 8)); // 1.5MB unc., 500KB comp.
+    //environment.jersey().register(new TileResource(conf, tableName, 256, 25));  // Too ugly
     environment.jersey().register(new SolrResource(conf, 512, 25, solrService));
   }
 }

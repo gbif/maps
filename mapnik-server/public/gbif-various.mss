@@ -31,7 +31,7 @@
 }
 
 #occurrence {
-  dot-width: 2;
+  dot-width: 1;
   dot-opacity: 1;
   [total <= 5] { dot-fill: #5e0063;  }
   [total > 5][total <= 10] { dot-fill: #851362;  }

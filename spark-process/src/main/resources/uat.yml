@@ -1,0 +1,49 @@
+# Used only for the spark application name
+appName: Map build (uat)
+
+# A parquet file of occurrence records
+# Hint: Consider using a Hive CTAS query "STORED AS PARQUET" from occurrence_hdfs
+sourceFile: /user/hive/warehouse/tim.db/occurrence_map_source_tenth
+
+# The base directory into which HFiles will be stored
+targetDirectory: hdfs://ha-nn/tmp/tim_maps
+
+# The max record count allowed before the view is built into a tile pyramid
+tilesThreshold: 100000
+
+# Target HBase details
+hbase:
+  zkQuorum: prodmaster1-vh.gbif.org,prodmaster2-vh.gbif.org,prodmaster3-vh.gbif.org
+
+# Applies only to those map views that have few enough records to be stored as features
+pointFeatures:
+  numTasks: 200 # controls the parallelism
+  tableName: tim_test
+  hfileCount: 32
+
+# TilePyramid applies to views where there are more records than the tilesThreshold
+# Notes:
+#   For hfileCount > 32 you must use -Dhbase.mapreduce.bulkload.max.hfiles.perRegion.perFamily=XXX when bulk loading
+tilePyramid:
+  tableName: tim_test
+  hfileCount: 100
+  projections:
+    # Web Mercator (e.g. like google maps)
+    -  minZoom: 0
+       maxZoom: 16
+       tileSize: 512
+       srs: EPSG:3857
+    # WGS84 "unprojected"
+    -  minZoom: 0
+       maxZoom: 16
+       tileSize: 512
+       srs: EPSG:4326
+    # North Pole LAEA (e.g. Arctic)
+    -  minZoom: 0
+       maxZoom: 16
+       tileSize: 512
+       srs: EPSG:3575
+
+
+
+

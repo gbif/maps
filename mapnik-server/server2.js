@@ -28,9 +28,9 @@ var tilejson = {
 }
 
 // load our stylesheet from cartocss and convert them to Mapnik XML stylesheet
-//var cartocss = fs.readFileSync("public/gbif-classic.mss", "utf8");
+var cartocss = fs.readFileSync("public/gbif-classic.mss", "utf8");
 //var cartocss = fs.readFileSync("public/gbif-hot3.mss", "utf8");
-var cartocss = fs.readFileSync("public/gbif-various.mss", "utf8");
+//var cartocss = fs.readFileSync("public/gbif-various.mss", "utf8");
 var stylesheet = parser.parseToXML([cartocss], tilejson);
 
 var server = http.createServer(function(req, res) {
@@ -68,7 +68,8 @@ var server = http.createServer(function(req, res) {
       var y = parseInt(query.y);
       var z = parseInt(query.z);
 
-      var tileUrl = "http://localhost:7001/api/occurrence/density/" + z + "/" + x + "/" + y + ".mvt?srs=EPSG:4326";
+      //var tileUrl = "http://localhost/api/occurrence/density/" + z + "/" + x + "/" + y + ".mvt?taxonKey=5231190";
+      var tileUrl = "http://localhost/api/occurrence/density/" + z + "/" + x + "/" + y + ".mvt";
 
 
       request.get({url: tileUrl, method: 'GET', encoding: null}, function (error, response, body) {

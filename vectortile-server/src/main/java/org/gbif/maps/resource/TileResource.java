@@ -128,9 +128,19 @@ public final class TileResource {
       Range years = toMinMaxYear(year);
       Set<String> bors = basisOfRecord.isEmpty() ? null : Sets.newHashSet(basisOfRecord);
 
-      for (long y1=y-1; y1<=y+1; y1++) {
-        for (long x1=x-1; x1<=x+1; x1++) {
+      // Getting 9 tiles from HBase is hopelessly slow.  Here I am exploring what the performance would be if I
+      // were to get the VectorTiles pre-bufferred in HBase (requires Spark backfill changes).
+      LOG.info("NOTE: skipping adjacent tiles, which will likely lead to tile boundary issues");
+      for (long y1=y; y1<=y; y1++) {
+        for (long x1=x; x1<=x; x1++) {
+
+      // TODO: This is wrong for dateline handling, and should determine if there can possibly be a tile
+      //for (long y1=y-1; y1<=y+1; y1++) {
+      //  for (long x1=x-1; x1<=x+1; x1++) {
           Optional<byte[]> encoded = hbaseMaps.getTile(mapKey, srs, z, x1, y1);
+          //LOG.info("NOTE: skipping caching of HBase responses!");
+          //Optional<byte[]> encoded = hbaseMaps.getTileNoCache(mapKey, srs, z, x1, y1);
+
           if (encoded.isPresent()) {
             LOG.debug("Found tile with encoded length of: " + encoded.get().length);
 
@@ -159,7 +169,7 @@ public final class TileResource {
       .withVectorLayers(new TileJson.VectorLayer[] {
         new TileJson.VectorLayer("occurrence", "The GBIF occurrence data")
       })
-      .withTiles(new String[]{"http://localhost:7001/api/occurrence/density/{z}/{x}/{y}.mvt?" + request.getQueryString()})
+      .withTiles(new String[]{"http://localhost/api/occurrence/density/{z}/{x}/{y}.mvt?" + request.getQueryString()})
       .build();
   }
 

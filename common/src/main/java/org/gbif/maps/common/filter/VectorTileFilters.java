@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
@@ -22,6 +23,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import no.ecc.vectortile.Filter;
@@ -47,6 +49,14 @@ public class VectorTileFilters {
 
   /**
    * Collects data (i.e. accumulates) which matches the filters given from the sourceTile into the encoder.
+   *
+   * This is intended to be used for cases when one wishes to merge data coming from tiles at different addresses, to
+   * e.g. build up buffer regions from ajacent tiles.  It has the potential to be slow, especially when dealing with
+   * large, highly dense tiles.
+   *
+   * For simple filtering of data, better performance will be available through the
+   *  {@link #collectInVectorTile(VectorTileEncoder, String, byte[], Range, Set, boolean)} method.
+   *
    * @param encoder To collect into
    * @param layerName The layer within the encoder into which we accumulate
    * @param sourceTile The source from which we are reading
@@ -76,8 +86,12 @@ public class VectorTileFilters {
     Iterable<VectorTileDecoder.Feature> iterable = () -> features.iterator();
     Stream<VectorTileDecoder.Feature> featureStream =
       StreamSupport.stream(iterable.spliterator(), false)
-                   .filter(filterFeatureByTile(x,y,sourceX,sourceY,tileSize,bufferSize))
-                   .filter(filterFeatureByYear(years));
+                   .filter(filterFeatureByTile(x,y,sourceX,sourceY,tileSize,bufferSize));
+
+    // only filter years if a range is given (performance optimisation)
+    if (!years.isUnbounded()) {
+      featureStream = featureStream.filter(filterFeatureByYear(years));
+    }
 
     if (verbose) {
       // merge the data into yearCounts by pixels
@@ -142,6 +156,84 @@ public class VectorTileFilters {
   }
 
   /**
+   * Filters the data from a tile into a single layer in the provided encoder, adding a total count and put.
+   *
+   * @param encoder To collect into (it is expected to be unused)
+   * @param layerName The layer within the encoder into which we accumulate
+   * @param sourceTile The source from which we are reading
+   * @param years The year range filter to apply
+   * @param basisOfRecords The basisOfRecords to flatter
+   * @param verbose If true then individual years for each point will be included, otherwise only the totals
+   *
+   * @throws IOException
+   */
+  public static void collectInVectorTile(final VectorTileEncoder encoder, String layerName, byte[] sourceTile,
+                                         Range years, Set<String> basisOfRecords, boolean verbose)
+    throws IOException {
+
+    // We can push down the predicate for the basis of record filter into the decoder if it is supplied
+    VectorTileDecoder.FeatureIterable features = basisOfRecords == null ? DECODER.decode(sourceTile) :
+      DECODER.decode(sourceTile, basisOfRecords);
+
+    // convert the features to a stream source filtering only to those on the tile and within the year range
+    Iterable<VectorTileDecoder.Feature> iterable = () -> features.iterator();
+    Stream<VectorTileDecoder.Feature> featureStream =
+      StreamSupport.stream(iterable.spliterator(), false);
+
+    // only filter years if a range is given (performance optimisation)
+    if (!years.isUnbounded()) {
+      featureStream = featureStream.filter(filterFeatureByYear(years));
+    }
+
+    if (verbose) {
+      // merge the data into yearCounts by pixels
+      Map<Geometry, Map<String, Long>> data = featureStream.collect(
+        // accumulate counts by year, for each pixel
+        Collectors.toMap(
+          extractGeometry(),
+          attributesPrunedToYears(years),
+          (m1,m2) -> {
+            m2.forEach((k, v) -> m1.merge(k, v, (v1, v2) -> {
+              // accumulate because the same pixel can be present in different layers (basisOfRecords) in the
+              // source tile
+              Long.valueOf(v1).longValue();
+              return ((Long)v1).longValue() + ((Long)v2).longValue();
+            }));
+            return m1;
+          }
+        ));
+
+      // add the pixel to the encoder
+      data.forEach((geom, yearCounts) -> {
+        // add a total value across all years
+        long sum = yearCounts.values().stream().mapToLong(v -> (Long)v).sum();
+        yearCounts.put(TOTAL_KEY, sum);
+        encoder.addFeature(layerName, yearCounts, geom);
+      });
+
+    } else {
+      // merge the data into total counts only by pixels
+      Map<Geometry, Long> data = featureStream.collect(
+        // accumulate totals for each pixel
+        Collectors.toMap(
+          extractGeometry(),
+          totalCountForYears(years), // note: we throw away year values here
+          (m1,m2) -> {
+            // simply accumulate totals
+            return m1 + m2;
+          }
+        ));
+
+      // add the feature to the encoder
+      data.forEach((geom, total) -> {
+        Map<String, Object> meta = Maps.newHashMap();
+        meta.put(TOTAL_KEY, total);
+        encoder.addFeature(layerName, meta, geom);
+      });
+    }
+  }
+
+  /**
    * Provides a function to accumulate the count within the year range (inclusive)
    */
   public static Function<VectorTileDecoder.Feature, Long> totalCountForYears(final Range years) {
@@ -186,6 +278,20 @@ public class VectorTileFilters {
           }
         }
         return result;
+      }
+    };
+  }
+
+  /**
+   * Gets the feature geometry.
+   * @return The function to extract the geometry.
+   */
+  public static Function<VectorTileDecoder.Feature, Geometry> extractGeometry() {
+
+    return new Function<VectorTileDecoder.Feature, Geometry>() {
+      @Override
+      public Geometry apply(VectorTileDecoder.Feature f) {
+        return f.getGeometry();
       }
     };
   }

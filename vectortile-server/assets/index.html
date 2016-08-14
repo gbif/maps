@@ -296,12 +296,27 @@ function initMap(map) {
   }
 
   // chose the style
-  //var style = styles["purple-yellow"];
-  var style = styles["yellow-red"];
+  var style = styles["purple-yellow"];
+  //var style = styles["yellow-red"];
 
   var simple = "simple" == backend ? true : false; // true if HBase, false if SOLR
   for (i=0; i<style.colors.length; i++) {
     if (simple) {
+      // playing with a shaded background to help continuous zoom
+      map.addLayer({
+        "id": "simple-background-" + i,
+        "type": "circle",
+        "source": "tile",
+        "source-layer": "occurrence",
+        "paint": {
+          "circle-radius": 4,
+          "circle-color": style.colors[i],
+          "circle-opacity": 0.015
+        },
+        "filter": style.filters[i]
+      });
+      map._gbif_layers.push("simple-background-" + i);
+
       map.addLayer({
         "id": "simple-" + i,
         "type": "circle",
@@ -310,7 +325,7 @@ function initMap(map) {
         "paint": {
           "circle-radius": 1.5,
           "circle-color": style.colors[i],
-          "circle-opacity": 1
+          "circle-opacity": 0.8
         },
         "filter": style.filters[i]
       });
@@ -347,7 +362,7 @@ var map = new mapboxgl.Map({
   },
   center: [0.13, 51.5],
   zoom: 0,
-  maxZoom: 20,
+  maxZoom: 20
 });
 // maintain our stack of sources to make it easy to clear them (there appears no way to get a list of sources)
 map._gbif_sources = [];

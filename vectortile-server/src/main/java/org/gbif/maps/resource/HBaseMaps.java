@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
+import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -90,6 +91,34 @@ public class HBaseMaps {
     try {
       return tileCache.get(new TileKey(mapKey, srs, z, x, y));
     } catch (ExecutionException e) {
+      // there is nothing the caller can do.  Swallow this here, logging the error
+      LOG.error("Unexpected error loading tile data from HBase.  Returning no tile.", e);
+      return Optional.absent();
+    }
+  }
+
+  /**
+   * For testing.  Does not cache!
+   * Returns a tile from HBase if one exists.
+   */
+  Optional<byte[]> getTileNoCache(String mapKey, String srs, int z, long x, long y) {
+    Stopwatch timer = new Stopwatch().start();
+    try {
+
+      try (Table table = connection.getTable(TableName.valueOf(tableName))) {
+        Get get = new Get(Bytes.toBytes(mapKey));
+        String columnFamily = srs.replaceAll(":", "_").toUpperCase();
+        get.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(z + ":" + x + ":" + y));
+        Result result = table.get(get);
+        if (result != null) {
+          byte[] encoded = result.getValue(Bytes.toBytes(columnFamily), Bytes.toBytes(z + ":" + x + ":" + y));
+          LOG.info("HBase lookup of {} returned {}kb and took {}ms", z + ":" + x + ":" + y, encoded.length / 1024, timer.elapsedMillis());
+          return encoded != null ? Optional.of(encoded) : Optional.<byte[]>absent();
+        } else {
+          return Optional.absent();
+        }
+      }
+    } catch (Exception e) {
       // there is nothing the caller can do.  Swallow this here, logging the error
       LOG.error("Unexpected error loading tile data from HBase.  Returning no tile.", e);
       return Optional.absent();

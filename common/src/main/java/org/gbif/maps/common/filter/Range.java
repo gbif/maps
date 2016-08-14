@@ -35,4 +35,11 @@ public class Range {
            (upper == null || (value != null && value <= upper));
   }
 
+  /**
+   * @return true of there are no bounds contained.
+   */
+  public boolean isUnbounded() {
+    return (lower == null  && upper == null);
+  }
+
 }
