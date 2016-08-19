@@ -29,10 +29,11 @@ var tilejson = {
 
 // load our stylesheet from cartocss and convert them to Mapnik XML stylesheet
 var cartocss = fs.readFileSync("public/gbif-classic.mss", "utf8");
+//var cartocss = fs.readFileSync("public/mono.mss", "utf8");
 //var cartocss = fs.readFileSync("public/gbif-hot3.mss", "utf8");
 //var cartocss = fs.readFileSync("public/gbif-various.mss", "utf8");
 var stylesheet = parser.parseToXML([cartocss], tilejson);
-
+console.log(stylesheet);
 var server = http.createServer(function(req, res) {
 
   var query = url.parse(req.url.toLowerCase(), true).query;
@@ -69,8 +70,9 @@ var server = http.createServer(function(req, res) {
       var z = parseInt(query.z);
 
       //var tileUrl = "http://localhost/api/occurrence/density/" + z + "/" + x + "/" + y + ".mvt?taxonKey=5231190";
-      var tileUrl = "http://localhost/api/occurrence/density/" + z + "/" + x + "/" + y + ".mvt";
-
+      //var tileUrl = "http://localhost/api/occurrence/density/" + z + "/" + x + "/" + y + ".mvt?srs=EPSG:3575";
+      //var tileUrl = "http://localhost/api/occurrence/density/" + z + "/" + x + "/" + y + ".mvt?taxonKey=212";
+      var tileUrl = "http://localhost:7001/api/occurrence/density/" + z + "/" + x + "/" + y + ".mvt";
 
       request.get({url: tileUrl, method: 'GET', encoding: null}, function (error, response, body) {
         if (!error && response.statusCode == 200 && body.length>0) {
@@ -86,12 +88,14 @@ var server = http.createServer(function(req, res) {
 
           // important to include a buffer, to catch the overlaps
           console.time("render");
-          vt.render(map, new mapnik.Image(512,512), {"buffer_size":25}, function(err, image) {
+          vt.render(map, new mapnik.Image(512,512), {"buffer_size":8}, function(err, image) {
             if (err) {
               res.end(err.message);
             } else {
               res.writeHead(200, {
-                'Content-Type': 'image/png'
+                'Content-Type': 'image/png',
+                'Access-Control-Allow-Origin': '*',
+               'Cache-Control': 'max-age=120, must-revalidate'
               });
               console.timeEnd("render");
               image.encode('png', function(err,buffer) {

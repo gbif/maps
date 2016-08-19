@@ -1,0 +1,48 @@
+/**
+ * TODO: This should be part of the build with the same version as the JS (as leaflet do)
+ */
+
+/* Container for the map which is passed to the underlying mapping library */
+.gbif-map__map-container {
+  height: 100%;
+  background-color: #848A8E;
+  margin-right: 0px;
+}
+
+/* Container for the GBIF specific map controls */
+.gbif-map__control-container {
+  position: relative;
+  height: 100%;
+  float: right;
+  background-color: #F7F9FA;
+}
+.gbif-map__control-content {
+  display: none;
+}
+.gbif-map__control-container.open .gbif-map__control-content {
+  display: block;
+  padding: 10px;
+  width: 320px;
+}
+.gbif-map__control-container.open .gbif-map__control-toggle-container {
+  right: 320px;
+}
+
+/* Toggle control for the GBIF container */
+.gbif-map__control-toggle-container {
+  position: absolute;
+  float: right;
+  width: 25px;
+  height: 50px;
+  background-color: #0000AA;
+  right: 0px;
+  top: 20px;
+  z-index: 10; /* Needs to sit above map */
+}
+.gbif-map__control-toggle-button {
+  width: 100%;
+  height: 100%;
+  background-color: #333;
+  border: none;
+  outline:0;
+}

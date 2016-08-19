@@ -116,6 +116,12 @@ public final class TileResource {
       final VectorTileEncoder encoder = new VectorTileEncoder(POINT_TILE_SIZE, POINT_TILE_BUFFER, false);
       Range years = toMinMaxYear(year);
       Set<String> bors = basisOfRecord.isEmpty() ? null : Sets.newHashSet(basisOfRecord);
+
+      /*
+      PointFeatureFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, features.getFeaturesList(),
+                                              projection, z, x, y, POINT_TILE_SIZE, bufferSize,
+                                              years, bors);
+                                              */
       PointFeatureFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, features.getFeaturesList(),
                                               projection, z, x, y, POINT_TILE_SIZE, bufferSize,
                                               years, bors);
@@ -144,8 +150,12 @@ public final class TileResource {
           if (encoded.isPresent()) {
             LOG.debug("Found tile with encoded length of: " + encoded.get().length);
 
+            /*
             VectorTileFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, encoded.get(),
                                                   z, x, y, x1, y1, tileSize, bufferSize,
+                                                  years, bors, false);
+                                                  */
+            VectorTileFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, encoded.get(),
                                                   years, bors, false);
           }
         }

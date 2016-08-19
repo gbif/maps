@@ -1,21 +1,22 @@
+
 <!DOCTYPE html>
 <html>
 <head>
   <title>Maps</title>
   <meta charset="utf-8" />
 
-  <link rel="stylesheet" href="https://npmcdn.com/leaflet@1.0.0-rc.3/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css" />
 </head>
 <body>
   <div id="map" style="width: 1024px; height: 512px; background-color: #000"></div>
 
-  <script src="https://npmcdn.com/leaflet@1.0.0-rc.3/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
   <script>
 
     var map = L.map('map').setView(new L.LatLng(0, 0), 1);
 
-
-    L.tileLayer('http://maptest-vh.gbif.org:3000?z={z}&x={x}&y={y}', {detectRetina: true}).addTo(map);
+    //L.tileLayer('http://maptest-vh.gbif.org:3000?z={z}&x={x}&y={y}', {detectRetina: true}).addTo(map);
+    L.tileLayer('?z={z}&x={x}&y={y}', {detectRetina: true}).addTo(map);
 
   </script>
 </body>

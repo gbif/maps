@@ -260,7 +260,7 @@ function initMap(map) {
   map._gbif_layers.push("base");
 
   var backend = $('input[name="_type"]:checked').val();
-  var tileLayer = backend == "simple" ? "http://maptest-vh.gbif.org:3000" : "http://localhost:7001/api/solr"
+  var tileLayer = backend == "simple" ? "http://maptest-vh.gbif.org:6081" : "http://localhost:7001/api/solr"
   map.addSource('tile', {
     type: 'raster',
     "tileSize": 256,
