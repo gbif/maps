@@ -27,6 +27,8 @@ pointFeatures:
 tilePyramid:
   tableName: tim_test
   hfileCount: 100
+  numPartitions: 200
+  tileBufferSize: 64
   projections:
     # Web Mercator (e.g. like google maps)
     -  minZoom: 0
@@ -43,7 +45,3 @@ tilePyramid:
        maxZoom: 16
        tileSize: 512
        srs: EPSG:3575
-
-
-
-

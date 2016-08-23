@@ -76,10 +76,10 @@ object BackfillTiles {
         })
       }
       res
-    }).reduceByKey(_+_, 200).map(r => {       // TODO: configurify this as a "numPartitions" property
+    }).reduceByKey(_+_, config.tilePyramid.numPartitions).map(r => {
       // type, zxy, bor : pixel,year,count
       ((r._1._1, r._1._2, r._1._4),(r._1._3,r._1._5,r._2))
-    }).partitionBy(new TileGroupPartitioner(200))   // TODO: use "numPartitions" property
+    }).partitionBy(new TileGroupPartitioner(config.tilePyramid.numPartitions))
 
     // Maintain the same key structure of type+zxy+bor and rewrite values into a map of "pixelYear" -> count
     val appendVal = (m: MMap[Long,Int], v: (Int,Short,Int)) => {
@@ -324,7 +324,7 @@ object BackfillTiles {
       tiles4.mapValues(tile => {
         // set up the encoder with no buffer and false to indicate that the features are not 0..255 space, but
         // already in the the space of the tileSize
-        val bufferSize = 64 // TODO!!! read from that config tileBufferSize we created above
+        val bufferSize = config.tilePyramid.tileBufferSize
         val encoder = new VectorTileEncoder(projectionConfig.tileSize, bufferSize, false)
 
         tile.keySet.foreach(bor => {

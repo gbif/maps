@@ -89,7 +89,9 @@ class PointFeaturesConfiguration (
 class TilePyramidConfiguration (
   @JsonProperty("tableName") _tableName: String,
   @JsonProperty("hfileCount") _hfileCount: Int,
-  @JsonProperty("projections") _projections: Array[ProjectionConfig]
+  @JsonProperty("projections") _projections: Array[ProjectionConfig],
+  @JsonProperty("numPartitions") _numPartitions: Int,
+  @JsonProperty("tileBufferSize") _tileBufferSize: Int
 ) extends Serializable {
   //val tileSize = Preconditions.checkNotNull(_tileSize, "tileSize cannot be null" : Object)
   //val minZoom = Preconditions.checkNotNull(_minZoom, "minZoom cannot be null" : Object)
@@ -98,6 +100,8 @@ class TilePyramidConfiguration (
   val tableName = Preconditions.checkNotNull(_tableName, "tableName cannot be null" : Object)
   val hfileCount = Preconditions.checkNotNull(_hfileCount, "hfileCount cannot be null" : Object)
   val projections = Preconditions.checkNotNull(_projections, "projections cannot be null" : Object)
+  val numPartitions = Preconditions.checkNotNull(_numPartitions, "numPartitions cannot be null" : Object)
+  val tileBufferSize = Preconditions.checkNotNull(_tileBufferSize, "tileBufferSize cannot be null" : Object)
 }
 
 /**
