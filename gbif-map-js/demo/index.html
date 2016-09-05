@@ -12,12 +12,12 @@
 
 <body style='width: 100%; min-height: 100%; margin: 0px;'>
 
-  <div id='map' style='width: 800px; height: 400px;' ></div>
+  <div id='map' style='width: 800px; height: 800px;' ></div>
 
   <script>
     var map = new gbif.Map({
       container: 'map',
-      renderMode: 'png'
+      gbifTileServer: 'http://maptest-vh.gbif.org:6081'
     });
 
   </script>

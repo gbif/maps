@@ -167,7 +167,7 @@ object BackfillTiles {
         })
       }
 
-      val bufferSize = 8 // TODO - move into config parameter called "tileBufferSize"
+      val bufferSize = 64 // TODO - move into config parameter called "tileBufferSize"
       /**
         * Add a buffer to each tile by bringing in data from adjacent tiles.
         */
@@ -324,7 +324,7 @@ object BackfillTiles {
       tiles4.mapValues(tile => {
         // set up the encoder with no buffer and false to indicate that the features are not 0..255 space, but
         // already in the the space of the tileSize
-        val bufferSize = 8 // TODO!!! read from that config tileBufferSize we created above
+        val bufferSize = 64 // TODO!!! read from that config tileBufferSize we created above
         val encoder = new VectorTileEncoder(projectionConfig.tileSize, bufferSize, false)
 
         tile.keySet.foreach(bor => {

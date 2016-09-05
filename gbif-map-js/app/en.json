@@ -1,3 +1,9 @@
 {
-  "test": "Bingo"
+  "projection" :{
+    "title": "Format",
+    "mercator": "Basic",
+    "wgs84": "World",
+    "arctic": "Arctic",
+    "antarctic": "Antarctic"
+  }
 }

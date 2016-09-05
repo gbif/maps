@@ -20,7 +20,6 @@ import javax.ws.rs.core.MediaType;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
-import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -59,9 +58,9 @@ import vector_tile.VectorTile;
  */
 @Path("/hex")
 @Singleton
-public final class HexDensityResource {
+public final class HexDensityResourceOLD {
 
-  private static final Logger LOG = LoggerFactory.getLogger(HexDensityResource.class);
+  private static final Logger LOG = LoggerFactory.getLogger(HexDensityResourceOLD.class);
   private static final int TILE_SIZE = 512;
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final Mercator MERCATOR = new Mercator(TILE_SIZE);
@@ -74,7 +73,7 @@ public final class HexDensityResource {
 
   private final Connection connection;
 
- public HexDensityResource() throws IOException {
+ public HexDensityResourceOLD() throws IOException {
     Configuration conf = HBaseConfiguration.create();
     conf.set("hbase.zookeeper.quorum", "c1n2.gbif.org:2181,c1n3.gbif.org:2181,c1n1.gbif.org:2181");
     conf.setInt("hbase.zookeeper.property.clientPort", 2181);

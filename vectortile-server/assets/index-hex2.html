@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+  <meta charset='utf-8'/>
+  <title>Maps</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no'/>
+
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.js'></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/8.3.0/nouislider.min.js"></script>
+  <script src="https://code.jquery.com/jquery-2.2.1.min.js"
+          integrity="sha256-gvQgAFzTH6trSrAWoH1iPo9Xc96QxSZ3feW6kem+O00=" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+        integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.css' rel='stylesheet'/>
+  <link href='nouislider.css' rel='stylesheet'/>
+  <link href='style.css' rel='stylesheet'/>
+
+  <!-- include cartodb.js needed only so we can get the BaseURLs -->
+  <script src="http://libs.cartocdn.com/cartodb.js/v3/3.15/cartodb.core.js"></script>
+
+
+</head>
+<body>
+  <div id='map' class="map"></div>
+
+  <div class='features features-about'>
+    <h4>GBIF Map Diagnostics</h4>
+
+    <form id="config" class="form-horizontal">
+
+      <div class="form-group col-sm-12">
+        <label class="radio-inline">
+          <input type="radio" name="_type" id="typeSimple" value="simple" checked> Simple (HBase)
+        </label>
+        <label class="radio-inline">
+          <input type="radio" name="_type" id="typeAdhoc" value="adhoc"> Ad hoc search (SOLR)
+        </label>
+      </div>
+
+      <hr/>
+
+      <div class="form-group col-sm-12 text-nowrap">
+        <label for="mapKey" class="col-sm-3 control-label">Map key</label>
+        <div class="col-sm-9">
+          <input type="text" class="form-control" id="_mapKey" placeholder="Everything" value="">
+        </div>
+        <div class="col-md-offset-3 col-sm-3 small">
+          <ul class="list-unstyled">
+            <li><a href="#" onclick="$('#_mapKey').val(''); $('#_mapKey').change();">Everything</a></li>
+            <li><a href="#" onclick="$('#_mapKey').val('taxonKey=1'); $('#_mapKey').change();">Animals</a></li>
+            <li><a href="#" onclick="$('#_mapKey').val('taxonKey=6'); $('#_mapKey').change();">Plants</a></li>
+          </ul>
+        </div>
+        <div class="col-sm-3 small">
+          <ul class="list-unstyled">
+            <li><a href="#" onclick="$('#_mapKey').val('taxonKey=5231190'); $('#_mapKey').change();">House sparrow</a></li>
+            <li><a href="#" onclick="$('#_mapKey').val('taxonKey=9703'); $('#_mapKey').change();">Cats</a></li>
+            <li><a href="#" onclick="$('#_mapKey').val('country=US'); $('#_mapKey').change();">United States</a></li>
+          </ul>
+        </div>
+        <div class="col-sm-3 small">
+          <ul class="list-unstyled">
+            <li><a href="#" onclick="$('#_mapKey').val('datasetKey=4fa7b334-ce0d-4e88-aaae-2e0c138d049e'); $('#_mapKey').change();">eBird</a></li>
+            <li><a href="#" onclick="$('#_mapKey').val('taxonKey=2435098'); $('#_mapKey').change();">Puma</a></li>
+            <li><a href="#" onclick="$('#_mapKey').val('publishingOrganizationKey=57254bd0-8256-11d8-b7ed-b8a03c50a862'); $('#_mapKey').change();">BGBM</a></li>
+          </ul>
+        </div>
+
+      </div>
+      <hr/>
+
+
+      <div class="form-group col-sm-12">
+        <label class="radio-inline">
+          <input type="radio" name="srs" id="srs3857" value="EPSG:3857" checked> Mercator
+        </label>
+        <label class="radio-inline">
+          <input type="radio" name="srs" id="srsWGS84" value="EPSG:4326"> WGS84
+        </label>
+        <label class="radio-inline">
+          <input type="radio" name="srs" id="srs3575" value="EPSG:3575"> Arctic
+        </label>
+        <label class="radio-inline">
+          <input type="radio" name="srs" id="srsTODO" value="EPSG:3575"> Antarctic
+        </label>
+      </div>
+
+      <hr/>
+
+      <div class="form-group col-sm-7">
+        <label class="radio-inline">
+          <input type="radio" name="year" id="yearExcluded" value="null" checked> All years
+        </label>
+        <label class="radio-inline">
+          <input type="radio" name="year" id="yearRange" value="1700,2016"><span id="years">1700 - 2016</span></input>
+        </label>
+      </div>
+      <div class="form-group col-sm-5">
+        <div id='slider'></div>
+      </div>
+
+      <hr/>
+
+      <div class="form-group">
+        <div class="col-sm-12">
+          Note: If none are selected then no filter is applied, which is equivalent to selecting them all.
+          This is in line with all GBIF search APIs.
+        </div>
+
+        <div class="col-sm-6">
+          <div class="checkbox">
+            <label><input type="checkbox" name="basisOfRecord" value="OBSERVATION"> Observation</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="basisOfRecord" value="HUMAN_OBSERVATION"> Human Observation</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="basisOfRecord" value="MACHINE_OBSERVATION"> Machine Observation</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="basisOfRecord" value="MATERIAL_SAMPLE"> Material Sample</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="basisOfRecord" value="PRESERVED_SPECIMEN"> Preserved Specimen</label>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="checkbox">
+            <label><input type="checkbox" name="basisOfRecord" value="FOSSIL_SPECIMEN"> Fossil Specimen</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="basisOfRecord" value="LIVING_SPECIMEN"> Living Specimen</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="basisOfRecord" value="LITERATURE"> Literature</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" name="basisOfRecord" value="UNKNOWN"> Unknwon</label>
+          </div>
+        </div>
+      </div>
+
+      <!--hr/>
+
+      <div class="form-group col-sm-12">
+        <label for="style" class="control-label">Style</label>
+        <div class="col-sm-12">
+          <textarea id="_style" style="font-family: monospace" rows="15" cols="50">{
+    "circle-radius": 1.5,
+    "circle-color": "#9F9",
+    "circle-opacity": 0.5
+  }
+          </textarea>
+        </div>
+      </div-->
+
+    </form>
+  </div>
+
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiZ2JpZiIsImEiOiJjaW0xeXU1c3gwMG04dm1tNXB3cjJ3Zm12In0.8A2pUP_lgL19w4G5L0fDNw';
+
+    // gets the query string for the map tiles
+    function queryParams() {
+      // extract the params from the form for the map tiles
+      var mapType = null;
+      var mapValue = null;
+      var config = $('#config').serializeArray().reduce(function(obj, item) {
+        if (!obj.params) obj.params=[];
+
+        if (item.name && !item.name.startsWith("_") && item.value && item.value!="null") {
+          var param = item.name + "=" + item.value;
+          obj.params.push(param);
+        }
+
+        if (item.name == "_mapType") mapType = item.value;
+        if (item.name == "_mapKey") mapValue = item.value;
+
+        return obj;
+      }, {});
+      var mapKey = $('#_mapKey').val();
+      if (mapKey != "") config.params.push(mapKey);
+      return config.params;
+    }
+
+    // Use the SQL API of CartoDB to get the base layers
+    var baseURLs = {};
+    function setBaseURL(propertyName, sql) {
+      cartodb.Tiles.getTiles({
+        user_name: 'timrobertson100',
+        sublayers: [
+          {
+            sql: sql,
+            cartocss: "#layer { polygon-fill: #4D5258; polygon-opacity: 1; line-width:0}"
+          }
+        ]
+      }, function(tileTemplate) {
+        baseURLs[propertyName]=tileTemplate.tiles[0];
+        initMap(map); // super ugly hack while we lack events(!)
+      });
+    }
+    function initCDBBaseURLs() {
+      setBaseURL("epsg3857", "SELECT cartodb_id,the_geom_webmercator FROM world_borders_hd_copy");
+      setBaseURL("epsg4326", "SELECT ST_SCALE(the_geom, 111319.44444444444444, 111319.44444444444444) AS the_geom_webmercator " +
+                             "FROM world_borders_hd_copy");
+      setBaseURL("epsg3575", "SELECT cartodb_id,ST_Transform(ST_INTERSECTION(the_geom," +
+                             "ST_GeomFromText('POLYGON((-180 0, -180 90, 180 90, 180 0, -180 0))', 4326)),3575) AS the_geom_webmercator " +
+                             "FROM world_borders_hd_copy");
+    }
+
+    /**
+     * Initialises the map.
+     */
+    function initMap(map) {
+      // ugly hack for now
+      if (baseURLs.epsg4326 === undefined || baseURLs.epsg3575 === undefined || baseURLs.epsg3857 === undefined) {
+        return; // baseURLs not ready
+      }
+
+
+      // Remove layers if they exist
+      while(map._gbif_sources.length > 0) {
+        var s = map._gbif_sources.pop();
+        if (map.getSource(s)) map.removeSource(s);
+      }
+      while(map._gbif_layers.length > 0) {
+        var s = map._gbif_layers.pop();
+        if (map.getLayer(s)) map.removeLayer(s);
+      }
+
+      var params = queryParams();
+      var queryString = params.join("&");
+
+      // HACK!
+      queryString = queryString + "&bin=hex";
+      console.log(queryString);
+
+      // baseLayer raster
+      var baseURL = baseURLs.epsg3857;
+      if (params.indexOf("srs=EPSG:3575")!=-1) {
+        baseURL = baseURLs.epsg3575;
+      } else if (params.indexOf("srs=EPSG:4326")!=-1) {
+        baseURL = baseURLs.epsg4326;
+      }
+      map.addSource('base', {
+        type: 'raster',
+        "tiles": [
+          baseURL.replace("{s}", "a"),
+          baseURL.replace("{s}", "b"),
+          baseURL.replace("{s}", "c"),
+          baseURL.replace("{s}", "d")
+        ],
+        "tileSize": 256
+      });
+      map._gbif_sources.push("base");
+      map.addLayer({
+        "id": "base",
+        "type": "raster",
+        "source": "base",
+        "minzoom": 0,
+        "maxzoom": 12
+      });
+      map._gbif_layers.push("base");
+
+      var backend = $('input[name="_type"]:checked').val();
+      var tileLayer = backend == "simple" ? "http://localhost:7001/api/occurrence/density" : "http://localhost:7001/api/solr"
+      map.addSource('tile', {
+        type: 'vector',
+        "tiles": [tileLayer + "/{z}/{x}/{y}.mvt?" + queryString]
+      });
+      map._gbif_sources.push("tile");
+
+      var styles = {
+        "purple-yellow": {
+          colors: ["#5e0063", "#851362", "#a42e61", "#be4c60", "#d26b63", "#e28b6b", "#eeab79", "#f7cb8e", "#ffebaa"],
+          filters: [
+            ["<=", "total", 5],
+            ["all",[">", "total", 5],["<=", "total", 10]],
+            ["all",[">", "total", 10],["<=", "total", 50]],
+            ["all",[">", "total", 50],["<=", "total", 100]],
+            ["all",[">", "total", 100],["<=", "total", 500]],
+            ["all",[">", "total", 500],["<=", "total", 1000]],
+            ["all",[">", "total", 1000],["<=", "total", 5000]],
+            ["all",[">", "total", 5000],["<=", "total", 10000]],
+            [">", "total", 10000]
+          ]
+        },
+        "yellow-red": {
+          colors: ["#FFFF00", "#FFCC00", "#FF9900", "#FF6600", "#FF3300", "#FF0000"],
+          filters: [
+            ["<=", "total", 10],
+            ["all",[">", "total", 10],["<=", "total", 100]],
+            ["all",[">", "total", 100],["<=", "total", 1000]],
+            ["all",[">", "total", 1000],["<=", "total", 10000]],
+            ["all",[">", "total", 10000],["<=", "total", 100000]],
+            [">", "total", 100000]
+          ]
+        }
+      }
+
+      // chose the style
+      var style = styles["purple-yellow"];
+      //var style = styles["yellow-red"];
+
+      var simple = "simple" == backend ? false : false; // true if HBase, false if SOLR
+      for (i=0; i<style.colors.length; i++) {
+        if (simple) {
+          // playing with a shaded background to help continuous zoom
+          map.addLayer({
+            "id": "simple-background-" + i,
+            "type": "circle",
+            "source": "tile",
+            "source-layer": "occurrence",
+            "paint": {
+              "circle-radius": 4,
+              "circle-color": style.colors[i],
+              "circle-opacity": 0.015
+            },
+            "filter": style.filters[i]
+          });
+          map._gbif_layers.push("simple-background-" + i);
+
+          map.addLayer({
+            "id": "simple-" + i,
+            "type": "circle",
+            "source": "tile",
+            "source-layer": "occurrence",
+            "paint": {
+              "circle-radius": 1.5,
+              "circle-color": style.colors[i],
+              "circle-opacity": 0.8
+            },
+            "filter": style.filters[i]
+          });
+          map._gbif_layers.push("simple-" + i);
+
+        } else {
+          map.addLayer({
+            "id": "adhoc-" + i,
+            "type": "fill",
+            "source": "tile",
+            "source-layer": "occurrence",
+            "paint": {
+              "fill-color": style.colors[i],
+              "fill-opacity": 0.75,
+              "fill-outline-color": "#999999"
+            },
+            "filter": style.filters[i]
+          });
+          map._gbif_layers.push("adhoc-" + i);
+        }
+      }
+    }
+
+    // race condition here...
+    initCDBBaseURLs();
+
+    var map = new mapboxgl.Map({
+      container: 'map',
+      // default with no style
+      style: {
+        "version": 8,
+        "sources": {},
+        "layers": []
+      },
+      center: [0.13, 51.5],
+      zoom: 0,
+      maxZoom: 20
+    });
+    // maintain our stack of sources to make it easy to clear them (there appears no way to get a list of sources)
+    map._gbif_sources = [];
+    map._gbif_layers = [];
+
+    map.addControl(new mapboxgl.Navigation());
+
+    map.on('style.load', function () {
+      initMap(map);
+    });
+
+    noUiSlider.create(slider, {
+      start: [1700, 2016],
+      step: 1,
+      connect: true,
+      range: {
+        'min': 1700,
+        'max': 2016
+      }
+    });
+
+    // any input change of the form triggers a map reload
+    $("#config :input").change(function() {
+      var backend = $('input[name="_type"]:checked').val();
+      if ("adhoc" == backend) {
+        // SOLR only supports WGS84
+        $('#srsWGS84').prop('checked', true);
+      }
+      initMap(map);
+    });
+
+    slider.noUiSlider.on('update', function (vals) {
+      // only adjust the range the user can see
+      document.getElementById("years").innerText = Math.floor(vals[0]) + " - " + Math.floor(vals[1]);
+    });
+
+    slider.noUiSlider.on('change', function (vals) {
+      // native JS works, while JQuery seems to have issue
+      document.getElementById("yearRange").checked = true;
+      document.getElementById("yearExcluded").checked = false;
+      document.getElementById("years").innerText = Math.floor(vals[0]) + " - " + Math.floor(vals[1]);
+      document.getElementById("yearRange").value = Math.floor(vals[0]) + "," + Math.floor(vals[1]);
+      initMap(map); // fire the event to update
+    });
+
+  </script>
+</body>
+</html>

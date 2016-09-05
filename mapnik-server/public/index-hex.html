@@ -23,7 +23,7 @@
 
       defaultGBIFParams: {
         style: "classic",
-        srs: "EPSG:4326",
+        //srs: "EPSG:4326",
       },
 
       initialize: function (url, options) {
@@ -53,8 +53,8 @@
 
     //L.tileLayer('http://maptest-vh.gbif.org:6081/api/occurrence/density/{z}/{x}/{y}.png', {detectRetina: true}).addTo(map);
 
-    L.gbifSimpleLayer('http://maptest-vh.gbif.org:6081/api/occurrence/density/{z}/{x}/{y}.png',
-      {srs: "EPSG:4326", style: "classic"}).addTo(map);
+    L.gbifSimpleLayer('./api/occurrence/density/{z}/{x}/{y}.png',
+      {style: "classicPoly"}).addTo(map);
 
 
   </script>

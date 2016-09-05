@@ -1,7 +1,7 @@
 
 var fragments = fragments || {}; // this will be injected at build time
 
-var util = require('../../app/util/util'); // TODO: just remove them
+var util = require('../../app/util/util');
 var DOM = require('../../app/util/dom');
 var mapbox = require('mapbox-gl');
 
@@ -12,7 +12,7 @@ var defaultOptions = {
   zoom: 0,
   minZoom: defaultMinZoom,
   maxZoom: defaultMaxZoom,
-  renderMode: "png" // mode can be webgl or png
+  gbifTileServer: 'http://maptest-vh.gbif.org:6081', // TODO: change to the public API
 }
 
 /**
@@ -47,6 +47,23 @@ module.exports = {
     // read the options setting defaults
     options = util.extend({}, defaultOptions, options);
 
+
+    // the properties of the GBIF layer which are contolled
+    var gbifLayer = {
+      srs: null,
+      basisOfRecord: null,
+      style: null
+    }
+
+    var setSRS = function (value) {
+      self._map.getSource('tile').tiles = ["http://maptest-vh.gbif.org:6081/api/occurrence/density/{z}/{x}/{y}.png?srs=" + value];
+      var l = self._map.getLayer("simple");
+      self._map.removeLayer('simple').addLayer(l);
+
+    }
+
+
+
     // split out container into 2: one for the map, and one for the GBIF pane
     var container = document.getElementById(options.container);
     var controlContainer = DOM.create('div', 'gbif-map__control-container', container);
@@ -68,13 +85,13 @@ module.exports = {
 
     var c = DOM.create('div', '', controlContent);
     c.innerHTML = fragments['mapControl'];
-    //c.innerHTML = fs.readFileSync(path.join(__dirname, "../../generated-js/ui/controller_partial.html"));
 
-    //c.innerHTML = fs.readFileSync("./generated-js/ui/controller_partial.html");
+    // attach the event handlers
+    attachClickHandlers(c, "input[data-key='srs']" , setSRS);
 
-    //console.log(window.nunjucksPrecompiled["ui/controller_partial.njk"].root());
-    //c.innerHTML = nunjucks.render("../../generated-js/ui/controller_partial.js");
-    //c.innerHTML = nunjucks.render("../../generated-js/ui/controller_partial.js");
+
+
+
 
     // setup the map
     options.container = mapContainer;
@@ -88,7 +105,10 @@ module.exports = {
         type: 'raster',
         "tileSize": 256,
         //"tiles": ["http://localhost:3000//api/occurrence/density/{z}/{x}/{y}.png"]
-        "tiles": ["http://maptest-vh.gbif.org:6081/index.html?z={z}&x={x}&y={y}"]
+        //"tiles": ["http://maptest-vh.gbif.org:6081/api/occurrence/density/{z}/{x}/{y}.png?srs=EPSG:4326"]
+        //"tiles": ["http://maptest-vh.gbif.org:6081/api/occurrence/density/{z}/{x}/{y}.png?srs=EPSG:3575"]
+        //"tiles": ["http://maptest-vh.gbif.org:6081/api/occurrence/density/{z}/{x}/{y}.png"]
+        "tiles": ["http://maptest-vh.gbif.org:6081/api/occurrence/density/{z}/{x}/{y}.png"]
       });
       self._map.addLayer({
         "id": "simple",
@@ -115,5 +135,20 @@ module.exports = {
       a.addEventListener('click', function() { fn(); });
       return a;
     }
+
+    /**
+     * For all elements identified by the selector within the source, the handler is registered.
+     */
+    function attachClickHandlers(source, selector, handler) {
+      var elements = c.querySelectorAll(selector);
+      util.forEach(elements, function (index, value) {
+        value.onclick = function(e) {
+          handler(value.dataset.value);
+        }
+      });
+    }
+
+
   }
+
 };

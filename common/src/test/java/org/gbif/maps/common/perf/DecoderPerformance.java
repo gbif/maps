@@ -21,10 +21,10 @@ public class DecoderPerformance {
     decoder.setAutoScale(false);
 
     // all data, zoom 0 only with total counts
-    //InputStream is = DecoderPerformance.class.getResourceAsStream("/all_z0.mvt");
+    InputStream is = DecoderPerformance.class.getResourceAsStream("/all_z0.mvt");
 
     // all data, zoom 0 only with counts for each year
-    InputStream is = DecoderPerformance.class.getResourceAsStream("/all_z0_verbose.mvt");
+    //InputStream is = DecoderPerformance.class.getResourceAsStream("/all_z0_verbose.mvt");
 
 
     // all data, zoom 0 only with counts for each year separated by basis of record

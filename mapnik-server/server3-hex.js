@@ -39,15 +39,15 @@ var defaultStyle = "classic";
  *
  * Should this become more complex, then express or simi
  */
-var assetsHTML = ['/index.html', '/index2.html']
+var assetsHTML = ['/index.html', '/index2.html', '/index-hex.html']
 var assertsIcon = ['/favicon.ico']
 
 /**
  * TODO: Move to config
  * Defines the host and port for the vector tile server to use
  */
-var tileServerHost = "maptest-vh.gbif.org";
-var tileServerPort = "80";
+var tileServerHost = "localhost";
+var tileServerPort = "7001";
 
 
 var server = http.createServer(function(req, res) {
@@ -71,7 +71,8 @@ var server = http.createServer(function(req, res) {
     parsedRequest.port = tileServerPort;
     parsedRequest.protocol = "http:";
     var tileUrl = url.format(parsedRequest);
-    console.log(tileUrl);
+    tileUrl = tileUrl + "&bin=hex&taxonKey=797";
+    //console.log(tileUrl);
 
     // extract the x,y,z from the URL which could be /some/map/type/{z}/{x}/{y}.mvt?srs=EPSG:4326
     var dirs = parsedRequest.pathname.substring(0, parsedRequest.pathname.length - 4).split("/");

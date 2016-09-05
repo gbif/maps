@@ -94,9 +94,9 @@
   </build>
 
   <modules>
-    <module>vectortile-server</module>
     <module>common</module>
-    <module>spark-process</module>
+    <module>vectortile-server</module>
+    <!--module>spark-process</module-->
   </modules>
 
 
