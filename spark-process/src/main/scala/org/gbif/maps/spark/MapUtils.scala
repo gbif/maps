@@ -46,23 +46,23 @@ object MapUtils {
     (zxy(0).toShort, zxy(1).toLong, zxy(2).toLong)
   }
 
-  // Encodes the XY into an INT
-  def encodePixel(x: Short, y: Short): Int = {
-    x.toInt << 16 | y
+  // Encodes the Pixel into an EncodedPixel
+  def encodePixel(p: Pixel) : EncodedPixel = {
+    p.x.toInt << 16 | p.y
   }
 
-  // Decodes the XY from an INT
-  def decodePixel(p: Int): (Short,Short) = {
-    ((p >> 16).asInstanceOf[Short], p.asInstanceOf[Short])
+  // Decodes the EncodedPixel into a Pixel
+  def decodePixel(encp: EncodedPixel) : Pixel = {
+    Pixel((encp >> 16).asInstanceOf[Short], encp.asInstanceOf[Short])
   }
 
-  // Encodes an (encoded) pixel and year into a Long
-  def encodePixelYear(p: Int, y: Short): Long = {
-    p.toLong << 32 | y
+  // Encodes an EncodedPixel and Year into a Long
+  def encodePixelYear(p: EncodedPixel, year: Year) : EncodedPixelYear = {
+    p.toLong << 32 | year
   }
 
-  // Decodes a pixel and year pair
-  def decodePixelYear(py: Long): (Int,Short) = {
+  // Decodes an EncodedPixelYear into an EncodedPixel and Year pair
+  def decodePixelYear(py: EncodedPixelYear) : (EncodedPixel, Year) = {
     ((py >> 32).asInstanceOf[Int], py.asInstanceOf[Short])
   }
 
@@ -95,6 +95,4 @@ object MapUtils {
     })
     res.toSet // immutable
   }
-
-
 }
