@@ -8,6 +8,8 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.{HashPartitioner, SparkContext}
 import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature
+import org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord
+import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
 import scala.collection.Set
@@ -21,19 +23,25 @@ import scala.collection.Set
   * collection of objects, each representing the count of records at a single location+year+basisOfRecord combination.
   */
 object BackfillPoints {
-
+  val logger = LoggerFactory.getLogger("org.gbif.maps.spark.BackfillPoints")
 
   def build(sc :SparkContext, df : DataFrame, keys: Set[String], config: MapConfiguration): Unit = {
 
     // collect a count by location, bor and year for each mapKey
-    var pointSource = df.flatMap(row => {
+    val pointSource = df.flatMap(row => {
       // extract the keys for the record and filter to only those that have been determined as suitable
       val mapKeys = MapUtils.mapKeysForRecord(row).intersect(keys)
 
       // extract the dimensions of interest from the record
       val lat = row.getDouble(row.fieldIndex("decimallatitude"))
       val lng = row.getDouble(row.fieldIndex("decimallongitude"))
-      val bor = MapUtils.BASIS_OF_RECORD(row.getString(row.fieldIndex("basisofrecord")))
+      val bor: BasisOfRecord = try {
+        MapUtils.BASIS_OF_RECORD(row.getString(row.fieldIndex("basisofrecord")))
+      } catch {
+        case ex: Exception => { logger.error("Unknown BasisOfRecord {}", row.getString(row.fieldIndex("basisofrecord")));  }
+          PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN
+      }
+
       val year = if (row.isNullAt(row.fieldIndex("year"))) null.asInstanceOf[Short]
       else row.getInt((row.fieldIndex("year"))).asInstanceOf[Short]
 
