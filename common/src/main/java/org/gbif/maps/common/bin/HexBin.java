@@ -7,6 +7,7 @@ import org.gbif.maps.io.PointFeature;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,13 +23,13 @@ import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
 import no.ecc.vectortile.VectorTileDecoder;
 import no.ecc.vectortile.VectorTileEncoder;
-import org.codetome.hexameter.core.api.DefaultSatelliteData;
+import org.codetome.hexameter.core.api.defaults.DefaultSatelliteData;
 import org.codetome.hexameter.core.api.Hexagon;
 import org.codetome.hexameter.core.api.HexagonOrientation;
 import org.codetome.hexameter.core.api.HexagonalGrid;
 import org.codetome.hexameter.core.api.HexagonalGridBuilder;
 import org.codetome.hexameter.core.api.HexagonalGridLayout;
-import org.codetome.hexameter.core.api.SatelliteData;
+import org.codetome.hexameter.core.api.contract.SatelliteData;
 import org.codetome.hexameter.core.backport.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +48,13 @@ public class HexBin {
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final VectorTileDecoder DECODER = new VectorTileDecoder();
 
-  private static final int NUM_HEX_BUFFER = 2;
+  // we provide a buffer size of 6 to ensure that we have plenty of hexagon grid around the tile
+  // to avoid https://github.com/Hexworks/hexameter/issues/32 and to ensure we have enough room to
+  // offset the grid to align at the tile boundaries.
+  private static final int NUM_HEX_BUFFER = 8;
+  private static final double HEX_GRID_OFFSET_X = 1.5;
+  private static final double HEX_GRID_OFFSET_Y = 2;
+
 
   static {
     DECODER.setAutoScale(false);
@@ -55,8 +62,6 @@ public class HexBin {
 
   private final int tileSize;
   private final int hexPerTile;
-
-
   private final double radius;
   private final double hexWidth;
   private final double hexHeight;
@@ -64,27 +69,30 @@ public class HexBin {
   // TODO: needs to be a common schema thing
   private final String layerName = "occurrence";
 
-  public HexBin(int tileSize, int hexPerTile) {
+  /**
+   * Constructs a hexagon binner whereby there will be at least minHexPerTile hexagons on each tile, adjusted to ensure
+   * that they tessellate properly.
+   * @param tileSize The tile size to paint
+   * @param minHexPerTile The minimum number of hexagons per tile
+   */
+  public HexBin(int tileSize, int minHexPerTile) {
     this.tileSize = tileSize;
-    this.hexPerTile = hexPerTile;
 
-    // in order to teselate, we need to add an extra 1/2 to the user requested tiles.
-    // e.g. 9 will result in 9.5 tiles painted
-    double w = 1.5 * (((double)hexPerTile + 1) / 2);
+    // In order to tessellate we need to add an extra 1/2 to the user requested tiles, and round up to an odd number.
+    // e.g. 9 will result in 9.5 tiles painted (so would 8)
+    minHexPerTile = minHexPerTile%2 == 0 ? minHexPerTile+1 : minHexPerTile; // round up to nearest odd number
+    double w = 1.5 * (((double)minHexPerTile + 1) / 2);
+    this.hexPerTile = (int) Math.ceil(minHexPerTile);
+
     hexWidth = tileSize / w;
     radius = hexWidth / 2;
-
 
     // for flat top, 2.5x width produces 3 hexagons, therefore 5R gives 3 hexagons
     //radius = (3.0 * tileSize) / (5d * ((double)hexPerTile + 0.5));
     //hexWidth = radius*2;
     hexHeight = (Math.sqrt(3)/2) * hexWidth;
 
-    LOG.info("Radius [{}], width[{}], height[{}]", radius, hexWidth, hexHeight);
-
-    LOG.info("horizontal: {}" , tileSize / hexWidth);
-
-
+    LOG.debug("Radius [{}], width[{}], height[{}]", radius, hexWidth, hexHeight);
   }
 
   public byte[] bin(byte[] sourceTile, int z, long x, long y) throws IOException {
@@ -98,9 +106,10 @@ public class HexBin {
     // Hexagons do not align at boundaries, and therefore we need to determine the offsets to ensure polygons
     // meet correctly across tiles.  The maximum offset is 1.5 cells horizontally and 1 cell vertically due to using
     // flat top tiles.  This is apparent when you see a picture. See http://www.redblobgames.com/grids/hexagons/#basics
-    final double gridOffsetX = (x*((tileSize)%(1.5*hexWidth)))%(1.5*hexWidth);
-    final double gridOffsetY = (y*(tileSize%hexHeight))%hexHeight;
+    final double gridOffsetX = (x*tileSize)%(1.5*hexWidth);
+    final double gridOffsetY = (y*tileSize)%hexHeight;
 
+    LOG.info("Radius [{}], width[{}], height[{}]", radius, hexWidth, hexHeight);
     LOG.info("Grid offsets: {},{}", gridOffsetX, gridOffsetY);
 
     // for each feature returned from the datastore locate its hexagon and store the data on the hexagon
@@ -120,22 +129,22 @@ public class HexBin {
                                     gridOffsetY,
                                     tileLocalXY.getX() * scale,
                                     tileLocalXY.getY() * scale,
-                                    feature);
+                                    feature,
+                                    x,
+                                    y);
       if (hex != null) {
         dataCells.add(hex);
       }
-
     }
 
-    VectorTileEncoder encoder = new VectorTileEncoder(tileSize, 64, false);
-    for (Hexagon hexagon : dataCells) {
+    VectorTileEncoder encoder = new VectorTileEncoder(tileSize, tileSize/4, false);
+    for (Hexagon<HexagonData> hexagon : dataCells) {
       Coordinate[] coordinates = new Coordinate[7];
       int i = 0;
-      for (org.codetome.hexameter.core.api.Point point : hexagon.getPoints()) {
-        coordinates[i++] = new Coordinate(point.getCoordinateX() - gridOffsetX - (hexWidth * 1.5),
-                                          point.getCoordinateY() - gridOffsetY - (2 * hexHeight));
-//        coordinates[i++] = new Coordinate(point.getCoordinateX() - gridOffsetX,
-//                                          point.getCoordinateY() - gridOffsetY);
+      Collection<org.codetome.hexameter.core.api.Point> points = hexagon.getPoints();
+      for (org.codetome.hexameter.core.api.Point point : points) {
+        coordinates[i++] = new Coordinate(point.getCoordinateX() - gridOffsetX - hexWidth * HEX_GRID_OFFSET_X,
+                                          point.getCoordinateY() - gridOffsetY - hexHeight * HEX_GRID_OFFSET_Y);
       }
       coordinates[6] = coordinates[0]; // close our polygon
       LinearRing linear = GEOMETRY_FACTORY.createLinearRing(coordinates);
@@ -150,9 +159,11 @@ public class HexBin {
                roundThreeDecimals(hexagon.getCenterX())
       );
 
+
+
       if (hexagon.getSatelliteData().isPresent()
-          && hexagon.getSatelliteData().get().getCustomData("total").isPresent()) {
-        meta.put("total", hexagon.getSatelliteData().get().getCustomData("total").get());
+          && hexagon.getSatelliteData().get().getMetadata().containsKey("total")) {
+        meta.put("total", hexagon.getSatelliteData().get().getMetadata().get("total"));
         LOG.debug("total {}", meta.get("total"));
 
       }
@@ -169,16 +180,16 @@ public class HexBin {
     return encoder.encode();
   }
 
+  /**
+   * Establish the grid, with a sufficient periphery hexagons to allow for adjustments due to tile boundary alignment
+   * and the nearest neighbour behaviour of the hexagon lookup (https://github.com/Hexworks/hexameter/issues/32).
+   * @return The grid of hexagons
+   */
   @VisibleForTesting
   HexagonalGrid newGridInstance() {
-    // Set up the NxM grid of hexes, allowing for buffer of 2 hexagons all around.  If hexagons aligned perfectly
-    // to the tile boundary a buffer of 1 would suffice.  However, a buffer of 2 allows us to move the grid to align
-    // the hexagon polygons with the ones in the tile directly above and to the left.
-    int requiredWidth = hexPerTile + NUM_HEX_BUFFER*2;
-    int requiredHeight = (int) Math.ceil(tileSize / hexHeight) + NUM_HEX_BUFFER*2;
-
-    LOG.info("Grid: {}x{}", requiredWidth, requiredHeight);
-
+    int requiredWidth = hexPerTile + NUM_HEX_BUFFER;
+    int requiredHeight = (int) Math.ceil(tileSize / hexHeight) + NUM_HEX_BUFFER;
+    LOG.debug("Grid: {}x{}", requiredWidth, requiredHeight);
     return new HexagonalGridBuilder()
       .setGridWidth(requiredWidth)
       .setGridHeight(requiredHeight)
@@ -211,39 +222,51 @@ public class HexBin {
     double gridOffsetY,
     double tileLocalX,
     double tileLocalY,
-    VectorTileDecoder.Feature feature
+    VectorTileDecoder.Feature feature,
+    long x, long y
   ) {
 
-    // and the pixel when on hex grid space, compensating for the offset and 2 hex buffer
-    // TODO: here we need to use NUM_HEX_BUFFER
-    double hexGridLocalX = tileLocalX + gridOffsetX + 1.5*hexWidth;
-    double hexGridLocalY = tileLocalY + gridOffsetY + 2*hexHeight;
-    //double hexGridLocalX = tileLocalX;
-    //double hexGridLocalY = tileLocalY;
+    // we only care about features that are on the tile, or within one hexagon of the tile, otherwise they can't
+    // possibly result in a hexagon, or partial hexagon rendered on this tile.  This is important, because the get by
+    // grid.getByPixelCoordinate() used will return the nearest hexagon, which may result in invalid hexagons rendering.
+    //if (tileLocalX < tileSize+hexWidth && tileLocalX > -hexWidth
+    //  && tileLocalY <tileSize+hexHeight && tileLocalY > -hexHeight) {
+    if (true) {
+
+      // and the pixel when on hex grid space, compensating for the offset and 2 hex buffer
+      // TODO: here we need to use NUM_HEX_BUFFER
+      double hexGridLocalX = tileLocalX + gridOffsetX + HEX_GRID_OFFSET_X*hexWidth;
+      double hexGridLocalY = tileLocalY + gridOffsetY + HEX_GRID_OFFSET_Y*hexHeight;
 
 
+      Optional<Hexagon<HexagonData>> hex = grid.getByPixelCoordinate(hexGridLocalX, hexGridLocalY);
+      if (hex.isPresent()) {
+        Hexagon<HexagonData> hexagon = hex.get();
 
-    Optional<Hexagon> hex = grid.getByPixelCoordinate(hexGridLocalX, hexGridLocalY);
-    if (hex.isPresent()) {
-      Hexagon hexagon = hex.get();
+        if (z==2 && x==0 && y==2) {
+          LOG.info("Adding Hex in tile[{},{}] tileLocal[{},{}], gridOffset[{},{}], hexGrid[{},{}]", x,y, tileLocalX, tileLocalY, gridOffsetX, gridOffsetY, hexGridLocalX, hexGridLocalY);
 
-      if (!hexagon.getSatelliteData().isPresent()) {
-        hexagon.setSatelliteData(new DefaultSatelliteData());
-      }
-
-      if (hexagon.getSatelliteData().isPresent()) {
-        SatelliteData cellData = hexagon.getSatelliteData().get();
-
-        // HACK!!!
-        long total = 10;
-        if (!cellData.getCustomData("total").isPresent()) {
-          cellData.addCustomData("total", total);
-        } else {
-          long existing = (Long)cellData.getCustomData("total").get();
-          cellData.addCustomData("total", total + existing);
         }
+
+        if (!hexagon.getSatelliteData().isPresent()) {
+          hexagon.setSatelliteData(new HexagonData());
+        }
+
+        if (hexagon.getSatelliteData().isPresent()) {
+          HexagonData cellData = hexagon.getSatelliteData().get();
+
+          // HACK!!!
+          long total = 10;
+          if (!cellData.getMetadata().containsKey("total")) {
+            cellData.getMetadata().put("total", total);
+          } else {
+            long existing = (Long)cellData.getMetadata().get("total");
+            cellData.getMetadata().put("total", total + existing);
+          }
+        }
+        return hexagon;
       }
-      return hexagon;
+
     }
 
     return null;

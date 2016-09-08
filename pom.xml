@@ -36,12 +36,11 @@
     <logback.version>1.1.6</logback.version>
     <java-vector-tile.version>1.1.2</java-vector-tile.version>
     <commons-math3.version>3.6.1</commons-math3.version>
-    <hexameter.version>2.0.0</hexameter.version>
+    <hexameter.version>3.0.0</hexameter.version>
     <fastutil.version>7.0.12</fastutil.version>
     <hive.version>1.1.0-cdh5.4.10</hive.version>
     <hadoop.version>2.6.0-cdh5.4.10</hadoop.version>
     <hbase.version>1.0.0-cdh5.4.10</hbase.version>
-    <hexameter.version>2.0.0</hexameter.version>
     <geotools.version>15.0</geotools.version>
 
     <scala.tools.version>2.10</scala.tools.version>
@@ -96,7 +95,7 @@
   <modules>
     <module>common</module>
     <module>vectortile-server</module>
-    <!--module>spark-process</module-->
+    <module>spark-process</module>
   </modules>
 
 
@@ -184,11 +183,6 @@
         <artifactId>dropwizard-testing</artifactId>
         <version>${dropwizard.version}</version>
         <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.codetome</groupId>
-        <artifactId>hexameter-core</artifactId>
-        <version>${hexameter.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hive</groupId>

@@ -139,16 +139,15 @@ public class PointFeatureFilters {
     return new Predicate<Feature>() {
       @Override
       public boolean test(Feature f) {
-
-        if (bors != null) {
+        if (bors == null || bors.isEmpty()) {
+          return true;
+        } else {
           for (String bor : bors) {
             if (bor.equalsIgnoreCase(f.getBasisOfRecord().toString())) {
               return true;
             }
           }
           return false; // no basis of record match the given options
-        } else {
-          return true;
         }
       }
     };

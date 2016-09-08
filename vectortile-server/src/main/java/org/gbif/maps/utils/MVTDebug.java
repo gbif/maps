@@ -28,8 +28,6 @@ public class MVTDebug {
       System.out.println("Layer: " + layer);
     }
 
-
-
     Iterator<VectorTileDecoder.Feature> iter = features.iterator();
     int total = 0;
     int duplicateLocations = 0;
@@ -38,6 +36,7 @@ public class MVTDebug {
     while (iter.hasNext()) {
       VectorTileDecoder.Feature f = iter.next();
       String coord = f.getGeometry().toString();
+      System.out.println(coord);
       if (coords.contains(coord)) {
         duplicateLocations++;
       }

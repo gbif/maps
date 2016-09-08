@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -118,6 +119,67 @@ public class PointFeatureFiltersTest {
     assertEquals("Pixel 3 meta invalid - total", 1l, meta3.get("total"));
     assertEquals("Pixel 3 meta invalid - 2011", 1l, meta3.get("2011"));
   }
+
+  /**
+   * A test to check that buffer regions addres as we would expect.
+   * This encodes some sample data into a tile at 1,1 in zoom 1 whereby some of the data will be in the buffer zone.
+   * It then decodes it, verifying that the coordinates look as one would expect, and things outside of the buffer
+   * were discarded.
+   */
+  @Test
+  public void testBuffering() throws IOException {
+    // our tile will be addressed at 1,1,1 (z,x,y)
+    List<PointFeature.PointFeatures.Feature> features = ImmutableList.of(
+      newFeature(0.0, 0.0, 2009, BasisOfRecord.HUMAN_OBSERVATION, 1),     // NW corner
+      newFeature(0.0, 180.0, 2010, BasisOfRecord.HUMAN_OBSERVATION, 1),   // NE corner
+      newFeature(-90.0, 0.0, 2009, BasisOfRecord.HUMAN_OBSERVATION, 1),   // SW corner
+      newFeature(-90.0, 180.0, 2010, BasisOfRecord.HUMAN_OBSERVATION, 1), // SE corner
+      newFeature(-45.0, -1.0, 2010, BasisOfRecord.HUMAN_OBSERVATION, 1),  // W bufferzone
+      newFeature(1.0, 90.0, 2010, BasisOfRecord.HUMAN_OBSERVATION, 1),    // N bufferzone
+      newFeature(90.0, 45.0, 2010, BasisOfRecord.HUMAN_OBSERVATION, 1)    // Outside buffer
+    );
+
+    // add all features in "layer" which should all be ignored
+    VectorTileEncoder encoder = new VectorTileEncoder(4096, 128, false);
+    TileProjection projection = Tiles.fromEPSG("EPSG:4326", 4096); // Plate carée (WGS84)
+    PointFeatureFilters.collectInVectorTile(
+      encoder,
+      "bufferedLayer",
+      features,
+      projection,
+      1, 1, 1, 4096, 128,
+      new Range(null, null), Sets.newHashSet()); // no filters
+    byte[] encoded = encoder.encode();
+
+    VectorTileDecoder decoder = new VectorTileDecoder();
+    decoder.setAutoScale(false); // don't convert to 256 pixel tiles
+    VectorTileDecoder.FeatureIterable featureIter = decoder.decode(encoded);
+
+    Set<Double2D> coordinates = Sets.newHashSet();
+    featureIter.forEach(f -> {
+      assertTrue("Features must all be geometries", f.getGeometry() instanceof Point);
+      Point p = (Point) f.getGeometry();
+      Double2D pixel = new Double2D(p.getX(), p.getY());
+      assertFalse("Tile should not have duplicate points", coordinates.contains(pixel));
+      coordinates.add(pixel);
+    });
+    assertEquals("Expected 6 coorindates", 6, coordinates.size());
+    assertTrue("NW missing", coordinates.contains(new Double2D(0,0)));
+    assertTrue("NE missing", coordinates.contains(new Double2D(4096,0)));
+    assertTrue("SW missing", coordinates.contains(new Double2D(0,2048)));
+    assertTrue("SE missing", coordinates.contains(new Double2D(4096,2048)));
+
+    // buffer coordinates are difficult to do exactly, so just confirm they are there in the general zone
+    boolean westBufferFound = false;
+    boolean northBufferFound = false;
+    for (Double2D c : coordinates) {
+      westBufferFound = westBufferFound || (c.getY() == 1024.0 && c.getX()<0 && c.getX() > -25);
+      northBufferFound = northBufferFound || (c.getX() == 2048.0 && c.getY()<0 && c.getY() > -25);
+    }
+    assertTrue("W buffer missing", westBufferFound);
+    assertTrue("N buffer missing", northBufferFound);
+  }
+
 
   /**
    * Utility to build features.

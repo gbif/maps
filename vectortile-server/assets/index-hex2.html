@@ -232,8 +232,9 @@
       var queryString = params.join("&");
 
       // HACK!
-      queryString = queryString + "&bin=hex";
-      console.log(queryString);
+      var points = queryString;
+      queryString = queryString + "&bin=hex&hexPerTile=11";
+      //console.log(queryString);
 
       // baseLayer raster
       var baseURL = baseURLs.epsg3857;
@@ -269,6 +270,19 @@
         "tiles": [tileLayer + "/{z}/{x}/{y}.mvt?" + queryString]
       });
       map._gbif_sources.push("tile");
+
+
+      // add a point layer for debug!
+      map.addSource('tile-points', {
+        type: 'vector',
+        "tiles": [tileLayer + "/{z}/{x}/{y}.mvt?" + points]
+      });
+      map._gbif_sources.push("tile-points");
+
+      map.showTileBoundaries = true;
+
+
+
 
       var styles = {
         "purple-yellow": {
@@ -342,12 +356,25 @@
             "source-layer": "occurrence",
             "paint": {
               "fill-color": style.colors[i],
-              "fill-opacity": 0.75,
-              "fill-outline-color": "#999999"
+              "fill-opacity": 0.5,
+              "fill-outline-color": "#000000"
             },
             "filter": style.filters[i]
           });
           map._gbif_layers.push("adhoc-" + i);
+
+          map.addLayer({
+            "id": "simple2-" + i,
+            "type": "circle",
+            "source": "tile-points",
+            "source-layer": "occurrence",
+            "paint": {
+              "circle-radius": 1,
+              "circle-color": "#F00",
+              "circle-opacity": 0.8
+            }
+          });
+          map._gbif_layers.push("simple2-" + i);
         }
       }
     }

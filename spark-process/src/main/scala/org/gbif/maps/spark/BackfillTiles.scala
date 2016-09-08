@@ -285,7 +285,7 @@ object BackfillTiles {
         // e.g. if you are on the bottom row there is no tile below to accumulate from, but the dateline does wrap.
 
         // North
-        if (z>0 && !tileN.isEmpty && y>0) {
+        if (z>0 && !tileN.isEmpty) {
           res += (((mapKey, MapUtils.toZXY(z.asInstanceOf[Byte],x,y-1)),tileN))
         }
         // South

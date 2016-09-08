@@ -71,7 +71,7 @@ var server = http.createServer(function(req, res) {
     parsedRequest.port = tileServerPort;
     parsedRequest.protocol = "http:";
     var tileUrl = url.format(parsedRequest);
-    tileUrl = tileUrl + "&bin=hex&taxonKey=797";
+    tileUrl = tileUrl + "&bin=hex&taxonKey=9703&hexPerTile=51";
     //console.log(tileUrl);
 
     // extract the x,y,z from the URL which could be /some/map/type/{z}/{x}/{y}.mvt?srs=EPSG:4326
