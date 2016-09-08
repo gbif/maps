@@ -186,7 +186,7 @@ object BackfillTiles {
 //        t._2 : Map BasisOfRecord → (Map Long → Int)
 
         t._2.foreach(keyVal => {
-          val bor = keyVal._1
+          val basis = keyVal._1
           val points = keyVal._2
 
           points.foreach((feature : (Long,Int)) => {
@@ -198,7 +198,7 @@ object BackfillTiles {
 
             // North
             if (pixel.y < bufferSize) {
-              val bor = tileN.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileN.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = pixel.x.asInstanceOf[Short]
               val py = (pixel.y + tileSize).asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
@@ -207,7 +207,7 @@ object BackfillTiles {
 
             // North West
             if (pixel.y < bufferSize && pixel.x < bufferSize) {
-              val bor = tileNW.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileNW.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = (pixel.x + tileSize).asInstanceOf[Short]
               val py = (pixel.y + tileSize).asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
@@ -216,7 +216,7 @@ object BackfillTiles {
 
             // North East
             if (pixel.y < bufferSize && pixel.x >= projectionConfig.tileSize - bufferSize) {
-              val bor = tileNE.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileNE.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = (pixel.x - tileSize).asInstanceOf[Short]
               val py = (pixel.y + tileSize).asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
@@ -225,7 +225,7 @@ object BackfillTiles {
 
             // West
             if (pixel.x < bufferSize) {
-              val bor = tileW.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileW.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = (pixel.x + tileSize).asInstanceOf[Short]
               val py = pixel.y.asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
@@ -234,7 +234,7 @@ object BackfillTiles {
 
             // East
             if (pixel.x >= projectionConfig.tileSize - bufferSize) {
-              val bor = tileE.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileE.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = (pixel.x - tileSize).asInstanceOf[Short]
               val py = pixel.y.asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
@@ -243,7 +243,7 @@ object BackfillTiles {
 
             // South
             if (pixel.y >= projectionConfig.tileSize - bufferSize) {
-              val bor = tileS.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileS.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = pixel.x.asInstanceOf[Short]
               val py = (pixel.y - tileSize).asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
@@ -252,7 +252,7 @@ object BackfillTiles {
 
             // South West
             if (pixel.y >= projectionConfig.tileSize - bufferSize && pixel.x < bufferSize) {
-              val bor = tileSW.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileSW.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = (pixel.x + tileSize).asInstanceOf[Short]
               val py = (pixel.y - tileSize).asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
@@ -261,7 +261,7 @@ object BackfillTiles {
 
             // South East
             if (pixel.y >= projectionConfig.tileSize - bufferSize && pixel.x >= projectionConfig.tileSize) {
-              val bor = tileSE.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileSE.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = (pixel.x - tileSize).asInstanceOf[Short]
               val py = (pixel.y - tileSize).asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
