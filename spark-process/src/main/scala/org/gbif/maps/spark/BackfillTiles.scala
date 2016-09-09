@@ -64,7 +64,9 @@ object BackfillTiles {
 
         // read the fields of interest
         val bor = MapUtils.BASIS_OF_RECORD(row.getString(row.fieldIndex("basisofrecord")))
-        val year = Option(row.fieldIndex("year")).getOrElse(null).asInstanceOf[Short]
+        val year =
+          if (row.isNullAt(row.fieldIndex("year"))) null.asInstanceOf[Short]
+          else row.getInt((row.fieldIndex("year"))).asInstanceOf[Short]
 
         // extract the keys for the record and filter to only those that are meant to be put in a tile pyramid
         val mapKeys = MapUtils.mapKeysForRecord(row).intersect(keys)

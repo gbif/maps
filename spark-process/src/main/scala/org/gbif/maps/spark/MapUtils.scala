@@ -9,6 +9,7 @@ import scala.collection.mutable
   * TODO: Consider moving much of this to Java and into the common project
   */
 object MapUtils {
+
   // Dictionary of map types
   val MAPS_TYPES = Map(
     "ALL" -> 0,
@@ -48,22 +49,22 @@ object MapUtils {
 
   // Encodes the Pixel into an EncodedPixel
   def encodePixel(p: Pixel) : EncodedPixel = {
-    p.x.toInt << 16 | p.y
+    p.x << 16 | p.y & 0xFFFF
   }
 
   // Decodes the EncodedPixel into a Pixel
-  def decodePixel(encp: EncodedPixel) : Pixel = {
-    Pixel((encp >> 16).asInstanceOf[Short], encp.asInstanceOf[Short])
+  def decodePixel(encoded: EncodedPixel) : Pixel = {
+    Pixel((encoded >> 16).asInstanceOf[Short], (encoded & 0xFFFF).asInstanceOf[Short])
   }
 
   // Encodes an EncodedPixel and Year into a Long
   def encodePixelYear(p: EncodedPixel, year: Year) : EncodedPixelYear = {
-    p.toLong << 32 | year
+    p.toLong << 32 | year & 0xFFFF
   }
 
   // Decodes an EncodedPixelYear into an EncodedPixel and Year pair
   def decodePixelYear(py: EncodedPixelYear) : (EncodedPixel, Year) = {
-    ((py >> 32).asInstanceOf[Int], py.asInstanceOf[Short])
+    ((py >> 32).asInstanceOf[Int], (py & 0xFFFF).asInstanceOf[Short])
   }
 
   // Returns all the map keys for the given row in an immutable Set
