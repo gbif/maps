@@ -162,7 +162,8 @@ object BackfillTiles {
         })
       }
 
-      val bufferSize = 64 // TODO - move into config parameter called "tileBufferSize"
+      val bufferSize = config.tilePyramid.tileBufferSize
+
       /**
         * Add a buffer to each tile by bringing in data from adjacent tiles.
         */
@@ -316,6 +317,7 @@ object BackfillTiles {
         * Generate the vector tile and write it as an HFile.
         */
       tiles4.mapValues(tile => {
+      //tiles3.mapValues(tile => {
         // set up the encoder with no buffer and false to indicate that the features are not 0..255 space, but
         // already in the the space of the tileSize
         val bufferSize = config.tilePyramid.tileBufferSize

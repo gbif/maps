@@ -84,7 +84,7 @@ object MapUtils {
     if (!row.isNullAt(row.fieldIndex("specieskey"))) taxonIDs+=row.getInt(row.fieldIndex("specieskey"))
     if (!row.isNullAt(row.fieldIndex("taxonkey"))) taxonIDs+=row.getInt(row.fieldIndex("taxonkey"))
 
-    val res = mutable.Set(
+    val res = mutable.Set[String](
       toMapKey(MAPS_TYPES("ALL"), 0),
       toMapKey(MAPS_TYPES("DATASET"), datasetKey),
       toMapKey(MAPS_TYPES("PUBLISHER"), publisherKey),

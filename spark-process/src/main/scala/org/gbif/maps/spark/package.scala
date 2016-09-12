@@ -14,6 +14,10 @@ package object spark {
   type EncodedPixel = Int
   type EncodedPixelYear = Long
 
+  type MapKey = String
+
+
+
   case class Pixel (x: Short, y: Short)
   case class PixelYear (py: PixelYear, year: Short)
 

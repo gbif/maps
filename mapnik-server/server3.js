@@ -46,8 +46,10 @@ var assertsIcon = ['/favicon.ico']
  * TODO: Move to config
  * Defines the host and port for the vector tile server to use
  */
-var tileServerHost = "maptest-vh.gbif.org";
-var tileServerPort = "80";
+//var tileServerHost = "maptest-vh.gbif.org";
+//var tileServerPort = "80";
+var tileServerHost = "localhost";
+var tileServerPort = "7001";
 
 
 var server = http.createServer(function(req, res) {

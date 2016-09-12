@@ -161,7 +161,7 @@ public final class TileResource {
     if (optionalFeatures.isPresent()) {
       TileProjection projection = Tiles.fromEPSG(srs, POINT_TILE_SIZE);
       PointFeature.PointFeatures features = optionalFeatures.get();
-      LOG.debug("Found {} features", features.getFeaturesCount());
+      LOG.info("Found {} features", features.getFeaturesCount());
       VectorTileEncoder encoder = new VectorTileEncoder(POINT_TILE_SIZE, POINT_TILE_BUFFER, false);
 
       PointFeatureFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, features.getFeaturesList(),

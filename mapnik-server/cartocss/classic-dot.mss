@@ -1,5 +1,5 @@
 #occurrence {
-  dot-width: 20;
+  dot-width: 2;
   [total <= 10] { dot-fill: #FFFF00;  }
   [total > 10][total <= 100] { dot-fill: #FFCC00;  }
   [total > 100][total <= 1000] { dot-fill: #FF9900;  }
