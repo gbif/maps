@@ -1,6 +1,5 @@
 package org.gbif.maps.spark
 
-import org.apache.hadoop.hbase.{HBaseConfiguration, HConstants}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.slf4j.LoggerFactory
 
@@ -32,40 +31,19 @@ object Backfill {
     val sc = new SparkContext(conf)
 
     val df =
-      if (true) {
+      if (config.source.startsWith("/")) {
+        logger.info("Reading Parquet file {}", config.source)
         val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 
-        sqlContext.read.parquet(config.sourceFile)
+        sqlContext.read.parquet(config.source)
       }
       else {
-        val hbaseConf = HBaseConfiguration.create()
-        // Other options for hbase configuration are available, please check
-        // http://hbase.apache.org/apidocs/org/apache/hadoop/hbase/HConstants.html
-        val zkQuorum = "zk1.gbif-dev.org,zk2.gbif-dev.org,zk3.gbif-dev.org"
-        hbaseConf.set(HConstants.ZOOKEEPER_QUORUM, zkQuorum)
+        logger.info("Reading from HBase table {}", config.source)
 
-        println("AOEUAOEUAOEUAOEUAOEUAOEUAOEUAOEU")
-        println("AOEUAOEUAOEUAOEUAOEUAOEUAOEUAOEU")
-        println("AOEUAOEUAOEUAOEUAOEUAOEUAOEUAOEU")
-        println("AOEUAOEUAOEUAOEUAOEUAOEUAOEUAOEU")
-        println("AOEUAOEUAOEUAOEUAOEUAOEUAOEUAOEU")
-        println("AOEUAOEUAOEUAOEUAOEUAOEUAOEUAOEU")
-        println("Reading from HBase, dev_occurrence")
-
-        HBaseInput.readFromHBase(hbaseConf, sc, "dev_occurrence")
+        HBaseInput.readFromHBase(config, sc)
       }
 
-//    df = df.limit(5000)
-
-    logger.error("Columns are {}", df.columns)
-    logger.error("Columns are {}", df.columns)
-    logger.error("Columns are {}", df.columns)
-    logger.error("Columns are {}", df.columns)
-    logger.error("Columns are {}", df.columns)
-    logger.error("Columns are {}", df.columns)
-    logger.error("Columns are {}", df.columns)
-    logger.error("Columns are {}", df.columns)
-    logger.error("Columns are {}", df.columns)
+    logger.info("DataFrame columns are {}", df.columns)
 
     // get a count of records per mapKey
     val counts = df.flatMap(MapUtils.mapKeysForRecord(_)).countByValue()
@@ -99,4 +77,3 @@ object Backfill {
     assert(args(0).equals("all") || args(0).equals("tiles") || args(0).equals("points"), usage)
   }
 }
-

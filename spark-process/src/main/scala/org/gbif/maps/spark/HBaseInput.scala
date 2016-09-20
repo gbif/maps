@@ -1,9 +1,7 @@
 package org.gbif.maps.spark
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.HBaseConfiguration
 import org.apache.hadoop.hbase.mapreduce.TableInputFormat
-import org.apache.hadoop.hbase.HConstants
+import org.apache.hadoop.hbase.{HBaseConfiguration, HConstants}
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark._
 import org.apache.spark.sql.types._
@@ -16,34 +14,15 @@ import org.slf4j.LoggerFactory
 object HBaseInput {
   val logger = LoggerFactory.getLogger("org.gbif.maps.spark.HBaseInput")
 
-  def main(args: Array[String]) {
+  def readFromHBase(config: MapConfiguration, sc: SparkContext) : DataFrame = {
+    val hbaseConf = HBaseConfiguration.create()
+    hbaseConf.set(HConstants.ZOOKEEPER_QUORUM, config.hbase.zkQuorum)
+    hbaseConf.set(HConstants.HBASE_CLIENT_SCANNER_CACHING, config.hbase.scannerCaching)
 
-    val sparkConf = new SparkConf().setAppName("HBaseTest")
-    val sc = new SparkContext(sparkConf)
-    val conf = HBaseConfiguration.create()
-    // Other options for hbase configuration are available, please check
-    // http://hbase.apache.org/apidocs/org/apache/hadoop/hbase/HConstants.html
-    val zkQuorum = "c1n1.gbif.org,c1n2.gbif.org,c1n6.gbif.org"
-    conf.set(HConstants.ZOOKEEPER_QUORUM, zkQuorum)
-    // Other options for configuring scan behavior are available. More information available at
-    // http://hbase.apache.org/apidocs/org/apache/hadoop/hbase/mapreduce/TableInputFormat.html
-    val inputTable = "dev_occurrence"
-
-    readFromHBase(conf, sc, inputTable)
-
-    sc.stop()
-  }
-
-  def readFromHBase(conf: Configuration, sc: SparkContext, inputTable: String) : DataFrame = {
     val sqlContext = new SQLContext(sc)
 
-    conf.set(HConstants.HBASE_CLIENT_SCANNER_CACHING, "1000") // TODO Configure
-
-    conf.set(TableInputFormat.INPUT_TABLE, inputTable) // TODO Configure, not parameter
-
-    conf.set(TableInputFormat.SCAN_COLUMN_FAMILY, "o")
-
     // Fields to read from HBase, and their types as they will be in the DataFrame
+    val columnFamily = "o"
     val fieldNamesAndTypes : List[(String, DataType)] = List(
       ("datasetKey", StringType),
       ("publishingOrgKey", StringType),
@@ -67,10 +46,12 @@ object HBaseInput {
       ("hasGeospatialIssues", BooleanType)
     )
 
-    val scanColumns = fieldNamesAndTypes.map(_._1).foldLeft("")( (a, b) => a + "o:"+b+" " ).trim
-    conf.set(TableInputFormat.SCAN_COLUMNS, scanColumns)
+    val scanColumns = fieldNamesAndTypes.map(_._1).foldLeft("")( (a, b) => a + columnFamily+":"+b+" " ).trim
+    hbaseConf.set(TableInputFormat.INPUT_TABLE, config.source)
+    hbaseConf.set(TableInputFormat.SCAN_COLUMN_FAMILY, columnFamily)
+    hbaseConf.set(TableInputFormat.SCAN_COLUMNS, scanColumns)
 
-    val hBaseRDD = sc.newAPIHadoopRDD(conf,
+    val hBaseRDD = sc.newAPIHadoopRDD(hbaseConf,
       classOf[TableInputFormat],
       classOf[org.apache.hadoop.hbase.io.ImmutableBytesWritable],
       classOf[org.apache.hadoop.hbase.client.Result])
@@ -91,7 +72,7 @@ object HBaseInput {
     val emptyBoolean = new Array[Byte](1)
 
     val rowRDD = hBaseRDD.map{ case(_, result) => {
-      val o = Bytes.toBytes("o");
+      val o = Bytes.toBytes(columnFamily)
 
       Row(
         Bytes.toString(Option(result.getValue(o, Bytes.toBytes("datasetKey"))).getOrElse(empty)),
@@ -117,13 +98,6 @@ object HBaseInput {
       )
     }}
 
-    val df : DataFrame = sqlContext.createDataFrame(rowRDD, schema)
-
-    // TODO Explain why this doesn't work.
-    // val df : DataFrame = sqlContext.createDataFrame(xxx.values, classOf[Occurrence])
-
-    logger.error("Columns are {}", df.columns)
-
-    return df
+    sqlContext.createDataFrame(rowRDD, schema)
   }
 }
