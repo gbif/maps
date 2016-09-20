@@ -1,7 +1,8 @@
 package org.gbif.maps.spark
 
-import org.apache.spark.sql.DataFrame
+import org.apache.hadoop.hbase.{HBaseConfiguration, HConstants}
 import org.apache.spark.{SparkConf, SparkContext}
+import org.slf4j.LoggerFactory
 
 /**
   * This is the driver for backfilling HBase maps.
@@ -11,6 +12,8 @@ import org.apache.spark.{SparkConf, SparkContext}
   * </pre>
   */
 object Backfill {
+  val logger = LoggerFactory.getLogger("org.gbif.maps.spark.Backfill")
+
   val usage = "Usage: [all,tiles,points] configFile"
 
   /**
@@ -27,11 +30,46 @@ object Backfill {
     val conf = new SparkConf().setAppName(config.appName)
     conf.setIfMissing("spark.master", "local[2]") // 2 threads for local dev in IDE, ignored when run on a cluster
     val sc = new SparkContext(conf)
-    val sqlContext = new org.apache.spark.sql.SQLContext(sc)
-    val df = sqlContext.read.parquet(config.sourceFile)
+
+    val df =
+      if (true) {
+        val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+
+        sqlContext.read.parquet(config.sourceFile)
+      }
+      else {
+        val hbaseConf = HBaseConfiguration.create()
+        // Other options for hbase configuration are available, please check
+        // http://hbase.apache.org/apidocs/org/apache/hadoop/hbase/HConstants.html
+        val zkQuorum = "zk1.gbif-dev.org,zk2.gbif-dev.org,zk3.gbif-dev.org"
+        hbaseConf.set(HConstants.ZOOKEEPER_QUORUM, zkQuorum)
+
+        println("AOEUAOEUAOEUAOEUAOEUAOEUAOEUAOEU")
+        println("AOEUAOEUAOEUAOEUAOEUAOEUAOEUAOEU")
+        println("AOEUAOEUAOEUAOEUAOEUAOEUAOEUAOEU")
+        println("AOEUAOEUAOEUAOEUAOEUAOEUAOEUAOEU")
+        println("AOEUAOEUAOEUAOEUAOEUAOEUAOEUAOEU")
+        println("AOEUAOEUAOEUAOEUAOEUAOEUAOEUAOEU")
+        println("Reading from HBase, dev_occurrence")
+
+        HBaseInput.readFromHBase(hbaseConf, sc, "dev_occurrence")
+      }
+
+//    df = df.limit(5000)
+
+    logger.error("Columns are {}", df.columns)
+    logger.error("Columns are {}", df.columns)
+    logger.error("Columns are {}", df.columns)
+    logger.error("Columns are {}", df.columns)
+    logger.error("Columns are {}", df.columns)
+    logger.error("Columns are {}", df.columns)
+    logger.error("Columns are {}", df.columns)
+    logger.error("Columns are {}", df.columns)
+    logger.error("Columns are {}", df.columns)
 
     // get a count of records per mapKey
     val counts = df.flatMap(MapUtils.mapKeysForRecord(_)).countByValue()
+
 
     if (Set("all","points").contains(args(0))) {
       // upto the threshold we can store points
@@ -49,6 +87,8 @@ object Backfill {
         BackfillTiles.build(sc,df,mapKeys.keySet,config, proj)
       })
     }
+
+    sc.stop()
   }
 
   /**
