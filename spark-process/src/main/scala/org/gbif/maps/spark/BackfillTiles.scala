@@ -67,13 +67,15 @@ object BackfillTiles {
         val zxy = MapUtils.toZXY(zoom, x, y) // the encoded tile address
 
         // read the fields of interest
-        val year = Option(row.fieldIndex("year")).getOrElse(null).asInstanceOf[Short]
         val bor: BasisOfRecord = try {
           MapUtils.BASIS_OF_RECORD(row.getString(row.fieldIndex("basisofrecord")))
         } catch {
           case ex: Exception => { logger.error("Unknown BasisOfRecord {}", row.getString(row.fieldIndex("basisofrecord")));  }
             PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN
         }
+        val year =
+          if (row.isNullAt(row.fieldIndex("year"))) null.asInstanceOf[Short]
+          else row.getInt((row.fieldIndex("year"))).asInstanceOf[Short]
 
         // extract the keys for the record and filter to only those that are meant to be put in a tile pyramid
         val mapKeys = MapUtils.mapKeysForRecord(row).intersect(keys)
@@ -169,7 +171,8 @@ object BackfillTiles {
         })
       }
 
-      val bufferSize = 64 // TODO - move into config parameter called "tileBufferSize"
+      val bufferSize = config.tilePyramid.tileBufferSize
+
       /**
         * Add a buffer to each tile by bringing in data from adjacent tiles.
         */
@@ -195,7 +198,7 @@ object BackfillTiles {
 //        t._2 : Map BasisOfRecord → (Map Long → Int)
 
         t._2.foreach(keyVal => {
-          val bor = keyVal._1
+          val basis = keyVal._1
           val points = keyVal._2
 
           points.foreach((feature : (Long,Int)) => {
@@ -207,7 +210,7 @@ object BackfillTiles {
 
             // North
             if (pixel.y < bufferSize) {
-              val bor = tileN.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileN.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = pixel.x.asInstanceOf[Short]
               val py = (pixel.y + tileSize).asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
@@ -216,7 +219,7 @@ object BackfillTiles {
 
             // North West
             if (pixel.y < bufferSize && pixel.x < bufferSize) {
-              val bor = tileNW.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileNW.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = (pixel.x + tileSize).asInstanceOf[Short]
               val py = (pixel.y + tileSize).asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
@@ -225,7 +228,7 @@ object BackfillTiles {
 
             // North East
             if (pixel.y < bufferSize && pixel.x >= projectionConfig.tileSize - bufferSize) {
-              val bor = tileNE.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileNE.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = (pixel.x - tileSize).asInstanceOf[Short]
               val py = (pixel.y + tileSize).asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
@@ -234,7 +237,7 @@ object BackfillTiles {
 
             // West
             if (pixel.x < bufferSize) {
-              val bor = tileW.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileW.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = (pixel.x + tileSize).asInstanceOf[Short]
               val py = pixel.y.asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
@@ -243,7 +246,7 @@ object BackfillTiles {
 
             // East
             if (pixel.x >= projectionConfig.tileSize - bufferSize) {
-              val bor = tileE.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileE.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = (pixel.x - tileSize).asInstanceOf[Short]
               val py = pixel.y.asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
@@ -252,7 +255,7 @@ object BackfillTiles {
 
             // South
             if (pixel.y >= projectionConfig.tileSize - bufferSize) {
-              val bor = tileS.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileS.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = pixel.x.asInstanceOf[Short]
               val py = (pixel.y - tileSize).asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
@@ -261,7 +264,7 @@ object BackfillTiles {
 
             // South West
             if (pixel.y >= projectionConfig.tileSize - bufferSize && pixel.x < bufferSize) {
-              val bor = tileSW.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileSW.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = (pixel.x + tileSize).asInstanceOf[Short]
               val py = (pixel.y - tileSize).asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
@@ -270,7 +273,7 @@ object BackfillTiles {
 
             // South East
             if (pixel.y >= projectionConfig.tileSize - bufferSize && pixel.x >= projectionConfig.tileSize) {
-              val bor = tileSE.getOrElseUpdate(bor, MMap[Long,Int]())
+              val bor = tileSE.getOrElseUpdate(basis, MMap[Long,Int]())
               val px = (pixel.x - tileSize).asInstanceOf[Short]
               val py = (pixel.y - tileSize).asInstanceOf[Short]
               val newKey = MapUtils.encodePixelYear(MapUtils.encodePixel(Pixel(px,py)), year)
@@ -323,6 +326,7 @@ object BackfillTiles {
         * Generate the vector tile and write it as an HFile.
         */
       tiles4.mapValues(tile => {
+      //tiles3.mapValues(tile => {
         // set up the encoder with no buffer and false to indicate that the features are not 0..255 space, but
         // already in the the space of the tileSize
         val bufferSize = config.tilePyramid.tileBufferSize

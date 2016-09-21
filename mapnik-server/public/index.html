@@ -53,8 +53,10 @@
 
     //L.tileLayer('http://maptest-vh.gbif.org:6081/api/occurrence/density/{z}/{x}/{y}.png', {detectRetina: true}).addTo(map);
 
-    L.gbifSimpleLayer('http://maptest-vh.gbif.org:6081/api/occurrence/density/{z}/{x}/{y}.png',
-      {srs: "EPSG:4326", style: "classic"}).addTo(map);
+    //L.gbifSimpleLayer('http://maptest-vh.gbif.org:6081/api/occurrence/density/{z}/{x}/{y}.png',
+    //  {srs: "EPSG:3875", style: "classic"}).addTo(map);
+    L.gbifSimpleLayer('http://localhost:3000/api/occurrence/density/{z}/{x}/{y}.png',
+      {srs: "EPSG:3857", style: "classic"}).addTo(map);
 
 
   </script>

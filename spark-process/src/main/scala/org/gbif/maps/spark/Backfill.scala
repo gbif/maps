@@ -62,7 +62,8 @@ object Backfill {
       println("MapKeys suitable for creating tile pyramid maps: " + mapKeys.size)
       config.tilePyramid.projections.foreach(proj => {
         println("Building tiles for projection" + proj.srs)
-        BackfillTiles.build(sc,df,mapKeys.keySet,config, proj)
+        //BackfillTiles.build(sc,df,mapKeys.keySet,config, proj)
+        BackfillTiles2.build(sc,df,mapKeys.keySet,config, proj)
       })
     }
 
