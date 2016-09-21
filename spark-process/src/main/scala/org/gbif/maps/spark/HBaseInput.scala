@@ -56,24 +56,20 @@ object HBaseInput {
       classOf[org.apache.hadoop.hbase.io.ImmutableBytesWritable],
       classOf[org.apache.hadoop.hbase.client.Result])
 
-//    val filteredOccurrences = filteredOccurrences.filter(row => {
-//      val occ = row._2
-//        (occ.decimalLatitude != 0) &&
-//        (occ.decimalLongitude != 0) &&
-//      !occ.hasGeospatialIssues
-//    })
-
     // Creating an SQL DataFrame
     val fields = fieldNamesAndTypes.map{ case (fieldName, fieldType) => StructField(fieldName.toLowerCase(), fieldType, nullable = true) }
     val schema = StructType(fields)
 
+    val o = Bytes.toBytes(columnFamily)
     val empty = new Array[Byte](4)
-    val emptyDouble = new Array[Byte](8)
     val emptyBoolean = new Array[Byte](1)
 
-    val rowRDD = hBaseRDD.map{ case(_, result) => {
-      val o = Bytes.toBytes(columnFamily)
-
+    val rowRDD = hBaseRDD.filter{ case(_, result) => {
+      // Filter out records without a position, or with a geospatial issue
+      Option(result.getValue(o, Bytes.toBytes("decimalLatitude"))).nonEmpty &&
+      Option(result.getValue(o, Bytes.toBytes("decimalLongitude"))).nonEmpty &&
+      ! Bytes.toBoolean(Option(result.getValue(o, Bytes.toBytes("hasGeospatialIssues"))).getOrElse(emptyBoolean))
+    }}.map{ case(_, result) => {
       Row(
         Bytes.toString(Option(result.getValue(o, Bytes.toBytes("datasetKey"))).getOrElse(empty)),
         Bytes.toString(Option(result.getValue(o, Bytes.toBytes("publishingOrgKey"))).getOrElse(empty)),
@@ -81,8 +77,8 @@ object HBaseInput {
         Bytes.toString(Option(result.getValue(o, Bytes.toBytes("countryCode"))).getOrElse(empty)),
         Bytes.toString(Option(result.getValue(o, Bytes.toBytes("basisOfRecord"))).getOrElse(empty)),
 
-        Bytes.toDouble(Option(result.getValue(o, Bytes.toBytes("decimalLatitude"))).getOrElse(emptyDouble)),
-        Bytes.toDouble(Option(result.getValue(o, Bytes.toBytes("decimalLongitude"))).getOrElse(emptyDouble)),
+        Bytes.toDouble(result.getValue(o, Bytes.toBytes("decimalLatitude"))), // Filter ensures not null.
+        Bytes.toDouble(result.getValue(o, Bytes.toBytes("decimalLongitude"))),
         Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("kingdomKey"))).getOrElse(empty)),
         Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("phylumKey"))).getOrElse(empty)),
         Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("classKey"))).getOrElse(empty)),
