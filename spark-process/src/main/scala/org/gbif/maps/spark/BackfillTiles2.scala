@@ -9,7 +9,10 @@ import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.{HashPartitioner, Partitioner, SparkContext}
 import org.gbif.maps.common.projection.Tiles
+import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature
+import org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord
+import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.{Map => MMap}
 import scala.collection.{Set, mutable}
@@ -19,6 +22,7 @@ import scala.collection.{Set, mutable}
   */
 object BackfillTiles2 {
   private val GEOMETRY_FACTORY = new GeometryFactory()
+  private val logger = LoggerFactory.getLogger("org.gbif.maps.spark.BackfillTiles2")
 
   /**
     * A partitioner that puts pixels in the same category together but ignores Z,X and Y.
@@ -64,7 +68,12 @@ object BackfillTiles2 {
         val zxy = MapUtils.toZXY(zoom, x, y) // the encoded tile address
 
         // read the fields of interest
-        val bor = MapUtils.BASIS_OF_RECORD(row.getString(row.fieldIndex("basisofrecord")))
+        val bor: BasisOfRecord = try {
+          MapUtils.BASIS_OF_RECORD(row.getString(row.fieldIndex("basisofrecord")))
+        } catch {
+          case ex: Exception => { logger.error("Unknown BasisOfRecord {}", row.getString(row.fieldIndex("basisofrecord"))); }
+            PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN
+        }
         val year =
           if (row.isNullAt(row.fieldIndex("year"))) null.asInstanceOf[Short]
           else row.getInt((row.fieldIndex("year"))).asInstanceOf[Short]

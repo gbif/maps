@@ -54,7 +54,7 @@ object Configurations {
   */
 class MapConfiguration (
   @JsonProperty("appName") _appName: String,
-  @JsonProperty("sourceFile") _sourceFile: String,
+  @JsonProperty("source") _source: String,
   @JsonProperty("targetDirectory") _targetDirectory: String,
   @JsonProperty("tilesThreshold") _tilesThreshold: Int,
   @JsonProperty("hbase") _hbase: HBaseConfiguration,
@@ -62,7 +62,7 @@ class MapConfiguration (
   @JsonProperty("tilePyramid") _tilePyramid: TilePyramidConfiguration
 ) extends Serializable {
   val appName = Preconditions.checkNotNull(_appName, "appName cannot be null" : Object)
-  val sourceFile = Preconditions.checkNotNull(_sourceFile, "sourceFile cannot be null" : Object)
+  val source = Preconditions.checkNotNull(_source, "source cannot be null" : Object)
   val targetDirectory = Preconditions.checkNotNull(_targetDirectory, "targetDirectory cannot be null" : Object)
   val tilesThreshold = Preconditions.checkNotNull(_tilesThreshold, "tilesThreshold cannot be null" : Object)
   val hbase = Preconditions.checkNotNull(_hbase, "hbase cannot be null" : Object)
@@ -123,7 +123,9 @@ class ProjectionConfig  (
   * Configuration specific to the HBase.
   */
 class HBaseConfiguration (
+  @JsonProperty("scannerCaching") _scannerCaching: String,
   @JsonProperty("zkQuorum") _zkQuorum: String
 ) extends Serializable {
+  val scannerCaching = Preconditions.checkNotNull(_scannerCaching, "scannerCaching cannot be null" : Object)
   val zkQuorum = Preconditions.checkNotNull(_zkQuorum, "zkQuorum cannot be null" : Object)
 }

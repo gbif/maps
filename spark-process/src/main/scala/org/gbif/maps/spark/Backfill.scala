@@ -1,7 +1,7 @@
 package org.gbif.maps.spark
 
-import org.apache.spark.sql.DataFrame
 import org.apache.spark.{SparkConf, SparkContext}
+import org.slf4j.LoggerFactory
 
 /**
   * This is the driver for backfilling HBase maps.
@@ -11,6 +11,8 @@ import org.apache.spark.{SparkConf, SparkContext}
   * </pre>
   */
 object Backfill {
+  val logger = LoggerFactory.getLogger("org.gbif.maps.spark.Backfill")
+
   val usage = "Usage: [all,tiles,points] configFile"
 
   /**
@@ -27,11 +29,25 @@ object Backfill {
     val conf = new SparkConf().setAppName(config.appName)
     conf.setIfMissing("spark.master", "local[2]") // 2 threads for local dev in IDE, ignored when run on a cluster
     val sc = new SparkContext(conf)
-    val sqlContext = new org.apache.spark.sql.SQLContext(sc)
-    val df = sqlContext.read.parquet(config.sourceFile)
+
+    val df =
+      if (config.source.startsWith("/")) {
+        logger.info("Reading Parquet file {}", config.source)
+        val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+
+        sqlContext.read.parquet(config.source)
+      }
+      else {
+        logger.info("Reading from HBase table {}", config.source)
+
+        HBaseInput.readFromHBase(config, sc)
+      }
+
+    logger.info("DataFrame columns are {}", df.columns)
 
     // get a count of records per mapKey
     val counts = df.flatMap(MapUtils.mapKeysForRecord(_)).countByValue()
+
 
     if (Set("all","points").contains(args(0))) {
       // upto the threshold we can store points
@@ -50,6 +66,8 @@ object Backfill {
         BackfillTiles2.build(sc,df,mapKeys.keySet,config, proj)
       })
     }
+
+    sc.stop()
   }
 
   /**
@@ -60,4 +78,3 @@ object Backfill {
     assert(args(0).equals("all") || args(0).equals("tiles") || args(0).equals("points"), usage)
   }
 }
-
