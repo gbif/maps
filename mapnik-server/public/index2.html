@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://npmcdn.com/leaflet@1.0.0-rc.3/dist/leaflet.css" />
 </head>
 <body>
-  <div id="map" style="width: 1000px; height: 500px; background-color: #000"></div>
+  <div id="map" style="width: 1000px; height: 500px; background-color: #848A8E"></div>
   <script src="https://npmcdn.com/leaflet@1.0.0-rc.3/dist/leaflet.js"></script>
   <script>
 
@@ -51,7 +51,8 @@
       return new L.GBIFSimple(url, options);
     };
 
-    L.gbifSimpleLayer('./api/solr/{z}/{x}/{y}.png?datasetKey=83e20573-f7dd-4852-9159-21566e1e691e', {style: "classicPoly"}).addTo(map);
+    //L.gbifSimpleLayer('./api/solr/{z}/{x}/{y}.png?datasetKey=83e20573-f7dd-4852-9159-21566e1e691e', {style: "classicPoly"}).addTo(map);
+    L.gbifSimpleLayer('./api/solr/{z}/{x}/{y}.png', {style: "classicPoly"}).addTo(map);
 
 
   </script>

@@ -19,7 +19,6 @@ package object spark {
 
 
   case class Pixel (x: Short, y: Short)
-  case class PixelYear (py: PixelYear, year: Short)
 
   case class FeatureCC (py: EncodedPixelYear, bor: Int)
   type TilePoints = MMap[Long,Int]

@@ -1,12 +1,14 @@
-package org.gbif.maps.spark
+package org.gbif.maps.tile
 
 import org.gbif.maps.spark._
 import org.scalatest.FunSuite
 
+
 /**
-  * Unit tests for MapUtils.
+  * Unit tests for Tile package functions.
   */
-class MapUtilsSuite extends FunSuite {
+class TileSuite extends FunSuite {
+
   test("Ensure pixels encode and decode correctly") {
     assert(Pixel(0,0) === encodeDecode(Pixel(0,0)))
     assert(Pixel(0,-1) === encodeDecode(Pixel(0,-1)))
@@ -43,15 +45,14 @@ class MapUtilsSuite extends FunSuite {
   }
 
   private def encodeDecode(pixel: Pixel) : Pixel = {
-    var encoded = MapUtils.encodePixel(pixel)
-    MapUtils.decodePixel(encoded)
+    var encoded = encodePixel(pixel)
+    decodePixel(encoded)
   }
 
   private def encodeDecode(pixel: Pixel, year: Year) : (Pixel, Year) = {
-    var encoded = MapUtils.encodePixelYear(
-      MapUtils.encodePixel(pixel), year)
+    var encoded = encodePixelYear(encodePixel(pixel), year)
 
-    var decoded = MapUtils.decodePixelYear(encoded)
-    (MapUtils.decodePixel(decoded._1), decoded._2)
+    var decoded = decodePixelYear(encoded)
+    (decodePixel(decoded._1), decoded._2)
   }
 }

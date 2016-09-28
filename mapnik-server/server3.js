@@ -39,7 +39,7 @@ var defaultStyle = "classic";
  *
  * Should this become more complex, then express or simi
  */
-var assetsHTML = ['/index.html', '/index2.html']
+var assetsHTML = ['/index.html', '/index2.html', '/auth.html']
 var assertsIcon = ['/favicon.ico']
 
 /**

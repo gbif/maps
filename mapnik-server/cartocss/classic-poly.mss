@@ -1,5 +1,6 @@
 #occurrence {
   polygon-fill: #006d2c;
+  opacity: 0.9;
   line-color: "#7b7b7b";
   line-width: 1;
   line-opacity: 0.5;

@@ -17,7 +17,7 @@ import scala.collection.{Set, mutable}
 /**
   * A builder of HFiles for a tile pyramid.
   */
-object BackfillTiles2 {
+object BackfillTiles3 {
   private val GEOMETRY_FACTORY = new GeometryFactory()
 
   /**
@@ -104,6 +104,22 @@ object BackfillTiles2 {
       */
     (projectionConfig.minZoom to projectionConfig.maxZoom).reverse.foreach(z => {
 
+      val downscale = z != projectionConfig.maxZoom; // true if we are moving down a zoom level
+
+      tiles3 = tiles3.flatMap(t => {
+        val result = mutable.ArrayBuffer[((String, String), DensityTile)]()
+
+        val mapKey = t._1._1
+        val (tileZ, x, y) = MapUtils.fromZXY(t._1._2)
+        val namedTiles = t._2.downscaleBuffer(x, y, projectionConfig.tileSize, config.tilePyramid.tileBufferSize, true)
+
+        val regionsOfInterest = TileBuffers.bufferRegions(tileZ, x, y, projectionConfig.tileSize, downscale, true)
+        val tiles = t._2.flatMapToRegions(regionsOfInterest, x, y, projectionConfig.tileSize, config.tilePyramid.tileBufferSize, downscale)
+
+        result
+      }).reduceByKey(DensityTile.merge(_,_))
+
+
       // downscale if needed, by merging the previous zoom tiles together (each quad of tiles become one tile)
       if (z != projectionConfig.maxZoom) {
 
@@ -188,5 +204,4 @@ object BackfillTiles2 {
   }).saveAsNewAPIHadoopFile(config.targetDirectory + "/tiles/" + projectionConfig.srs.replaceAll(":", "_") + "/z" + z, classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat], Configurations.hfileOutputConfiguration(config, config.tilePyramid.tableName))
     })
   }
-
 }

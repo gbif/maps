@@ -54,7 +54,7 @@
     //L.tileLayer('http://maptest-vh.gbif.org:6081/api/occurrence/density/{z}/{x}/{y}.png', {detectRetina: true}).addTo(map);
 
     L.gbifSimpleLayer('./api/occurrence/density/{z}/{x}/{y}.png',
-      {style: "classicPoly"}).addTo(map);
+      {style: "classicPoly", detectRetina: false}).addTo(map);
 
 
   </script>
