@@ -10,15 +10,13 @@ import scala.collection.mutable.{Map => MMap}
 package object spark {
   type Year = Short
 
-  type ZXY = (Short,Long,Long)
+  //type ZXY = (Short,Long,Long)
   type EncodedPixel = Int
   type EncodedPixelYear = Long
 
   type MapKey = String
 
-
-
-  case class Pixel (x: Short, y: Short)
+  //case class Pixel (x: Short, y: Short)
 
   case class FeatureCC (py: EncodedPixelYear, bor: Int)
   type TilePoints = MMap[Long,Int]

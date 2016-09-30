@@ -114,7 +114,7 @@ public final class TileResource {
     enableCORS(response);
     Preconditions.checkArgument(bin == null || BIN_MODE_HEX.equalsIgnoreCase(bin), "Unsupported bin mode");
     String mapKey = mapKey(request);
-    LOG.debug("MapKey: {}", mapKey);
+    LOG.info("MapKey: {}", mapKey);
 
     Range years = toMinMaxYear(year);
     Set<String> bors = basisOfRecord.isEmpty() ? null : Sets.newHashSet(basisOfRecord);
@@ -174,7 +174,7 @@ public final class TileResource {
 
       Optional<byte[]> encoded = hbaseMaps.getTile(mapKey, srs, z, x, y);
       if (encoded.isPresent()) {
-        LOG.debug("Found tile with encoded length of: " + encoded.get().length);
+        LOG.info("Found tile with encoded length of: " + encoded.get().length);
 
         VectorTileFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, encoded.get(),
                                               years, basisOfRecords, verbose);

@@ -9,7 +9,10 @@ package object tile {
   case class Pixel (x: Short, y: Short)
 
   // A tile address container
-  case class ZXY (z: Int, x: Long, y: Long)
+  case class ZXY (z: Int, x: Long, y: Long) extends Ordered[ZXY] {
+    override def toString : String = z + ":" + x + ":" + y
+    def compare(that: ZXY): Int =  this.toString compare that.toString
+  }
 
   // A year and count container
   case class YearCount(year: Year, count: Int)

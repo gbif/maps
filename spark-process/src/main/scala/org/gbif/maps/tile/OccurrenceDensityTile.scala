@@ -17,7 +17,7 @@ import scala.collection.mutable.{Map => MMap}
   * @param bufferSize The buffer size in pixels
   */
 class OccurrenceDensityTile(zxy: ZXY, tileSize: Int, bufferSize: Int)
-  extends Tile[Feature.BasisOfRecord, YearCount](zxy, tileSize, bufferSize) {
+  extends Tile[Feature.BasisOfRecord, YearCount](zxy, tileSize, bufferSize) with Serializable {
 
   /**
     * Returns a new [[OccurrenceDensityTile]] instance for the given address using the same tileSize and bufferSize as
@@ -91,7 +91,7 @@ object OccurrenceDensityTile {
 /**
   * A structure that stores counts by year for pixels in a performance optimised manner.
   */
-class EncodedPixelYearCount extends FeatureData[YearCount] {
+class EncodedPixelYearCount extends FeatureData[YearCount] with Serializable {
   @VisibleForTesting
   private[tile] val data = MMap[EncodedPixelYear, Int]()
 

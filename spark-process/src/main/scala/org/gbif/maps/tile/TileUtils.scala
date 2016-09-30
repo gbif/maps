@@ -40,6 +40,7 @@ private[tile] object TileUtils {
         case (1, 0) => result ++= Set(Region.N, Region.E, Region.NE)
         case (0, 1) => result ++= Set(Region.S, Region.W, Region.SW)
         case (1, 1) => result ++= Set(Region.S, Region.E, Region.SE)
+        case _ => ; // ignore others (like -1,0)
       }
     } else {
       // all regions may be of interest
@@ -128,7 +129,8 @@ private[tile] object TileUtils {
     * @param direction To indicate which adjacent tile is being requested
     * @return The address of the tile adjacent to the current tile in the direction specified
     */
-  def adjacentTileZXY(zxy:ZXY, direction: Region.Value): ZXY = {
+  def adjacentTileZXY(zxy:ZXY, direction: Region.Value, downscale: Boolean): ZXY = {
+    val z = if (downscale) zxy.z-1 else zxy.z
     val address = direction match {
       case Region.TILE => zxy
       case Region.N => new ZXY(zxy.z, zxy.x, zxy.y - 1)
@@ -165,6 +167,20 @@ private[tile] object TileUtils {
       return Pixel(px,py)
     }
     return pixel
+  }
+
+  /**
+    * Adjusts the address given to be used for one zoom lower if required.
+    *
+    * @param zxy To downscale
+    * @param downscale If true the address is adjusted, otherwise this method returns the input address
+    * @return The downscaled address or the input address
+    */
+  def downscaleAddress(zxy: ZXY, downscale: Boolean) : ZXY = {
+    if (downscale) {
+      return ZXY(zxy.z-1, zxy.x/2, zxy.y/2)
+    }
+    return zxy
   }
 }
 

@@ -42,8 +42,8 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
 
     // TODO: configurify!
 
-    //conf.set("hbase.zookeeper.quorum", "c1n2.gbif.org:2181,c1n3.gbif.org:2181,c1n1.gbif.org:2181");
-    conf.set("hbase.zookeeper.quorum", "prodmaster1-vh.gbif.org:2181,prodmaster2-vh.gbif.org:2181,prodmaster3-vh.gbif.org:2181");
+    conf.set("hbase.zookeeper.quorum", "c1n2.gbif.org:2181,c1n3.gbif.org:2181,c1n1.gbif.org:2181");
+    //conf.set("hbase.zookeeper.quorum", "prodmaster1-vh.gbif.org:2181,prodmaster2-vh.gbif.org:2181,prodmaster3-vh.gbif.org:2181");
     conf.setInt("hbase.zookeeper.property.clientPort", 2181);
     SolrClient client = new CloudSolrServerBuilder()
       .withZkHost("prodmaster1-vh.gbif.org:2181,prodmaster2-vh.gbif.org:2181,prodmaster3-vh.gbif.org:2181/prodsolr")

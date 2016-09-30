@@ -2,6 +2,7 @@ package org.gbif.maps.spark
 
 import org.gbif.maps.io.PointFeature
 import org.apache.spark.sql.Row
+import org.gbif.maps.tile.ZXY
 
 import scala.collection.mutable
 
@@ -41,30 +42,15 @@ object MapUtils {
     z + ":" + x + ":" + y;
   }
 
+  // Encodes the XYZ into a string
+  def toZXY(zxy: ZXY) : String = {
+    toZXY(zxy.z.asInstanceOf[Byte], zxy.x, zxy.y)
+  }
+
   // Decodes the XYZ from a string
   def fromZXY(encoded: String) : (Short,Long,Long) = {
     val zxy = encoded.split(":")
     (zxy(0).toShort, zxy(1).toLong, zxy(2).toLong)
-  }
-
-  // Encodes the Pixel into an EncodedPixel
-  def encodePixel(p: Pixel) : EncodedPixel = {
-    p.x << 16 | p.y & 0xFFFF
-  }
-
-  // Decodes the EncodedPixel into a Pixel
-  def decodePixel(encoded: EncodedPixel) : Pixel = {
-    Pixel((encoded >> 16).asInstanceOf[Short], (encoded & 0xFFFF).asInstanceOf[Short])
-  }
-
-  // Encodes an EncodedPixel and Year into a Long
-  def encodePixelYear(p: EncodedPixel, year: Year) : EncodedPixelYear = {
-    p.toLong << 32 | year & 0xFFFF
-  }
-
-  // Decodes an EncodedPixelYear into an EncodedPixel and Year pair
-  def decodePixelYear(py: EncodedPixelYear) : (EncodedPixel, Year) = {
-    ((py >> 32).asInstanceOf[Int], (py & 0xFFFF).asInstanceOf[Short])
   }
 
   // Returns all the map keys for the given row in an immutable Set
@@ -85,15 +71,17 @@ object MapUtils {
     if (!row.isNullAt(row.fieldIndex("taxonkey"))) taxonIDs+=row.getInt(row.fieldIndex("taxonkey"))
 
     val res = mutable.Set[String](
-      toMapKey(MAPS_TYPES("ALL"), 0),
-      toMapKey(MAPS_TYPES("DATASET"), datasetKey),
-      toMapKey(MAPS_TYPES("PUBLISHER"), publisherKey),
-      toMapKey(MAPS_TYPES("COUNTRY"), country),
-      toMapKey(MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry)
+      toMapKey(MAPS_TYPES("ALL"), 0)
+      //toMapKey(MAPS_TYPES("DATASET"), datasetKey),
+      //toMapKey(MAPS_TYPES("PUBLISHER"), publisherKey),
+      //toMapKey(MAPS_TYPES("COUNTRY"), country),
+      //toMapKey(MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry)
     )
+    /*
     taxonIDs.foreach(id => {
       res += toMapKey(MAPS_TYPES("TAXON"), id)
     })
+    */
     res.toSet // immutable
   }
 }

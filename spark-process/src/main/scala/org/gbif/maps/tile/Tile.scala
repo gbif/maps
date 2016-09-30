@@ -45,13 +45,16 @@ trait FeatureData[FT] {
   * @tparam L The layer type
   * @tparam F The feature type
   */
-abstract class Tile[L, F](zxy: ZXY, tileSize: Int, bufferSize: Int) {
+abstract class Tile[L, F](zxy: ZXY, tileSize: Int, bufferSize: Int) extends Serializable {
 
   // the data structure split into layers
   private val data = MMap[L, FeatureData[F]]()
 
   // exposes our data
-  def getData() : MMap[L, FeatureData[F]] = {data}
+  def getData() = data
+
+  // exposes the tile address
+  def getZXY() = zxy
 
   /**
     * Returns a set of tiles, each representing a region of the current tile with the pixels readdressed so they can
@@ -62,7 +65,7 @@ abstract class Tile[L, F](zxy: ZXY, tileSize: Int, bufferSize: Int) {
     * @param wrapDateline true if the pixel addressing should wrap across the international dateline
     * @return A set of tiles representing all regions of this tile suitable for stitching together with adjacent tiles
     */
-  def flatMapToBuffers(downscale: Boolean, wrapDateline: Boolean) : Set[Tile[L,F]] = {
+  def flatMapToBuffers(downscale: Boolean, wrapDateline: Boolean) : Iterable[Tile[L,F]] = {
     val result = MMap[Region.Value, Tile[L,F]]()
 
     // determine the possible regions of interest for this tile that can be used as buffers on adjacent tiles
@@ -77,22 +80,24 @@ abstract class Tile[L, F](zxy: ZXY, tileSize: Int, bufferSize: Int) {
         // To avoid double counting exclude any pixels in our buffer zone
         if (pixel.x >= 0 && pixel.x < tileSize && pixel.y >= 0 && pixel.y < tileSize) {
 
-          // adjust the pixel address for a new zoom if necessary
+          // adjust the tile and pixel addresses for the new zoom if necessary
+          val downscaledZXY = TileUtils.downscaleAddress(zxy, downscale)
           val downscaledPixel = TileUtils.downscalePixel(zxy, tileSize, pixel, downscale)
+
 
           // for each region, adjust the pixel for the target tile and collect the results
           for (region <- regions) {
             val bufferAdjustedPixel = TileUtils.adjustPixelForBuffer(downscaledPixel, region, tileSize, bufferSize)
 
             bufferAdjustedPixel match {
-              case Some(pixel) => appendFeature(result, region, layer, pixel, feature)
+              case Some(pixel) => appendFeature(result, region, downscaledZXY, layer, pixel, feature)
               case None => None // pixel ignored for this region
             }
           }
         }
       }
     }
-    result.values.toSet
+    result.values
   }
 
   /**
@@ -104,10 +109,9 @@ abstract class Tile[L, F](zxy: ZXY, tileSize: Int, bufferSize: Int) {
     * @param pixel To collect
     * @param feature To associate with the pixel
     */
-  private[tile] def appendFeature(context: MMap[Region.Value, Tile[L,F]], region: Region.Value, layer: L, pixel: Pixel,
+  private[tile] def appendFeature(context: MMap[Region.Value, Tile[L,F]], region: Region.Value, zxy: ZXY, layer: L, pixel: Pixel,
     feature: F) = {
-    val targetZXY = TileUtils.adjacentTileZXY(zxy, region)
-    val targetTile = context.getOrElseUpdate(region, newTileInstance(targetZXY))
+    val targetTile = context.getOrElseUpdate(region, newTileInstance(zxy))
     val layerData = targetTile.getData().getOrElseUpdate(layer, newFeatureDataInstance())
     layerData.collect(pixel, feature)
   }
