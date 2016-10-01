@@ -129,8 +129,7 @@ private[tile] object TileUtils {
     * @param direction To indicate which adjacent tile is being requested
     * @return The address of the tile adjacent to the current tile in the direction specified
     */
-  def adjacentTileZXY(zxy:ZXY, direction: Region.Value, downscale: Boolean): ZXY = {
-    val z = if (downscale) zxy.z-1 else zxy.z
+  def adjacentTileZXY(zxy:ZXY, direction: Region.Value): ZXY = {
     val address = direction match {
       case Region.TILE => zxy
       case Region.N => new ZXY(zxy.z, zxy.x, zxy.y - 1)

@@ -84,7 +84,6 @@ abstract class Tile[L, F](zxy: ZXY, tileSize: Int, bufferSize: Int) extends Seri
           val downscaledZXY = TileUtils.downscaleAddress(zxy, downscale)
           val downscaledPixel = TileUtils.downscalePixel(zxy, tileSize, pixel, downscale)
 
-
           // for each region, adjust the pixel for the target tile and collect the results
           for (region <- regions) {
             val bufferAdjustedPixel = TileUtils.adjustPixelForBuffer(downscaledPixel, region, tileSize, bufferSize)
@@ -111,7 +110,8 @@ abstract class Tile[L, F](zxy: ZXY, tileSize: Int, bufferSize: Int) extends Seri
     */
   private[tile] def appendFeature(context: MMap[Region.Value, Tile[L,F]], region: Region.Value, zxy: ZXY, layer: L, pixel: Pixel,
     feature: F) = {
-    val targetTile = context.getOrElseUpdate(region, newTileInstance(zxy))
+    var targetTileZXY = TileUtils.adjacentTileZXY(zxy, region)
+    val targetTile = context.getOrElseUpdate(region, newTileInstance(targetTileZXY))
     val layerData = targetTile.getData().getOrElseUpdate(layer, newFeatureDataInstance())
     layerData.collect(pixel, feature)
   }
