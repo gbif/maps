@@ -1,13 +1,14 @@
 package org.gbif.maps.tile
 
-import org.gbif.maps.spark._
 import org.scalatest.FunSuite
-
+import scala.collection.mutable.{HashSet => MHashSet}
 
 /**
-  * Unit tests for Tile package functions.
+  * Unit tests for Tile package functions and generic operations on the Tile class.
   */
 class TileSuite extends FunSuite {
+  // utility container for a pixel on a tile
+  private case class TilePixelCount(z: Int, x: Long, y: Long, px: Int, py: Int, count: Int)
 
   test("Ensure pixels encode and decode correctly") {
     assert(Pixel(0,0) === encodeDecode(Pixel(0,0)))
@@ -44,6 +45,40 @@ class TileSuite extends FunSuite {
     assert((Pixel(-43,-43), -1) === encodeDecode(Pixel(-43,-43), (-1).asInstanceOf[Short]))
   }
 
+  /**
+    * Specific test to check that pixels in the far western area are placed into eastern border buffers when
+    * downscaling.
+    */
+  test("Ensure timezone handling with downscaling for westerly pixels") {
+    val layerName = "test"
+
+    // a western tile at z16, with a pixel that lies in the NW region
+    val sourceTile = new SingleChannelRasterTile(new ZXY(16, 0, 10))
+    sourceTile.collect(layerName, new Pixel(1,1), 100)
+
+    val downscaled = sourceTile.flatMapToBuffers(true, true)
+    val pixelData = toFullPixelAddress(downscaled)
+    assertResult(4)(pixelData.size)
+    assert(pixelData.contains(new TilePixelCount(15,0,5,0,0,100))) // tile center
+    assert(pixelData.contains(new TilePixelCount(15,0,4,0,512,100))) // N tile
+    assert(pixelData.contains(new TilePixelCount(15,32767,5,512,0,100))) // W tile wrapping across dateline
+    assert(pixelData.contains(new TilePixelCount(15,32767,4,512,512,100))) // NW tile wrapping across dateline
+  }
+
+  // Extract all pixels at a full address (tile and pixel)
+  private def toFullPixelAddress(tiles: Iterable[Tile[String, Int]]) : Set[TilePixelCount] = {
+    val data = new MHashSet[TilePixelCount]()
+    for (tile <- tiles) {
+      val zxy = tile.getZXY()
+      for ((layer,features) <- tile.getData()) {
+        for ((pixel,count) <- features.iterator()) {
+          data += (new TilePixelCount(zxy.z, zxy.x, zxy.y, pixel.x, pixel.y, count))
+        }
+      }
+    }
+    data.toSet
+  }
+
   private def encodeDecode(pixel: Pixel) : Pixel = {
     var encoded = encodePixel(pixel)
     decodePixel(encoded)
@@ -51,7 +86,6 @@ class TileSuite extends FunSuite {
 
   private def encodeDecode(pixel: Pixel, year: Year) : (Pixel, Year) = {
     var encoded = encodePixelYear(encodePixel(pixel), year)
-
     var decoded = decodePixelYear(encoded)
     (decodePixel(decoded._1), decoded._2)
   }

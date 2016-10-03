@@ -57,6 +57,19 @@ abstract class Tile[L, F](zxy: ZXY, tileSize: Int, bufferSize: Int) extends Seri
   def getZXY() = zxy
 
   /**
+    * Collects a feature at a pixel.
+    * @param layer To collect into
+    * @param pixel The pixel for which to append the feature to
+    * @param feature The feature
+    * @return Ourself
+    */
+  def collect(layer: L, pixel: Pixel, feature: F) : Tile[L, F] = {
+    val layerData = getData().getOrElseUpdate(layer, newFeatureDataInstance())
+    layerData.collect(pixel, feature)
+    this
+  }
+
+  /**
     * Returns a set of tiles, each representing a region of the current tile with the pixels readdressed so they can
     * be used directly in the adjacent tile as a buffer.  Optionally this can downscale at the same time to prepare
     * a tile at e.g zoom 15 into a set of tiles suitable for stitching together at zoom 14.

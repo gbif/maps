@@ -49,7 +49,7 @@ private[tile] object TileUtils {
     }
 
     val targetZ = if (downscale) zxy.z - 1 else zxy.z
-    val maxTileAddress = if (targetZ == 0) 0 else (2 << (targetZ - 1)) - 1
+    val maxTileAddress = maxTileAddressForZoom(targetZ)
     val targetX = if (downscale) zxy.x >>> 1 else zxy.x
     val targetY = if (downscale) zxy.y >>> 1 else zxy.y
 
@@ -123,7 +123,7 @@ private[tile] object TileUtils {
     * Returns the tile address for the adjacent tile in the direction specified.  Dateline handling is supported by
     * wrapping, but if a direction is requested North or South that goes beyond the poles then addresses that are out
     * of bounds will be returned.  Developers should safeguard against this beforehand (Note: bufferRegions does that
-    * for you).
+    * for you and is highly encouraged).
     *
     * @param zxy For the current tile
     * @param direction To indicate which adjacent tile is being requested
@@ -143,11 +143,23 @@ private[tile] object TileUtils {
     }
 
     // handle wrapping across the dateline
-    val maxTileAddress = if (zxy.z == 0) 0 else (2 << (zxy.z-1)) - 1
-    var x = if (address.x == -1) maxTileAddress else address.x
-    x = if (address.x > maxTileAddress) 0 else address.x
+    val maxTileAddress = maxTileAddressForZoom(zxy.z)
+    val x = address.x match {
+      case t if t>maxTileAddress => 0
+      case t if t<0 => maxTileAddress
+      case _ => address.x
+    }
 
     new ZXY(address.z, x, address.y)
+  }
+
+  /**
+    * Returns the maximum tile X or Y address for the given zoom.
+    * @param zoom The zoom level
+    * @return The maximum address on the grid
+    */
+  def maxTileAddressForZoom(zoom:Int) : Long= {
+    (1 << zoom) - 1
   }
 
   /**

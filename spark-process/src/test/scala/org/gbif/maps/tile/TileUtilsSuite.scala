@@ -4,10 +4,22 @@ import org.gbif.maps.tile.TileUtils.Region._
 import org.scalatest.FunSuite
 
 
+
 /**
-  * Unit tests for Tile package functions.
+  * Unit tests for TileUtils.
   */
 class TileUtilsSuite extends FunSuite {
+
+  // this is critical path stuff so test all combinations that will be used
+  test("Verify maximum tile address") {
+    assertResult(0)(TileUtils.maxTileAddressForZoom(0))
+    assertResult(1)(TileUtils.maxTileAddressForZoom(1))
+    assertResult(3)(TileUtils.maxTileAddressForZoom(2))
+    assertResult(7)(TileUtils.maxTileAddressForZoom(3))
+    assertResult(15)(TileUtils.maxTileAddressForZoom(4))
+  }
+
+
   // this is critical path stuff so test all combinations that will be used
   test("Verify buffer regions") {
 
@@ -86,5 +98,13 @@ class TileUtilsSuite extends FunSuite {
     assertResult(Set(TILE, E)) (TileUtils.bufferRegions(new ZXY(2, 1, 3), true, true))
     assertResult(Set(TILE, W)) (TileUtils.bufferRegions(new ZXY(2, 2, 3), true, true))
     assertResult(Set(TILE, E)) (TileUtils.bufferRegions(new ZXY(2, 3, 3), true, true))
+  }
+
+  // test date line handling of addressing of adjacent tiles
+  test("Adjacent tile handling") {
+    val zoom = 16
+    val maxAddress = TileUtils.maxTileAddressForZoom(zoom)
+    assertResult(new ZXY(zoom, maxAddress, 10)) (TileUtils.adjacentTileZXY(new ZXY(zoom,0,10), W))
+
   }
 }
