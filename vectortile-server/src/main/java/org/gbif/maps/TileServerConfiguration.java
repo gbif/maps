@@ -13,55 +13,160 @@ import io.dropwizard.client.HttpClientConfiguration;
 public class TileServerConfiguration extends Configuration {
   @Valid
   @NotNull
-  private HttpClientConfiguration httpClient = new HttpClientConfiguration();
+  private HBaseConfiguration hbase;
 
-  @JsonProperty("httpClient")
-  public HttpClientConfiguration getHttpClientConfiguration() {
-    return httpClient;
-  }
-
-  @JsonProperty("httpClient")
-  public void setHttpClientConfiguration(HttpClientConfiguration httpClient) {
-    this.httpClient = httpClient;
-  }
-
-/*
-
-  @NotEmpty
-  private String hbaseZookeeperQuorum;
-  private int hbaseZookeeperClientPort;
-  @NotEmpty
-  private String hbaseTableName;
+  @Valid
+  @NotNull
+  private SolrConfiguration solr;
 
   @JsonProperty
-  public String getHbaseZookeeperQuorum() {
-    return hbaseZookeeperQuorum;
+  public HBaseConfiguration getHbase() {
+    return hbase;
   }
 
   @JsonProperty
-  public void setHbaseZookeeperQuorum(String hbaseZookeeperQuorum) {
-    this.hbaseZookeeperQuorum = hbaseZookeeperQuorum;
+  public void setHbase(HBaseConfiguration hbase) {
+    this.hbase = hbase;
   }
 
   @JsonProperty
-  public int getHbaseZookeeperClientPort() {
-    return hbaseZookeeperClientPort;
+  public SolrConfiguration getSolr() {
+    return solr;
   }
 
   @JsonProperty
-  public void setHbaseZookeeperClientPort(int hbaseZookeeperClientPort) {
-    this.hbaseZookeeperClientPort = hbaseZookeeperClientPort;
+  public void setSolr(SolrConfiguration solr) {
+    this.solr = solr;
   }
 
-  @JsonProperty
-  public String getHbaseTableName() {
-    return hbaseTableName;
+  public static class HBaseConfiguration extends Configuration {
+    @Valid
+    @NotNull
+    private String zookeeperQuorum;
+
+    @Valid
+    @NotNull
+    private String tableName;
+
+    @Valid
+    @NotNull
+    private Integer tileSize;
+
+    @Valid
+    @NotNull
+    private Integer bufferSize;
+
+
+    @JsonProperty
+    public String getZookeeperQuorum() {
+      return zookeeperQuorum;
+    }
+
+    @JsonProperty
+    public void setZookeeperQuorum(String zookeeperQuorum) {
+      this.zookeeperQuorum = zookeeperQuorum;
+    }
+
+    @JsonProperty
+    public String getTableName() {
+      return tableName;
+    }
+
+    @JsonProperty
+    public void setTableName(String tableName) {
+      this.tableName = tableName;
+    }
+
+    @JsonProperty
+    public Integer getTileSize() {
+      return tileSize;
+    }
+
+    @JsonProperty
+    public void setTileSize(Integer tileSize) {
+      this.tileSize = tileSize;
+    }
+
+    @JsonProperty
+    public Integer getBufferSize() {
+      return bufferSize;
+    }
+
+    @JsonProperty
+    public void setBufferSize(Integer bufferSize) {
+      this.bufferSize = bufferSize;
+    }
   }
 
-  @JsonProperty
-  public void setHbaseTableName(String hbaseTableName) {
-    this.hbaseTableName = hbaseTableName;
-  }
+  public static class SolrConfiguration extends Configuration {
+    @Valid
+    @NotNull
+    private String zookeeperQuorum;
 
-  */
+    @Valid
+    @NotNull
+    private String defaultCollection;
+
+    @Valid
+    @NotNull
+    private String requestHandler;
+
+    @Valid
+    @NotNull
+    private Integer tileSize;
+
+    @Valid
+    @NotNull
+    private Integer bufferSize;
+
+    @JsonProperty
+    public String getZookeeperQuorum() {
+      return zookeeperQuorum;
+    }
+
+    @JsonProperty
+    public void setZookeeperQuorum(String zookeeperQuorum) {
+      this.zookeeperQuorum = zookeeperQuorum;
+    }
+
+    @JsonProperty
+    public String getDefaultCollection() {
+      return defaultCollection;
+    }
+
+    @JsonProperty
+    public void setDefaultCollection(String defaultCollection) {
+      this.defaultCollection = defaultCollection;
+    }
+
+    @JsonProperty
+    public Integer getTileSize() {
+      return tileSize;
+    }
+
+    @JsonProperty
+    public void setTileSize(Integer tileSize) {
+      this.tileSize = tileSize;
+    }
+
+    @JsonProperty
+    public Integer getBufferSize() {
+      return bufferSize;
+    }
+
+    @JsonProperty
+    public void setBufferSize(Integer bufferSize) {
+      this.bufferSize = bufferSize;
+    }
+
+    @JsonProperty
+    public String getRequestHandler() {
+      return requestHandler;
+    }
+
+    @JsonProperty
+    public void setRequestHandler(String requestHandler) {
+      this.requestHandler = requestHandler;
+    }
+  }
 }

@@ -93,7 +93,7 @@ public class VectorTileFiltersTest {
       assertFalse("Tile should not have duplicate points", result.containsKey(pixel));
       result.put(pixel, f.getAttributes());
     });
-    assertEquals("Expected 4 pixels of data", 4, result.size());
+    assertEquals("Expected 5 pixels of data", 5, result.size());
 
     // pixel 1
     assertTrue("Pixel 1 missing", result.containsKey(px1));
@@ -123,6 +123,15 @@ public class VectorTileFiltersTest {
     assertEquals("Pixel 4 meta invalid - total", 3l, m4.get("total"));
     assertEquals("Pixel 4 meta invalid - 2012", 1l, m4.get("2012"));
     assertEquals("Pixel 4 meta invalid - 2013", 2l, m4.get("2013"));
+
+    // pixel 5 (comes in to buffer zone due to dateline wrapping)
+    // pixel 5 comes from the px1 (10,10) on the tile at 0,0 which wraps across into our Eastern buffer
+    Double2D px5 = new Double2D(522,10);
+    assertTrue("Pixel 5 missing (the dateline pixel)", result.containsKey(px5));
+    Map<String, Object> m5 = result.get(px5);
+    assertEquals("Pixel 5 meta invalid - total", 9l, m5.get("total"));
+    assertEquals("Pixel 5 meta invalid - 2012", 3l, m5.get("2012"));
+    assertEquals("Pixel 5 meta invalid - 2013", 6l, m5.get("2013"));
 
   }
 

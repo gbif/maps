@@ -7,7 +7,7 @@ import org.gbif.maps.tile.ZXY
 import scala.collection.mutable
 
 /**
-  * TODO: Consider moving much of this to Java and into the common project
+  * Utilities for dealing with map building.
   */
 object MapUtils {
 
@@ -71,17 +71,15 @@ object MapUtils {
     if (!row.isNullAt(row.fieldIndex("taxonkey"))) taxonIDs+=row.getInt(row.fieldIndex("taxonkey"))
 
     val res = mutable.Set[String](
-      toMapKey(MAPS_TYPES("ALL"), 0)
-      //toMapKey(MAPS_TYPES("DATASET"), datasetKey),
-      //toMapKey(MAPS_TYPES("PUBLISHER"), publisherKey),
-      //toMapKey(MAPS_TYPES("COUNTRY"), country),
-      //toMapKey(MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry)
+      toMapKey(MAPS_TYPES("ALL"), 0),
+      toMapKey(MAPS_TYPES("DATASET"), datasetKey),
+      toMapKey(MAPS_TYPES("PUBLISHER"), publisherKey),
+      toMapKey(MAPS_TYPES("COUNTRY"), country),
+      toMapKey(MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry)
     )
-    /*
     taxonIDs.foreach(id => {
       res += toMapKey(MAPS_TYPES("TAXON"), id)
     })
-    */
     res.toSet // immutable
   }
 }

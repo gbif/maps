@@ -78,13 +78,7 @@ public final class SolrResource {
   private final TileProjection projection;
   private final OccurrenceHeatmapsService solrService;
 
-  /**
-   * TODO: remove this - this is just a test
-   */
-  Map<String, OccurrenceHeatmapResponse> cache = Maps.newHashMap();
-
-  public SolrResource(Configuration conf, int tileSize, int bufferSize,
-                      OccurrenceHeatmapsService solrService) throws IOException {
+  public SolrResource(OccurrenceHeatmapsService solrService, int tileSize, int bufferSize) throws IOException {
     this.tileSize = tileSize;
     this.bufferSize = bufferSize;
     this.solrService = solrService;
@@ -119,14 +113,6 @@ public final class SolrResource {
     LOG.info("SOLR request:{}", heatmapRequest.toString());
 
     OccurrenceHeatmapResponse solrResponse = solrService.searchHeatMap(heatmapRequest);
-    // quick test!
-    /*
-    if (!cache.containsKey(heatmapRequest.toString())) {
-      cache.put(heatmapRequest.toString(), solrService.searchHeatMap(heatmapRequest));
-    }
-    OccurrenceHeatmapResponse solrResponse = cache.get(heatmapRequest.toString());
-    */
-
     VectorTileEncoder encoder = new VectorTileEncoder (tileSize, bufferSize, false);
 
     final Rectangle2D.Double tileBoundary = tileBoundaryWGS84(z, x, y); // TODO: merge with solrSearchGeom

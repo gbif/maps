@@ -3,6 +3,7 @@ package org.gbif.maps.common.filter;
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.Tiles;
+import org.gbif.maps.io.PointFeature;
 
 import java.util.Collection;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.common.collect.Maps;
 import com.vividsolutions.jts.geom.Coordinate;
@@ -63,7 +65,7 @@ public class PointFeatureFilters {
           .filter(filterFeatureByTile(projection, z, x, y, tileSize, buffer)) // filter to the tile
           .collect(
             // accumulate counts by year, for each pixel
-            Collectors.groupingBy(toTileLocalPixelXY(projection, z, x, y, tileSize),
+            Collectors.groupingBy(toTileLocalPixelXY(projection, z, x, y, tileSize, buffer),
                                   Collectors.groupingBy(Feature::getYear,Collectors.summingInt(Feature::getCount)))
           )
           .forEach((pixel, yearCounts) -> {
@@ -79,7 +81,20 @@ public class PointFeatureFilters {
             meta.put("total", sum);
             features.incrementAndGet();
             encoder.addFeature(layerName, meta, point);
-    });
+
+            // Zoom 0 is a special case, whereby we copy data across the dateline into buffers
+            if (z==0 && pixel.getX()<buffer) {
+              Double2D adjustedPixel = new Double2D(pixel.getX() + tileSize, pixel.getY());
+              Point point2 = GEOMETRY_FACTORY.createPoint(new Coordinate(adjustedPixel.getX(), adjustedPixel.getY()));
+              encoder.addFeature(layerName, meta, point2);
+
+            } else if (z==0 && pixel.getX()>=tileSize-buffer) {
+              Double2D adjustedPixel = new Double2D(pixel.getX() - tileSize, pixel.getY());
+              Point point2 = GEOMETRY_FACTORY.createPoint(new Coordinate(adjustedPixel.getX(), adjustedPixel.getY()));
+              encoder.addFeature(layerName, meta, point2);
+
+            }
+          });
     LOG.debug("Collected {} features in the tile", features.get());
   }
 
@@ -93,12 +108,13 @@ public class PointFeatureFilters {
    * @return The function to convert
    */
   public static Function<Feature, Double2D> toTileLocalPixelXY(final TileProjection projection, final int z,
-                                                               final long x, final long y, final int tileSize) {
+                                                               final long x, final long y,
+                                                               final int tileSize, final int bufferSize) {
     return new Function<Feature, Double2D>() {
       @Override
       public Double2D apply(Feature t) {
         Double2D pixelXY = projection.toGlobalPixelXY(t.getLatitude(),t.getLongitude(), z);
-        return Tiles.toTileLocalXY(pixelXY, x, y, tileSize);
+        return Tiles.toTileLocalXY(pixelXY, z, x, y, tileSize, bufferSize);
       }
     };
   }
@@ -122,7 +138,7 @@ public class PointFeatureFilters {
       public boolean test(Feature f) {
         if (projection.isPlottable(f.getLatitude(), f.getLongitude())) {
           Double2D pixelXY = projection.toGlobalPixelXY(f.getLatitude(), f.getLongitude(), z);
-          return Tiles.tileContains(x, y, tileSize, pixelXY, buffer);
+          return Tiles.tileContains(z, x, y, tileSize, pixelXY, buffer);
         } else {
           return false;
         }
