@@ -151,8 +151,8 @@ public final class SolrResource {
               // convert the lat,lng into pixel coordinates
               Double2D swGlobalXY = projection.toGlobalPixelXY(maxYAsNorm, minXAsNorm, z);
               Double2D neGlobalXY = projection.toGlobalPixelXY(minYAsNorm, maxXAsNorm, z);
-              Double2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, x, y, tileSize);
-              Double2D neTileXY = Tiles.toTileLocalXY(neGlobalXY, x, y, tileSize);
+              Double2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, z, x, y, tileSize, bufferSize);
+              Double2D neTileXY = Tiles.toTileLocalXY(neGlobalXY, z, x, y, tileSize, bufferSize);
 
               int minX = (int) swTileXY.getX();
               int maxX = (int) neTileXY.getX();
