@@ -1,8 +1,0 @@
-.DS_Store
-
-**/.scratch
-*.iml
-.idea/
-
-**/dist
-**/node_modules/
