@@ -65,10 +65,10 @@ object BackfillTiles {
         val tileXY = Tiles.toTileXY(globalXY, zoom, projectionConfig.tileSize) // addressed the tile
         val x = tileXY.getX
         val y = tileXY.getY
-        val tileLocalXY = Tiles.toTileLocalXY(globalXY, x, y, projectionConfig.tileSize) // pixels on the tile
+        val tileLocalXY = Tiles.toTileLocalXY(globalXY, projectionConfig.maxZoom, x, y, projectionConfig.tileSize,
+          config.tilePyramid.tileBufferSize) // pixels on the tile
         val pixel = Pixel(tileLocalXY.getX.asInstanceOf[Short], tileLocalXY.getY.asInstanceOf[Short]) // note: rounds here
         val encPixel = encodePixel(pixel)
-        //val zxy = MapUtils.toZXY(zoom, x, y) // the encoded tile address
         val zxy = new ZXY(zoom, x, y)
 
         // read the fields of interest
@@ -103,7 +103,6 @@ object BackfillTiles {
       m1 ++= m2
     }
     val tiles2 = tiles.aggregateByKey(MMap[Long,Int]().empty)(appendVal, merge)
-
 
     type TileFeatures = (ZXY, BasisOfRecord, MMap[Long,Int])
     val createTile = (pixels: TileFeatures) => {
@@ -145,7 +144,6 @@ object BackfillTiles {
         }
         result
       }).reduceByKey(tileMerger)
-
 
       /**
         * Generate the vector tile and write it as an HFile.
