@@ -64,9 +64,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A quick test to try and visualise the SOLR response in a MVT.
+ * SOLR search as a vector tile service.
  */
-@Path("/solr")
+@Path("/occurrence/adhoc")
 @Singleton
 public final class SolrResource {
 
@@ -115,7 +115,7 @@ public final class SolrResource {
     OccurrenceHeatmapResponse solrResponse = solrService.searchHeatMap(heatmapRequest);
     VectorTileEncoder encoder = new VectorTileEncoder (tileSize, bufferSize, false);
 
-    final Rectangle2D.Double tileBoundary = tileBoundaryWGS84(z, x, y); // TODO: merge with solrSearchGeom
+    final Rectangle2D.Double tileBoundary = tileBoundaryWGS84(z, x, y); // TODO: merge with solrSearchGeom?
     final Point2D tileBoundarySW = new Point2D.Double(tileBoundary.getMinX(), tileBoundary.getMinY());
     final Point2D tileBoundaryNE = new Point2D.Double(tileBoundary.getMaxX(), tileBoundary.getMaxY());
 
@@ -196,7 +196,7 @@ public final class SolrResource {
     return  Math.min(Math.max(value, lower), upper);
   }
 
-  // TODO: This sucks
+  /*
   @GET
   @Path("all.json")
   @Timed
@@ -215,6 +215,7 @@ public final class SolrResource {
       .withTiles(new String[]{"http://tiletest.gbif.org:9001/api/solr/{z}/{x}/{y}.mvt"})
       .build();
   }
+  */
 
   // open the tiles to the world (especially your friendly localhost developer!)
   private void prepare(HttpServletResponse response) {

@@ -33,7 +33,7 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
 
   @Override
   public final void initialize(Bootstrap<TileServerConfiguration> bootstrap) {
-    bootstrap.addBundle(new AssetsBundle("/assets", "/", "index.html", "assets"));
+    bootstrap.addBundle(new AssetsBundle("/assets", "/", "debug.html", "assets"));
   }
 
   @Override

@@ -54,7 +54,7 @@ import static org.gbif.maps.resource.Params.toMinMaxYear;
 /**
  * The tile resource for the simple gbif data layers (i.e. HBase sourced, preprocessed).
  */
-@Path("/")
+@Path("/occurrence/density")
 @Singleton
 public final class TileResource {
 
@@ -69,7 +69,7 @@ public final class TileResource {
   private static final int POINT_TILE_BUFFER = POINT_TILE_SIZE / 4;
   private static final String BIN_MODE_HEX = "hex";
   private static final int HEX_TILE_SIZE = 4096;
-  private static final String DEFAULT_HEX_PER_TILE = "37";
+  private static final String DEFAULT_HEX_PER_TILE = "51";
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final VectorTileDecoder DECODER = new VectorTileDecoder();
   static {
@@ -94,7 +94,7 @@ public final class TileResource {
   }
 
   @GET
-  @Path("/occurrence/density/{z}/{x}/{y}.mvt")
+  @Path("/{z}/{x}/{y}.mvt")
   @Timed
   @Produces("application/x-protobuf")
   public byte[] all(

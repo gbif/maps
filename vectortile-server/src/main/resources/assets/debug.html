@@ -5,7 +5,7 @@
   <title>Maps</title>
   <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no'/>
 
-  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.js'></script>
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.25.0/mapbox-gl.js'></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/8.3.0/nouislider.min.js"></script>
   <script src="https://code.jquery.com/jquery-2.2.1.min.js"
       integrity="sha256-gvQgAFzTH6trSrAWoH1iPo9Xc96QxSZ3feW6kem+O00=" crossorigin="anonymous"></script>
@@ -17,7 +17,6 @@
 
   <!-- include cartodb.js needed only so we can get the BaseURLs -->
   <script src="http://libs.cartocdn.com/cartodb.js/v3/3.15/cartodb.core.js"></script>
-
 
 </head>
 <body>
@@ -81,7 +80,21 @@
         <input type="radio" name="srs" id="srs3575" value="EPSG:3575"> Arctic
       </label>
       <label class="radio-inline">
-        <input type="radio" name="srs" id="srsTODO" value="EPSG:3575"> Antarctic
+        <input type="radio" name="srs" id="srsTODO" value="EPSG:3575" disabled> Antarctic
+      </label>
+    </div>
+
+    <hr id="styleHR"/>
+
+    <div class="form-group col-sm-12" id="style">
+      <label class="radio-inline">
+        <input type="radio" name="bin" id="point" value="" checked> Points
+      </label>
+      <label class="radio-inline">
+        <input type="radio" name="bin" id="hex-small" value="hex"> Hex (small)
+      </label>
+      <label class="radio-inline">
+        <input type="radio" name="bin" id="hex-large" value="hex"> Hex (large)
       </label>
     </div>
 
@@ -140,20 +153,6 @@
       </div>
     </div>
 
-    <!--hr/>
-
-    <div class="form-group col-sm-12">
-      <label for="style" class="control-label">Style</label>
-      <div class="col-sm-12">
-        <textarea id="_style" style="font-family: monospace" rows="15" cols="50">{
-  "circle-radius": 1.5,
-  "circle-color": "#9F9",
-  "circle-opacity": 0.5
-}
-        </textarea>
-      </div>
-    </div-->
-
   </form>
 </div>
 
@@ -180,6 +179,14 @@ function queryParams() {
   }, {});
   var mapKey = $('#_mapKey').val();
   if (mapKey != "") config.params.push(mapKey);
+
+  // hack for hex size
+  if (document.getElementById('hex-small').checked) {
+    config.params.push("hexPerTile=61");
+  } else if (document.getElementById('hex-large').checked) {
+    config.params.push("hexPerTile=21");
+  }
+
   return config.params;
 }
 
@@ -260,22 +267,94 @@ function initMap(map) {
   map._gbif_layers.push("base");
 
   var backend = $('input[name="_type"]:checked').val();
-  var tileLayer = backend == "simple" ? "http://maptest-vh.gbif.org:6081" : "http://localhost:7001/api/solr"
+  var baseURL = window.location.href.replace("debug.html", "");
+  var tileLayer = backend == "simple" ? baseURL + "api/occurrence/density" : baseURL + "api/occurrence/adhoc"
   map.addSource('tile', {
-    type: 'raster',
-    "tileSize": 256,
-    "tiles": [tileLayer + "?z={z}&x={x}&y={y}"] // hack: no query string!
+    type: 'vector',
+    "tiles": [tileLayer + "/{z}/{x}/{y}.mvt?" + queryString]
   });
   map._gbif_sources.push("tile");
 
-  var simple = "simple" == backend ? true : false; // true if HBase, false if SOLR
-    if (simple) {
-      map.addLayer({
-        "id": "simple", "type": "raster", "source": "tile",
-      });
-      map._gbif_layers.push("simple");
+  var styles = {
+    "purple-yellow": {
+      colors: ["#5e0063", "#851362", "#a42e61", "#be4c60", "#d26b63", "#e28b6b", "#eeab79", "#f7cb8e", "#ffebaa"],
+      filters: [
+        ["<=", "total", 5],
+        ["all",[">", "total", 5],["<=", "total", 10]],
+        ["all",[">", "total", 10],["<=", "total", 50]],
+        ["all",[">", "total", 50],["<=", "total", 100]],
+        ["all",[">", "total", 100],["<=", "total", 500]],
+        ["all",[">", "total", 500],["<=", "total", 1000]],
+        ["all",[">", "total", 1000],["<=", "total", 5000]],
+        ["all",[">", "total", 5000],["<=", "total", 10000]],
+        [">", "total", 10000]
+      ]
+    },
+    "yellow-red": {
+      colors: ["#FFFF00", "#FFCC00", "#FF9900", "#FF6600", "#FF3300", "#FF0000"],
+      filters: [
+        ["<=", "total", 10],
+        ["all",[">", "total", 10],["<=", "total", 100]],
+        ["all",[">", "total", 100],["<=", "total", 1000]],
+        ["all",[">", "total", 1000],["<=", "total", 10000]],
+        ["all",[">", "total", 10000],["<=", "total", 100000]],
+        [">", "total", 100000]
+      ]
     }
+  }
 
+  // chose the style
+  var style = styles["yellow-red"];
+  var bin = $('input[name="bin"]:checked').val();
+
+  var point = "simple" == backend && bin == "" ? true : false; // true if HBase and points
+  for (i=0; i<style.colors.length; i++) {
+    if (point) {
+      // a shaded background to help continuous zoom
+      map.addLayer({
+        "id": "simple-background-" + i,
+        "type": "circle",
+        "source": "tile",
+        "source-layer": "occurrence",
+        "paint": {
+          "circle-radius": 4,
+          "circle-color": style.colors[i],
+          "circle-opacity": 0.015
+        },
+        "filter": style.filters[i]
+      });
+      map._gbif_layers.push("simple-background-" + i);
+
+      map.addLayer({
+        "id": "simple-" + i,
+        "type": "circle",
+        "source": "tile",
+        "source-layer": "occurrence",
+        "paint": {
+          "circle-radius": 1.5,
+          "circle-color": style.colors[i],
+          "circle-opacity": 0.8
+        },
+        "filter": style.filters[i]
+      });
+      map._gbif_layers.push("simple-" + i);
+
+    } else {
+      map.addLayer({
+        "id": "adhoc-" + i,
+        "type": "fill",
+        "source": "tile",
+        "source-layer": "occurrence",
+        "paint": {
+          "fill-color": style.colors[i],
+          "fill-opacity": 0.75,
+          "fill-outline-color": "#999999"
+        },
+        "filter": style.filters[i]
+      });
+      map._gbif_layers.push("adhoc-" + i);
+    }
+  }
 }
 
 // race condition here...
@@ -319,6 +398,17 @@ $("#config :input").change(function() {
   if ("adhoc" == backend) {
     // SOLR only supports WGS84
     $('#srsWGS84').prop('checked', true);
+    $('#srs3857').prop('disabled', true);
+    $('#srs3575').prop('disabled', true);
+
+    $('#style').hide();
+    $('#styleHR').hide();
+
+  } else {
+    $('#srs3857').prop('disabled', false);
+    $('#srs3575').prop('disabled', false);
+    $('#style').show();
+    $('#styleHR').show();
   }
   initMap(map);
 });
