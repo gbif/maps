@@ -115,6 +115,7 @@ function createServer(config) {
           });
         } else {
           // no tile
+          // TODO: return 204 No Content for blank tiles, and 404 Not Found for off-the-map (beyond the projection?) tiles.
           res.writeHead(404, {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
           res.end();
         }
