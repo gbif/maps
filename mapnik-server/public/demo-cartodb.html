@@ -28,7 +28,7 @@
         var map = new L.Map('map', {
           zoomControl: false,
           center: [0, 0],
-          zoom: 0
+          zoom: 2
         });
 
         var sqlWGS84 = "SELECT ST_SCALE(the_geom, 111319.44444444444444, 111319.44444444444444) AS the_geom_webmercator FROM world_borders_hd_copy";
@@ -49,16 +49,12 @@
            attribution: 'Natural Earth data, map by CartoDB'
          }).addTo(map);
 
-          L.tileLayer("http://localhost:8080/map/occurrence/tile.png?x={x}&y={y}&z={z}&taxonKey=6&basis_of_record=PRESERVED_SPECIMEN&srs=EPSG:4326", {
+          L.tileLayer("./api/occurrence/adhoc/{z}/{x}/{y}.png?taxonKey=6&basisOfRecord=PRESERVED_SPECIMEN&srs=EPSG:4326&style=classic.poly", {
             attribution: 'GBIF'
           }).addTo(map);
-
-
         })
-
       }
 
-      // you could use $(window).load(main);
       window.onload = main;
     </script>
   </body>

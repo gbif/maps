@@ -51,10 +51,8 @@
       return new L.GBIFSimple(url, options);
     };
 
-    //L.tileLayer('http://maptest-vh.gbif.org:6081/api/occurrence/density/{z}/{x}/{y}.png', {detectRetina: true}).addTo(map);
-
     L.gbifSimpleLayer('./api/occurrence/density/{z}/{x}/{y}.png',
-      {style: "classicPoly", detectRetina: false}).addTo(map);
+      {style: "classic.poly", bin:"hex", hexPerTile:27, taxonKey:"9703", detectRetina: false}).addTo(map);
 
 
   </script>

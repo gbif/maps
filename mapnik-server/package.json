@@ -1,7 +1,7 @@
 {
   "name": "mapnik-server",
   "version": "1.0.0",
-  "description": "An express based server rendering PNGs using Mapnik, from a MVT backend",
+  "description": "A node based server rendering PNGs using Mapnik, from a MVT backend",
   "main": "index.js",
   "dependencies": {
     "async": "^2.0.0-rc.5",
@@ -18,7 +18,8 @@
     "tilelive-tmstyle": "^0.6.0",
     "tilelive-vector": "^3.9.3",
     "underscore": "^1.8.3",
-    "vector-tile": "^1.2.1"
+    "vector-tile": "^1.2.1",
+    "yaml-js": "^0.1.4"
   },
   "devDependencies": {}
 }

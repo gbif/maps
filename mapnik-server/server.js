@@ -1,151 +1,147 @@
 var mapnik = require('mapnik')
   , mercator = require('./sphericalmercator')
   , request = require('request')
-  , async = require('async')
   , http = require('http')
   , url = require('url')
   , fs = require('fs')
-  , tilelive = require('tilelive')
-  , carto = require('carto')
+  , yaml = require('yaml-js')
   , parser = require('./cartoParser');
 
-// configure tilelive to use tilejson services to locate vector tiles
-require('tilejson').registerProtocols(tilelive);
 
-function isEmpty(obj) {
-  for(var prop in obj) {
-    if(obj.hasOwnProperty(prop))
-      return false;
-  }
-  return true;
-}
-
-var server = http.createServer(function(req, res) {
-
-  var query = url.parse(req.url.toLowerCase(), true).query;
-
-  if (!query || isEmpty(query)) {
-    try {
-      res.writeHead(200, {
-        'Content-Type': 'text/html'
-      });
-
-      // support a basic asset server
-      if (req.url == '/') {
-        res.end(fs.readFileSync('./public/index.html'));
-      } else {
-        res.end(fs.readFileSync('./public/' + req.url));
-      }
-    } catch (err) {
-      res.writeHead(500, {
-        'Content-Type': 'text/plain'
-      });
-      res.end('Not found: ' + req.url);
-    }
-  } else {
-
-    if (query &&
-        query.x !== undefined &&
-        query.y !== undefined &&
-        query.z !== undefined
-    ) {
-
-      // TODO: of course...
-      //var tilejsonURL = "tilejson+http://localhost:7001/api/all.json";
-      // timeout can be added in the tilejson response? TODO...
-      var tilejsonURL = "tilejson+http://localhost:7001/api/occurrence/density.json?timeout=30000&srs=EPSG:4326";
-      var cartoURL = "http://localhost:3000/gbif-classic.mss"
-      //var cartoURL = "http://localhost:3000/gbif-hot2.mss"
-
-      console.time("getAssets");
-
-      // Collect the CartoCSS styling document, metadata about the tiles and generate the image using mapnik
-      async.parallel({
-        // load the carto CSS
-        carto: function(callback) {
-          request.get(cartoURL, function (error, response, body) {
-            if (!error && response.statusCode == 200) {
-
-              callback(null, body)
-            } else {
-              callback(error)
-            }
-          })
-        },
-
-        // load the tilejson metadata
-        tilejson: function(callback) {
-          tilelive.load(tilejsonURL, function(err, source) {
-            callback(err, source);
-          })
+/**
+ * Compile the CartoCss into Mapnik stylesheets into a lookup dictionary
+ */
+var namedStyles = {};
+namedStyles["classic.point"] = compileStylesheetSync("./cartocss/classic-dot.mss")
+namedStyles["classic.poly"] = compileStylesheetSync("./cartocss/classic-poly.mss")
+namedStyles["greenHeat.point"] = compileStylesheetSync("./cartocss/green-heat-dot.mss")
+namedStyles["purpleYellow.point"] = compileStylesheetSync("./cartocss/purple-yellow-dot.mss")
+function compileStylesheetSync(filename) {
+  // snippet simulating a tilejson response from tilelive, required only to give the layers for the cartoParser
+  var tilejson = {
+    data: {
+      "vector_layers": [
+        {
+          "id": "occurrence",
+          "description": "The GBIF occurrence data"
         }
+      ]
+    }
+  }
+  var cartocss = fs.readFileSync(filename, "utf8");
+  return parser.parseToXML([cartocss], tilejson);
+}
+var defaultStyle = "classic.point";
 
-      }, function(err, results) {
-        console.timeEnd("getAssets");
-        if (err) throw err;
 
-        // convert the carto into mapnik style
-        var xmlStylesheet = parser.parseToXML([results.carto], results.tilejson);
-        console.log(xmlStylesheet)
+/**
+ * The server supports the ability to provide assets which need to be explicitly registered in order to be secure.
+ * (e.g. trying to expose files using URL hack such as http://tiles.gbif.org/../../../hosts)
+ *
+ * Should this become more complex, then express or similar should be consider.
+ */
+var assetsHTML = ['/demo1.html', '/demo2.html', '/demo3.html', '/demo-cartodb.html']
+var assertsIcon = ['/favicon.ico']
 
-        // load the tile which is located from the tilejson metadata
-        console.time("getTile");
+function createServer(config) {
+  return http.createServer(function(req, res) {
 
-        results.tilejson.getTile(parseInt(query.z),parseInt(query.x),parseInt(query.y), function(err, tile, headers) {
+    var parsedRequest = url.parse(req.url, true)
+
+    // handle registered assets
+    if (assetsHTML.indexOf(parsedRequest.path) != -1) {
+      res.writeHead(200, {'Content-Type': 'text/html'});
+      res.end(fs.readFileSync('./public' + parsedRequest.path));
+
+    } else if (assertsIcon.indexOf(parsedRequest.path) != -1) {
+      res.writeHead(200, {'Content-Type': 'image/x-icon'});
+      res.end(fs.readFileSync('./public' + parsedRequest.path));
+
+    } else if (parsedRequest.pathname.indexOf(".png") == parsedRequest.pathname.length - 4) {
+
+      // reformat the request to the type expected by the VectorTile Server
+      parsedRequest.pathname = parsedRequest.pathname.replace("png", "mvt");
+      parsedRequest.hostname = config.tileServer.host;
+      parsedRequest.port = config.tileServer.port;
+      parsedRequest.protocol = "http:";
+      var tileUrl = url.format(parsedRequest);
+      console.log(tileUrl);
+
+      // extract the x,y,z from the URL which could be /some/map/type/{z}/{x}/{y}.mvt?srs=EPSG:4326
+      var dirs = parsedRequest.pathname.substring(0, parsedRequest.pathname.length - 4).split("/");
+      var x = parseInt(dirs[dirs.length - 2]);
+      var y = parseInt(dirs[dirs.length - 1]);
+      var z = parseInt(dirs[dirs.length - 3]);
+
+      // find the compiled stylesheet from the given style parameter, defaulting if omitted or bogus
+      var style = (parsedRequest.query.style !== undefined && parsedRequest.query.style) ?
+                  parsedRequest.query.style : defaultStyle;
+      var stylesheet = namedStyles[style];
+      stylesheet = (stylesheet !== undefined && stylesheet) ? stylesheet : namedStyles[defaultStyle];
+
+      // issue the request to the vector tile server and render the tile as a PNG using Mapnik
+      console.time("getTile");
+      request.get({url: tileUrl, method: 'GET', encoding: null}, function (error, response, body) {
+
+        if (!error && response.statusCode == 200 && body.length > 0) {
           console.timeEnd("getTile");
-                                                                                          1
+
           var map = new mapnik.Map(512, 512, mercator.proj4);
-          map.fromStringSync(xmlStylesheet); // load in the style we parsed
+          map.fromStringSync(stylesheet);
+          var vt = new mapnik.VectorTile(z, x, y);
+          vt.addDataSync(body);
 
+          // important to include a buffer, to catch the overlaps
+          console.time("render");
+          vt.render(map, new mapnik.Image(512, 512), {"buffer_size": 8}, function (err, image) {
+            if (err) {
+              res.end(err.message);
+            } else {
+              res.writeHead(200, {
+                'Content-Type': 'image/png',
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'max-age=600, must-revalidate'    // TODO: configurify the cache control!
+              });
+              console.timeEnd("render");
+              image.encode('png', function (err, buffer) {
 
-          var vt = new mapnik.VectorTile(parseInt(query.z),parseInt(query.x),parseInt(query.y));
-          if (tile && tile.length>0) {
-            vt.addDataSync(tile);
-            //console.log(vt.tileSize, vt.bufferSize);
-
-            //console.log(mapnik.VectorTile.info(tile));
-            //var extent = vt.extent();
-            //console.log(extent);
-
-            // important to include a buffer, to catch the overlaps
-            console.time("render");
-            vt.render(map, new mapnik.Image(512,512), {"buffer_size":25}, function(err, image) {
-              if (err) {
-                res.end(err.message);
-              } else {
-                res.writeHead(200, {
-                  'Content-Type': 'image/png'
-                });
-                console.timeEnd("render");
-                image.encode('png', function(err,buffer) {
-
-                  if (err) {
-                    res.end(err.message);
-                  } else {
-                    res.end(buffer);
-                  }
-                });
-              }
-            });
-          } else {
-            // no tile
-            res.writeHead(404, {
-              'Content-Type': 'image/png'
-            });
-            res.end();
-          }
-        })
+                if (err) {
+                  res.end(err.message);
+                } else {
+                  res.end(buffer);
+                }
+              });
+            }
+          });
+        } else {
+          // no tile
+          res.writeHead(404, {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
+          res.end();
+        }
       })
 
-
     } else {
-      res.writeHead(500, {
-        'Content-Type': 'text/plain'
-      });
-      res.end('missing x, y, z, sql, or style parameter');
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('Expected a tile URL in the form of /{map-path}/{z}/{x}/{y}.png?{params}');
     }
-  }
-});
+  });
+}
 
 
-server.listen(3000);
+
+
+/**
+ * The main entry point.
+ * Extract the configuration and start the server.  This expects a config file in YAML format as the first and only
+ * argument.  No sanitization is performaned on the file existance or content.
+ */
+try {
+  var configFile = process.argv[2];
+  console.log("Using config: " + configFile);
+  var config = yaml.load(fs.readFileSync(configFile, "utf8"));
+  server = createServer(config)
+  server.listen(config.server.port);
+
+} catch (e) {
+  console.error(e);
+}
