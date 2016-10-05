@@ -52,7 +52,7 @@
     };
 
 
-    L.gbifSimpleLayer('http://localhost:3000/api/occurrence/density/{z}/{x}/{y}.png',
+    L.gbifSimpleLayer('./api/occurrence/density/{z}/{x}/{y}.png',
       {srs: "EPSG:3857", style: "greenHeat.point"}).addTo(map);
 
 
