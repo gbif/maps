@@ -1,0 +1,17 @@
+<assembly>
+  <id>bundle</id>
+  <formats>
+    <format>tar.gz</format>
+  </formats>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <fileSets>
+    <fileSet>
+      <directory>src/main/node</directory>
+      <outputDirectory></outputDirectory>
+    </fileSet>
+    <fileSet>
+      <directory>node_modules</directory>
+      <outputDirectory>node_modules</outputDirectory>
+    </fileSet>
+  </fileSets>
+</assembly>
