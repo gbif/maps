@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * A conatiner object to produce JSON in TileJson format.
  * @see https://github.com/mapbox/tilejson-spec
  */
-@JsonInclude(JsonInclude.Include.NON_ABSENT)
+@JsonInclude(JsonInclude.Include.ALWAYS)
 public class TileJson {
   private String attribution;
   private double[] bounds;

@@ -12,20 +12,6 @@
   <artifactId>spark-process</artifactId>
 
   <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>net.alchim31.maven</groupId>
-          <artifactId>scala-maven-plugin</artifactId>
-          <version>3.2.1</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>2.0.2</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -43,7 +29,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.7</version>
         <configuration>
           <skipTests>true</skipTests>
         </configuration>
@@ -52,7 +37,6 @@
       <plugin>
         <groupId>org.scalatest</groupId>
         <artifactId>scalatest-maven-plugin</artifactId>
-        <version>1.0</version>
         <configuration>
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
           <junitxml>.</junitxml>
@@ -71,7 +55,6 @@
         <!-- see http://davidb.github.com/scala-maven-plugin -->
         <groupId>net.alchim31.maven</groupId>
         <artifactId>scala-maven-plugin</artifactId>
-        <version>3.2.0</version>
         <executions>
           <execution>
             <goals>
@@ -98,16 +81,6 @@
             <goals>
               <goal>shade</goal>
             </goals>
-            <!--configuration>
-              <artifactSet>
-                <excludes>
-                  <exclude>org.apache.hadoop:*</exclude>
-                  <exclude>org.apache.hbase:*</exclude>
-                  <exclude>org.apache.spark:*</exclude>
-                  <exclude>org.scala-lang:*</exclude>
-                </excludes>
-              </artifactSet>
-            </configuration-->
           </execution>
         </executions>
       </plugin>
@@ -155,13 +128,6 @@
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-client</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.hbase</groupId>
@@ -194,49 +160,39 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-mllib_2.11</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>no.ecc.vectortile</groupId>
       <artifactId>java-vector-tile</artifactId>
     </dependency>
-
-    <!-- TODO: properties and move to motherpom -->
-    <dependency>
-      <groupId>org.scalatest</groupId>
-      <artifactId>scalatest-funsuite_2.10</artifactId>
-      <version>3.0.0-SNAP13</version>
-      <scope>test</scope>
-    </dependency>
-    <!--dependency>
-      <groupId>it.unimi.dsi</groupId>
-      <artifactId>fastutil</artifactId>
-      <version>7.0.12</version>
-    </dependency-->
-    <!-- TODO: Move up and comment that fixed to the version coming in Spark -->
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-yaml</artifactId>
-      <version>2.4.4</version>
+      <!-- Important: Dropwizard conflicts with this, so be explicit -->
+      <version>${jackson.spark.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>2.4.4</version>
+      <!-- Important: Dropwizard conflicts with this, so be explicit -->
+      <version>${jackson.spark.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <version>2.4.4</version>
+      <!-- Important: Dropwizard conflicts with this, so be explicit -->
+      <version>${jackson.spark.version}</version>
     </dependency>
+
+    <!-- Tests -->
+    <dependency>
+      <groupId>org.scalatest</groupId>
+      <artifactId>scalatest-funsuite_2.10</artifactId>
+    </dependency>
+
   </dependencies>
 
   <profiles>
     <!--
-      Provides all the necessary scala jars to run in the IDE, which are marked as provided scope normally to ensure
-      they are not in the artifact
+      Provides all the necessary scala jars to run Spark in the IDE, which are normally marked as provided scope.
     -->
     <profile>
       <id>ide</id>
@@ -301,11 +257,6 @@
           <groupId>org.apache.spark</groupId>
           <artifactId>spark-sql_${scala.tools.version}</artifactId>
         </dependency>
-        <!--dependency>
-          <groupId>org.apache.spark</groupId>
-          <artifactId>spark-mllib_2.11</artifactId>
-        </dependency-->
-        <!-- TODO -->
       </dependencies>
     </profile>
   </profiles>

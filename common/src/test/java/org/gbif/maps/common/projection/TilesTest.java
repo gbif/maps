@@ -41,5 +41,4 @@ public class TilesTest {
     assertTrue(Tiles.tileContains(1, 1, 0, 512, new Double2D(10,10), 64)); // East buffer
     assertTrue(Tiles.tileContains(1, 0, 0, 512, new Double2D(1023,10), 64)); // West buffer
   }
-
 }

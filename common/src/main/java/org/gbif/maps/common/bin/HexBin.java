@@ -86,10 +86,6 @@ public class HexBin {
 
     hexWidth = tileSize / w;
     radius = hexWidth / 2;
-
-    // for flat top, 2.5x width produces 3 hexagons, therefore 5R gives 3 hexagons
-    //radius = (3.0 * tileSize) / (5d * ((double)hexPerTile + 0.5));
-    //hexWidth = radius*2;
     hexHeight = (Math.sqrt(3)/2) * hexWidth;
 
     LOG.debug("Radius [{}], width[{}], height[{}]", radius, hexWidth, hexHeight);
@@ -153,6 +149,7 @@ public class HexBin {
       Map<String, Object> meta = Maps.newHashMap();
 
       // HACK: a test id
+      // TODO
       meta.put("id",
                roundThreeDecimals(hexagon.getCenterY())
                + "," +
@@ -243,19 +240,16 @@ public class HexBin {
       if (hex.isPresent()) {
         Hexagon<HexagonData> hexagon = hex.get();
 
-        if (z==2 && x==0 && y==2) {
-          LOG.info("Adding Hex in tile[{},{}] tileLocal[{},{}], gridOffset[{},{}], hexGrid[{},{}]", x,y, tileLocalX, tileLocalY, gridOffsetX, gridOffsetY, hexGridLocalX, hexGridLocalY);
-
-        }
-
         if (!hexagon.getSatelliteData().isPresent()) {
           hexagon.setSatelliteData(new HexagonData());
         }
 
+        // TODO
         if (hexagon.getSatelliteData().isPresent()) {
           HexagonData cellData = hexagon.getSatelliteData().get();
 
           // HACK!!!
+          // TODO!
           long total = 10;
           if (!cellData.getMetadata().containsKey("total")) {
             cellData.getMetadata().put("total", total);
