@@ -48,7 +48,10 @@ public class HexBin {
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final VectorTileDecoder DECODER = new VectorTileDecoder();
 
-  // we provide a buffer size of 6 to ensure that we have plenty of hexagon grid around the tile
+  public static final String LAYER_NAME = "occurrence";
+  private static final String META_TOTAL_KEY = "total";
+
+  // we provide a buffer to ensure that we have plenty of hexagon grid around the tile
   // to avoid https://github.com/Hexworks/hexameter/issues/32 and to ensure we have enough room to
   // offset the grid to align at the tile boundaries.
   private static final int NUM_HEX_BUFFER = 8;
@@ -65,9 +68,6 @@ public class HexBin {
   private final double radius;
   private final double hexWidth;
   private final double hexHeight;
-
-  // TODO: needs to be a common schema thing
-  private final String layerName = "occurrence";
 
   /**
    * Constructs a hexagon binner whereby there will be at least minHexPerTile hexagons on each tile, adjusted to ensure
@@ -92,9 +92,9 @@ public class HexBin {
   }
 
   public byte[] bin(byte[] sourceTile, int z, long x, long y) throws IOException {
-    VectorTileDecoder.FeatureIterable tile = DECODER.decode(sourceTile, layerName);
-    Preconditions.checkArgument(tile.getLayerNames().contains(layerName), "Tile is missing the expected layer: "
-                                                                          + layerName);
+    VectorTileDecoder.FeatureIterable tile = DECODER.decode(sourceTile, LAYER_NAME);
+    Preconditions.checkArgument(tile.getLayerNames().contains(LAYER_NAME), "Tile is missing the expected layer: "
+                                                                          + LAYER_NAME);
     Iterable<VectorTileDecoder.Feature> features = () -> tile.iterator();
 
     HexagonalGrid grid = newGridInstance();
@@ -148,21 +148,10 @@ public class HexBin {
 
       Map<String, Object> meta = Maps.newHashMap();
 
-      // HACK: a test id
-      // TODO
-      meta.put("id",
-               roundThreeDecimals(hexagon.getCenterY())
-               + "," +
-               roundThreeDecimals(hexagon.getCenterX())
-      );
-
-
-
       if (hexagon.getSatelliteData().isPresent()
-          && hexagon.getSatelliteData().get().getMetadata().containsKey("total")) {
-        meta.put("total", hexagon.getSatelliteData().get().getMetadata().get("total"));
-        LOG.debug("total {}", meta.get("total"));
-
+          && hexagon.getSatelliteData().get().getMetadata().containsKey(META_TOTAL_KEY)) {
+        meta.put(META_TOTAL_KEY, hexagon.getSatelliteData().get().getMetadata().get(META_TOTAL_KEY));
+        LOG.debug("total {}", meta.get(META_TOTAL_KEY));
       }
 
       LOG.debug("Coords {},{},{},{},{},{}" + coordinates[0],
@@ -171,7 +160,7 @@ public class HexBin {
                coordinates[3],
                coordinates[4],
                coordinates[5]);
-      encoder.addFeature("occurrence", meta, poly);
+      encoder.addFeature(LAYER_NAME, meta, poly);
     }
 
     return encoder.encode();
@@ -223,55 +212,50 @@ public class HexBin {
     long x, long y
   ) {
 
-    // we only care about features that are on the tile, or within one hexagon of the tile, otherwise they can't
-    // possibly result in a hexagon, or partial hexagon rendered on this tile.  This is important, because the get by
-    // grid.getByPixelCoordinate() used will return the nearest hexagon, which may result in invalid hexagons rendering.
-    //if (tileLocalX < tileSize+hexWidth && tileLocalX > -hexWidth
-    //  && tileLocalY <tileSize+hexHeight && tileLocalY > -hexHeight) {
-    if (true) {
+    // and the pixel when on hex grid space, compensating for the offset and 2 hex buffer
+    double hexGridLocalX = tileLocalX + gridOffsetX + HEX_GRID_OFFSET_X*hexWidth;
+    double hexGridLocalY = tileLocalY + gridOffsetY + HEX_GRID_OFFSET_Y*hexHeight;
 
-      // and the pixel when on hex grid space, compensating for the offset and 2 hex buffer
-      // TODO: here we need to use NUM_HEX_BUFFER
-      double hexGridLocalX = tileLocalX + gridOffsetX + HEX_GRID_OFFSET_X*hexWidth;
-      double hexGridLocalY = tileLocalY + gridOffsetY + HEX_GRID_OFFSET_Y*hexHeight;
+    Optional<Hexagon<HexagonData>> hex = grid.getByPixelCoordinate(hexGridLocalX, hexGridLocalY);
+    if (hex.isPresent()) {
+      Hexagon<HexagonData> hexagon = hex.get();
 
-
-      Optional<Hexagon<HexagonData>> hex = grid.getByPixelCoordinate(hexGridLocalX, hexGridLocalY);
-      if (hex.isPresent()) {
-        Hexagon<HexagonData> hexagon = hex.get();
-
-        if (!hexagon.getSatelliteData().isPresent()) {
-          hexagon.setSatelliteData(new HexagonData());
-        }
-
-        // TODO
-        if (hexagon.getSatelliteData().isPresent()) {
-          HexagonData cellData = hexagon.getSatelliteData().get();
-
-          // HACK!!!
-          // TODO!
-          long total = 10;
-          if (!cellData.getMetadata().containsKey("total")) {
-            cellData.getMetadata().put("total", total);
-          } else {
-            long existing = (Long)cellData.getMetadata().get("total");
-            cellData.getMetadata().put("total", total + existing);
-          }
-        }
-        return hexagon;
+      if (!hexagon.getSatelliteData().isPresent()) {
+        hexagon.setSatelliteData(new HexagonData());
       }
 
+      if (hexagon.getSatelliteData().isPresent()) {
+        HexagonData cellData = hexagon.getSatelliteData().get();
+
+        Optional<Long> total = totalCount(feature.getAttributes());
+        if (total.isPresent()) {
+          if (!cellData.getMetadata().containsKey(META_TOTAL_KEY)) {
+            cellData.getMetadata().put(META_TOTAL_KEY, total.get());
+          } else {
+            long existing = (Long)cellData.getMetadata().get(META_TOTAL_KEY);
+            cellData.getMetadata().put(META_TOTAL_KEY, total.get() + existing);
+          }
+        }
+      }
+      return hexagon;
     }
 
     return null;
   }
 
   /**
-   * Rounds to 3 decimal places
+   * Leniently attempts to get a total from the meta.
    */
-  private static double roundThreeDecimals(double d) {
-    DecimalFormat df = new DecimalFormat("#.###");
-    return Double.valueOf(df.format(d));
+  private Optional<Long> totalCount(Map<String, Object> meta) {
+    if (meta != null && meta.containsKey(META_TOTAL_KEY)) {
+      try {
+        Long total = Long.parseLong(meta.get(META_TOTAL_KEY).toString()); // support anything that can be parsed
+        return Optional.of(total);
+      } catch (NumberFormatException e) {
+        // swallow
+      }
+    }
+    return Optional.empty();
   }
 
 
