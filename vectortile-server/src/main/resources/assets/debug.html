@@ -88,7 +88,7 @@
 
     <div class="form-group col-sm-12" id="style">
       <label class="radio-inline">
-        <input type="radio" name="bin" id="point" value="" checked> Points
+        <input type="radio" name="bin" id="point" value="" checked> Default
       </label>
       <label class="radio-inline">
         <input type="radio" name="bin" id="hex-small" value="hex"> Hex (small)
@@ -224,7 +224,6 @@ function initMap(map) {
     return; // baseURLs not ready
   }
 
-
   // Remove layers if they exist
   while(map._gbif_sources.length > 0) {
     var s = map._gbif_sources.pop();
@@ -269,6 +268,9 @@ function initMap(map) {
   var backend = $('input[name="_type"]:checked').val();
   var baseURL = window.location.href.replace("debug.html", "");
   baseURL = baseURL.replace("#", ""); // hack
+
+  //baseURL = "http://localhost:7001/"; // useful only for in IDE dev
+
   var tileLayer = backend == "simple" ? baseURL + "api/occurrence/density" : baseURL + "api/occurrence/adhoc"
   map.addSource('tile', {
     type: 'vector',
@@ -402,14 +404,14 @@ $("#config :input").change(function() {
     $('#srs3857').prop('disabled', true);
     $('#srs3575').prop('disabled', true);
 
-    $('#style').hide();
-    $('#styleHR').hide();
+    //$('#style').hide();
+    //$('#styleHR').hide();
 
   } else {
     $('#srs3857').prop('disabled', false);
     $('#srs3575').prop('disabled', false);
-    $('#style').show();
-    $('#styleHR').show();
+    //$('#style').show();
+    //$('#styleHR').show();
   }
   initMap(map);
 });

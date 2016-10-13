@@ -1,5 +1,6 @@
 package org.gbif.maps.resource;
 
+import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.Tiles;
@@ -33,20 +34,27 @@ import no.ecc.vectortile.VectorTileEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.gbif.maps.resource.Params.BIN_MODE_HEX;
+import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
+import static org.gbif.maps.resource.Params.HEX_TILE_SIZE;
+import static org.gbif.maps.resource.Params.enableCORS;
+
 /**
  * SOLR search as a vector tile service.
  */
 @Path("/occurrence/adhoc")
 @Singleton
-public final class SolrResource {
+public final class  SolrResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(SolrResource.class);
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
+  private static final double solrQueryBufferPercentage = 0.125;  // 1/8th tile buffer all around, similar to the HBase maps
 
   private final int tileSize;
   private final int bufferSize;
   private final TileProjection projection;
   private final OccurrenceHeatmapsService solrService;
+
 
   public SolrResource(OccurrenceHeatmapsService solrService, int tileSize, int bufferSize) throws IOException {
     this.tileSize = tileSize;
@@ -66,16 +74,22 @@ public final class SolrResource {
     @PathParam("x") long x,
     @PathParam("y") long y,
     @DefaultValue("EPSG:4326") @QueryParam("srs") String srs,
+    @QueryParam("bin") String bin,
+    @DefaultValue(DEFAULT_HEX_PER_TILE) @QueryParam("hexPerTile") int hexPerTile,
     @Context HttpServletResponse response,
     @Context HttpServletRequest request
     ) throws Exception {
-    prepare(response);
+    enableCORS(response);
     Preconditions.checkArgument("EPSG:4326".equalsIgnoreCase(srs),
                                 "Adhoc search maps are currently only available in EPSG:4326");
     OccurrenceHeatmapRequest heatmapRequest = OccurrenceHeatmapRequestProvider.buildOccurrenceHeatmapRequest(request);
-    //heatmapRequest.setZoom(z);
+
+
+    Preconditions.checkArgument(bin == null || BIN_MODE_HEX.equalsIgnoreCase(bin), "Unsupported bin mode");
+
     // Tim note: by testing in production index, we determine that 4 is a sensible performance choice
     // every 4 zoom levels the grid resolution increases
+    //heatmapRequest.setZoom(z); // default behavior
     int solrLevel = ((int)(z/4))*4;
     heatmapRequest.setZoom(solrLevel);
 
@@ -85,11 +99,11 @@ public final class SolrResource {
     OccurrenceHeatmapResponse solrResponse = solrService.searchHeatMap(heatmapRequest);
     VectorTileEncoder encoder = new VectorTileEncoder (tileSize, bufferSize, false);
 
-    final Rectangle2D.Double tileBoundary = tileBoundaryWGS84(z, x, y); // TODO: merge with solrSearchGeom?
-    final Point2D tileBoundarySW = new Point2D.Double(tileBoundary.getMinX(), tileBoundary.getMinY());
-    final Point2D tileBoundaryNE = new Point2D.Double(tileBoundary.getMaxX(), tileBoundary.getMaxY());
+    Double2D[] boundary = bufferedTileBoundary(z,x,y);
+    final Point2D tileBoundarySW = new Point2D.Double(boundary[0].getX(), boundary[0].getY());
+    final Point2D tileBoundaryNE = new Point2D.Double(boundary[1].getX(), boundary[1].getY());
 
-   // iterate the data structure from SOLR painting cells
+    // iterate the data structure from SOLR painting cells
     final List<List<Integer>> countsInts = solrResponse.getCountsInts2D();
     for (int row = 0; countsInts!=null && row < countsInts.size(); row++) {
       if (countsInts.get(row) != null) {
@@ -126,12 +140,15 @@ public final class SolrResource {
 
               int minX = (int) swTileXY.getX();
               int maxX = (int) neTileXY.getX();
+              double centerX = minX + (((double) maxX - minX) / 2);
+
               // tiles are indexed 0->255, but if the right of the cell (maxX) is on the tile boundary, this
               // will be detected (correctly) as the index 0 for the next tile.  Reset that.
               maxX = (minX > maxX) ? tileSize - 1 : maxX;
 
               int minY = (int) swTileXY.getY();
               int maxY = (int) neTileXY.getY();
+              double centerY = minY + (((double) maxY - minY) / 2);
               // tiles are indexed 0->255, but if the bottom of the cell (maxY) is on the tile boundary, this
               // will be detected (correctly) as the index 0 for the next tile.  Reset that.
               maxY = (minY > maxY) ? tileSize - 1 : maxY;
@@ -143,84 +160,81 @@ public final class SolrResource {
               minX = clip(minX, 0, tileSize-1);
               maxX = clip(maxX, 1, tileSize-1);
 
-              Coordinate[] coords = new Coordinate[] {
-                new Coordinate(swTileXY.getX(), swTileXY.getY()),
-                new Coordinate(neTileXY.getX(), swTileXY.getY()),
-                new Coordinate(neTileXY.getX(), neTileXY.getY()),
-                new Coordinate(swTileXY.getX(), neTileXY.getY()),
-                new Coordinate(swTileXY.getX(), swTileXY.getY())
-              };
-
               Map<String, Object> meta = new HashMap();
               meta.put("total", count);
-              encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPolygon(coords));
+
+              // for hexagon binning, we add the cell center point, otherwise the geometry
+              if (BIN_MODE_HEX.equalsIgnoreCase(bin)) {
+                // hack: use just the center points for each cell
+                Coordinate center = new Coordinate(centerX, centerY);
+                encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPoint(center));
+
+              } else {
+                // default behaviour with polygon squares for the cells
+                Coordinate[] coords = new Coordinate[] {
+                  new Coordinate(swTileXY.getX(), swTileXY.getY()),
+                  new Coordinate(neTileXY.getX(), swTileXY.getY()),
+                  new Coordinate(neTileXY.getX(), neTileXY.getY()),
+                  new Coordinate(swTileXY.getX(), neTileXY.getY()),
+                  new Coordinate(swTileXY.getX(), swTileXY.getY())
+                };
+
+                encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPolygon(coords));
+              }
+
             }
           }
         }
       }
     }
-    return encoder.encode();
+
+    byte[] encodedTile = encoder.encode();
+    if (BIN_MODE_HEX.equalsIgnoreCase(bin)) {
+      HexBin binner = new HexBin(HEX_TILE_SIZE, hexPerTile);
+      return binner.bin(encodedTile, z, x, y);
+
+    } else {
+      return encodedTile;
+    }
   }
 
   private static int clip(int value, int lower, int upper) {
     return  Math.min(Math.max(value, lower), upper);
   }
 
-  /*
-  @GET
-  @Path("all.json")
-  @Timed
-  @Produces(MediaType.APPLICATION_JSON)
-  public TileJson allTileJson(@Context HttpServletResponse response) throws IOException {
-    prepare(response);
-    return TileJson.TileJsonBuilder
-      .newBuilder()
-      .withAttribution("GBIF")
-      .withDescription("The tileset for all data")
-      .withId("GBIF:all")
-      .withName("GBIF All Data")
-      .withVectorLayers(new TileJson.VectorLayer[] {
-        new TileJson.VectorLayer("occurrence", "The observation data")
-      })
-      .withTiles(new String[]{"http://tiletest.gbif.org:9001/api/solr/{z}/{x}/{y}.mvt"})
-      .build();
-  }
-  */
-
-  // open the tiles to the world (especially your friendly localhost developer!)
-  private void prepare(HttpServletResponse response) {
-    response.addHeader("Allow-Control-Allow-Methods", "GET,OPTIONS");
-    response.addHeader("Access-Control-Allow-Origin", "*");
-  }
 
   /**
-   * Returns a SOLR search string for the geometry in WGS84 CRS for the tile.
+   * Returns a SOLR search string for the geometry in WGS84 CRS for the tile with a buffer.
    */
   private static String solrSearchGeom(int z, long x, long y) {
-    int tilesPerZoom = 1 << z;
-    double degsPerTile = 360d/tilesPerZoom;
-    double minLng = degsPerTile * x - 180;
-    double maxLat = 180 - (degsPerTile * y); // note EPSG:4326 covers only half the space vertically hence 180
-
-    // clip to the world extent
-    maxLat = Math.min(maxLat,90);
-    double minLat = Math.max(maxLat-degsPerTile,-90);
-    return "[" + minLng + " " + minLat + " TO "
-           + (minLng+degsPerTile) + " " + maxLat + "]";
+    Double2D[] boundary = bufferedTileBoundary(z,x,y);
+    return "[" + boundary[0].getX() + " " + boundary[0].getY() + " TO "
+           + boundary[1].getX() + " " + boundary[1].getY() + "]";
   }
 
-  /**
-   * Returns a SOLR search string for the geometry in WGS84 CRS for the tile.
-   */
-  private static Rectangle2D.Double tileBoundaryWGS84(int z, long x, long y) {
+  private static Double2D[] bufferedTileBoundary(int z, long x, long y) {
     int tilesPerZoom = 1 << z;
     double degsPerTile = 360d/tilesPerZoom;
-    double minLng = degsPerTile * x - 180;
-    double maxLat = 180 - (degsPerTile * y); // note EPSG:4326 covers only half the space vertically hence 180
 
-    // clip to the world extent
-    maxLat = Math.min(maxLat,90);
-    double minLat = Math.max(maxLat-degsPerTile,-90);
-    return new Rectangle2D.Double(minLng, minLat, degsPerTile, maxLat - minLat);
+    // the edges of the tile
+    double minLng = degsPerTile * x - 180;
+    double maxLng = minLng + degsPerTile;
+    double maxLat = 180 - (degsPerTile * y); // note EPSG:4326 covers only half the space vertically hence 180
+    double minLat = maxLat-degsPerTile;
+
+    // buffer the query by the percentage
+    double bufferDegrees = solrQueryBufferPercentage*degsPerTile;
+    Double2D sw = new Double2D(minLng - bufferDegrees, minLat - bufferDegrees);
+    Double2D ne = new Double2D(maxLng + bufferDegrees, maxLat + bufferDegrees);
+
+    // clip north and south, but wrap over dateline
+    //Double2D clippedSW = new Double2D(sw.getX(), Math.max(sw.getY(),-90));
+    //Double2D clippedNE = new Double2D(ne.getX(), Math.min(ne.getY(),90));
+
+    // HACK FOR NOW: clip the longitude too, as SOLR does not let us cross dateline
+    Double2D clippedSW = new Double2D(Math.max(sw.getX(), -180), Math.max(sw.getY(),-90));
+    Double2D clippedNE = new Double2D(Math.min(ne.getX(), 180), Math.min(ne.getY(),90));
+
+    return new Double2D[] {clippedSW, clippedNE};
   }
 }

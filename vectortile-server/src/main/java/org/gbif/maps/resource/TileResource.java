@@ -38,6 +38,10 @@ import org.slf4j.LoggerFactory;
 import static org.gbif.maps.resource.Params.enableCORS;
 import static org.gbif.maps.resource.Params.mapKey;
 import static org.gbif.maps.resource.Params.toMinMaxYear;
+import static org.gbif.maps.resource.Params.BIN_MODE_HEX;
+import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
+import static org.gbif.maps.resource.Params.HEX_TILE_SIZE;
+
 /**
  * The tile resource for the simple gbif data layers (i.e. HBase sourced, preprocessed).
  */
@@ -54,9 +58,6 @@ public final class TileResource {
   // we always use high resolution tiles for the point data which are small by definition
   private static final int POINT_TILE_SIZE = 4096;
   private static final int POINT_TILE_BUFFER = POINT_TILE_SIZE / 4;
-  private static final String BIN_MODE_HEX = "hex";
-  private static final int HEX_TILE_SIZE = 4096;
-  private static final String DEFAULT_HEX_PER_TILE = "51";
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final VectorTileDecoder DECODER = new VectorTileDecoder();
   static {

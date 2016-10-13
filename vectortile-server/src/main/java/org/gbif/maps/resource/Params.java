@@ -17,6 +17,12 @@ class Params {
   static final Pattern COMMA = Pattern.compile(",");
   static final Pattern PIPE = Pattern.compile("[|]");
 
+  // Parameters for dealing with hexagon binning
+  static final String BIN_MODE_HEX = "hex";
+  static final int HEX_TILE_SIZE = 4096;
+  static final String DEFAULT_HEX_PER_TILE = "51";
+
+
   // Maps the http parameter for the type to the HBase row key prefix for that map.
   // This aligns with the Spark processing that populates HBase of course, but maps the internal key to the
   // http parameter.
