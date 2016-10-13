@@ -9,6 +9,7 @@
   </parent>
 
   <artifactId>vectortile-server</artifactId>
+  <packaging>jar</packaging>
 
   <build>
     <plugins>
@@ -37,7 +38,6 @@
               <goal>shade</goal>
             </goals>
             <configuration>
-              <shadedArtifactAttached>true</shadedArtifactAttached>
               <transformers>
                 <transformer
                   implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
