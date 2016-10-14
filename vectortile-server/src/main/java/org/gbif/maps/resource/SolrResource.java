@@ -27,6 +27,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -44,11 +45,13 @@ import static org.gbif.maps.resource.Params.enableCORS;
  */
 @Path("/occurrence/adhoc")
 @Singleton
-public final class  SolrResource {
+public final class SolrResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(SolrResource.class);
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
-  private static final double solrQueryBufferPercentage = 0.125;  // 1/8th tile buffer all around, similar to the HBase maps
+
+  @VisibleForTesting
+  static final double SOLR_QUERY_BUFFER_PERCENTAGE = 0.125;  // 1/8th tile buffer all around, similar to the HBase maps
 
   private final int tileSize;
   private final int bufferSize;
@@ -87,7 +90,7 @@ public final class  SolrResource {
 
     Preconditions.checkArgument(bin == null || BIN_MODE_HEX.equalsIgnoreCase(bin), "Unsupported bin mode");
 
-    // Tim note: by testing in production index, we determine that 4 is a sensible performance choice
+    // Note (Tim R): by testing in production index, we determine that 4 is a sensible performance choice
     // every 4 zoom levels the grid resolution increases
     //heatmapRequest.setZoom(z); // default behavior
     int solrLevel = ((int)(z/4))*4;
@@ -99,38 +102,46 @@ public final class  SolrResource {
     OccurrenceHeatmapResponse solrResponse = solrService.searchHeatMap(heatmapRequest);
     VectorTileEncoder encoder = new VectorTileEncoder (tileSize, bufferSize, false);
 
-    Double2D[] boundary = bufferedTileBoundary(z,x,y);
+    // Handle datelines in the SOLRResponse.
+    OccurrenceHeatmapResponse datelineAdjustedResponse = datelineAdjustedResponse(solrResponse);
+
+
+    Double2D[] boundary = bufferedTileBoundary(z, x, y, false);
     final Point2D tileBoundarySW = new Point2D.Double(boundary[0].getX(), boundary[0].getY());
     final Point2D tileBoundaryNE = new Point2D.Double(boundary[1].getX(), boundary[1].getY());
 
     // iterate the data structure from SOLR painting cells
-    final List<List<Integer>> countsInts = solrResponse.getCountsInts2D();
+    final List<List<Integer>> countsInts = datelineAdjustedResponse.getCountsInts2D();
     for (int row = 0; countsInts!=null && row < countsInts.size(); row++) {
       if (countsInts.get(row) != null) {
         for (int column = 0; column < countsInts.get(row).size(); column++) {
           Integer count = countsInts.get(row).get(column);
           if (count != null && count > 0) {
 
-            final Rectangle2D.Double cell = new Rectangle2D.Double(solrResponse.getMinLng(column),
-                                                                   solrResponse.getMinLat(row),
-                                                                   solrResponse.getMaxLng(column)
-                                                                   - solrResponse.getMinLng(column),
-                                                                   solrResponse.getMaxLat(row) - solrResponse.getMinLat(
-                                                                     row));
+            final Rectangle2D.Double cell = new Rectangle2D.Double(datelineAdjustedResponse.getMinLng(column),
+                                                                   datelineAdjustedResponse.getMinLat(row),
+                                                                   datelineAdjustedResponse.getMaxLng(column)
+                                                                     - datelineAdjustedResponse.getMinLng(column),
+                                                                   datelineAdjustedResponse.getMaxLat(row) -
+                                                                     datelineAdjustedResponse.getMinLat(row));
 
             // get the extent of the cell
             final Point2D cellSW = new Point2D.Double(cell.getMinX(), cell.getMinY());
             final Point2D cellNE = new Point2D.Double(cell.getMaxX(), cell.getMaxY());
 
             // only paint if the cell falls on the tile (noting again higher Y means further south).
-            if (cellNE.getX() > tileBoundarySW.getX() && cellSW.getX() < tileBoundaryNE.getX()
-                && cellNE.getY() > tileBoundarySW.getY() && cellSW.getY() < tileBoundaryNE.getY()) {
+            //if (cellNE.getX() > tileBoundarySW.getX() && cellSW.getX() < tileBoundaryNE.getX()
+            //    && cellNE.getY() > tileBoundarySW.getY() && cellSW.getY() < tileBoundaryNE.getY()) {
 
               // clip normalized pixel locations to the edges of the cell
-              double minXAsNorm = Math.max(cellSW.getX(), tileBoundarySW.getX());
-              double maxXAsNorm = Math.min(cellNE.getX(), tileBoundaryNE.getX());
-              double minYAsNorm = Math.max(cellSW.getY(), tileBoundarySW.getY());
-              double maxYAsNorm = Math.min(cellNE.getY(), tileBoundaryNE.getY());
+            //double minXAsNorm = Math.max(cellSW.getX(), tileBoundarySW.getX());
+            //double maxXAsNorm = Math.min(cellNE.getX(), tileBoundaryNE.getX());
+            //double minYAsNorm = Math.max(cellSW.getY(), tileBoundarySW.getY());
+            //double maxYAsNorm = Math.min(cellNE.getY(), tileBoundaryNE.getY());
+            double minXAsNorm = cellSW.getX();
+            double maxXAsNorm = cellNE.getX();
+            double minYAsNorm = cellSW.getY();
+            double maxYAsNorm = cellNE.getY();
 
               // convert the lat,lng into pixel coordinates
               Double2D swGlobalXY = projection.toGlobalPixelXY(maxYAsNorm, minXAsNorm, z);
@@ -144,21 +155,21 @@ public final class  SolrResource {
 
               // tiles are indexed 0->255, but if the right of the cell (maxX) is on the tile boundary, this
               // will be detected (correctly) as the index 0 for the next tile.  Reset that.
-              maxX = (minX > maxX) ? tileSize - 1 : maxX;
+              //maxX = (minX > maxX) ? tileSize - 1 : maxX;
 
               int minY = (int) swTileXY.getY();
               int maxY = (int) neTileXY.getY();
               double centerY = minY + (((double) maxY - minY) / 2);
               // tiles are indexed 0->255, but if the bottom of the cell (maxY) is on the tile boundary, this
               // will be detected (correctly) as the index 0 for the next tile.  Reset that.
-              maxY = (minY > maxY) ? tileSize - 1 : maxY;
+              //maxY = (minY > maxY) ? tileSize - 1 : maxY;
 
               // Clip the extent to the tile.  At this point e.g. max can be 256px, but tile pixels can only be
               // addressed at 0 to 255.  If we don't clip, 256 will actually spill over into the second row / column
               // and result in strange lines.  Note the importance of the clipping, as the min values are the left, or
               // top of the cell, but the max values are the right or bottom.
-              minX = clip(minX, 0, tileSize-1);
-              maxX = clip(maxX, 1, tileSize-1);
+              //minX = clip(minX, 0, tileSize-1);
+              //maxX = clip(maxX, 1, tileSize-1);
 
               Map<String, Object> meta = new HashMap();
               meta.put("total", count);
@@ -183,7 +194,7 @@ public final class  SolrResource {
               }
 
             }
-          }
+          //}
         }
       }
     }
@@ -202,39 +213,79 @@ public final class  SolrResource {
     return  Math.min(Math.max(value, lower), upper);
   }
 
+  /**
+   * Returns a new object with the min and max X set correctly for dateline adjustment or the source if the dateline
+   * was not crossed.
+   */
+  private OccurrenceHeatmapResponse datelineAdjustedResponse(OccurrenceHeatmapResponse source) {
+    if (source.getMaxX() < source.getMinX()) {
+      double minX = source.getMinX();
+      double maxX = source.getMaxX();
+      // the one closest to dateline will always be the one to adjust
+      if (Math.cos(Math.toRadians(source.getMaxX())) < Math.cos(Math.toRadians(source.getMinX()))) {
+        maxX += 360;
+      } else {
+        minX -= 360;
+      }
+
+      // need to return new object because it sets internal variables (e.g. length) in constructor
+      return new OccurrenceHeatmapResponse(
+          source.getColumns(),
+          source.getRows(),
+          source.getCount(),
+          minX,
+          maxX,
+          source.getMinY(),
+          source.getMaxY(),
+          source.getCountsInts2D()
+        );
+    } else {
+      return source;
+    }
+  }
+
 
   /**
    * Returns a SOLR search string for the geometry in WGS84 CRS for the tile with a buffer.
    */
   private static String solrSearchGeom(int z, long x, long y) {
-    Double2D[] boundary = bufferedTileBoundary(z,x,y);
+    Double2D[] boundary = bufferedTileBoundary(z, x, y, true);
     return "[" + boundary[0].getX() + " " + boundary[0].getY() + " TO "
            + boundary[1].getX() + " " + boundary[1].getY() + "]";
   }
 
-  private static Double2D[] bufferedTileBoundary(int z, long x, long y) {
+  /**
+   * For the given tile, returns the envelope for the tile, with a buffer.
+   * @param z zoom
+   * @param x tile X address
+   * @param y tile Y address
+   * @param adjustDateline If the envelope should compensate for the dateline handling (only needed for search request)
+   * @return an envelope for the tile, with the appropriate buffer
+   */
+  @VisibleForTesting
+  static Double2D[] bufferedTileBoundary(int z, long x, long y, boolean adjustDateline) {
     int tilesPerZoom = 1 << z;
     double degsPerTile = 360d/tilesPerZoom;
+    double bufferDegrees = SOLR_QUERY_BUFFER_PERCENTAGE * degsPerTile;
 
-    // the edges of the tile
-    double minLng = degsPerTile * x - 180;
-    double maxLng = minLng + degsPerTile;
-    double maxLat = 180 - (degsPerTile * y); // note EPSG:4326 covers only half the space vertically hence 180
-    double minLat = maxLat-degsPerTile;
+    // the edges of the tile after buffering
+    double minLng = (degsPerTile * x) - 180 - bufferDegrees;
+    double maxLng = minLng + degsPerTile + (bufferDegrees * 2);
+    double maxLat = 180 - (degsPerTile * y) + bufferDegrees; // EPSG:4326 covers only half the space vertically, hence 180
+    double minLat = maxLat - degsPerTile - (bufferDegrees * 2);
 
-    // buffer the query by the percentage
-    double bufferDegrees = solrQueryBufferPercentage*degsPerTile;
-    Double2D sw = new Double2D(minLng - bufferDegrees, minLat - bufferDegrees);
-    Double2D ne = new Double2D(maxLng + bufferDegrees, maxLat + bufferDegrees);
+    // handle the dateline wrapping
+    if (z>0 && adjustDateline) {
+      minLng = minLng < -180 ? minLng + 360 : minLng;
+      maxLng = maxLng > 180 ? maxLng - 360 : maxLng;
+    }
 
-    // clip north and south, but wrap over dateline
-    //Double2D clippedSW = new Double2D(sw.getX(), Math.max(sw.getY(),-90));
-    //Double2D clippedNE = new Double2D(ne.getX(), Math.min(ne.getY(),90));
+    // clip the extent (SOLR barfs otherwise)
+    maxLat = Math.min(maxLat, 90);
+    minLat = Math.max(minLat, -90);
+    maxLng = Math.min(maxLng, 180);
+    minLng = Math.max(minLng, -180);
 
-    // HACK FOR NOW: clip the longitude too, as SOLR does not let us cross dateline
-    Double2D clippedSW = new Double2D(Math.max(sw.getX(), -180), Math.max(sw.getY(),-90));
-    Double2D clippedNE = new Double2D(Math.min(ne.getX(), 180), Math.min(ne.getY(),90));
-
-    return new Double2D[] {clippedSW, clippedNE};
+    return new Double2D[] {new Double2D(minLng, minLat), new Double2D(maxLng, maxLat)};
   }
 }
