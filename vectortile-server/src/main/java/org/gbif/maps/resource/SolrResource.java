@@ -42,6 +42,7 @@ import static org.gbif.maps.resource.Params.enableCORS;
 
 /**
  * SOLR search as a vector tile service.
+ * Note to developers: This class could benefit from some significant refactoring and cleanup.
  */
 @Path("/occurrence/adhoc")
 @Singleton
@@ -111,6 +112,7 @@ public final class SolrResource {
     final Point2D tileBoundaryNE = new Point2D.Double(boundary[1].getX(), boundary[1].getY());
 
     // iterate the data structure from SOLR painting cells
+    // (note: this is not pretty, but neither is the result from SOLR... some cleanup here would be beneficial)
     final List<List<Integer>> countsInts = datelineAdjustedResponse.getCountsInts2D();
     for (int row = 0; countsInts!=null && row < countsInts.size(); row++) {
       if (countsInts.get(row) != null) {
@@ -129,15 +131,6 @@ public final class SolrResource {
             final Point2D cellSW = new Point2D.Double(cell.getMinX(), cell.getMinY());
             final Point2D cellNE = new Point2D.Double(cell.getMaxX(), cell.getMaxY());
 
-            // only paint if the cell falls on the tile (noting again higher Y means further south).
-            //if (cellNE.getX() > tileBoundarySW.getX() && cellSW.getX() < tileBoundaryNE.getX()
-            //    && cellNE.getY() > tileBoundarySW.getY() && cellSW.getY() < tileBoundaryNE.getY()) {
-
-              // clip normalized pixel locations to the edges of the cell
-            //double minXAsNorm = Math.max(cellSW.getX(), tileBoundarySW.getX());
-            //double maxXAsNorm = Math.min(cellNE.getX(), tileBoundaryNE.getX());
-            //double minYAsNorm = Math.max(cellSW.getY(), tileBoundarySW.getY());
-            //double maxYAsNorm = Math.min(cellNE.getY(), tileBoundaryNE.getY());
             double minXAsNorm = cellSW.getX();
             double maxXAsNorm = cellNE.getX();
             double minYAsNorm = cellSW.getY();
@@ -153,23 +146,9 @@ public final class SolrResource {
               int maxX = (int) neTileXY.getX();
               double centerX = minX + (((double) maxX - minX) / 2);
 
-              // tiles are indexed 0->255, but if the right of the cell (maxX) is on the tile boundary, this
-              // will be detected (correctly) as the index 0 for the next tile.  Reset that.
-              //maxX = (minX > maxX) ? tileSize - 1 : maxX;
-
               int minY = (int) swTileXY.getY();
               int maxY = (int) neTileXY.getY();
               double centerY = minY + (((double) maxY - minY) / 2);
-              // tiles are indexed 0->255, but if the bottom of the cell (maxY) is on the tile boundary, this
-              // will be detected (correctly) as the index 0 for the next tile.  Reset that.
-              //maxY = (minY > maxY) ? tileSize - 1 : maxY;
-
-              // Clip the extent to the tile.  At this point e.g. max can be 256px, but tile pixels can only be
-              // addressed at 0 to 255.  If we don't clip, 256 will actually spill over into the second row / column
-              // and result in strange lines.  Note the importance of the clipping, as the min values are the left, or
-              // top of the cell, but the max values are the right or bottom.
-              //minX = clip(minX, 0, tileSize-1);
-              //maxX = clip(maxX, 1, tileSize-1);
 
               Map<String, Object> meta = new HashMap();
               meta.put("total", count);
@@ -179,6 +158,15 @@ public final class SolrResource {
                 // hack: use just the center points for each cell
                 Coordinate center = new Coordinate(centerX, centerY);
                 encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPoint(center));
+
+                // handle datelines for zoom 0 by copying the features into the appropriate buffer
+                if (z==0 && centerX < bufferSize) {
+                  center = new Coordinate(centerX + tileSize, centerY);
+                  encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPoint(center));
+                } else if (z==0 && centerX > tileSize - bufferSize) {
+                  center = new Coordinate(centerX - tileSize, centerY);
+                  encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPoint(center));
+                }
 
               } else {
                 // default behaviour with polygon squares for the cells
@@ -274,7 +262,7 @@ public final class SolrResource {
     double maxLat = 180 - (degsPerTile * y) + bufferDegrees; // EPSG:4326 covers only half the space vertically, hence 180
     double minLat = maxLat - degsPerTile - (bufferDegrees * 2);
 
-    // handle the dateline wrapping
+    // handle the dateline wrapping (for all zooms above 0, which needs special attention)
     if (z>0 && adjustDateline) {
       minLng = minLng < -180 ? minLng + 360 : minLng;
       maxLng = maxLng > 180 ? maxLng - 360 : maxLng;
