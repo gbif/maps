@@ -5,6 +5,7 @@ import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
+import org.gbif.ws.discovery.conf.ServiceConfiguration;
 
 /**
  * Application configuration with sensible defaults if applicable.
@@ -17,6 +18,10 @@ public class TileServerConfiguration extends Configuration {
   @Valid
   @NotNull
   private SolrConfiguration solr;
+
+  @Valid
+  @NotNull
+  private ServiceConfiguration service;
 
   @JsonProperty
   public HBaseConfiguration getHbase() {
@@ -37,6 +42,12 @@ public class TileServerConfiguration extends Configuration {
   public void setSolr(SolrConfiguration solr) {
     this.solr = solr;
   }
+
+  @JsonProperty
+  public ServiceConfiguration getService() { return service; }
+
+  @JsonProperty
+  public void setService(ServiceConfiguration service) { this.service = service; }
 
   public static class HBaseConfiguration extends Configuration {
     @Valid

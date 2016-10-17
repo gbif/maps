@@ -56,6 +56,9 @@
     <dropwizard.version>0.9.2</dropwizard.version>
     <scalatest.version>3.0.0-SNAP13</scalatest.version>
     <junit.version>4.12</junit.version>
+    <curator.version>2.9.1</curator.version>
+    <maven-core.version>3.3.9</maven-core.version>
+    <maven-model.version>3.1.1</maven-model.version>
 
     <!-- Plugins -->
     <maven-protoc-plugin.version>0.3.5</maven-protoc-plugin.version>

@@ -14,6 +14,7 @@ import io.dropwizard.setup.Environment;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.solr.client.solrj.SolrClient;
+import org.gbif.ws.discovery.lifecycle.DiscoveryLifeCycle;
 
 /**
  * The main entry point for running the member node.
@@ -58,5 +59,7 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
     environment.jersey().register(new SolrResource(solrService,
                                                    configuration.getSolr().getTileSize(),
                                                    configuration.getSolr().getBufferSize()));
+
+    environment.lifecycle().manage(new DiscoveryLifeCycle(configuration.getService()));
   }
 }
