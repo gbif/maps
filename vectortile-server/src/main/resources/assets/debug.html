@@ -271,7 +271,7 @@ function initMap(map) {
 
   //baseURL = "http://localhost:7001/"; // useful only for in IDE dev
 
-  var tileLayer = backend == "simple" ? baseURL + "api/occurrence/density" : baseURL + "api/occurrence/adhoc"
+  var tileLayer = backend == "simple" ? baseURL + "map/occurrence/density" : baseURL + "map/occurrence/adhoc"
   map.addSource('tile', {
     type: 'vector',
     "tiles": [tileLayer + "/{z}/{x}/{y}.mvt?" + queryString]
