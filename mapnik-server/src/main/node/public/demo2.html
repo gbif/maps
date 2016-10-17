@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -51,7 +50,7 @@
       return new L.GBIFSimple(url, options);
     };
 
-    L.gbifSimpleLayer('./api/occurrence/density/{z}/{x}/{y}.png',
+    L.gbifSimpleLayer('./map/occurrence/density/{z}/{x}/{y}.png',
       {style: "classic.poly", bin:"hex", hexPerTile:27, taxonKey:"9703", detectRetina: false}).addTo(map);
 
 
