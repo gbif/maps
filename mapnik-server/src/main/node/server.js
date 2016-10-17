@@ -133,15 +133,17 @@ function createServer(config) {
 
 /**
  * The main entry point.
- * Extract the configuration and start the server.  This expects a config file in YAML format as the first and only
- * argument.  No sanitization is performaned on the file existance or content.
+ * Extract the configuration and start the server.  This expects a config file in YAML format and a port
+ * as the only arguments.  No sanitization is performed on the file existance or content.
  */
 try {
   var configFile = process.argv[2];
+  var port = parseInt(process.argv[3]);
   console.log("Using config: " + configFile);
+  console.log("Using port: " + port);
   var config = yaml.load(fs.readFileSync(configFile, "utf8"));
   server = createServer(config)
-  server.listen(config.server.port);
+  server.listen(port);
 
 } catch (e) {
   console.error(e);
