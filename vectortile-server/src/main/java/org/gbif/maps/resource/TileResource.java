@@ -125,7 +125,7 @@ public final class TileResource {
   /**
    * Retrieves the data from HBase, applies the filters and merges the result into a vector tile containing a single
    * layer named {@link TileResource#LAYER_OCCURRENCE}.
-   * <p/>
+   * <p>
    * This method handles both pre-tiled and simple feature list stored data, returning a consistent format of vector
    * tile regardless of the storage format.  Please note that the tile size can vary and should be inspected before use.
    *

@@ -50,7 +50,7 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
 
 
     // tileSize must match the preprocessed tiles in HBase
-    String tableName =  configuration.getHbase().getTableName();
+    String tableName = configuration.getHbase().getTableName();
 
     environment.jersey().register(new TileResource(conf,
                                                    configuration.getHbase().getTableName(),
@@ -60,6 +60,8 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
                                                    configuration.getSolr().getTileSize(),
                                                    configuration.getSolr().getBufferSize()));
 
-    environment.lifecycle().manage(new DiscoveryLifeCycle(configuration.getService()));
+    if (configuration.getService().isDiscoverable()) {
+      environment.lifecycle().manage(new DiscoveryLifeCycle(configuration.getService()));
+    }
   }
 }
