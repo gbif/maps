@@ -7,11 +7,10 @@
   <fileSets>
     <fileSet>
       <directory>src/main/node</directory>
+      <excludes>
+        <exclude>node/**</exclude>
+      </excludes>
       <outputDirectory></outputDirectory>
-    </fileSet>
-    <fileSet>
-      <directory>node_modules</directory>
-      <outputDirectory>node_modules</outputDirectory>
     </fileSet>
   </fileSets>
 </assembly>
