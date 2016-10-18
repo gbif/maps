@@ -5,8 +5,8 @@ var mapnik = require('mapnik')
   , url = require('url')
   , fs = require('fs')
   , yaml = require('yaml-js')
+  , gbifServiceRegistry = require('./gbifServiceRegistry')
   , parser = require('./cartoParser');
-
 
 /**
  * Compile the CartoCss into Mapnik stylesheets into a lookup dictionary
@@ -128,8 +128,15 @@ function createServer(config) {
   });
 }
 
-
-
+/**
+ * Shut down cleanly.
+ */
+function exitHandler() {
+  console.log("Completing requests");
+  server.close(function () {
+    process.exit(0);
+  });
+}
 
 /**
  * The main entry point.
@@ -145,6 +152,11 @@ try {
   server = createServer(config)
   server.listen(port);
 
+  gbifServiceRegistry.register(config);
+
+  process.on('SIGINT', exitHandler.bind());
+  process.on('SIGTERM', exitHandler.bind());
+  process.on('exit', exitHandler.bind());
 } catch (e) {
   console.error(e);
 }
