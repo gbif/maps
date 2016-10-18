@@ -51,14 +51,14 @@ gbifServiceRegistry.register = function(config) {
           "@class": "org.gbif.ws.discovery.conf.ServiceDetails",
           "groupId": "org.gbif.maps",
           "artifactId": "mapnik-server",
-          "version": "UNKNOWN", // TODO
+          "version": config.service.version,
           "serviceConfiguration": {
             "httpPort": port,
             "httpAdminPort": -1,
             "zkHost": config.service.zkHost,
             "zkPath": config.service.zkPath,
             "stopSecret": null,
-            "timestamp": (Date.now() / 1000 | 0),
+            "timestamp": config.service.timestamp,
             "externalPort": port,
             "externalAdminPort": -1,
             "host": host,
@@ -70,7 +70,7 @@ gbifServiceRegistry.register = function(config) {
           "status": "RUNNING",
           "name": "mapnik-server",
           "externalUrl": url,
-          "fullName": "mapnik-server-UNKNOWN" // TODO
+          "fullName": "mapnik-server-" + config.service.version
         },
         "registrationTimeUTC": Date.now(),
         "serviceType": "DYNAMIC",
