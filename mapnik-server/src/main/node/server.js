@@ -145,6 +145,19 @@ function exitHandler() {
  * as the only arguments.  No sanitization is performed on the file existance or content.
  */
 try {
+  process.on('SIGHUP', () => {console.log("Ignoring SIGHUP")});
+
+  // Log if we crash.
+  process.on('uncaughtException', function (exception) {
+    console.trace(exception);
+    exitHandler();
+  });
+  process.on('unhandledRejection', (reason, p) => {
+    console.log("Unhandled Rejection at: Promise ", p, " reason: ", reason);
+    exitHandler();
+  });
+
+  // Set up server.
   var configFile = process.argv[2];
   var port = parseInt(process.argv[3]);
   console.log("Using config: " + configFile);
@@ -153,8 +166,10 @@ try {
   server = createServer(config)
   server.listen(port);
 
+  // Set up ZooKeeper.
   gbifServiceRegistry.register(config);
 
+  // Aim to exit cleanly.
   process.on('SIGINT', exitHandler.bind());
   process.on('SIGTERM', exitHandler.bind());
   process.on('exit', exitHandler.bind());
