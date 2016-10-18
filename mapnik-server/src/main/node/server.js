@@ -45,6 +45,7 @@ var assertsIcon = ['/favicon.ico']
 
 function createServer(config) {
   return http.createServer(function(req, res) {
+    console.log("Request: "+req.url);
 
     var parsedRequest = url.parse(req.url, true)
 
@@ -65,7 +66,7 @@ function createServer(config) {
       parsedRequest.port = config.tileServer.port;
       parsedRequest.protocol = "http:";
       var tileUrl = url.format(parsedRequest);
-      console.log(tileUrl);
+      console.log("Fetching tile: "+tileUrl);
 
       // extract the x,y,z from the URL which could be /some/map/type/{z}/{x}/{y}.mvt?srs=EPSG:4326
       var dirs = parsedRequest.pathname.substring(0, parsedRequest.pathname.length - 4).split("/");
