@@ -1,7 +1,9 @@
 package org.gbif.maps.spark
 
+import org.apache.spark.Partitioner
 import org.gbif.maps.io.PointFeature
 import org.apache.spark.sql.Row
+import org.gbif.maps.common.hbase.ModulusSalt
 import org.gbif.maps.tile.ZXY
 
 import scala.collection.mutable
@@ -81,5 +83,19 @@ object MapUtils {
       res += toMapKey(MAPS_TYPES("TAXON"), id)
     })
     res.toSet // immutable
+  }
+
+  /**
+    * A partitioner that puts data destined for the same HBase region together based on the prefix of the key salt.
+    */
+  class SaltPrefixPartitioner[K,V](saltLength: Int) extends Partitioner {
+
+    def getPartition(key: Any): Int = {
+      val salt = ModulusSalt.saltFrom(key.toString)
+      return salt
+    }
+
+    // a length of 1 is 0..9, 2 is 0..99 etc.
+    override def numPartitions: Int = scala.math.pow(10, saltLength).asInstanceOf[Int]
   }
 }

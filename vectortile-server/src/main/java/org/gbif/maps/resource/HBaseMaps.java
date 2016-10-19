@@ -1,5 +1,6 @@
 package org.gbif.maps.resource;
 
+import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.io.PointFeature;
 
 import java.io.IOException;
@@ -31,10 +32,12 @@ public class HBaseMaps {
   private static final Logger LOG = LoggerFactory.getLogger(HBaseMaps.class);
   private final Connection connection;
   private final String tableName;
+  private final ModulusSalt salt;
 
   public HBaseMaps(Configuration conf, String tableName) throws IOException {
     connection = ConnectionFactory.createConnection(conf);
     this.tableName = tableName;
+    salt = new ModulusSalt(10); // TODO
   }
 
   private LoadingCache<String, Optional<PointFeature.PointFeatures>> pointCache = CacheBuilder
@@ -46,7 +49,9 @@ public class HBaseMaps {
         @Override
         public Optional<PointFeature.PointFeatures> load(String rowKey) throws Exception {
           try (Table table = connection.getTable(TableName.valueOf(tableName))) {
-            Get get = new Get(Bytes.toBytes(rowKey));
+
+            byte[] saltedKey = salt.salt(rowKey);
+            Get get = new Get(saltedKey);
             get.addColumn(Bytes.toBytes("EPSG_4326"), Bytes.toBytes("features"));
             Result result = table.get(get);
             if (result != null) {
@@ -69,12 +74,16 @@ public class HBaseMaps {
         @Override
         public Optional<byte[]> load(TileKey rowCell) throws Exception {
           try (Table table = connection.getTable(TableName.valueOf(tableName))) {
-            Get get = new Get(Bytes.toBytes(rowCell.rowKey));
+
+            String unsalted = rowCell.rowKey + ":" + rowCell.zxy();
+            byte[] saltedKey = salt.salt(unsalted);
+
+            Get get = new Get(saltedKey);
             String columnFamily = rowCell.srs.replaceAll(":", "_").toUpperCase();
-            get.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(rowCell.zxy()));
+            get.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("tile"));
             Result result = table.get(get);
             if (result != null) {
-              byte[] encoded = result.getValue(Bytes.toBytes(columnFamily), Bytes.toBytes(rowCell.zxy()));
+              byte[] encoded = result.getValue(Bytes.toBytes(columnFamily), Bytes.toBytes("tile"));
               return encoded != null ? Optional.of(encoded) : Optional.<byte[]>absent();
             } else {
               return Optional.absent();

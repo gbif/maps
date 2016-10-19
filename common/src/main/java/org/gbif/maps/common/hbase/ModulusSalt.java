@@ -1,5 +1,6 @@
 package org.gbif.maps.common.hbase;
 
+import java.io.Serializable;
 import java.nio.charset.Charset;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -7,11 +8,11 @@ import com.google.common.annotations.VisibleForTesting;
 /**
  * Defines the salting behavior for encoding keys in HBase.
  * <p/>
- * Salting is used primarily to allow a simple way to create presplit tables with equal key distributions, and as a
- * secondary concern it will likely improve the concurrent read throughput by balancing requests across the region
- * servers.
+ * For our purposes, salting is used primarily to allow a simple way to create presplit tables with equal key
+ * distributions, and as a secondary concern it will likely improve the concurrent read throughput by balancing
+ * requests across the region servers.
  */
-public class ModulusSalt {
+public class ModulusSalt implements Serializable {
   private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
   public static final String SEPARATOR = ":";
 
@@ -26,9 +27,27 @@ public class ModulusSalt {
     digitCount = ModulusSalt.digitCount(modulus-1); // minus one because e.g. %100 produces 0..99 (2 digits)
   }
 
-  @VisibleForTesting
-  String saltToString(String key) {
-    int salt =  key.hashCode() % modulus;
+  public int saltCharCount() {
+    return digitCount;
+  }
+
+  /**
+   * Provides the salt from the key or throws IAE.
+   * @param key To extract the salt from
+   * @return The salt as an integer or throws IAE
+   */
+  public static int saltFrom(String key) {
+    try {
+      String saltAsString = key.substring(0, key.indexOf(":"));
+      return Integer.parseInt(saltAsString);
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Expected key in form of salt:value (e.g. 123:dataset1). Received: " + key);
+    }
+  }
+
+  public String saltToString(String key) {
+    // positive hashcode values only
+    int salt =  (key.hashCode() & 0xfffffff) % modulus;
     return leftPadZeros(salt, digitCount) + SEPARATOR + key;
   }
 

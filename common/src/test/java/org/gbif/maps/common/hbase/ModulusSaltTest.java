@@ -1,5 +1,7 @@
 package org.gbif.maps.common.hbase;
 
+import java.nio.charset.Charset;
+
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -25,6 +27,28 @@ public class ModulusSaltTest {
     assertEquals("03:" + s, salt.saltToString(s));
 
   }
+
+  @Test
+  public void testSaltFrom() {
+    assertEquals(12, ModulusSalt.saltFrom("12:dataset1"));
+    assertEquals(999, ModulusSalt.saltFrom("999:dataset:1"));
+    assertEquals(1, ModulusSalt.saltFrom("1:dataset_1"));
+    try {
+      ModulusSalt.saltFrom("1dataset_1");
+      fail("Invalid key without salt should fail");
+    } catch(IllegalArgumentException e) {
+    }
+    try {
+      ModulusSalt.saltFrom("aaa:dataset_1");
+      fail("Invalid key with non numeric salt should fail");
+    } catch(IllegalArgumentException e) {
+    }
+
+    System.out.println("1".getBytes(Charset.forName("UTF-8"))[0]);
+    System.out.println("2".getBytes(Charset.forName("UTF-8"))[0]);
+    System.out.println("3".getBytes(Charset.forName("UTF-8"))[0]);
+  }
+
 
   @Test
   public void testPadding() {

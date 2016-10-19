@@ -9,7 +9,9 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.client.HTable
 import org.apache.hadoop.hbase.{HBaseConfiguration, KeyValue}
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
-import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat
+import org.apache.hadoop.hbase.io.compress.Compression
+import org.apache.hadoop.hbase.mapreduce.{HFileOutputFormat, PatchedHFileOutputFormat2}
+import org.apache.hadoop.mapred.FileOutputFormat
 import org.apache.hadoop.mapreduce.Job
 
 /**
@@ -39,13 +41,13 @@ object Configurations {
   def hfileOutputConfiguration(appConfig: MapConfiguration, tableName: String) : Configuration = {
     val conf = HBaseConfiguration.create()
     conf.set("hbase.zookeeper.quorum", appConfig.hbase.zkQuorum);
-    conf.set("mapred.output.compression.codec","org.apache.hadoop.io.compress.SnappyCodec")
+
+    // NOTE: job creates a copy of the conf
     val job = new Job(conf, appConfig.appName) // name not actually used since we don't submit MR
-    job.setMapOutputKeyClass(classOf[ImmutableBytesWritable]);
-    job.setMapOutputValueClass(classOf[KeyValue]);
     val table = new HTable(conf, tableName)
-    HFileOutputFormat.configureIncrementalLoad(job, table);
-    conf
+    PatchedHFileOutputFormat2.configureIncrementalLoad(job, table);
+
+    return job.getConfiguration // important
   }
 }
 
@@ -84,7 +86,7 @@ class PointFeaturesConfiguration (
 }
 
 /**
-  * Configuraiton specific to the tile pyramiding.
+  * Configuration specific to the tile pyramiding.
   */
 class TilePyramidConfiguration (
   @JsonProperty("tableName") _tableName: String,
@@ -93,10 +95,6 @@ class TilePyramidConfiguration (
   @JsonProperty("numPartitions") _numPartitions: Int,
   @JsonProperty("tileBufferSize") _tileBufferSize: Int
 ) extends Serializable {
-  //val tileSize = Preconditions.checkNotNull(_tileSize, "tileSize cannot be null" : Object)
-  //val minZoom = Preconditions.checkNotNull(_minZoom, "minZoom cannot be null" : Object)
-  //val maxZoom = Preconditions.checkNotNull(_maxZoom, "maxZoom cannot be null" : Object)
-  //val srs = Preconditions.checkNotNull(_srs, "maxZoom cannot be null" : Object).split(",")
   val tableName = Preconditions.checkNotNull(_tableName, "tableName cannot be null" : Object)
   val hfileCount = Preconditions.checkNotNull(_hfileCount, "hfileCount cannot be null" : Object)
   val projections = Preconditions.checkNotNull(_projections, "projections cannot be null" : Object)
@@ -124,8 +122,10 @@ class ProjectionConfig  (
   */
 class HBaseConfiguration (
   @JsonProperty("scannerCaching") _scannerCaching: String,
-  @JsonProperty("zkQuorum") _zkQuorum: String
+  @JsonProperty("zkQuorum") _zkQuorum: String,
+  @JsonProperty("keySaltModulus") _keySaltModulus: Int
 ) extends Serializable {
   val scannerCaching = Preconditions.checkNotNull(_scannerCaching, "scannerCaching cannot be null" : Object)
   val zkQuorum = Preconditions.checkNotNull(_zkQuorum, "zkQuorum cannot be null" : Object)
+  val keySaltModulus = Preconditions.checkNotNull(_keySaltModulus, "keySaltModulus cannot be null" : Object)
 }

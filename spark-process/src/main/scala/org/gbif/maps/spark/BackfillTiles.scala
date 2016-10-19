@@ -4,20 +4,19 @@ import com.vividsolutions.jts.geom.{Coordinate, GeometryFactory}
 import no.ecc.vectortile.VectorTileEncoder
 import org.apache.hadoop.hbase.KeyValue
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
-import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat
+import org.apache.hadoop.hbase.mapreduce.{HFileOutputFormat, PatchedHFileOutputFormat2}
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.{HashPartitioner, Partitioner, SparkContext}
 import org.gbif.maps.common.projection.Tiles
+import org.gbif.maps.common.hbase.ModulusSalt
 import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord
 import org.slf4j.LoggerFactory
 
-
 import scala.collection.mutable.{Map => MMap}
 import scala.collection.{Set, mutable}
-
 import org.gbif.maps.tile._
 
 /**
@@ -50,6 +49,8 @@ object BackfillTiles {
     * @param projectionConfig Configuration of the SRS and zoom levels etc
     */
   def build(sc: SparkContext, df: DataFrame, keys: Set[String], config: MapConfiguration, projectionConfig: ProjectionConfig) = {
+
+    val keySalter = new ModulusSalt(config.hbase.keySaltModulus); // salted HBase keys
 
     val tiles = df.flatMap(row => {
       val res = mutable.ArrayBuffer[((String, ZXY, EncodedPixel, Feature.BasisOfRecord, Year), Int)]()
@@ -174,7 +175,7 @@ object BackfillTiles {
             // VectorTiles want String:Object format
             val metaAsString = new java.util.HashMap[String, Any]()
 
-            // TODO: move this type convertion above
+            // TODO: move this type convertion to above
             for ((year, count) <- meta) {
               metaAsString.put(String.valueOf(year), count)
             }
@@ -185,22 +186,28 @@ object BackfillTiles {
 
       })
 
-      val tiles5 = tiles4.repartitionAndSortWithinPartitions(new HashPartitioner(config.tilePyramid.hfileCount))
+      val tiles5 = tiles4.map(r => {
+        // mapType:mapKey:z:x:y for a tall, narrow table
+        val rowKey = r._1._1 + ":" + r._1._2
+        val saltedRowKey = keySalter.saltToString(rowKey)
+        (saltedRowKey,r._2)
+      }).repartitionAndSortWithinPartitions(new MapUtils.SaltPrefixPartitioner(keySalter.saltCharCount()))
 
       tiles5.map(r => {
-        val k = new ImmutableBytesWritable(Bytes.toBytes(r._1._1))
-        val cell = r._1._2
+        val saltedRowKey = Bytes.toBytes(r._1)
+        val k = new ImmutableBytesWritable(saltedRowKey)
         val cellData = r._2
-        val row = new KeyValue(Bytes.toBytes(r._1._1), // key
+
+        val row = new KeyValue(saltedRowKey, // key
           Bytes.toBytes(projectionConfig.srs.replaceAll(":", "_")), // column family (e.g. epsg_4326)
-          Bytes.toBytes(cell), // cell keyed on the zxy
+          Bytes.toBytes("tile"),
           cellData)
         (k, row)
       }).saveAsNewAPIHadoopFile(
         config.targetDirectory + "/tiles/" + projectionConfig.srs.replaceAll(":", "_") + "/z" + z,
         classOf[ImmutableBytesWritable],
         classOf[KeyValue],
-        classOf[HFileOutputFormat],
+        classOf[PatchedHFileOutputFormat2],
         Configurations.hfileOutputConfiguration(config, config.tilePyramid.tableName))
 
       downscale = true; // TODO: such as hack!

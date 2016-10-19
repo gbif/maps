@@ -16,6 +16,7 @@ tilesThreshold: 100000
 hbase:
   scannerCaching: 10000
   zkQuorum: zk1.gbif-dev.org,zk2.gbif-dev.org,zk3.gbif-dev.org
+  keySaltModulus: 10
 
 # Applies only to those map views that have few enough records to be stored as features
 pointFeatures:

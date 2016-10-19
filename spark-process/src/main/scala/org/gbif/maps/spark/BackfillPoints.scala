@@ -6,6 +6,7 @@ import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.{HashPartitioner, SparkContext}
+import org.gbif.maps.common.hbase.ModulusSalt
 import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord
@@ -26,6 +27,8 @@ object BackfillPoints {
   val logger = LoggerFactory.getLogger("org.gbif.maps.spark.BackfillPoints")
 
   def build(sc :SparkContext, df : DataFrame, keys: Set[String], config: MapConfiguration): Unit = {
+
+    val keySalter = new ModulusSalt(config.hbase.keySaltModulus); // salted HBase keys
 
     // collect a count by location, bor and year for each mapKey
     val pointSource = df.flatMap(row => {
@@ -55,7 +58,11 @@ object BackfillPoints {
     }).reduceByKey(_+_, config.pointFeatures.numTasks).map(r => {
       // Structured as: mapKey -> lat,lng,bor,year,count
       // NOTE: If we have more than an INT at a single location in one year something in the data is wrong
-      (r._1._1,(r._1._2,r._1._3,r._1._4,r._1._5,r._2.asInstanceOf[Int]))
+
+      val rowKey = r._1._1
+      val saltedRowKey = keySalter.saltToString(rowKey)
+
+      (saltedRowKey,(r._1._2,r._1._3,r._1._4,r._1._5,r._2.asInstanceOf[Int]))
     })
 
     // Convert into PBF and prepare to write into HFiles
@@ -71,10 +78,11 @@ object BackfillPoints {
         builder.addFeatures(fb)
       })
       builder.build().toByteArray
-    }).repartitionAndSortWithinPartitions(new HashPartitioner(config.pointFeatures.hfileCount)).map(r => {
-      // HFiles must be sorted
-      val k = new ImmutableBytesWritable(Bytes.toBytes(r._1))
-      val row = new KeyValue(Bytes.toBytes(r._1), // key
+    }).repartitionAndSortWithinPartitions(new MapUtils.SaltPrefixPartitioner(keySalter.saltCharCount())).map(r => {
+
+      val saltedRowKey = Bytes.toBytes(r._1)
+      val k = new ImmutableBytesWritable(saltedRowKey)
+      val row = new KeyValue(saltedRowKey, // key
         Bytes.toBytes("EPSG_4326"), // column family
         Bytes.toBytes("features"), // cell
         r._2 // cell value
