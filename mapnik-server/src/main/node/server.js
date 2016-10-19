@@ -40,12 +40,12 @@ var defaultStyle = "classic.point";
  *
  * Should this become more complex, then express or similar should be consider.
  */
-var assetsHTML = ['/map/demo1.html', '/map/demo2.html', '/map/demo3.html', '/map/demo-cartodb.html']
+var assetsHTML = ['/v2/map/demo1.html', '/v2/map/demo2.html', '/v2/map/demo3.html', '/v2/map/demo-cartodb.html']
 var assertsIcon = ['/favicon.ico']
 
 function createServer(config) {
   return http.createServer(function(req, res) {
-    //console.log("Request: "+req.url);
+    console.log("Request: "+req.url);
 
     var parsedRequest = url.parse(req.url, true)
 
