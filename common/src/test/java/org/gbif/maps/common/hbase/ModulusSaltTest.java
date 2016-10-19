@@ -43,10 +43,6 @@ public class ModulusSaltTest {
       fail("Invalid key with non numeric salt should fail");
     } catch(IllegalArgumentException e) {
     }
-
-    System.out.println("1".getBytes(Charset.forName("UTF-8"))[0]);
-    System.out.println("2".getBytes(Charset.forName("UTF-8"))[0]);
-    System.out.println("3".getBytes(Charset.forName("UTF-8"))[0]);
   }
 
 

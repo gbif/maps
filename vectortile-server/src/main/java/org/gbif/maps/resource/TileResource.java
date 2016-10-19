@@ -73,10 +73,12 @@ public final class TileResource {
    * @param conf The application configuration
    * @param tileSize The tile size for the preprocessed tiles (not point tiles which are always full resolution)
    * @param bufferSize The buffer size for preprocessed tiles
+   * @param saltModulus The salt modulus to use
    * @throws IOException If HBase cannot be reached
    */
-  public TileResource(Configuration conf, String hbaseTableName, int tileSize, int bufferSize) throws IOException {
-    this.hbaseMaps = new HBaseMaps(conf, hbaseTableName);
+  public TileResource(Configuration conf, String hbaseTableName, int tileSize, int bufferSize, int saltModulus)
+    throws IOException {
+    this.hbaseMaps = new HBaseMaps(conf, hbaseTableName, saltModulus);
     this.tileSize = tileSize;
     this.bufferSize = bufferSize;
   }

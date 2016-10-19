@@ -66,6 +66,9 @@ public class TileServerConfiguration extends Configuration {
     @NotNull
     private Integer bufferSize;
 
+    @Valid
+    @NotNull
+    private Integer saltModulus;
 
     @JsonProperty
     public String getZookeeperQuorum() {
@@ -105,6 +108,15 @@ public class TileServerConfiguration extends Configuration {
     @JsonProperty
     public void setBufferSize(Integer bufferSize) {
       this.bufferSize = bufferSize;
+    }
+
+    @JsonProperty
+    public Integer getSaltModulus() {
+      return saltModulus;
+    }
+    @JsonProperty
+    public void setSaltModulus(Integer saltModulus) {
+      this.saltModulus = saltModulus;
     }
   }
 

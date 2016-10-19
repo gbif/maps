@@ -34,10 +34,10 @@ public class HBaseMaps {
   private final String tableName;
   private final ModulusSalt salt;
 
-  public HBaseMaps(Configuration conf, String tableName) throws IOException {
+  public HBaseMaps(Configuration conf, String tableName, int saltModulus) throws IOException {
     connection = ConnectionFactory.createConnection(conf);
     this.tableName = tableName;
-    salt = new ModulusSalt(10); // TODO
+    salt = new ModulusSalt(saltModulus);
   }
 
   private LoadingCache<String, Optional<PointFeature.PointFeatures>> pointCache = CacheBuilder
@@ -48,8 +48,9 @@ public class HBaseMaps {
       new CacheLoader<String, Optional<PointFeature.PointFeatures>>() {
         @Override
         public Optional<PointFeature.PointFeatures> load(String rowKey) throws Exception {
+          LOG.info("Table {}", tableName);
           try (Table table = connection.getTable(TableName.valueOf(tableName))) {
-
+            LOG.info(salt.saltToString(rowKey));
             byte[] saltedKey = salt.salt(rowKey);
             Get get = new Get(saltedKey);
             get.addColumn(Bytes.toBytes("EPSG_4326"), Bytes.toBytes("features"));
@@ -77,6 +78,7 @@ public class HBaseMaps {
 
             String unsalted = rowCell.rowKey + ":" + rowCell.zxy();
             byte[] saltedKey = salt.salt(unsalted);
+            LOG.info(salt.saltToString(unsalted));
 
             Get get = new Get(saltedKey);
             String columnFamily = rowCell.srs.replaceAll(":", "_").toUpperCase();
@@ -139,6 +141,7 @@ public class HBaseMaps {
    */
   Optional<PointFeature.PointFeatures> getPoints(String mapKey) {
     try {
+      LOG.info("Getting points");
       return pointCache.get(mapKey);
     } catch (ExecutionException e) {
       // there is nothing the caller can do.  Swallow this here, logging the error

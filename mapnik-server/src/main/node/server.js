@@ -36,16 +36,16 @@ var defaultStyle = "classic.point";
 
 /**
  * The server supports the ability to provide assets which need to be explicitly registered in order to be secure.
- * (e.g. trying to expose files using URL hack such as http://tiles.gbif.org/../../../hosts)
+ * (e.g. trying to expose files using URL hack such as http://api.gbif.org/v1/map/../../../hosts)
  *
  * Should this become more complex, then express or similar should be consider.
  */
-var assetsHTML = ['/demo1.html', '/demo2.html', '/demo3.html', '/demo-cartodb.html']
+var assetsHTML = ['/map/demo1.html', '/map/demo2.html', '/map/demo3.html', '/map/demo-cartodb.html']
 var assertsIcon = ['/favicon.ico']
 
 function createServer(config) {
   return http.createServer(function(req, res) {
-    console.log("Request: "+req.url);
+    //console.log("Request: "+req.url);
 
     var parsedRequest = url.parse(req.url, true)
 
@@ -66,7 +66,7 @@ function createServer(config) {
       parsedRequest.port = config.tileServer.port;
       parsedRequest.protocol = "http:";
       var tileUrl = url.format(parsedRequest);
-      console.log("Fetching tile: "+tileUrl);
+      //console.log("Fetching tile: "+tileUrl);
 
       // extract the x,y,z from the URL which could be /some/map/type/{z}/{x}/{y}.mvt?srs=EPSG:4326
       var dirs = parsedRequest.pathname.substring(0, parsedRequest.pathname.length - 4).split("/");
@@ -81,11 +81,11 @@ function createServer(config) {
       stylesheet = (stylesheet !== undefined && stylesheet) ? stylesheet : namedStyles[defaultStyle];
 
       // issue the request to the vector tile server and render the tile as a PNG using Mapnik
-      console.time("getTile");
+      //console.time("getTile");
       request.get({url: tileUrl, method: 'GET', encoding: null}, function (error, response, body) {
 
         if (!error && response.statusCode == 200 && body.length > 0) {
-          console.timeEnd("getTile");
+          //console.timeEnd("getTile");
 
           var map = new mapnik.Map(512, 512, mercator.proj4);
           map.fromStringSync(stylesheet);
@@ -93,7 +93,7 @@ function createServer(config) {
           vt.addDataSync(body);
 
           // important to include a buffer, to catch the overlaps
-          console.time("render");
+          //console.time("render");
           vt.render(map, new mapnik.Image(512, 512), {"buffer_size": 8}, function (err, image) {
             if (err) {
               res.end(err.message);
@@ -103,7 +103,7 @@ function createServer(config) {
                 'Access-Control-Allow-Origin': '*',
                 'Cache-Control': 'max-age=600, must-revalidate'    // TODO: configurify the cache control!
               });
-              console.timeEnd("render");
+              //console.timeEnd("render");
               image.encode('png', function (err, buffer) {
 
                 if (err) {

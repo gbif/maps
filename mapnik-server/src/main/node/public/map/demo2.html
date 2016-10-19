@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -8,7 +7,7 @@
   <link rel="stylesheet" href="https://npmcdn.com/leaflet@1.0.0-rc.3/dist/leaflet.css" />
 </head>
 <body>
-  <div id="map" style="width: 1000px; height: 500px; background-color: #848A8E"></div>
+  <div id="map" style="width: 100%; height: 700px; background-color: #000"></div>
   <script src="https://npmcdn.com/leaflet@1.0.0-rc.3/dist/leaflet.js"></script>
   <script>
 
@@ -23,7 +22,7 @@
 
       defaultGBIFParams: {
         style: "classic",
-        srs: "EPSG:4326",
+        //srs: "EPSG:4326",
       },
 
       initialize: function (url, options) {
@@ -51,9 +50,8 @@
       return new L.GBIFSimple(url, options);
     };
 
-    //L.gbifSimpleLayer('./api/solr/{z}/{x}/{y}.png?datasetKey=83e20573-f7dd-4852-9159-21566e1e691e', {style: "classicPoly"}).addTo(map);
-    L.gbifSimpleLayer('./map/occurrence/adhoc/{z}/{x}/{y}.png',
-      {style: "classic.poly", taxonKey:"9703"}).addTo(map);
+    L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}.png',
+      {style: "classic.poly", bin:"hex", hexPerTile:27, taxonKey:"9703", detectRetina: false}).addTo(map);
 
 
   </script>

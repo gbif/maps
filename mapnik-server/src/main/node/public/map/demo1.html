@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -22,7 +23,7 @@
 
       defaultGBIFParams: {
         style: "classic",
-        //srs: "EPSG:4326",
+        srs: "EPSG:4326",
       },
 
       initialize: function (url, options) {
@@ -50,8 +51,9 @@
       return new L.GBIFSimple(url, options);
     };
 
-    L.gbifSimpleLayer('./map/occurrence/density/{z}/{x}/{y}.png',
-      {style: "classic.poly", bin:"hex", hexPerTile:27, taxonKey:"9703", detectRetina: false}).addTo(map);
+
+    L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}.png',
+      {srs: "EPSG:3857", style: "greenHeat.point"}).addTo(map);
 
 
   </script>

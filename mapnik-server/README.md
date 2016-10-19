@@ -1,8 +1,6 @@
 # Mapnik Server
 
-**This is experimental!**
-
-This attempts to use an Express server running a tile-live convertion of the MVTs from the vector-tile server to PNGs rendered using Mapnik.
+A very simple PNG writer of vector tiles that renders using Mapnik.
 
 # Building and running
 

@@ -12,8 +12,18 @@
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
       integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
   <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.css' rel='stylesheet'/>
-  <link href='nouislider.css' rel='stylesheet'/>
-  <link href='style.css' rel='stylesheet'/>
+  <script>
+    // handle /map/debug or /map/debug/ or /map/debug/index.html options
+    if (window.location.href.indexOf('debug/') != -1) {
+      console.log("yes");
+      document.write('<link href="./nouislider.css" rel="stylesheet"/>');
+      document.write('<link href="./style.css" rel="stylesheet"/>');
+    } else {
+      console.log("no");
+      document.write('<link href="./debug/nouislider.css" rel="stylesheet"/>');
+      document.write('<link href="./debug/style.css" rel="stylesheet"/>');
+    }
+  </script>
 
   <!-- include cartodb.js needed only so we can get the BaseURLs -->
   <script src="http://libs.cartocdn.com/cartodb.js/v3/3.15/cartodb.core.js"></script>
@@ -266,12 +276,16 @@ function initMap(map) {
   map._gbif_layers.push("base");
 
   var backend = $('input[name="_type"]:checked').val();
-  var baseURL = window.location.href.replace("debug.html", "");
-  baseURL = baseURL.replace("#", ""); // hack
 
-  //baseURL = "http://localhost:7001/"; // useful only for in IDE dev
+  // these are terrible terrible hacks
+  var baseURL = window.location.href.substr(0, window.location.href.indexOf("debug"));
 
-  var tileLayer = backend == "simple" ? baseURL + "map/occurrence/density" : baseURL + "map/occurrence/adhoc"
+  //var baseURL = window.location.href.replace("/index.html", "");
+  //var baseURL = window.location.href.replace("debug/", "");
+  //var baseURL = window.location.href.replace("debug", "");
+  //baseURL = baseURL.replace("#", "");
+
+  var tileLayer = backend == "simple" ? baseURL + "occurrence/density" : baseURL + "occurrence/adhoc"
   map.addSource('tile', {
     type: 'vector',
     "tiles": [tileLayer + "/{z}/{x}/{y}.mvt?" + queryString]
