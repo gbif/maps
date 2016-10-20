@@ -134,9 +134,10 @@ function createServer(config) {
  */
 function exitHandler() {
   console.log("Completing requests");
-  server.close(function () {
+  // Until https://github.com/nodejs/node/issues/2642 is fixed, we can't wait for connections to end.
+  //server.close(function () {
     process.exit(0);
-  });
+  //});
 }
 
 /**
