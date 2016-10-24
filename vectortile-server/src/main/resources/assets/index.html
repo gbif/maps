@@ -221,7 +221,9 @@ function initCDBBaseURLs() {
   setBaseURL("epsg3575", "SELECT cartodb_id,ST_Transform(ST_INTERSECTION(the_geom," +
              "ST_GeomFromText('POLYGON((-180 0, -180 90, 180 90, 180 0, -180 0))', 4326)),3575) AS the_geom_webmercator " +
              "FROM world_borders_hd_copy");
-  setBaseURL("epsg3031", "SELECT cartodb_id, st_transform(the_geom, 3031) as the_geom_webmercator FROM ne_glaciated_areas_copy");
+  setBaseURL("epsg3031", "SELECT cartodb_id,ST_Transform(ST_INTERSECTION(the_geom," +
+             "ST_GeomFromText('POLYGON((-180 -90, -180 0, 180 0, 180 -90, -180 -90))', 4326)),3031) AS the_geom_webmercator  " +
+             "FROM world_borders_hd_copy");
 }
 
 /**
@@ -280,9 +282,7 @@ function initMap(map) {
 
   var backend = $('input[name="_type"]:checked').val();
 
-  // these are terrible terrible hacks
   var baseURL = window.location.href.substr(0, window.location.href.indexOf("debug"));
-  //baseURL = "http://localhost:7001/map/";
 
   var tileLayer = backend == "simple" ? baseURL + "occurrence/density" : baseURL + "occurrence/adhoc"
   map.addSource('tile', {
