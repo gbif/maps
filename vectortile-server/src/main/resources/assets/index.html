@@ -15,11 +15,9 @@
   <script>
     // handle /map/debug or /map/debug/ or /map/debug/index.html options
     if (window.location.href.indexOf('debug/') != -1) {
-      console.log("yes");
       document.write('<link href="./nouislider.css" rel="stylesheet"/>');
       document.write('<link href="./style.css" rel="stylesheet"/>');
     } else {
-      console.log("no");
       document.write('<link href="./debug/nouislider.css" rel="stylesheet"/>');
       document.write('<link href="./debug/style.css" rel="stylesheet"/>');
     }
@@ -90,7 +88,7 @@
         <input type="radio" name="srs" id="srs3575" value="EPSG:3575"> Arctic
       </label>
       <label class="radio-inline">
-        <input type="radio" name="srs" id="srsTODO" value="EPSG:3575" disabled> Antarctic
+        <input type="radio" name="srs" id="srs3031" value="EPSG:3031"> Antarctic
       </label>
     </div>
 
@@ -223,6 +221,7 @@ function initCDBBaseURLs() {
   setBaseURL("epsg3575", "SELECT cartodb_id,ST_Transform(ST_INTERSECTION(the_geom," +
              "ST_GeomFromText('POLYGON((-180 0, -180 90, 180 90, 180 0, -180 0))', 4326)),3575) AS the_geom_webmercator " +
              "FROM world_borders_hd_copy");
+  setBaseURL("epsg3031", "SELECT cartodb_id, st_transform(the_geom, 3031) as the_geom_webmercator FROM ne_glaciated_areas_copy");
 }
 
 /**
@@ -255,6 +254,10 @@ function initMap(map) {
   } else if (params.indexOf("srs=EPSG:4326")!=-1) {
     baseURL = baseURLs.epsg4326;
   }
+  else if (params.indexOf("srs=EPSG:3031")!=-1) {
+    baseURL = baseURLs.epsg3031;
+  }
+
   map.addSource('base', {
     type: 'raster',
     "tiles": [
@@ -279,11 +282,7 @@ function initMap(map) {
 
   // these are terrible terrible hacks
   var baseURL = window.location.href.substr(0, window.location.href.indexOf("debug"));
-
-  //var baseURL = window.location.href.replace("/index.html", "");
-  //var baseURL = window.location.href.replace("debug/", "");
-  //var baseURL = window.location.href.replace("debug", "");
-  //baseURL = baseURL.replace("#", "");
+  //baseURL = "http://localhost:7001/map/";
 
   var tileLayer = backend == "simple" ? baseURL + "occurrence/density" : baseURL + "occurrence/adhoc"
   map.addSource('tile', {
@@ -417,6 +416,7 @@ $("#config :input").change(function() {
     $('#srsWGS84').prop('checked', true);
     $('#srs3857').prop('disabled', true);
     $('#srs3575').prop('disabled', true);
+    $('#srs3031').prop('disabled', true);
 
     //$('#style').hide();
     //$('#styleHR').hide();
@@ -424,6 +424,7 @@ $("#config :input").change(function() {
   } else {
     $('#srs3857').prop('disabled', false);
     $('#srs3575').prop('disabled', false);
+    $('#srs3031').prop('disabled', false);
     //$('#style').show();
     //$('#styleHR').show();
   }

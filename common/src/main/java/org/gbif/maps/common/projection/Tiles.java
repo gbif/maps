@@ -21,6 +21,9 @@ public class Tiles {
 
     } else if (WGS84.EPSG_CODE.equalsIgnoreCase(epsg)) {
       return new WGS84(size);
+
+    } else if (WGS84AntarcticPolarStereographic.EPSG_CODE.equalsIgnoreCase(epsg)) {
+      return new WGS84AntarcticPolarStereographic(size);
     }
     throw new IllegalArgumentException("Unsupported EPSG supplied: " + epsg);
   }

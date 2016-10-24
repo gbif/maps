@@ -10,21 +10,19 @@ import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.MathTransform;
-import org.opengis.referencing.operation.TransformException;
 
 /**
- * Our implementation of this arctic projections indicates that it clip at the equator through choice.
- * This class is threadsafe.
- * @see https://epsg.io/3575
+ * Antarctic projection.
+ * See http://epsg.io/3031.
  */
-class NorthPoleLAEAEurope extends WGS84Stereographic {
-  static final String EPSG_CODE = "EPSG:3575";
+class WGS84AntarcticPolarStereographic extends WGS84Stereographic {
+  static final String EPSG_CODE = "EPSG:3031";
 
-  // A tranform to convert from WGS84 coordinates into 3575 pixel space
+  // A tranform to convert from WGS84 coordinates into 3031 pixel space
   private static final MathTransform TRANSFORM;
   static {
     try {
-      TRANSFORM = CRS.findMathTransform(CRS.decode("EPSG:4326"), CRS.decode("EPSG:3575"), true);
+      TRANSFORM = CRS.findMathTransform(CRS.decode("EPSG:4326"), CRS.decode(EPSG_CODE), true);
     } catch (FactoryException e) {
       throw new IllegalStateException("Unable to decode EPSG projections", e);
     }
@@ -35,13 +33,14 @@ class NorthPoleLAEAEurope extends WGS84Stereographic {
     return TRANSFORM;
   }
 
-  NorthPoleLAEAEurope(int tileSize) {
+  WGS84AntarcticPolarStereographic(int tileSize) {
     super(tileSize);
   }
 
   @Override
   public boolean isPlottable(double latitude, double longitude) {
-    // clipped to equator and above by deliberate choice, even though the projection would support more
-    return latitude >= 0 && longitude>=-180 && longitude<=180;
+    // clipped to equator and above by deliberate choice, even though the projection recommends 60 degrees south
+    return latitude <= 0 && longitude>=-180 && longitude<=180;
   }
 }
+
