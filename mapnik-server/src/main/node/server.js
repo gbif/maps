@@ -114,10 +114,18 @@ function createServer(config) {
               });
             }
           });
-        } else {
+        } else if (!error && (
+            response.statusCode == 404 ||   // not found
+            response.statusCode == 204 ||   // no content
+            (response.statusCode == 200 && body.length==0))  // accepted but no content
+          ) {
           // no tile
-          // TODO: return 204 No Content for blank tiles, and 404 Not Found for off-the-map (beyond the projection?) tiles.
-          res.writeHead(404, {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
+          res.writeHead(204, {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
+          res.end();
+
+        } else {
+          // something went wrong
+          res.writeHead(500, {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
           res.end();
         }
       })

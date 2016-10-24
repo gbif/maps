@@ -117,7 +117,12 @@ public final class TileResource {
 
     } else if (BIN_MODE_HEX.equalsIgnoreCase(bin)) {
       HexBin binner = new HexBin(HEX_TILE_SIZE, hexPerTile);
-      return binner.bin(vectorTile, z, x, y);
+      try {
+        return binner.bin(vectorTile, z, x, y);
+      } catch (IllegalArgumentException e) {
+        // happens on empty tiles
+        return vectorTile;
+      }
 
     } else {
       throw new IllegalArgumentException("Unsupported bin mode"); // cannot happen due to conditional check above
