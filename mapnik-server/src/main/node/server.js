@@ -14,6 +14,7 @@ var mapnik = require('mapnik')
 var namedStyles = {};
 namedStyles["classic.point"] = compileStylesheetSync("./cartocss/classic-dot.mss")
 namedStyles["classic.poly"] = compileStylesheetSync("./cartocss/classic-poly.mss")
+namedStyles["green.poly"] = compileStylesheetSync("./cartocss/green-poly.mss")
 namedStyles["greenHeat.point"] = compileStylesheetSync("./cartocss/green-heat-dot.mss")
 namedStyles["purpleYellow.point"] = compileStylesheetSync("./cartocss/purple-yellow-dot.mss")
 function compileStylesheetSync(filename) {
@@ -40,7 +41,8 @@ var defaultStyle = "classic.point";
  *
  * Should this become more complex, then express or similar should be consider.
  */
-var assetsHTML = ['/v2/map/demo1.html', '/v2/map/demo2.html', '/v2/map/demo3.html', '/v2/map/demo-cartodb.html']
+var assetsHTML = ['/v2/map/demo1.html', '/v2/map/demo2.html', '/v2/map/demo3.html', '/v2/map/demo4.html',
+                  '/v2/map/demo-cartodb.html']
 var assertsIcon = ['/favicon.ico']
 
 function createServer(config) {
