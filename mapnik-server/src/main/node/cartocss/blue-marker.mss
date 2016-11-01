@@ -1,10 +1,10 @@
 /*
- * An orange style that paints the center of the polygon with a circle with the circle adjusting size depending on the
+ * A blue style that paints the center of the polygon with a circle with the circle adjusting size depending on the
  * count.
  */
 
 #occurrence {
-  marker-fill: #FF6347;
+  marker-fill: #40bfff;
   marker-allow-overlap: true;
   marker-opacity: 0.8;
   line-color: "#ff0000";

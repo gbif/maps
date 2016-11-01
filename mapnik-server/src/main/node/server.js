@@ -17,6 +17,7 @@ namedStyles["classic.poly"] = compileStylesheetSync("./cartocss/classic-poly.mss
 namedStyles["green.poly"] = compileStylesheetSync("./cartocss/green-poly.mss")
 namedStyles["green2.poly"] = compileStylesheetSync("./cartocss/green2-poly.mss")
 namedStyles["orange.marker"] = compileStylesheetSync("./cartocss/orange-marker.mss")
+namedStyles["blue.marker"] = compileStylesheetSync("./cartocss/blue-marker.mss")
 namedStyles["outline.poly"] = compileStylesheetSync("./cartocss/outline-poly.mss")
 namedStyles["greenHeat.point"] = compileStylesheetSync("./cartocss/green-heat-dot.mss")
 namedStyles["purpleYellow.point"] = compileStylesheetSync("./cartocss/purple-yellow-dot.mss")
