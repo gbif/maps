@@ -102,14 +102,30 @@ public final class TileResource {
     ) throws Exception {
 
     enableCORS(response);
-    Preconditions.checkArgument(bin == null || BIN_MODE_HEX.equalsIgnoreCase(bin), "Unsupported bin mode");
     String mapKey = mapKey(request);
+    return getTile(z,x,y,mapKey,srs,basisOfRecord,year,verbose,bin,hexPerTile);
+  }
+
+
+  byte[] getTile(
+    int z,
+    long x,
+    long y,
+    String mapKey,
+    String srs,
+    List<String> basisOfRecord,
+    String year,
+    boolean verbose,
+    String bin,
+    int hexPerTile
+  ) throws Exception {
+    Preconditions.checkArgument(bin == null || BIN_MODE_HEX.equalsIgnoreCase(bin), "Unsupported bin mode");
     LOG.info("MapKey: {}", mapKey);
 
     Range years = toMinMaxYear(year);
-    Set<String> bors = basisOfRecord.isEmpty() ? null : Sets.newHashSet(basisOfRecord);
+    Set<String> bors = basisOfRecord == null || basisOfRecord.isEmpty() ? null : Sets.newHashSet(basisOfRecord);
 
-    byte[] vectorTile = filteredVectorTile(z, x, y, mapKey, srs, bors, years, false);
+    byte[] vectorTile = filteredVectorTile(z, x, y, mapKey, srs, bors, years, verbose);
 
     // depending on the query, direct the request
     if (bin == null) {

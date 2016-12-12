@@ -144,8 +144,8 @@
   <modules>
     <module>common</module>
     <module>vectortile-server</module>
-    <module>spark-process</module>
-    <module>mapnik-server</module>
+    <!--module>spark-process</module>
+    <module>mapnik-server</module-->
   </modules>
 
   <dependencyManagement>

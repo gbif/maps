@@ -1,6 +1,7 @@
 package org.gbif.maps;
 
 import org.gbif.common.search.solr.builders.CloudSolrServerBuilder;
+import org.gbif.maps.resource.RegressionResource;
 import org.gbif.maps.resource.SolrResource;
 import org.gbif.maps.resource.TileResource;
 import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapsService;
@@ -54,11 +55,16 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
     // tileSize must match the preprocessed tiles in HBase
     String tableName = configuration.getHbase().getTableName();
 
-    environment.jersey().register(new TileResource(conf,
-                                                   configuration.getHbase().getTableName(),
-                                                   configuration.getHbase().getTileSize(),
-                                                   configuration.getHbase().getBufferSize(),
-                                                   configuration.getHbase().getSaltModulus()));
+    TileResource tiles = new TileResource(conf,
+                                          configuration.getHbase().getTableName(),
+                                          configuration.getHbase().getTileSize(),
+                                          configuration.getHbase().getBufferSize(),
+                                          configuration.getHbase().getSaltModulus());
+    environment.jersey().register(tiles);
+
+    environment.jersey().register(new RegressionResource(tiles, client));
+
+    // The resource that queries SOLR directly for HeatMap data
     environment.jersey().register(new SolrResource(solrService,
                                                    configuration.getSolr().getTileSize(),
                                                    configuration.getSolr().getBufferSize()));

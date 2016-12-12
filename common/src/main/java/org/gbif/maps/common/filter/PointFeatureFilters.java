@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import static org.gbif.maps.io.PointFeature.PointFeatures.Feature;
 
+import static com.sun.tools.doclint.Entity.sum;
+
 /**
  * Filters and converters for PointFeature based tiles.
  */
@@ -69,11 +71,10 @@ public class PointFeatureFilters {
                                   Collectors.groupingBy(Feature::getYear,Collectors.summingInt(Feature::getCount)))
           )
           .forEach((pixel, yearCounts) -> {
-            LOG.debug("Adding pixel {}", pixel);
-
             // collect the year:count values as a feature within the VT for the pixel
             Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(pixel.getX(), pixel.getY()));
             Map<String, Object> meta = Maps.newHashMap();
+
             yearCounts.forEach((year, count) -> meta.put(String.valueOf(year), count));
 
             // add a total value across all years
@@ -95,7 +96,7 @@ public class PointFeatureFilters {
 
             }
           });
-    LOG.debug("Collected {} features in the tile", features.get());
+    LOG.info("Collected {} features in the tile", features.get());
   }
 
   /**

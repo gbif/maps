@@ -154,6 +154,15 @@ public class HexBin {
         LOG.debug("total {}", meta.get(META_TOTAL_KEY));
       }
 
+      // TODO: control only for verbose
+      if (hexagon.getSatelliteData().isPresent()) {
+        hexagon.getSatelliteData().get().getMetadata().forEach((k,v) -> {
+          //LOG.info("Adding {}:{} in hex metadata", k,v);
+          meta.put(k, v);
+        });
+      }
+
+
       LOG.debug("Coords {},{},{},{},{},{}" + coordinates[0],
                coordinates[1],
                coordinates[2],
@@ -236,6 +245,18 @@ public class HexBin {
             cellData.getMetadata().put(META_TOTAL_KEY, total.get() + existing);
           }
         }
+
+        // TODO: this should only be done if a verbose count is asked
+        feature.getAttributes().forEach((year, count) -> {
+          //LOG.info("Adding {},{} to hexagon metadata", year, count);
+          if (!cellData.getMetadata().containsKey(year)) {
+            cellData.getMetadata().put(year, (Long) count);
+          } else {
+            long existing = (Long)cellData.getMetadata().get(year);
+            cellData.getMetadata().put(year, (Long) count + existing);
+          }
+
+        });
       }
       return hexagon;
     }

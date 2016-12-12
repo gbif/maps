@@ -1,13 +1,20 @@
 package org.gbif.maps.resource;
 
+import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
+import org.gbif.api.model.occurrence.search.OccurrenceSearchRequest;
+import org.gbif.api.util.SearchTypeValidator;
+import org.gbif.api.util.VocabularyUtils;
 import org.gbif.maps.common.filter.Range;
 
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 
 /**
  * Utilities for dealing with the parameters and mappings.
@@ -21,7 +28,6 @@ class Params {
   static final String BIN_MODE_HEX = "hex";
   static final int HEX_TILE_SIZE = 4096;
   static final String DEFAULT_HEX_PER_TILE = "51";
-
 
   // Maps the http parameter for the type to the HBase row key prefix for that map.
   // This aligns with the Spark processing that populates HBase of course, but maps the internal key to the
@@ -95,5 +101,49 @@ class Params {
     }
     throw new IllegalArgumentException("Year must contain a single or a comma separated minimum and maximum value.  "
                                        + "Supplied: " + encodedYear);
+  }
+
+  /**
+   * Iterates over the params map and adds to the search request the recognized parameters (i.e.: those that have a
+   * correspondent value in the P generic parameter).
+   * Empty (of all size) and null parameters are discarded.
+   */
+  static void setSearchParams(OccurrenceSearchRequest occurrenceSearchRequest, HttpServletRequest request) {
+    for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
+      OccurrenceSearchParameter p = findSearchParam(entry.getKey());
+      if (p != null) {
+        for (String val : removeEmptyParameters(entry.getValue())) {
+          SearchTypeValidator.validate(p, val);
+          occurrenceSearchRequest.addParameter(p, val);
+        }
+      }
+    }
+  }
+
+  /**
+   * @return The occurrence seach parameter for the HTTP Parameter name or null
+   */
+  private static OccurrenceSearchParameter findSearchParam(String name) {
+    try {
+      return (OccurrenceSearchParameter) VocabularyUtils.lookupEnum(name, OccurrenceSearchParameter.class);
+    } catch (IllegalArgumentException e) {
+      // we have all params here, not only the enum ones, so this is ok to end up here a few times
+    }
+    return null;
+  }
+
+  /**
+   * Removes all empty and null parameters from the list.
+   * Each value is trimmed(String.trim()) in order to remove all sizes of empty parameters.
+   */
+  private static List<String> removeEmptyParameters(String[] parameters) {
+    List<String> cleanParameters = Lists.newArrayListWithCapacity(parameters.length);
+    for (String param : parameters) {
+      final String cleanParam = Strings.nullToEmpty(param).trim();
+      if (cleanParam.length() > 0) {
+        cleanParameters.add(cleanParam);
+      }
+    }
+    return cleanParameters;
   }
 }

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html" style="height: 100%">
+<head>
+  <meta charset='utf-8'/>
+  <title>Maps</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no'/>
+
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.28.0/mapbox-gl.js'></script>
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.28.0/mapbox-gl.css' rel='stylesheet'/>
+  <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v0.14.0/mapbox-gl-draw.css' type='text/css' />
+  <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v0.14.0/mapbox-gl-draw.js'></script>
+
+</head>
+<body style="height: 100%">
+<div id='map' style="width:100%; height:100%"></div>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiZ2JpZiIsImEiOiJjaW0xeXU1c3gwMG04dm1tNXB3cjJ3Zm12In0.8A2pUP_lgL19w4G5L0fDNw';
+
+var colors = [
+  '#a50f15',
+  '#de2d26',
+  '#fb6a4a',
+  '#fcae91',
+  '#fee5d9',
+  '#edf8e9',
+  '#bae4b3',
+  '#74c476',
+  '#31a354',
+  '#006d2c'
+];
+
+var paintFill = {
+  "fill-color": "#0F0",
+  "fill-opacity": 0.4
+};
+
+var mapStyle = {
+  "version": 8,
+  "name": "Light",
+  "sources": {
+    "mapbox": {
+      "type": "vector",
+      "url": "mapbox://mapbox.mapbox-streets-v6"
+    },
+    "gbif": {
+      "type": "vector",
+      "tiles": ["http://localhost:7001/map/occurrence/regression/{z}/{x}/{y}.mvt?taxonKey=1898286&higherTaxonKey=797"]
+      //"tiles": ["http://localhost:7001/map/occurrence/regression/{z}/{x}/{y}.mvt?taxonKey=212&higherTaxonKey=1&srs=EPSG:4326&year=1990,2000"]
+
+      // taxonKey=4989904&higherTaxonKey=7782
+    }
+  },
+  "sprite": "mapbox://sprites/mapbox/light-v9",
+  "glyphs": "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {"background-color": "#ededed"}
+    },
+    {
+      "id": "water",
+      "source": "mapbox",
+      "source-layer": "water",
+      "type": "fill",
+      "paint": {"fill-color": "#d6d6d6"}
+    },
+    {
+      "id": "gbifOccurrence",
+      "source": "gbif",
+      "source-layer": "occurrence",
+      "type": "fill",
+      "paint": {"fill-color": "#2c2c2c"}
+    },
+  ]
+};
+
+
+var map = new mapboxgl.Map({
+  container: 'map',
+  style: mapStyle,
+  center: [10, 50],
+  zoom: 3,
+  hash: false
+});
+
+map.on('style.load', function () {
+  var breakpoints = colors.reverse().map(function(e, i) {
+    return [ (colors.length-6-i)*0.0002, e ];
+  });
+
+  map.addLayer({
+    "id": "regression",
+    "type": "line",
+    "source": "gbif",
+    "source-layer": "regression",
+    "paint": {
+      "line-color": "#7b7b7b",
+      "line-width": 0.5,
+      "line-opacity": 0.5
+    }
+  });
+
+  breakpoints.forEach(function (layer, i) {
+    var paint = {
+      "fill-color": layer[1],
+      "fill-opacity": 0.4
+    };
+
+    var filter = i == 0 ?
+      [">=", "slope", layer[0]] :
+      ["all",
+        [">=", "slope", layer[0]],
+        ["<", "slope", breakpoints[i - 1][0]]];
+    if (i==breakpoints.length-1) filter = ["<", "slope", breakpoints[i - 1][0]];
+
+
+    map.addLayer({
+      "id": "regression-" + i,
+      "type": "fill",
+      "source": "gbif",
+      "source-layer": "regression",
+      "paint": paint,
+      "filter": filter
+    });
+  });
+
+  //a layer that activates only on a hover over a feature (a cell)
+  map.addLayer({
+    "id": "regression-fill-hover",
+    "type": "fill",
+    "source": "gbif",
+    "source-layer": "regression",
+    "paint": {
+      "fill-color": "#FCA107",
+      "fill-opacity": 0.6
+    },
+    "filter": ['==', "id", ""]
+  });
+
+  var regressionLayers = colors.map(function(e, i) {
+    return "regression-" + i;
+  });
+
+  map.on('mousemove', function (e) {
+    if (!map.getLayer('regression-fill-hover')) return;
+    var features = map.queryRenderedFeatures(e.point, {layers: regressionLayers} );
+    map.getCanvas().style.cursor = (features.length > 0) ? 'pointer' : '';
+    if (features.length>0) {
+      map.setFilter("regression-fill-hover", ["==", "id", features[0].properties.id]);
+    } else {
+      map.setFilter("regression-fill-hover", ["==", "id", ""]);
+    }
+  });
+
+
+  var Draw = new mapboxglDraw();
+  //map.addControl(Draw)
+});
+
+
+</script>
+</body>
+</html>
