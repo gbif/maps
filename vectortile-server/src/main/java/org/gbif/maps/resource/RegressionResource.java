@@ -117,6 +117,7 @@ public final class RegressionResource {
     @DefaultValue("EPSG:3857") @QueryParam("srs") String srs,  // default as SphericalMercator
     @QueryParam("year") String year,
     @QueryParam("higherTaxonKey") String higherTaxonKey,
+    @DefaultValue("2") @QueryParam("minYears") int minYears,
     @Context HttpServletResponse response,
     @Context HttpServletRequest request
   ) throws Exception {
@@ -132,7 +133,7 @@ public final class RegressionResource {
     // determine the global pixel origin address at the top left of the tile, used for uniquely identifying the hexagons
     Long2D originXY = new Long2D(x * TILE_SIZE, y * TILE_SIZE);
 
-    return regression(speciesLayer, higherTaxaLayer, originXY);
+    return regression(speciesLayer, higherTaxaLayer, minYears, originXY);
   }
 
   /**
@@ -220,7 +221,7 @@ public final class RegressionResource {
    * What follows is hastily prepared  for the pilot implementation.
    * This should be refactored and unit tests added.
    */
-  private byte[] regression(byte[] speciesTile, byte[] groupTile, Long2D originXY) throws IOException {
+  private byte[] regression(byte[] speciesTile, byte[] groupTile, int minYears, Long2D originXY) throws IOException {
 
     // build indexes of year counts per hexagon for the species and the group
     Map<String, TreeMap<String, Long>> groupCounts = yearCountsByGeometry(groupTile, originXY);
@@ -233,8 +234,6 @@ public final class RegressionResource {
       String id = getGeometryId(geom, originXY);
       speciesGeometries.put(id, geom);
     });
-
-    int minYears = 15; // TODO
 
     VectorTileEncoder encoder = new VectorTileEncoder(TILE_SIZE, TILE_BUFFER, false);
     speciesCounts.entrySet().stream().forEach(e -> {

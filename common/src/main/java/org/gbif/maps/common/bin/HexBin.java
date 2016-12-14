@@ -105,8 +105,8 @@ public class HexBin {
     final double gridOffsetX = (x*tileSize)%(1.5*hexWidth);
     final double gridOffsetY = (y*tileSize)%hexHeight;
 
-    LOG.info("Radius [{}], width[{}], height[{}]", radius, hexWidth, hexHeight);
-    LOG.info("Grid offsets: {},{}", gridOffsetX, gridOffsetY);
+    LOG.debug("Radius [{}], width[{}], height[{}]", radius, hexWidth, hexHeight);
+    LOG.debug("Grid offsets: {},{}", gridOffsetX, gridOffsetY);
 
     // for each feature returned from the datastore locate its hexagon and store the data on the hexagon
     Set<Hexagon> dataCells = Sets.newHashSet();
@@ -157,7 +157,6 @@ public class HexBin {
       // TODO: control only for verbose
       if (hexagon.getSatelliteData().isPresent()) {
         hexagon.getSatelliteData().get().getMetadata().forEach((k,v) -> {
-          //LOG.info("Adding {}:{} in hex metadata", k,v);
           meta.put(k, v);
         });
       }
@@ -248,7 +247,6 @@ public class HexBin {
 
         // TODO: this should only be done if a verbose count is asked
         feature.getAttributes().forEach((year, count) -> {
-          //LOG.info("Adding {},{} to hexagon metadata", year, count);
           if (!cellData.getMetadata().containsKey(year)) {
             cellData.getMetadata().put(year, (Long) count);
           } else {
