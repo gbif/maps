@@ -2,15 +2,18 @@ package org.gbif.maps.resource;
 
 import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
 import org.gbif.api.model.occurrence.search.OccurrenceSearchRequest;
+import org.gbif.api.vocabulary.BasisOfRecord;
 import org.gbif.maps.common.projection.Long2D;
 import org.gbif.occurrence.search.OccurrenceSearchRequestBuilder;
 import org.gbif.occurrence.search.solr.OccurrenceSolrField;
 
 import java.io.IOException;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -24,11 +27,14 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Polygon;
 import no.ecc.vectortile.VectorTileDecoder;
@@ -60,6 +66,21 @@ public final class RegressionResource {
   private static final int TILE_BUFFER = TILE_SIZE / 4; // a generous buffer for hexagons
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final ObjectMapper MAPPER = new ObjectMapper();
+
+  // Explicitly name BORs of interest to exclude fossils and living specimens
+  private static final List<String> SUITABLE_BASIS_OF_RECORDS = ImmutableList.of(
+    "UNKNOWN", // assume unlikely to be fossils or living
+    "PRESERVED_SPECIMEN",
+    "OBSERVATION",
+    "HUMAN_OBSERVATION",
+    "MACHINE_OBSERVATION",
+    "MATERIAL_SAMPLE",
+    "LITERATURE"
+  );
+  private static final VectorTileDecoder decoder = new VectorTileDecoder();
+  static {
+    decoder.setAutoScale(false); // important to avoid auto scaling to 256 tiles
+  }
 
   private final TileResource tiles;
   private final SolrClient solrClient;
@@ -103,9 +124,10 @@ public final class RegressionResource {
     enableCORS(response);
     String mapKey = mapKey(request);
 
-    byte[] speciesLayer = tiles.getTile(z, x, y, mapKey, srs, null, year, true, "hex", HEX_PER_TILE);
+    byte[] speciesLayer = tiles.getTile(z, x, y, mapKey, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE);
     mapKey = Params.MAP_TYPES.get("taxonKey") + ":" + higherTaxonKey;
-    byte[] higherTaxaLayer = tiles.getTile(z, x, y, mapKey, srs, null, year, true, "hex", HEX_PER_TILE);
+    byte[] higherTaxaLayer = tiles.getTile(z, x, y, mapKey, srs,
+                                           SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE);
 
     // determine the global pixel origin address at the top left of the tile, used for uniquely identifying the hexagons
     Long2D originXY = new Long2D(x * TILE_SIZE, y * TILE_SIZE);
@@ -122,25 +144,35 @@ public final class RegressionResource {
   public String adHocRegression(@Context HttpServletRequest request) throws IOException, SolrServerException {
     String higherTaxonKey = Preconditions.checkNotNull(request.getParameter("higherTaxonKey"),
                                                        "A higherTaxonKey must be provided to perform regression");
-
     TreeMap<String, Long> speciesCounts = yearFacetFromSolr(request);
     TreeMap<String, Long> groupCounts = yearFacetFromSolr(request, higherTaxonKey);
+    Map<String, Object> meta = regressionToMeta(speciesCounts, groupCounts);
+    return MAPPER.writeValueAsString(meta);
+  }
 
+  /**
+   * Performs the regression for the species and groups generating the meta data.
+   * @param speciesCounts
+   * @param groupCounts
+   * @return
+   * @throws JsonProcessingException
+   */
+  private Map<String, Object> regressionToMeta(TreeMap<String, Long> speciesCounts, TreeMap<String, Long> groupCounts)
+    throws JsonProcessingException {
     // normalise all species counts against the group, building the regression the normalized data
     SimpleRegression regression = new SimpleRegression();
-    groupCounts.forEach((year, baseCount) -> {
+    groupCounts.forEach((year, groupCount) -> {
       double speciesCount = speciesCounts.containsKey(year) ? speciesCounts.get(year) : 0.0;
-      if (baseCount > 0) { // defensive coding
-        regression.addData(Double.valueOf(year), speciesCount / baseCount);
+      if (groupCount > 0) { // defensive coding
+        regression.addData(Double.valueOf(year), speciesCount / groupCount);
       }
     });
 
     Map<String, Object> meta = Maps.newHashMap();
-    populateMetaFromRegression(meta, regression);
+    regressionStatsToMeta(meta, regression);
     meta.put("groupCounts", MAPPER.writeValueAsString(groupCounts));
     meta.put("speciesCounts", MAPPER.writeValueAsString(speciesCounts));
-
-    return MAPPER.writeValueAsString(meta);
+    return meta;
   }
 
   /**
@@ -151,6 +183,12 @@ public final class RegressionResource {
     throws IOException, SolrServerException {
     OccurrenceSearchRequest searchRequest = new OccurrenceSearchRequest(0, 0);
     Params.setSearchParams(searchRequest, request);
+
+    // force our basis of record to be those that are supported
+    searchRequest.getParameters().removeAll(OccurrenceSearchParameter.BASIS_OF_RECORD);
+    SUITABLE_BASIS_OF_RECORDS.forEach(bor -> searchRequest.addBasisOfRecordFilter(BasisOfRecord.valueOf(bor)));
+
+
     searchRequest.getFacets().clear(); // safeguard against dangerous queries
     searchRequest.addFacets(OccurrenceSearchParameter.YEAR);
 
@@ -182,92 +220,96 @@ public final class RegressionResource {
    * What follows is hastily prepared  for the pilot implementation.
    * This should be refactored and unit tests added.
    */
-  private byte[] regression(byte[] source, byte[] base, Long2D originXY) throws IOException {
-    VectorTileDecoder decoder = new VectorTileDecoder();
-    decoder.setAutoScale(false); // important to avoid auto scaling to 256 tiles
+  private byte[] regression(byte[] speciesTile, byte[] groupTile, Long2D originXY) throws IOException {
 
-    // build an index of year counts per hexagon
-    Map<String, Map<Integer, AtomicLong>> baseVals = Maps.newHashMap();
-    Iterator<VectorTileDecoder.Feature> baseIter = decoder.decode(base).iterator();
-    while (baseIter.hasNext()) {
-      VectorTileDecoder.Feature f = baseIter.next();
+    // build indexes of year counts per hexagon for the species and the group
+    Map<String, TreeMap<String, Long>> groupCounts = yearCountsByGeometry(groupTile, originXY);
+    Map<String, TreeMap<String, Long>> speciesCounts = yearCountsByGeometry(speciesTile, originXY);
 
-      String id = getGeometryId((Polygon) f.getGeometry(), originXY);
-      if (!baseVals.containsKey(id)) {
-        baseVals.put(id, Maps.newHashMap());
-      }
-      Map<Integer, AtomicLong> yearVals = baseVals.get(id);
-      for (Map.Entry<String, Object> e : f.getAttributes().entrySet()) {
-        try {
-          // this makes the assumption that there are year:count attributes, plus others which will be ignored
-          Integer year = Integer.parseInt(e.getKey());
-          if (yearVals.containsKey(year)) {
-            yearVals.get(year).getAndAdd((Long) e.getValue());
-          } else {
-            yearVals.put(year, new AtomicLong((Long) e.getValue()));
-          }
-        } catch (Exception ex) {
-          // ignore attributes not in year:count format
-        }
-      }
-    }
+    // An index of the geometries.  This requires 2 decodings of the species tile, so could be optimised
+    Map<String, Geometry> speciesGeometries = Maps.newHashMap();
+    decoder.decode(speciesTile).forEach(f -> {
+      Polygon geom = (Polygon) f.getGeometry();
+      String id = getGeometryId(geom, originXY);
+      speciesGeometries.put(id, geom);
+    });
+
+    int minYears = 15; // TODO
 
     VectorTileEncoder encoder = new VectorTileEncoder(TILE_SIZE, TILE_BUFFER, false);
-    Map<String, Object> meta = Maps.newHashMap();
-
-    Iterator<VectorTileDecoder.Feature> sourceIter = decoder.decode(source).iterator();
-    while (sourceIter.hasNext()) {
-      VectorTileDecoder.Feature f = sourceIter.next();
-      String id = getGeometryId((Polygon) f.getGeometry(), originXY);
-
-      Map<Integer, AtomicLong> baseCounts = baseVals.get(id);
-
-      if (baseCounts != null) {
-        Map<Integer, AtomicLong> yearVals = Maps.newHashMap();
-        for (Map.Entry<String, Object> e : f.getAttributes().entrySet()) {
-          try {
-            // this makes the assumption that there are year:count attributes, plus others which will be ignored
-            Integer year = Integer.parseInt(e.getKey());
-            if (yearVals.containsKey(year)) {
-              yearVals.get(year).getAndAdd((Long) e.getValue());
-            } else {
-              yearVals.put(year, new AtomicLong((Long) e.getValue()));
-            }
-          } catch (Exception ex) {
-            // ignore attributes not in year:count format
-            LOG.debug("skipping metadata '{}'", e.getKey());
-          }
+    speciesCounts.entrySet().stream().forEach(e -> {
+      try {
+        if (groupCounts.containsKey(e.getKey()) && e.getValue().size() >= minYears) {
+          Map<String, Object> meta = null;
+          meta = regressionToMeta(e.getValue(), groupCounts.get(e.getKey()));
+          meta.put("id", e.getKey());
+          encoder.addFeature("regression", meta, speciesGeometries.get(e.getKey()));
         }
 
-        // you need at least 2 points to regress
-        if (yearVals.size() > 1) {
-
-          // now normalize them
-          SimpleRegression regression = new SimpleRegression();
-
-          // use the group counts, since we wish to infer absence (0 count) for years where there are records within
-          // the group but the species is not recorded for that year.
-          for (int year : baseCounts.keySet()) {
-            double speciesCount = yearVals.containsKey(year) ? (double) yearVals.get(year).get() : 0.0;
-            double normalizedCount = speciesCount / baseCounts.get(year).get();
-            regression.addData(Double.valueOf(year), normalizedCount);
-            // add to the data that we've inferred a 0
-            if (!yearVals.containsKey(year)) {
-              yearVals.put(year, new AtomicLong(0));
-            }
-          }
-
-          populateMetaFromRegression(meta, regression);
-          meta.put("groupCounts", MAPPER.writeValueAsString(baseCounts));
-          meta.put("speciesCounts", MAPPER.writeValueAsString(yearVals));
-
-          meta.put("id", id);
-          encoder.addFeature("regression", meta, f.getGeometry());
-        }
+      } catch (JsonProcessingException e1) {
+        // ignore
       }
-    }
-
+    });
     return encoder.encode();
+  }
+
+  /**
+   * Decodes a vector tile and extracts the year counts accumulated by the geometry.
+   * @param vectorTile
+   * @param offsetXY The offset to apply when creating the geometry ID
+   * @return A map keys on geometry ID containing counts by year for each geometry
+   * @throws IOException if the tile is corrupt
+   */
+  private static Map<String, TreeMap<String, Long>> yearCountsByGeometry(byte[] vectorTile, Long2D offsetXY) throws IOException {
+    Map<String, TreeMap<String, Long>> counts = Maps.newHashMap();
+    decoder.decode(vectorTile).forEach(f -> {
+      String hexagonId = getGeometryId((Polygon) f.getGeometry(), offsetXY);
+      TreeMap<String, Long> years = f.getAttributes().entrySet().stream()
+                                 .filter(filterFeaturesToYears()) // discard attributes that aren't year counts
+                                 .collect(Collectors.toMap(
+                                   e -> e.getKey(),
+                                   e -> (Long) e.getValue(),
+                                   (c1, c2) -> c1 + c2,
+                                   TreeMap::new
+                                 ));
+
+      // features can come from different layers in the tile, so we need to merge them in
+      if (counts.containsKey(hexagonId)) {
+
+        TreeMap<String, Long> merged =
+          Stream.concat(counts.get(hexagonId).entrySet().stream(), years.entrySet().stream())
+                .collect(Collectors.toMap(
+                  e -> e.getKey(),
+                  e -> e.getValue(),
+                  (c1, c2) -> c1 + c2,
+                  TreeMap::new
+                ));
+
+      } else {
+        counts.put(hexagonId, years);
+      }
+    });
+    return counts;
+  }
+
+  /**
+   * Filters to only the entries that have a year:count structure.
+   * This is of course making very strict assumptions on the schema of data.
+   */
+  static Predicate<Map.Entry<String, Object>> filterFeaturesToYears() {
+    return new Predicate<Map.Entry<String, Object>>() {
+      @Override
+      public boolean test(Map.Entry<String, Object> e) {
+        try {
+          if (Integer.parseInt(e.getKey()) > 0 && e.getValue() instanceof Long) {
+            return true;
+          }
+        } catch(NumberFormatException ex) {
+          // expected
+        }
+        return false;
+      }
+    };
   }
 
   /**
@@ -276,7 +318,7 @@ public final class RegressionResource {
    * @return A globally unique identifier for the hexagon, that will be the same across tile boundaries (i.e. handling
    * buffers).
    */
-  private String getGeometryId(Polygon geom, Long2D originXY) {
+  private static String getGeometryId(Polygon geom, Long2D originXY) {
     Coordinate vertex = geom.getCoordinates()[0];
     String id = ((int) originXY.getX() + vertex.x) + ":" + ((int) originXY.getY() + vertex.y);
     return id;
@@ -285,7 +327,7 @@ public final class RegressionResource {
   /**
    * Sets the named values in the metadata from the result of the regression.
    */
-  private void populateMetaFromRegression(Map<String, Object> meta, SimpleRegression regression) {
+  private void regressionStatsToMeta(Map<String, Object> meta, SimpleRegression regression) {
     meta.put("slope", regression.getSlope());
     meta.put("intercept", regression.getIntercept());
     meta.put("significance", regression.getSignificance());
