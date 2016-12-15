@@ -121,7 +121,6 @@ public final class RegressionResource {
     @Context HttpServletResponse response,
     @Context HttpServletRequest request
   ) throws Exception {
-
     enableCORS(response);
     String mapKey = mapKey(request);
 
@@ -143,9 +142,9 @@ public final class RegressionResource {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public String adHocRegression(@Context HttpServletRequest request, @Context HttpServletResponse response) throws IOException, SolrServerException {
+    enableCORS(response);
     String higherTaxonKey = Preconditions.checkNotNull(request.getParameter("higherTaxonKey"),
                                                        "A higherTaxonKey must be provided to perform regression");
-    enableCORS(response);
     TreeMap<String, Long> speciesCounts = yearFacetFromSolr(request);
     TreeMap<String, Long> groupCounts = yearFacetFromSolr(request, higherTaxonKey);
     Map<String, Object> meta = regressionToMeta(speciesCounts, groupCounts);
@@ -240,8 +239,7 @@ public final class RegressionResource {
     speciesCounts.entrySet().stream().forEach(e -> {
       try {
         if (groupCounts.containsKey(e.getKey()) && e.getValue().size() >= minYears) {
-          Map<String, Object> meta = null;
-          meta = regressionToMeta(e.getValue(), groupCounts.get(e.getKey()));
+          Map<String, Object> meta = regressionToMeta(e.getValue(), groupCounts.get(e.getKey()));
           meta.put("id", e.getKey());
           encoder.addFeature("regression", meta, speciesGeometries.get(e.getKey()));
         }
