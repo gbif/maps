@@ -117,7 +117,7 @@ public final class RegressionResource {
     @DefaultValue("EPSG:3857") @QueryParam("srs") String srs,  // default as SphericalMercator
     @QueryParam("year") String year,
     @QueryParam("higherTaxonKey") String higherTaxonKey,
-    @DefaultValue("2") @QueryParam("minYears") int minYears,
+    @DefaultValue("2") @QueryParam("minYears") int minYears,  // 2 years are required for a regression
     @Context HttpServletResponse response,
     @Context HttpServletRequest request
   ) throws Exception {
@@ -142,9 +142,10 @@ public final class RegressionResource {
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  public String adHocRegression(@Context HttpServletRequest request) throws IOException, SolrServerException {
+  public String adHocRegression(@Context HttpServletRequest request, @Context HttpServletResponse response) throws IOException, SolrServerException {
     String higherTaxonKey = Preconditions.checkNotNull(request.getParameter("higherTaxonKey"),
                                                        "A higherTaxonKey must be provided to perform regression");
+    enableCORS(response);
     TreeMap<String, Long> speciesCounts = yearFacetFromSolr(request);
     TreeMap<String, Long> groupCounts = yearFacetFromSolr(request, higherTaxonKey);
     Map<String, Object> meta = regressionToMeta(speciesCounts, groupCounts);
