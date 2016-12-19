@@ -132,6 +132,7 @@ public final class RegressionResource {
     // determine the global pixel origin address at the top left of the tile, used for uniquely identifying the hexagons
     Long2D originXY = new Long2D(x * TILE_SIZE, y * TILE_SIZE);
 
+    response.setStatus(204);
     return regression(speciesLayer, higherTaxaLayer, minYears, originXY);
   }
 
@@ -218,7 +219,7 @@ public final class RegressionResource {
   }
 
   /**
-   * What follows is hastily prepared  for the pilot implementation.
+   * What follows is hastily prepared for the pilot implementation.
    * This should be refactored and unit tests added.
    */
   private byte[] regression(byte[] speciesTile, byte[] groupTile, int minYears, Long2D originXY) throws IOException {

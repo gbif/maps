@@ -1,6 +1,7 @@
 package org.gbif.maps;
 
 import org.gbif.common.search.solr.builders.CloudSolrServerBuilder;
+import org.gbif.maps.resource.NoContentResponseFilter;
 import org.gbif.maps.resource.RegressionResource;
 import org.gbif.maps.resource.SolrResource;
 import org.gbif.maps.resource.TileResource;
@@ -68,6 +69,8 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
     environment.jersey().register(new SolrResource(solrService,
                                                    configuration.getSolr().getTileSize(),
                                                    configuration.getSolr().getBufferSize()));
+
+    environment.jersey().register(NoContentResponseFilter.class);
 
     if (configuration.getService().isDiscoverable()) {
       environment.lifecycle().manage(new DiscoveryLifeCycle(configuration.getService()));

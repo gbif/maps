@@ -46,8 +46,8 @@ var mapStyle = {
     "gbif": {
       "type": "vector",
       //"tiles": ["http://localhost:7001/map/occurrence/regression/{z}/{x}/{y}.mvt?taxonKey=1898286&higherTaxonKey=797"]
-      "tiles": ["http://api.gbif-uat.org/v2/map/occurrence/regression/{z}/{x}/{y}.mvt?taxonKey=1898286&higherTaxonKey=797&year=1900,2016"]
-      //"tiles": ["http://localhost:7001/map/occurrence/regression/{z}/{x}/{y}.mvt?taxonKey=212&higherTaxonKey=1&srs=EPSG:4326&year=1990,2000"]
+      //"tiles": ["http://api.gbif-uat.org/v2/map/occurrence/regression/{z}/{x}/{y}.mvt?taxonKey=1898286&higherTaxonKey=797&year=1900,2016&minYears=15"]
+      "tiles": ["http://localhost:7001/map/occurrence/regression/{z}/{x}/{y}.mvt?taxonKey=212&higherTaxonKey=1"]
 
       // taxonKey=4989904&higherTaxonKey=7782
     }
@@ -157,8 +157,8 @@ map.on('style.load', function () {
 
   map.on('moveend', function() {
     //console.log(map.transform.worldSize + " - " + map.transform.x + ":" + map.transform.y);
-    console.log(map.transform.worldSize);
-    console.log(map.transform.project({lng: 0, lat:0}));
+    //console.log(map.transform.worldSize);
+    //console.log(map.transform.project({lng: 0, lat:0}));
   })
 
 
