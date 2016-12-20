@@ -31,7 +31,7 @@
 
   <properties>
     <jdkLevel>1.8</jdkLevel>
-    <gbif-occurrence.version>0.49</gbif-occurrence.version>
+    <gbif-occurrence.version>0.60-SNAPSHOT</gbif-occurrence.version>
     <slf4j.version>1.7.18</slf4j.version>
     <!-- Important: same version as the PBF library installed -->
     <protoc.version>2.5.0</protoc.version>
@@ -144,8 +144,8 @@
   <modules>
     <module>common</module>
     <module>vectortile-server</module>
-    <!--module>spark-process</module>
-    <module>mapnik-server</module-->
+    <module>spark-process</module>
+    <module>mapnik-server</module>
   </modules>
 
   <dependencyManagement>
