@@ -1,19 +1,14 @@
 ## Maps
  
-Currently a research project to exploring a generic architecture for maps to support enhanced functionalities.
+GBIF Maps in Mapbox Vector Tile (MVT) format and as PNGs.
 
-Including topics:
-
- - Higher frequency updates
- - Density counts, plus counts of distinct values (e.g. species counts)
+ - Processing from HBase or Parquet files into the tile pyramid, stored in HBase
+ - Rendering in Mapbox vector tile (MVT) format from HBase or SOLR data sources
+ - Mapnik as an optional view to convert MVTs into PNGs
  - Hexagon binning views
- - Equal area binning views (e.g. Google S2)
- - Mapping ad hoc SOLR search results for small, medium and large result sets
  - Fast disaster recovery and batch processing
- - Vector tile format (MVT) and UTF8 grid formats
- - Time series to year resolution 
- - Binning of data to month resolution (i.e. multiple years, but "January") 
+ - Year resolution time series data
  
-The general architecture under research is depicted:
+The general architecture:
 
 ![Architecture](./assets/architecture.png)
