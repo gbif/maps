@@ -35,7 +35,7 @@ class Params {
   static final Map<String, String> MAP_TYPES = ImmutableMap.of(
     "taxonKey","1",
     "datasetKey","2",
-    "publishingOrganizationKey", "3",
+    "publishingOrg", "3",
     "country", "4",
     "publishingCountry", "5"
   );
