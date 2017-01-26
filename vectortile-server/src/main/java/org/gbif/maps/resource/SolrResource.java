@@ -188,7 +188,8 @@ public final class SolrResource {
     }
 
     byte[] encodedTile = encoder.encode();
-    if (BIN_MODE_HEX.equalsIgnoreCase(bin)) {
+    if (BIN_MODE_HEX.equalsIgnoreCase(bin) && countsInts!=null && !countsInts.isEmpty()) {
+      // binning will throw IAE on no data, so code defensively
       HexBin binner = new HexBin(HEX_TILE_SIZE, hexPerTile);
       return binner.bin(encodedTile, z, x, y);
 
