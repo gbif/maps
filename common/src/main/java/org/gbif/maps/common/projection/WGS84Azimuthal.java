@@ -1,30 +1,29 @@
 package org.gbif.maps.common.projection;
 
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Point2D;
-
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import org.geotools.geometry.jts.JTS;
-import org.geotools.referencing.CRS;
-import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.MathTransform;
 
-/**
- * Base class handling the trnaformations for the polar views.
- */
-abstract class WGS84Stereographic extends AbstractTileProjection {
-  static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 
-  // An affine transform to move world coordinates into positive space addressing, so the lowest is 0,0
-  static final AffineTransform OFFSET_TRANSFORM = AffineTransform.getTranslateInstance(
-      AbstractTileProjection.EARTH_CIRCUMFERENCE / 2,
-      AbstractTileProjection.EARTH_CIRCUMFERENCE / 2);
+/**
+ * Base class handling azimuthal projections.
+ */
+abstract class WGS84Azimuthal extends AbstractTileProjection {
+  static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
 
   abstract MathTransform getTransform();
 
-  WGS84Stereographic(int tileSize) {
+  // An affine transform to move world coordinates into positive space addressing, so the lowest is 0,0
+  abstract AffineTransform getOffsetTransform();
+
+  // The distance in projected units from the origin to the chosen limit of projected space.
+  abstract double getExtent();
+
+  WGS84Azimuthal(int tileSize) {
     super(tileSize);
   }
 
@@ -55,8 +54,8 @@ abstract class WGS84Stereographic extends AbstractTileProjection {
     // the world pixel range at this zoom
     double globalPixelExtent = zoom==0 ? getTileSize() : getTileSize() * (2<<(zoom-1));
 
-    double pixelsPerMeter = globalPixelExtent / AbstractTileProjection.EARTH_CIRCUMFERENCE;
-    AffineTransform scale= AffineTransform.getScaleInstance(pixelsPerMeter, pixelsPerMeter);
+    double pixelsPerMeter = globalPixelExtent / getExtent() / 2.0;
+    AffineTransform scale = AffineTransform.getScaleInstance(pixelsPerMeter, pixelsPerMeter);
 
     // Swap Y to convert world addressing to pixel addressing where 0,0 is at the top
     AffineTransform mirror_y = new AffineTransform(1, 0, 0, -1, 0, globalPixelExtent);
@@ -64,8 +63,7 @@ abstract class WGS84Stereographic extends AbstractTileProjection {
     // combine the transform, noting you reverse the order
     AffineTransform world2pixel = new AffineTransform(mirror_y);
     world2pixel.concatenate(scale);
-    world2pixel.concatenate(OFFSET_TRANSFORM);
+    world2pixel.concatenate(getOffsetTransform());
     return world2pixel;
   }
-
 }

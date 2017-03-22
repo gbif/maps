@@ -96,7 +96,7 @@ public class PointFeatureFilters {
 
             }
           });
-    LOG.info("Collected {} features in the tile", features.get());
+    LOG.info("Collected {} features in the tile {}/{}/{}", features.get(), z, x, y);
   }
 
   /**

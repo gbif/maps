@@ -33,17 +33,17 @@ tilePyramid:
   numPartitions: 200
   tileBufferSize: 64
   projections:
-    # Web Mercator (i.e. like google maps)
+    # Web Mercator (i.e. like Google maps)
     -  minZoom: 0
        maxZoom: 16
        tileSize: 512
        srs: EPSG:3857
-    # WGS84 "unprojected"
+    # WGS84 Equirectangular
     -  minZoom: 0
        maxZoom: 16
        tileSize: 512
        srs: EPSG:4326
-    # North Pole LAEA (i.e. Arctic)
+    # North Pole LAEA Europe (i.e. Arctic)
     -  minZoom: 0
        maxZoom: 16
        tileSize: 512
