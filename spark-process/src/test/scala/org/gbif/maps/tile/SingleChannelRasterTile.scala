@@ -1,13 +1,9 @@
 package org.gbif.maps.tile
 
-import com.google.common.annotations.VisibleForTesting
-import org.gbif.maps.io.PointFeature.PointFeatures.Feature
-
-
 import scala.collection.mutable.{Map => MMap}
 
 /**
-  * Utility implementation for tests only, which stores an count by pixel (i.e. a basic single channel raster)
+  * Utility implementation for tests only, which stores a count by pixel (i.e. a basic single channel raster)
   */
 private[tile]class SingleChannelRasterTile(zxy: ZXY) extends Tile[String, Int](zxy, 512, 64) {
   override def newTileInstance(zxy: ZXY): Tile[String, EncodedPixel] = new SingleChannelRasterTile(zxy)

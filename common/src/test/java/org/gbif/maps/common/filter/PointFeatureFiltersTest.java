@@ -121,7 +121,7 @@ public class PointFeatureFiltersTest {
   }
 
   /**
-   * A test to check that buffer regions addres as we would expect.
+   * A test to check that buffer regions address as we would expect.
    * This encodes some sample data into a tile at 1,1 in zoom 1 whereby some of the data will be in the buffer zone.
    * It then decodes it, verifying that the coordinates look as one would expect, and things outside of the buffer
    * were discarded.

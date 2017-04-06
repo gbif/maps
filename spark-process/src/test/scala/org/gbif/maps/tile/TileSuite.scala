@@ -49,7 +49,7 @@ class TileSuite extends FunSuite {
     * Specific test to check that pixels in the far western area are placed into eastern border buffers when
     * downscaling.
     */
-  test("Ensure timezone handling with downscaling for westerly pixels") {
+  test("Ensure dateline handling with downscaling for westerly pixels") {
     val layerName = "test"
 
     // a western tile at z16, with a pixel that lies in the NW region
@@ -80,13 +80,13 @@ class TileSuite extends FunSuite {
   }
 
   private def encodeDecode(pixel: Pixel) : Pixel = {
-    var encoded = encodePixel(pixel)
+    val encoded = encodePixel(pixel)
     decodePixel(encoded)
   }
 
   private def encodeDecode(pixel: Pixel, year: Year) : (Pixel, Year) = {
-    var encoded = encodePixelYear(encodePixel(pixel), year)
-    var decoded = decodePixelYear(encoded)
+    val encoded = encodePixelYear(encodePixel(pixel), year)
+    val decoded = decodePixelYear(encoded)
     (decodePixel(decoded._1), decoded._2)
   }
 }

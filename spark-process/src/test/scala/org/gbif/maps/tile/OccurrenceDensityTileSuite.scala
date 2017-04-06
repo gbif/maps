@@ -75,7 +75,7 @@ class OccurrenceDensityTileSuite extends FunSuite {
     })
   }
 
-  // enocde a pixel year easily to make tests more readable
+  // encode a pixel year easily to make tests more readable
   private def encode(x: Int, y: Int, year: Int) : EncodedPixelYear = {
     encodePixelYear(
       encodePixel(Pixel(x.asInstanceOf[Short],y.asInstanceOf[Short])),

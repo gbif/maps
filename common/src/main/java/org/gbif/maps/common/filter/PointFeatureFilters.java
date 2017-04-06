@@ -25,8 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import static org.gbif.maps.io.PointFeature.PointFeatures.Feature;
 
-import static com.sun.tools.doclint.Entity.sum;
-
 /**
  * Filters and converters for PointFeature based tiles.
  */
@@ -42,7 +40,7 @@ public class PointFeatureFilters {
    * @param encoder To collect into
    * @param layerName The layer within the VT to collect to
    * @param source To project and filter
-   * @param projection To projectthe points
+   * @param projection To project the points
    * @param z The zoom level
    * @param x The target tile X address
    * @param y The target tile Y address
@@ -59,7 +57,7 @@ public class PointFeatureFilters {
     // Note:  This projects the coordinates twice: once for filtering to the tile and secondly when collecting the
     //        tile features.  This could be optimized by calculating the WGS84 lat,lng of the tile+buffer extent and
     //        filtering the incoming stream using that.  At the time of writing the TileProjection does not offer that
-    //        inverse capability and performance is in sub 5 msecs, so not considered worthwhile (yet).
+    //        inverse capability and performance is in sub 5 ms, so not considered worthwhile (yet).
     AtomicInteger features = new AtomicInteger();
     source.stream()
           .filter(filterFeatureByBasisOfRecord(basisOfRecords))

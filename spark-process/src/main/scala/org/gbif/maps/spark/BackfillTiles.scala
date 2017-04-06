@@ -27,7 +27,7 @@ object BackfillTiles {
   private val logger = LoggerFactory.getLogger("org.gbif.maps.spark.BackfillTiles2")
 
   /**
-    * A partitioner that puts pixels in the same category together but ignores Z,X and Y.
+    * A partitioner that puts pixels in the same category together but ignores Z, X and Y.
     * This is useful so that merging across zooms remains a data local task.
     */
   class TileGroupPartitioner[K,V](partitions: Int) extends Partitioner {
@@ -157,11 +157,11 @@ object BackfillTiles {
 
         for ((basisOfRecord, features) <- tile.getData()) {
           // unpack the encoded pixel years and create a map with pixels and the metadata
-          var pixels = MMap[Pixel, MMap[Short,Int]]();
+          val pixels = MMap[Pixel, MMap[Short,Int]]()
 
           for ((pixel, yearCount) <- features.iterator()) {
             if (pixels.contains(pixel)) {
-              var pixelMeta = pixels.get(pixel).get
+              val pixelMeta = pixels.get(pixel).get
               pixelMeta.update(yearCount.year, pixelMeta.getOrElse(yearCount.year, 0) + yearCount.count)
             } else {
               val pixelMeta = MMap[Short,Int]()
@@ -175,7 +175,7 @@ object BackfillTiles {
             // VectorTiles want String:Object format
             val metaAsString = new java.util.HashMap[String, Any]()
 
-            // TODO: move this type convertion to above
+            // TODO: move this type conversion to above
             for ((year, count) <- meta) {
               metaAsString.put(String.valueOf(year), count)
             }

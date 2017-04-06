@@ -50,7 +50,7 @@ object Backfill {
 
 
     if (Set("all","points").contains(args(0))) {
-      // upto the threshold we can store points
+      // up to the threshold we can store points
       val mapKeys = counts.filter(r => {r._2<config.tilesThreshold})
       println("MapKeys suitable for storing as point maps: " + mapKeys.size)
       BackfillPoints.build(sc,df,mapKeys.keySet,config)

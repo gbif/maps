@@ -76,7 +76,7 @@ object OccurrenceDensityTile {
       for ((basisOfRecord, features) <- sourceTile.getData()) {
 
         // create the layer in the target tile if needed
-        var targetLayer = target.getData().getOrElseUpdate(basisOfRecord, target.newFeatureDataInstance())
+        val targetLayer = target.getData().getOrElseUpdate(basisOfRecord, target.newFeatureDataInstance())
 
         // accumulate the data in the target layer
         for ((pixel, yearCount) <- features.iterator()) {

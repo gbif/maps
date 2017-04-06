@@ -56,7 +56,7 @@ public class Tiles {
    * Provides the tile address for the tile that will contain the pixel at the given zoom and tile size.
    *
    * @param globalPixelXY The pixel address in global space
-   * @param zoom          the zoom level
+   * @param z             the zoom level
    * @param tileSize      the tile size
    *
    * @return The tile XY address
