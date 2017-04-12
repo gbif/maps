@@ -1,6 +1,6 @@
-## Maps
- 
-GBIF Maps in Mapbox Vector Tile (MVT) format and as PNGs.
+# GBIF Maps
+
+GBIF Occurrence Maps in [Mapbox Vector Tile](https://www.mapbox.com/vector-tiles/specification/) (MVT) format and as PNGs.
 
  - Processing from HBase or Parquet files into the tile pyramid, stored in HBase
  - Rendering in Mapbox vector tile (MVT) format from HBase or SOLR data sources

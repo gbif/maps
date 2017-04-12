@@ -2,7 +2,7 @@
 
 A very simple PNG writer of vector tiles that renders using Mapnik.
 
-# Building and running
+## Building and running
 
 For continuous integration with the Java modules, this project can be built using Maven:
 
@@ -13,4 +13,4 @@ export PATH="$PWD/node/":$PATH
 node server.js ../../../server.conf 3000
 ```
 
-`npm`, `nvm` and `npm` tool can be used instead, if preferred.
+`npm` and `nvm` can be used instead, if preferred.

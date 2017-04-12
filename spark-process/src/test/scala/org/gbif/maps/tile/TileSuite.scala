@@ -1,6 +1,8 @@
 package org.gbif.maps.tile
 
+import org.gbif.maps.common.projection.TileSchema
 import org.scalatest.FunSuite
+
 import scala.collection.mutable.{HashSet => MHashSet}
 
 /**
@@ -56,7 +58,7 @@ class TileSuite extends FunSuite {
     val sourceTile = new SingleChannelRasterTile(new ZXY(16, 0, 10))
     sourceTile.collect(layerName, new Pixel(1,1), 100)
 
-    val downscaled = sourceTile.flatMapToBuffers(true, true)
+    val downscaled = sourceTile.flatMapToBuffers(TileSchema.WEB_MERCATOR, true)
     val pixelData = toFullPixelAddress(downscaled)
     assertResult(4)(pixelData.size)
     assert(pixelData.contains(new TilePixelCount(15,0,5,0,0,100))) // tile center

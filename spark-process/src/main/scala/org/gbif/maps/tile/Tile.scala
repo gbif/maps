@@ -1,5 +1,7 @@
 package org.gbif.maps.tile
 
+import org.gbif.maps.common.projection.TileSchema
+
 import scala.collection.mutable.{Map => MMap}
 import org.gbif.maps.tile.TileUtils.Region
 
@@ -74,15 +76,15 @@ abstract class Tile[L, F](zxy: ZXY, tileSize: Int, bufferSize: Int) extends Seri
     * be used directly in the adjacent tile as a buffer.  Optionally this can downscale at the same time to prepare
     * a tile at e.g zoom 15 into a set of tiles suitable for stitching together at zoom 14.
     *
+    * @param tileSchema Defines the tile addressing scheme and dateline wrapping
     * @param downscale true if the pixels should be readdressed for use at 1 zoom lower than the current tile
-    * @param wrapDateline true if the pixel addressing should wrap across the international dateline
     * @return A set of tiles representing all regions of this tile suitable for stitching together with adjacent tiles
     */
-  def flatMapToBuffers(downscale: Boolean, wrapDateline: Boolean) : Iterable[Tile[L,F]] = {
+  def flatMapToBuffers(tileSchema: TileSchema, downscale: Boolean) : Iterable[Tile[L,F]] = {
     val result = MMap[Region.Value, Tile[L,F]]()
 
     // determine the possible regions of interest for this tile that can be used as buffers on adjacent tiles
-    val regions = TileUtils.bufferRegions(zxy, downscale, wrapDateline)
+    val regions = TileUtils.bufferRegions(tileSchema, zxy, downscale)
 
     // for each layer
     for ((layer, features) <- data) {
@@ -102,7 +104,7 @@ abstract class Tile[L, F](zxy: ZXY, tileSize: Int, bufferSize: Int) extends Seri
             val bufferAdjustedPixel = TileUtils.adjustPixelForBuffer(downscaledPixel, region, tileSize, bufferSize)
 
             bufferAdjustedPixel match {
-              case Some(pixel) => appendFeature(result, region, downscaledZXY, layer, pixel, feature)
+              case Some(pixel) => appendFeature(tileSchema, result, region, downscaledZXY, layer, pixel, feature)
               case None => None // pixel ignored for this region
             }
           }
@@ -115,15 +117,16 @@ abstract class Tile[L, F](zxy: ZXY, tileSize: Int, bufferSize: Int) extends Seri
   /**
     * Appends a feature to the context.  When the context does not contain the target tile it is created.
     *
+    * @param tileSchema The tile schema in use
     * @param context To collect the feature into
     * @param region The key within the context within which we are working
     * @param layer The layer within which we are working
     * @param pixel To collect
     * @param feature To associate with the pixel
     */
-  private[tile] def appendFeature(context: MMap[Region.Value, Tile[L,F]], region: Region.Value, zxy: ZXY, layer: L, pixel: Pixel,
+  private[tile] def appendFeature(tileSchema: TileSchema, context: MMap[Region.Value, Tile[L,F]], region: Region.Value, zxy: ZXY, layer: L, pixel: Pixel,
     feature: F) = {
-    var targetTileZXY = TileUtils.adjacentTileZXY(zxy, region)
+    val targetTileZXY = TileUtils.adjacentTileZXY(tileSchema, zxy, region)
     val targetTile = context.getOrElseUpdate(region, newTileInstance(targetTileZXY))
     val layerData = targetTile.getData().getOrElseUpdate(layer, newFeatureDataInstance())
     layerData.collect(pixel, feature)

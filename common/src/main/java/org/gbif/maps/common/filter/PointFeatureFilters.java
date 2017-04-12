@@ -2,6 +2,7 @@ package org.gbif.maps.common.filter;
 
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.TileProjection;
+import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
 import org.gbif.maps.io.PointFeature;
 
@@ -51,6 +52,7 @@ public class PointFeatureFilters {
    */
   public static void collectInVectorTile(VectorTileEncoder encoder, String layerName,
                                          List<Feature> source, TileProjection projection,
+                                         TileSchema schema,
                                          int z, long x, long y, int tileSize, int buffer,
                                          Range years, Set<String> basisOfRecords) {
 
@@ -65,7 +67,7 @@ public class PointFeatureFilters {
           .filter(filterFeatureByTile(projection, z, x, y, tileSize, buffer)) // filter to the tile
           .collect(
             // accumulate counts by year, for each pixel
-            Collectors.groupingBy(toTileLocalPixelXY(projection, z, x, y, tileSize, buffer),
+            Collectors.groupingBy(toTileLocalPixelXY(projection, schema, z, x, y, tileSize, buffer),
                                   Collectors.groupingBy(Feature::getYear,Collectors.summingInt(Feature::getCount)))
           )
           .forEach((pixel, yearCounts) -> {
@@ -106,14 +108,14 @@ public class PointFeatureFilters {
    * @param tileSize That we operate with
    * @return The function to convert
    */
-  public static Function<Feature, Double2D> toTileLocalPixelXY(final TileProjection projection, final int z,
-                                                               final long x, final long y,
+  public static Function<Feature, Double2D> toTileLocalPixelXY(final TileProjection projection, final TileSchema schema,
+                                                               final int z, final long x, final long y,
                                                                final int tileSize, final int bufferSize) {
     return new Function<Feature, Double2D>() {
       @Override
       public Double2D apply(Feature t) {
         Double2D pixelXY = projection.toGlobalPixelXY(t.getLatitude(),t.getLongitude(), z);
-        return Tiles.toTileLocalXY(pixelXY, z, x, y, tileSize, bufferSize);
+        return Tiles.toTileLocalXY(pixelXY, schema, z, x, y, tileSize, bufferSize);
       }
     };
   }

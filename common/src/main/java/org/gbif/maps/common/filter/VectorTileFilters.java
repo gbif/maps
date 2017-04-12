@@ -2,6 +2,7 @@ package org.gbif.maps.common.filter;
 
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.TileProjection;
+import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
 import org.gbif.maps.io.PointFeature;
 
@@ -73,7 +74,7 @@ public class VectorTileFilters {
    *
    * @throws IOException
    */
-  public static void collectInVectorTile(VectorTileEncoder encoder, String layerName, byte[] sourceTile,
+  public static void collectInVectorTile(VectorTileEncoder encoder, String layerName, byte[] sourceTile, TileSchema schema,
                                          int z, long x, long y, long sourceX, long sourceY, int tileSize, int bufferSize,
                                          Range years, Set<String> basisOfRecords, boolean verbose)
     throws IOException {
@@ -98,7 +99,7 @@ public class VectorTileFilters {
       Map<Double2D, Map<String, Long>> pixels = featureStream.collect(
         // accumulate counts by year, for each pixel
         Collectors.toMap(
-          toTileLocalPixelXY(z, x, y, sourceX, sourceY, tileSize, bufferSize),
+          toTileLocalPixelXY(schema, z, x, y, sourceX, sourceY, tileSize, bufferSize),
           attributesPrunedToYears(years),
           (m1,m2) -> {
             m2.forEach((k, v) -> m1.merge(k, v, (v1, v2) -> {
@@ -131,7 +132,7 @@ public class VectorTileFilters {
       Map<Double2D, Long> pixels = featureStream.collect(
         // accumulate totals for each pixel
         Collectors.toMap(
-          toTileLocalPixelXY(z, x, y, sourceX, sourceY, tileSize, bufferSize),
+          toTileLocalPixelXY(schema, z, x, y, sourceX, sourceY, tileSize, bufferSize),
           totalCountForYears(years), // note: we throw away year values here
           (m1,m2) -> {
             // simply accumulate totals
@@ -300,7 +301,7 @@ public class VectorTileFilters {
    * Gets the X,Y point for the feature.
    * @return The function to convert the feature to the location.
    */
-  public static Function<VectorTileDecoder.Feature, Double2D> toTileLocalPixelXY(final int z, final long x, final long y,
+  public static Function<VectorTileDecoder.Feature, Double2D> toTileLocalPixelXY(final TileSchema schema, final int z, final long x, final long y,
                                                                                  final long sourceX, final long sourceY,
                                                                                  final int tileSize, final int bufferSize) {
     return new Function<VectorTileDecoder.Feature, Double2D>() {
@@ -311,7 +312,7 @@ public class VectorTileFilters {
 
           // find the tile local pixel address on the target tile (pixel may be coming from an adjacent tile)
           Double2D pixelXY = new Double2D(tileSize * sourceX + p.getX(), tileSize * sourceY + p.getY());
-          return Tiles.toTileLocalXY(pixelXY, z, x, y, tileSize, bufferSize);
+          return Tiles.toTileLocalXY(pixelXY, schema, z, x, y, tileSize, bufferSize);
         } else {
           throw new IllegalStateException("Only point geometries are supported");
         }

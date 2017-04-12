@@ -12,7 +12,7 @@ import org.opengis.referencing.operation.MathTransform;
 class NorthPoleLAEAEurope extends WGS84LambertAzimuthalEqualArea {
   static final String EPSG_CODE = "EPSG:3575";
 
-  // A tranform to convert from WGS84 coordinates into 3575 pixel space
+  // A transform to convert from WGS84 coordinates into 3575 pixel space
   private static final MathTransform TRANSFORM;
   static {
     try {

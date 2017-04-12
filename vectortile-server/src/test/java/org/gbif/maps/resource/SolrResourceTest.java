@@ -12,16 +12,28 @@ public class SolrResourceTest {
   @Test
   public void testBufferedTileBoundary() {
 
-    // zoom 0, no dateline should clip to world extent
-    double buffer = 360 * SolrResource.SOLR_QUERY_BUFFER_PERCENTAGE;
-    Double2D[] expected = new Double2D[]{new Double2D(-180, -90), new Double2D(180, 90)};
-    assertEquals("0,0,0 without dateline failed", expected, SolrResource.bufferedTileBoundary(0, 0, 0, false));
+    double buffer = 180 * SolrResource.SOLR_QUERY_BUFFER_PERCENTAGE;
+
+    // Tile 0/0/0 and 0/1/0, no dateline
+    // ■□
+    Double2D[] expectedWest = new Double2D[]{new Double2D(-180 - buffer, -90), new Double2D(  0 + buffer, 90)};
+    assertEquals("0/0/0 without dateline failed", expectedWest, SolrResource.bufferedTileBoundary(0, 0, 0, true));
+
+    // □■
+    Double2D[] expectedEast = new Double2D[]{new Double2D(   0 - buffer, -90), new Double2D(180 + buffer, 90)};
+    assertEquals("0/1/0 without dateline failed", expectedEast, SolrResource.bufferedTileBoundary(0, 1, 0, true));
 
     // zoom 1, with dateline
-    buffer = 180 * SolrResource.SOLR_QUERY_BUFFER_PERCENTAGE;
-    expected = new Double2D[]{new Double2D(180 - buffer, 0 - buffer), new Double2D(0 + buffer, 90)};
-    assertEquals("1,0,0 with dateline failed", expected, SolrResource.bufferedTileBoundary(1, 0, 0, true));
+    buffer /= 2;
+
+    // ■□□□
+    // □□□□
+    Double2D[] expectedNW = new Double2D[]{new Double2D(-180 - buffer, 0 - buffer), new Double2D(-90 + buffer,         90)};
+    assertEquals("1/0/0 with dateline failed", expectedNW, SolrResource.bufferedTileBoundary(1, 0, 0, true));
+
+    // □□□□
+    // □□□■
+    Double2D[] expectedSE = new Double2D[]{new Double2D(  90 - buffer,        -90), new Double2D(180 + buffer, 0 + buffer)};
+    assertEquals("1/3/3 with dateline failed", expectedSE, SolrResource.bufferedTileBoundary(1, 3, 1, true));
   }
-
-
 }

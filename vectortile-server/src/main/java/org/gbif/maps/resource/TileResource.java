@@ -5,6 +5,7 @@ import org.gbif.maps.common.filter.PointFeatureFilters;
 import org.gbif.maps.common.filter.Range;
 import org.gbif.maps.common.filter.VectorTileFilters;
 import org.gbif.maps.common.projection.TileProjection;
+import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
 import org.gbif.maps.io.PointFeature;
 
@@ -43,7 +44,7 @@ import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
 import static org.gbif.maps.resource.Params.HEX_TILE_SIZE;
 
 /**
- * The tile resource for the simple gbif data layers (i.e. HBase sourced, preprocessed).
+ * The tile resource for the simple GBIF data layers (i.e. HBase sourced, preprocessed).
  */
 @Path("/occurrence/density")
 @Singleton
@@ -176,7 +177,7 @@ public final class TileResource {
       VectorTileEncoder encoder = new VectorTileEncoder(POINT_TILE_SIZE, POINT_TILE_BUFFER, false);
 
       PointFeatureFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, features.getFeaturesList(),
-                                                projection, z, x, y, POINT_TILE_SIZE, POINT_TILE_BUFFER,
+                                                projection, TileSchema.fromSRS(srs), z, x, y, POINT_TILE_SIZE, POINT_TILE_BUFFER,
                                                 years, basisOfRecords);
 
       return encoder.encode();

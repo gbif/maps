@@ -50,6 +50,25 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.6.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>org.gbif.maps.TileServerApplication</mainClass>
+          <arguments>
+            <argument>server</argument>
+            <argument>server.conf</argument>
+          </arguments>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 

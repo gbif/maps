@@ -3,6 +3,7 @@ package org.gbif.maps.resource;
 import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.TileProjection;
+import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
 import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapRequest;
 import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapRequestProvider;
@@ -139,8 +140,8 @@ public final class SolrResource {
               // convert the lat,lng into pixel coordinates
               Double2D swGlobalXY = projection.toGlobalPixelXY(maxYAsNorm, minXAsNorm, z);
               Double2D neGlobalXY = projection.toGlobalPixelXY(minYAsNorm, maxXAsNorm, z);
-              Double2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, z, x, y, tileSize, bufferSize);
-              Double2D neTileXY = Tiles.toTileLocalXY(neGlobalXY, z, x, y, tileSize, bufferSize);
+              Double2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
+              Double2D neTileXY = Tiles.toTileLocalXY(neGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
 
               int minX = (int) swTileXY.getX();
               int maxX = (int) neTileXY.getX();
@@ -254,26 +255,21 @@ public final class SolrResource {
   @VisibleForTesting
   static Double2D[] bufferedTileBoundary(int z, long x, long y, boolean adjustDateline) {
     int tilesPerZoom = 1 << z;
-    double degsPerTile = 360d/tilesPerZoom;
-    double bufferDegrees = SOLR_QUERY_BUFFER_PERCENTAGE * degsPerTile;
+    double degreesPerTile = 180d/tilesPerZoom;
+    double bufferDegrees = SOLR_QUERY_BUFFER_PERCENTAGE * degreesPerTile;
 
     // the edges of the tile after buffering
-    double minLng = (degsPerTile * x) - 180 - bufferDegrees;
-    double maxLng = minLng + degsPerTile + (bufferDegrees * 2);
-    double maxLat = 180 - (degsPerTile * y) + bufferDegrees; // EPSG:4326 covers only half the space vertically, hence 180
-    double minLat = maxLat - degsPerTile - (bufferDegrees * 2);
+    double minLng = (degreesPerTile * x) - 180 - bufferDegrees;
+    double maxLng = minLng + degreesPerTile + (bufferDegrees * 2);
+
+    double maxLat = 90 - (degreesPerTile * y) + bufferDegrees;
+    double minLat = maxLat - degreesPerTile - 2*bufferDegrees;
 
     // handle the dateline wrapping (for all zooms above 0, which needs special attention)
-    if (z>0 && adjustDateline) {
-      minLng = minLng < -180 ? minLng + 360 : minLng;
-      maxLng = maxLng > 180 ? maxLng - 360 : maxLng;
-    }
 
     // clip the extent (SOLR barfs otherwise)
     maxLat = Math.min(maxLat, 90);
     minLat = Math.max(minLat, -90);
-    maxLng = Math.min(maxLng, 180);
-    minLng = Math.max(minLng, -180);
 
     return new Double2D[] {new Double2D(minLng, minLat), new Double2D(maxLng, maxLat)};
   }

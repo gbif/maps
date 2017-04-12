@@ -13,7 +13,7 @@ import org.gbif.maps.common.hbase.ModulusSalt
 import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord
-import org.slf4j.LoggerFactory
+import org.slf4j.{LoggerFactory, Marker, MarkerFactory}
 
 import scala.collection.mutable.{Map => MMap}
 import scala.collection.{Set, mutable}
@@ -63,10 +63,10 @@ object BackfillTiles {
         // locate the tile and pixel we are dealing with
         val zoom = projectionConfig.maxZoom.asInstanceOf[Byte]
         val globalXY = projection.toGlobalPixelXY(lat, lng, zoom) // global pixel address space
-        val tileXY = Tiles.toTileXY(globalXY, zoom, projectionConfig.tileSize) // addressed the tile
+        val tileXY = Tiles.toTileXY(globalXY, projectionConfig.tileSchema, zoom, projectionConfig.tileSize) // addressed the tile
         val x = tileXY.getX
         val y = tileXY.getY
-        val tileLocalXY = Tiles.toTileLocalXY(globalXY, projectionConfig.maxZoom, x, y, projectionConfig.tileSize,
+        val tileLocalXY = Tiles.toTileLocalXY(globalXY, projectionConfig.tileSchema, projectionConfig.maxZoom, x, y, projectionConfig.tileSize,
           config.tilePyramid.tileBufferSize) // pixels on the tile
         val pixel = Pixel(tileLocalXY.getX.asInstanceOf[Short], tileLocalXY.getY.asInstanceOf[Short]) // note: rounds here
         val encPixel = encodePixel(pixel)
@@ -139,7 +139,7 @@ object BackfillTiles {
       tiles3 = tiles3.flatMap(t => {
         val result = mutable.ArrayBuffer[((String, String), OccurrenceDensityTile)]()
         val mapKey = t._1._1
-        val tiles = t._2.flatMapToBuffers(downscale, true)
+        val tiles = t._2.flatMapToBuffers(projectionConfig.tileSchema, downscale)
         for (tile <- tiles) {
           result += (((mapKey, tile.getZXY().toString), tile.asInstanceOf[OccurrenceDensityTile]))
         }

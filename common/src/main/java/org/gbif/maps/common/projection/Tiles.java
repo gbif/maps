@@ -9,7 +9,7 @@ public class Tiles {
    * Factory of TileProjection for the given ESPG code.
    * @param epsg That defines the projection
    * @param size Of the tile in use
-   * @return The Tileprojection for the EPSG
+   * @return The TileProjection for the EPSG
    * @throws IllegalArgumentException If the EPSG is not supported
    */
   public static TileProjection fromEPSG(String epsg, int size) throws IllegalArgumentException {
@@ -31,25 +31,32 @@ public class Tiles {
   /**
    * Converts the pixel from global addressing to an address local to the tile identified.
    * @param globalPixelXY To convert
+   * @param schema The tile schema to follow
    * @param z The zoom address of the tile we wish local addressing for
    * @param x The x address of the tile we wish local addressing for
    * @param y The y address of the tile we wish local addressing for
    * @param tileSize The tile size
+   * @param bufferSize The buffer size
    * @return The pixel XY local to the tile in question
    */
-  public static Double2D toTileLocalXY(Double2D globalPixelXY, int z, long x, long y, int tileSize, int bufferSize) {
-    long numTilesAtZoom = 1<<z;
+  public static Double2D toTileLocalXY(Double2D globalPixelXY, TileSchema schema, int z, long x, long y, int tileSize, int bufferSize) {
+    long numTilesAtZoom = schema.getZzTilesHorizontal() * 1<<z;
     long maxGlobalPixelAddress = numTilesAtZoom * tileSize;
 
-    double dateLineAdjustedX = globalPixelXY.getX();
-    if (z>0 && x==0 && globalPixelXY.getX()>=maxGlobalPixelAddress-bufferSize) {
-      dateLineAdjustedX -= maxGlobalPixelAddress;
+    double localX = globalPixelXY.getX() - x * tileSize;
+    double localY = globalPixelXY.getY() - y * tileSize;
 
-    } else if (z>0 && x==numTilesAtZoom-1 && globalPixelXY.getX()<bufferSize) {
-      dateLineAdjustedX += maxGlobalPixelAddress;
+    if (schema.isWrapX()) {
+      if (schema.getZzTilesHorizontal() > 1 || z > 0) { // Don't wrap when the single tile is the global tile
+        if (x == 0 && globalPixelXY.getX() >= maxGlobalPixelAddress - bufferSize) {
+          localX = globalPixelXY.getX() - maxGlobalPixelAddress - x * tileSize;
+        } else if (x == numTilesAtZoom - 1 && globalPixelXY.getX() < bufferSize) {
+          localX = globalPixelXY.getX() + maxGlobalPixelAddress - x * tileSize;
+        }
+      }
     }
 
-    return new Double2D(dateLineAdjustedX - x * tileSize, globalPixelXY.getY() - y * tileSize);
+    return new Double2D(localX, localY);
   }
 
   /**
@@ -61,9 +68,9 @@ public class Tiles {
    *
    * @return The tile XY address
    */
-  public static Long2D toTileXY(Double2D globalPixelXY, int z, int tileSize) {
-    long x = (long) Math.min(Math.max(globalPixelXY.getX() / tileSize, 0), Math.pow(2, z) - 1);
-    long y = (long) Math.min(Math.max(globalPixelXY.getY() / tileSize, 0), Math.pow(2, z) - 1);
+  public static Long2D toTileXY(Double2D globalPixelXY, TileSchema schema, int z, int tileSize) {
+    long x = (long) Math.min(Math.max(globalPixelXY.getX() / tileSize, 0), Math.pow(2, z+schema.getZzTilesHorizontal()-1) - 1);
+    long y = (long) Math.min(Math.max(globalPixelXY.getY() / tileSize, 0), Math.pow(2, z+schema.getZzTilesVertical()-1) - 1);
     return new Long2D(x, y);
   }
 

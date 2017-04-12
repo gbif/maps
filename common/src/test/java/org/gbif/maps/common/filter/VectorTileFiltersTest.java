@@ -16,6 +16,7 @@ import no.ecc.vectortile.VectorTileDecoder;
 import no.ecc.vectortile.VectorTileEncoder;
 import org.junit.Test;
 
+import static org.gbif.maps.common.projection.TileSchema.WEB_MERCATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -67,14 +68,14 @@ public class VectorTileFiltersTest {
     // add all features in "layer1"
     Set<String> bors = ImmutableSet.of("observation", "specimen");
     Range years = new Range(2012, 2013);
-    VectorTileFilters.collectInVectorTile(encoder, "layer1", sourceTile, 1, 1, 0, 1, 0, 512, 25, years, bors, true);
+    VectorTileFilters.collectInVectorTile(encoder, "layer1", sourceTile, WEB_MERCATOR, 1, 1, 0, 1, 0, 512, 25, years, bors, true);
 
     // collect the data into "layer1" but this time indicating it comes from a tile that is the
     // NW quadrant of the world
-    VectorTileFilters.collectInVectorTile(encoder, "layer1", sourceTile, 1, 1, 0, 0, 0, 512, 25, years, bors, true);
+    VectorTileFilters.collectInVectorTile(encoder, "layer1", sourceTile, WEB_MERCATOR, 1, 1, 0, 0, 0, 512, 25, years, bors, true);
 
     // collect into "layer2" which should be ignored completely
-    VectorTileFilters.collectInVectorTile(encoder, "layer2", sourceTile, 1, 1, 0, 1, 0, 512, 25, years, bors, true);
+    VectorTileFilters.collectInVectorTile(encoder, "layer2", sourceTile, WEB_MERCATOR, 1, 1, 0, 1, 0, 512, 25, years, bors, true);
 
 
     // build the vector tile to test the output

@@ -1,6 +1,8 @@
 package org.gbif.maps.tile
 
-import scala.collection.mutable.{Map => MMap, Set => MSet}
+import org.gbif.maps.common.projection.TileSchema
+
+import scala.collection.mutable.{Set => MSet}
 
 /**
   * Utilities for dealing with tiles.
@@ -24,12 +26,12 @@ private[tile] object TileUtils {
     * pixels from one zoom to a zoom 1 level higher which is a performance optimisation (can be done in a single pass
     * of the source tile).
     *
+    * @param tileSchema The tile schema
     * @param zxy The tile address
     * @param downscale If the tile is being downscaled at the same time as buffering
-    * @param wrapDateline True if the dateline should wrap
     * @return The regions that are of interest
     */
-  def bufferRegions(zxy: ZXY, downscale: Boolean , wrapDateline: Boolean) : Set[Region.Value] = {
+  def bufferRegions(tileSchema: TileSchema, zxy: ZXY, downscale: Boolean) : Set[Region.Value] = {
     // initialise the result, knowing that our own canvas is always of interest
     val result = MSet[Region.Value](Region.TILE)
 
@@ -49,7 +51,7 @@ private[tile] object TileUtils {
     }
 
     val targetZ = if (downscale) zxy.z - 1 else zxy.z
-    val maxTileAddress = maxTileAddressForZoom(targetZ)
+    val (maxXTileAddress, maxYTileAddress) = maxTileAddressForZoom(tileSchema, targetZ)
     val targetX = if (downscale) zxy.x >>> 1 else zxy.x
     val targetY = if (downscale) zxy.y >>> 1 else zxy.y
 
@@ -57,18 +59,18 @@ private[tile] object TileUtils {
     if (targetY == 0) {
       result -=(Region.N, Region.NE, Region.NW) // nothing north of us
     }
-    if (targetY == maxTileAddress) {
+    if (targetY == maxYTileAddress) {
       result -=(Region.S, Region.SE, Region.SW) // nothing south of us
     }
-    if (targetX == 0 && !wrapDateline) {
+    if (targetX == 0 && !tileSchema.isWrapX) {
       result -=(Region.NW, Region.W, Region.SW) // nothing west of us
     }
-    if (targetX == maxTileAddress && !wrapDateline) {
+    if (targetX == maxXTileAddress && !tileSchema.isWrapX) {
       result -=(Region.NE, Region.E, Region.SE) // nothing east of us
     }
 
     // special case for when z was already 0, not covered by the rules above
-    if (zxy.z == 0 && wrapDateline) {
+    if (zxy.z == 0 && tileSchema.isWrapX) {
       result ++= Set(Region.E, Region.W)
     }
     return result.toSet
@@ -90,7 +92,7 @@ private[tile] object TileUtils {
     * @return The pixel adjusted to the coordinate referencing system of the target tile
     */
   def adjustPixelForBuffer(pixel: Pixel, region: Region.Value, tileSize: Int, bufferSize: Int) : Option[Pixel] = {
-    // convience container describing the filter to test and the adjustment to make
+    // convenience container describing the filter to test and the adjustment to make
     case class Adjustment (minX: Int, minY: Int, maxX: Int, maxY: Int, offsetX: Int, offsetY: Int)
 
     // Depending on the region we apply different adjustments to the pixel location.  E.g. a pixel destined to the
@@ -129,7 +131,7 @@ private[tile] object TileUtils {
     * @param direction To indicate which adjacent tile is being requested
     * @return The address of the tile adjacent to the current tile in the direction specified
     */
-  def adjacentTileZXY(zxy:ZXY, direction: Region.Value): ZXY = {
+  def adjacentTileZXY(tileSchema: TileSchema, zxy:ZXY, direction: Region.Value): ZXY = {
     val address = direction match {
       case Region.TILE => zxy
       case Region.N => new ZXY(zxy.z, zxy.x, zxy.y - 1)
@@ -143,7 +145,7 @@ private[tile] object TileUtils {
     }
 
     // handle wrapping across the dateline
-    val maxTileAddress = maxTileAddressForZoom(zxy.z)
+    val (maxTileAddress, _) = maxTileAddressForZoom(tileSchema, zxy.z)
     val x = address.x match {
       case t if t>maxTileAddress => 0
       case t if t<0 => maxTileAddress
@@ -154,12 +156,12 @@ private[tile] object TileUtils {
   }
 
   /**
-    * Returns the maximum tile X or Y address for the given zoom.
+    * Returns the (maximum tile X address, maximum tile Y address) for the given zoom.
     * @param zoom The zoom level
     * @return The maximum address on the grid
     */
-  def maxTileAddressForZoom(zoom:Int) : Long= {
-    (1 << zoom) - 1
+  def maxTileAddressForZoom(tileSchema: TileSchema, zoom: Int) : (Long, Long) = {
+    ( (tileSchema.getZzTilesHorizontal << zoom) - 1, (tileSchema.getZzTilesVertical << zoom) - 1 )
   }
 
   /**
@@ -194,4 +196,3 @@ private[tile] object TileUtils {
     return zxy
   }
 }
-

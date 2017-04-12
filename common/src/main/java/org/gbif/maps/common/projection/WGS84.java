@@ -4,10 +4,9 @@ package org.gbif.maps.common.projection;
  * This simply plots the coordinates in world space performing no further projection.
  * Notes:
  * <ul>
- *   <li>WGS84 might not be the best name for this.  It could be called a plate carreé projection for example but that
- *   is somewhat ambigious</li>
- *   <li>There is confusion as to what a slippy map should expect for Z0.  This implementation will result in a single
- *   square tile at zoom 0, with a buffer of empty space above and below the rectangular world</li>
+ *   <li>This is an equirectangular projection with the Equator and Prime Meridian as the meridians, usually called Plate Careé.</li>
+ *   <li>Tile schemes for projections other than Web Mercator aren't well-defined, but most tools default to two tiles
+ *   at zoom 0, covering the whole world.</li>
  * </ul>
  *
  * This class is threadsafe.
@@ -21,10 +20,11 @@ class WGS84 extends AbstractTileProjection {
 
   @Override
   public Double2D toGlobalPixelXY(double latitude, double longitude, int zoom) {
+    // Width and height of the area covered by the 0/0/0 tile (Western hemisphere) in pixels at this zoom.
     double pixels = (long) getTileSize() << zoom;
-    double pixelsPerDegree = pixels / 360;
+    double pixelsPerDegree = pixels / 180;
     double x = (longitude + 180) * pixelsPerDegree;
-    double y = pixels - ((latitude * pixelsPerDegree) + pixels/2);  // inverted since top is pixel 0
+    double y = (-latitude + 90) * pixelsPerDegree; // inverted since top is pixel 0
     return new Double2D(x,y);
   }
 

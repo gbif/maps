@@ -95,7 +95,9 @@ function createServer(config) {
 
           var map = new mapnik.Map(512, 512, mercator.proj4);
           map.fromStringSync(stylesheet);
-          var vt = new mapnik.VectorTile(z, x, y);
+          // Pretend it's tile 0, 0, since Mapnik validates the address according to the standard Google schema,
+          // and we aren't using it for WGS84.
+          var vt = new mapnik.VectorTile(z, 0, 0);
           vt.addDataSync(body);
 
           // important to include a buffer, to catch the overlaps
@@ -157,7 +159,7 @@ function exitHandler() {
 /**
  * The main entry point.
  * Extract the configuration and start the server.  This expects a config file in YAML format and a port
- * as the only arguments.  No sanitization is performed on the file existance or content.
+ * as the only arguments.  No sanitization is performed on the file existence or content.
  */
 try {
   process.on('SIGHUP', () => {console.log("Ignoring SIGHUP")});

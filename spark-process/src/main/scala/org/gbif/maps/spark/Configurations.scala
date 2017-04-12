@@ -13,6 +13,7 @@ import org.apache.hadoop.hbase.io.compress.Compression
 import org.apache.hadoop.hbase.mapreduce.{HFileOutputFormat, PatchedHFileOutputFormat2}
 import org.apache.hadoop.mapred.FileOutputFormat
 import org.apache.hadoop.mapreduce.Job
+import org.gbif.maps.common.projection.TileSchema
 
 /**
   * Utility builders
@@ -115,6 +116,7 @@ class ProjectionConfig  (
   val minZoom = Preconditions.checkNotNull(_minZoom, "minZoom cannot be null" : Object)
   val maxZoom = Preconditions.checkNotNull(_maxZoom, "maxZoom cannot be null" : Object)
   val srs = Preconditions.checkNotNull(_srs, "maxZoom cannot be null" : Object)
+  val tileSchema = TileSchema.fromSRS(srs)
 }
 
 /**

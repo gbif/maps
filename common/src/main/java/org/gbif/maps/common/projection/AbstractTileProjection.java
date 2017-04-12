@@ -2,11 +2,6 @@ package org.gbif.maps.common.projection;
 
 public abstract class AbstractTileProjection implements TileProjection {
 
-  /**
-   * The circumference of the Earth at the Equator in meters, as used by leaflet etc.
-   */
-  public static final double EARTH_CIRCUMFERENCE = 40_075_016.686;
-
   /*
    * Earth's authalic ("equal area") radius is the radius of a hypothetical perfect sphere that has the same surface
    * area as the reference ellipsoid.

@@ -13,7 +13,7 @@ import java.awt.geom.AffineTransform;
 class WGS84AntarcticPolarStereographic extends WGS84Azimuthal {
   static final String EPSG_CODE = "EPSG:3031";
 
-  // A tranform to convert from WGS84 coordinates into 3031 pixel space
+  // A transform to convert from WGS84 coordinates into 3031 pixel space
   private static final MathTransform TRANSFORM;
   static {
     try {
@@ -27,7 +27,7 @@ class WGS84AntarcticPolarStereographic extends WGS84Azimuthal {
    * Calculated with x-coordinate of
    * (Point) JTS.transform(GEOMETRY_FACTORY.createPoint(new Coordinate(0, 0)), TRANSFORM)
    */
-  static final double STEREOGRAPHIC_EXTENT = 12367396.21845986;
+  static final double STEREOGRAPHIC_EXTENT = 12_367_396.21845986;
 
   // An affine transform to move world coordinates into positive space addressing, so the lowest is 0,0
   static final AffineTransform OFFSET_TRANSFORM = AffineTransform.getTranslateInstance(STEREOGRAPHIC_EXTENT, STEREOGRAPHIC_EXTENT);
