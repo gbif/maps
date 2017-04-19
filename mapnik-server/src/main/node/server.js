@@ -45,13 +45,65 @@ var defaultStyle = "classic.point";
  *
  * Should this become more complex, then express or similar should be consider.
  */
-var assetsHTML = ['/v2/map/demo1.html', '/v2/map/demo2.html', '/v2/map/demo3.html', '/v2/map/demo4.html',
-  , '/v2/map/demo5.html', '/v2/map/demo6.html', '/v2/map/demo-cartodb.html']
-var assertsIcon = ['/favicon.ico']
+var assetsHTML = [
+  '/map/demo.html',
+  '/map/demo1.html',
+  '/map/demo2.html',
+  '/map/demo3.html',
+  '/map/demo4.html',
+  '/map/demo5.html',
+  '/map/demo6.html',
+  '/map/demo7.html',
+  '/map/demo8.html',
+  '/map/demo-cartodb.html'];
+
+function parseUrl(parsedRequest) {
+  if (parsedRequest.pathname.endsWith(".png")) {
+
+    // extract the x,y,z from the URL which could be /some/map/type/{z}/{x}/{y}@{n}x.png?srs=EPSG:4326&...
+    var dirs = parsedRequest.pathname.substring(0, parsedRequest.pathname.length - 7).split("/");
+    var z = parseInt(dirs[dirs.length - 3]);
+    var x = parseInt(dirs[dirs.length - 2]);
+    var y = parseInt(dirs[dirs.length - 1]);
+
+    // find the compiled stylesheet from the given style parameter, defaulting if omitted or bogus
+    var stylesheet = (parsedRequest.query.style in namedStyles)
+      ? namedStyles[parsedRequest.query.style]
+      : namedStyles[defaultStyle];
+
+    var density = parseInt(parsedRequest.pathname.substring(parsedRequest.pathname.length - 6, parsedRequest.pathname.length - 5));
+
+    if (!(isNaN(z) || isNaN(x) || isNaN(y) || isNaN(density))) {
+      return {
+        "z": z,
+        "x": x,
+        "y": y,
+        "density": density,
+        "stylesheet": stylesheet
+      }
+    }
+  }
+  throw Error("URL structure is invalid, expected /some/map/type/{z}/{x}/{y}@{n}x.png?srs=EPSG:4326&...");
+}
+
+function vectorRequest(parsedRequest) {
+  // reformat the request to the type expected by the VectorTile Server
+  // Remove raster parameters, to improve cacheability
+  delete parsedRequest.query.style;
+  delete parsedRequest.search; // Must be removed to force regeneration of query string
+  parsedRequest.pathname = parsedRequest.pathname.replace("@1x.png", ".mvt");
+  parsedRequest.pathname = parsedRequest.pathname.replace("@2x.png", ".mvt");
+  parsedRequest.pathname = parsedRequest.pathname.replace("@3x.png", ".mvt");
+  parsedRequest.pathname = parsedRequest.pathname.replace("@4x.png", ".mvt");
+  parsedRequest.hostname = config.tileServer.host;
+  parsedRequest.port = config.tileServer.port;
+  parsedRequest.protocol = "http:";
+  return url.format(parsedRequest);
+}
 
 function createServer(config) {
   return http.createServer(function(req, res) {
-    console.log("Request: "+req.url);
+    console.log("Request:", req.url);
 
     var parsedRequest = url.parse(req.url, true)
 
@@ -60,87 +112,85 @@ function createServer(config) {
       res.writeHead(200, {'Content-Type': 'text/html'});
       res.end(fs.readFileSync('./public' + parsedRequest.path));
 
-    } else if (assertsIcon.indexOf(parsedRequest.path) != -1) {
-      res.writeHead(200, {'Content-Type': 'image/x-icon'});
-      res.end(fs.readFileSync('./public' + parsedRequest.path));
+    } else {
+      // Handle map tiles.
 
-    } else if (parsedRequest.pathname.indexOf(".png") == parsedRequest.pathname.length - 4) {
+      try {
+        var parameters = parseUrl(parsedRequest);
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'text/plain' });
+        res.end(e.message);
+        return;
+      }
 
-      // reformat the request to the type expected by the VectorTile Server
-      parsedRequest.pathname = parsedRequest.pathname.replace("png", "mvt");
-      parsedRequest.hostname = config.tileServer.host;
-      parsedRequest.port = config.tileServer.port;
-      parsedRequest.protocol = "http:";
-      var tileUrl = url.format(parsedRequest);
-      //console.log("Fetching tile: "+tileUrl);
-
-      // extract the x,y,z from the URL which could be /some/map/type/{z}/{x}/{y}.mvt?srs=EPSG:4326
-      var dirs = parsedRequest.pathname.substring(0, parsedRequest.pathname.length - 4).split("/");
-      var x = parseInt(dirs[dirs.length - 2]);
-      var y = parseInt(dirs[dirs.length - 1]);
-      var z = parseInt(dirs[dirs.length - 3]);
-
-      // find the compiled stylesheet from the given style parameter, defaulting if omitted or bogus
-      var style = (parsedRequest.query.style !== undefined && parsedRequest.query.style) ?
-                  parsedRequest.query.style : defaultStyle;
-      var stylesheet = namedStyles[style];
-      stylesheet = (stylesheet !== undefined && stylesheet) ? stylesheet : namedStyles[defaultStyle];
+      var vectorTileUrl = vectorRequest(parsedRequest);
 
       // issue the request to the vector tile server and render the tile as a PNG using Mapnik
+      console.log("Fetching vector tile:", vectorTileUrl);
       //console.time("getTile");
-      request.get({url: tileUrl, method: 'GET', encoding: null}, function (error, response, body) {
+      request.get({url: vectorTileUrl, method: 'GET', encoding: null}, function (error, response, body) {
+
+        console.log("Vector tile has HTTP status", response.statusCode, "and size", body.length);
 
         if (!error && response.statusCode == 200 && body.length > 0) {
           //console.timeEnd("getTile");
 
-          var map = new mapnik.Map(512, 512, mercator.proj4);
-          map.fromStringSync(stylesheet);
-          // Pretend it's tile 0, 0, since Mapnik validates the address according to the standard Google schema,
-          // and we aren't using it for WGS84.
-          var vt = new mapnik.VectorTile(z, 0, 0);
-          vt.addDataSync(body);
+          var size = 512 * parameters.density;
 
-          // important to include a buffer, to catch the overlaps
-          //console.time("render");
-          vt.render(map, new mapnik.Image(512, 512), {"buffer_size": 8}, function (err, image) {
-            if (err) {
-              res.end(err.message);
-            } else {
-              res.writeHead(200, {
-                'Content-Type': 'image/png',
-                'Access-Control-Allow-Origin': '*',
-                'Cache-Control': 'max-age=600, must-revalidate'    // TODO: configurify the cache control!
-              });
-              //console.timeEnd("render");
-              image.encode('png', function (err, buffer) {
+          try {
+            var map = new mapnik.Map(size, size, mercator.proj4);
+            map.fromStringSync(parameters.stylesheet);
+            // Pretend it's tile 0, 0, since Mapnik validates the address according to the standard Google schema,
+            // and we aren't using it for WGS84.
+            var vt = new mapnik.VectorTile(parameters.z, 0, 0);
+            vt.addDataSync(body);
 
-                if (err) {
-                  res.end(err.message);
-                } else {
-                  res.end(buffer);
-                }
-              });
-            }
-          });
+            // important to include a buffer, to catch the overlaps
+            //console.time("render");
+            vt.render(map, new mapnik.Image(size, size), {"buffer_size": 8, "scale": parameters.density}, function (err, image) {
+              if (err) {
+                res.end(err.message);
+              } else {
+                res.writeHead(200, {
+                  'Content-Type': 'image/png',
+                  'Access-Control-Allow-Origin': '*',
+                  'Cache-Control': 'max-age=600, must-revalidate'    // TODO: configure the cache control!
+                });
+                //console.timeEnd("render");
+                image.encode('png', function (err, buffer) {
+
+                  if (err) {
+                    res.end(err.message);
+                  } else {
+                    res.end(buffer);
+                  }
+                });
+              }
+            });
+          } catch (e) {
+            // something went wrong
+            res.writeHead(500, {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
+            res.end(e.message);
+            console.log(e);
+          }
+
         } else if (!error && (
             response.statusCode == 404 ||   // not found
             response.statusCode == 204 ||   // no content
             (response.statusCode == 200 && body.length==0))  // accepted but no content
           ) {
           // no tile
-          res.writeHead(204, {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
+          res.writeHead((response.statusCode == 200) ? 204 : response.statusCode, // keep same status code
+            {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
           res.end();
 
         } else {
           // something went wrong
-          res.writeHead(500, {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
+          res.writeHead(503, {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
           res.end();
         }
       })
 
-    } else {
-      res.writeHead(500, { 'Content-Type': 'text/plain' });
-      res.end('Expected a tile URL in the form of /{map-path}/{z}/{x}/{y}.png?{params}');
     }
   });
 }
@@ -180,7 +230,7 @@ try {
   console.log("Using config: " + configFile);
   console.log("Using port: " + port);
   var config = yaml.load(fs.readFileSync(configFile, "utf8"));
-  server = createServer(config)
+  var server = createServer(config)
   server.listen(port);
 
   // Set up ZooKeeper.

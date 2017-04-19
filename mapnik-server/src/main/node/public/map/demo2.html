@@ -1,13 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Maps</title>
+  <title>Maps Demo 2</title>
   <meta charset="utf-8" />
-
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <link rel="icon" href="//tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-dark"/>
+  <style>
+    html, body, #map {
+      height: 100%;
+      padding: 0;
+      margin: 0;
+      background-color: black;
+    }
+  </style>
   <link rel="stylesheet" href="https://npmcdn.com/leaflet@1.0.0-rc.3/dist/leaflet.css" />
 </head>
 <body>
-  <div id="map" style="width: 100%; height: 700px; background-color: #000"></div>
+  <div id="map"></div>
   <script src="https://npmcdn.com/leaflet@1.0.0-rc.3/dist/leaflet.js"></script>
   <script>
 
@@ -50,10 +59,8 @@
       return new L.GBIFSimple(url, options);
     };
 
-    L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}.png',
+    L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}@1x.png',
       {style: "classic.poly", bin:"hex", hexPerTile:27, taxonKey:"9703", detectRetina: false}).addTo(map);
-
-
   </script>
 </body>
 </html>

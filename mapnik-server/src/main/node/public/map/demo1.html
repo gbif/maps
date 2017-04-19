@@ -1,17 +1,24 @@
-
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Maps</title>
+  <title>Maps Demo 1</title>
   <meta charset="utf-8" />
-
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <link rel="icon" href="//tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-dark"/>
+  <style>
+    html, body, #map {
+      height: 100%;
+      padding: 0;
+      margin: 0;
+      background-color: black;
+    }
+  </style>
   <link rel="stylesheet" href="https://npmcdn.com/leaflet@1.0.0-rc.3/dist/leaflet.css" />
 </head>
 <body>
-  <div id="map" style="width: 1000px; height: 500px; background-color: #848A8E"></div>
+  <div id="map"></div>
   <script src="https://npmcdn.com/leaflet@1.0.0-rc.3/dist/leaflet.js"></script>
   <script>
-
     var map = L.map('map').setView(new L.LatLng(0, 0), 1);
 
     L.GBIFSimple = L.TileLayer.extend({
@@ -51,11 +58,9 @@
       return new L.GBIFSimple(url, options);
     };
 
-    //L.gbifSimpleLayer('./api/solr/{z}/{x}/{y}.png?datasetKey=83e20573-f7dd-4852-9159-21566e1e691e', {style: "classicPoly"}).addTo(map);
-    L.gbifSimpleLayer('./occurrence/adhoc/{z}/{x}/{y}.png',
-      {style: "classic.poly", taxonKey:"9703", bin:"hex", hexPerTile:17}).addTo(map);
 
-
+    L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}@1x.png',
+      {srs: "EPSG:3857", style: "greenHeat.point"}).addTo(map);
   </script>
 </body>
 </html>

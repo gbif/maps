@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Maps Demo 6</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <link rel="icon" href="//tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-light"/>
+  <style>
+    html, body, #map {
+      height: 100%;
+      padding: 0;
+      margin: 0;
+      background-color: ghostwhite;
+    }
+  </style>
+  <link rel="stylesheet" href="//tile.gbif.org/ui/leaflet.css" type="text/css">
+  <script src="//tile.gbif.org/ui/leaflet-src.js"></script>
+  <script src="//tile.gbif.org/ui/proj4.js"></script>
+  <script src="//tile.gbif.org/ui/proj4leaflet.js"></script>
+</head>
+<body>
+<div id="map"></div>
+<script>
+  var pixel_ratio = window.devicePixelRatio || 1;
+
+  var max_zoom = 16;
+  var tile_size = 512;
+
+  var extent = 180.0;
+  var resolutions = Array(max_zoom + 1).fill().map((_, i) => ( extent / tile_size / Math.pow(2, i) ));
+
+  var crs = new L.Proj.CRS(
+          'EPSG:4326',
+          '+proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees',
+          {
+            origin: [-180.0, 90.0],
+            bounds: L.bounds([-180, 90], [180, -90]),
+            resolutions: resolutions
+          }
+  );
+
+  var map = L.map('map', {
+    crs: crs
+  }).setView([0, 0], 1);
+
+  L.tileLayer('//tile.gbif.org/4326/omt/{z}/{x}/{y}@'+pixel_ratio+'x.png?style=gbif-light', {
+    tileSize: tile_size
+  }).addTo(map);
+
+  L.GBIFSimple = L.TileLayer.extend({
+    options: {
+      attribution: 'GBIF.org',
+      errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', // empty tile
+    },
+
+    defaultGBIFParams: {
+      style: "classic",
+      srs: "EPSG:4326"
+    },
+
+    initialize: function (url, options) {
+      this._url = url;
+
+      // all keys that are not TileLayer options go to GBIF params
+      var gbifParams = L.extend({}, this.defaultGBIFParams);
+      for (var i in options) {
+        if (!(i in this.options)) {
+          gbifParams[i] = options[i];
+        }
+      }
+
+      options = L.setOptions(this, options);
+      this.gbifParams = gbifParams;
+    },
+
+    getTileUrl: function (coords) {
+      var url = L.TileLayer.prototype.getTileUrl.call(this, coords);
+      return url + L.Util.getParamString(this.gbifParams, url)
+    },
+  });
+
+  L.gbifSimpleLayer = function (url, options) {
+    return new L.GBIFSimple(url, options);
+  };
+
+  L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}@'+pixel_ratio+'x.png',
+          {style: "outline.poly", bin: "hex", "hexPerTile": 10,  year:"2000,2016", taxonKey:212, tileSize: 512}).addTo(map);
+
+  L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}@'+pixel_ratio+'x.png',
+          {style: "blue.marker", bin: "hex", "hexPerTile": 10,  year:"2000,2016", taxonKey:212, tileSize: 512}).addTo(map);
+</script>
+</body>
+</html>

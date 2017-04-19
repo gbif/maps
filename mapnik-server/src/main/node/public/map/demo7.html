@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Maps Demo 7</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <link rel="icon" href="//tile.gbif.org/3575/omt/0/0/0@1x.png?style=gbif-classic"/>
+  <style>
+    html, body, #map {
+      height: 100%;
+      padding: 0;
+      margin: 0;
+      background-color: ghostwhite;
+    }
+  </style>
+  <link rel="stylesheet" href="//tile.gbif.org/ui/leaflet.css" type="text/css">
+  <script src="//tile.gbif.org/ui/leaflet-src.js"></script>
+  <script src="//tile.gbif.org/ui/proj4.js"></script>
+  <script src="//tile.gbif.org/ui/proj4leaflet.js"></script>
+</head>
+<body>
+<div id="map"></div>
+<script>
+  var pixel_ratio = window.devicePixelRatio || 1;
+
+  var max_zoom = 16;
+  var tile_size = 512;
+
+  var extent = Math.sqrt(2) * 6371007.2;
+  var resolutions = Array(max_zoom + 1).fill().map((_, i) => ( extent / tile_size / Math.pow(2, i-1) ));
+
+  var crs = new L.Proj.CRS(
+          'EPSG:3575',
+          '+proj=laea +lat_0=90 +lon_0=10 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs',
+          {
+            origin: [-extent, extent],
+            projectedBounds: L.bounds(L.point(-extent, extent), L.point(extent, -extent)),
+            resolutions: resolutions
+          }
+  );
+
+  var map = L.map('map', {
+    crs: crs,
+  }).setView([83, -38], 2);
+
+  // This gets round a bug, when Leaflet tries to find the coordinates for pixels outside the projection (e.g. top left corner of top left tile).
+  // https://github.com/kartena/Proj4Leaflet/issues/82
+  // Restricting the view is probably necessary to avoid the problem properly.  Or fixing the problem properly.
+  try {
+    L.tileLayer('//tile.gbif.org/3575/omt/{z}/{x}/{y}@'+pixel_ratio+'x.png?style=gbif-classic', {
+      tileSize: 512,
+      minZoom: 0,
+      maxZoom: 14
+    }).addTo(map);
+  }
+  catch (err) {
+    console.error(err);
+  }
+
+  L.GBIFSimple = L.TileLayer.extend({
+    options: {
+      attribution: 'GBIF.org',
+      errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', // empty tile
+    },
+
+    defaultGBIFParams: {
+      style: "classic",
+      srs: "EPSG:3575"
+    },
+
+    initialize: function (url, options) {
+      this._url = url;
+
+      // all keys that are not TileLayer options go to GBIF params
+      var gbifParams = L.extend({}, this.defaultGBIFParams);
+      for (var i in options) {
+        if (!(i in this.options)) {
+          gbifParams[i] = options[i];
+        }
+      }
+
+      options = L.setOptions(this, options);
+      this.gbifParams = gbifParams;
+    },
+
+    getTileUrl: function (coords) {
+      var url = L.TileLayer.prototype.getTileUrl.call(this, coords);
+      return url + L.Util.getParamString(this.gbifParams, url)
+    },
+  });
+
+  L.gbifSimpleLayer = function (url, options) {
+    return new L.GBIFSimple(url, options);
+  };
+
+  try {
+    L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}@'+pixel_ratio+'x.png',
+            {style: "classic.point", taxonKey:2481433, tileSize: 512}).addTo(map);
+  }
+  catch (err) {
+    console.error(err);
+  }
+</script>
+</body>
+</html>
