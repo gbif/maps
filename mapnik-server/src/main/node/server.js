@@ -97,6 +97,7 @@ function vectorRequest(parsedRequest) {
   parsedRequest.pathname = parsedRequest.pathname.replace("@4x.png", ".mvt");
   parsedRequest.hostname = config.tileServer.host;
   parsedRequest.port = config.tileServer.port;
+  parsedRequest.pathname = config.tileServer.prefix + parsedRequest.pathname;
   parsedRequest.protocol = "http:";
   return url.format(parsedRequest);
 }
@@ -130,67 +131,75 @@ function createServer(config) {
       //console.time("getTile");
       request.get({url: vectorTileUrl, method: 'GET', encoding: null}, function (error, response, body) {
 
-        console.log("Vector tile has HTTP status", response.statusCode, "and size", body.length);
+        if (!error) {
+          console.log("Vector tile has HTTP status", response.statusCode, "and size", body.length);
 
-        if (!error && response.statusCode == 200 && body.length > 0) {
-          //console.timeEnd("getTile");
+          if (response.statusCode == 200 && body.length > 0) {
+            //console.timeEnd("getTile");
 
-          var size = 512 * parameters.density;
+            var size = 512 * parameters.density;
 
-          try {
-            var map = new mapnik.Map(size, size, mercator.proj4);
-            map.fromStringSync(parameters.stylesheet);
-            // Pretend it's tile 0, 0, since Mapnik validates the address according to the standard Google schema,
-            // and we aren't using it for WGS84.
-            var vt = new mapnik.VectorTile(parameters.z, 0, 0);
-            vt.addDataSync(body);
+            try {
+              var map = new mapnik.Map(size, size, mercator.proj4);
+              map.fromStringSync(parameters.stylesheet);
+              // Pretend it's tile 0, 0, since Mapnik validates the address according to the standard Google schema,
+              // and we aren't using it for WGS84.
+              var vt = new mapnik.VectorTile(parameters.z, 0, 0);
+              vt.addDataSync(body);
 
-            // important to include a buffer, to catch the overlaps
-            //console.time("render");
-            vt.render(map, new mapnik.Image(size, size), {"buffer_size": 8, "scale": parameters.density}, function (err, image) {
-              if (err) {
-                res.end(err.message);
-              } else {
-                res.writeHead(200, {
-                  'Content-Type': 'image/png',
-                  'Access-Control-Allow-Origin': '*',
-                  'Cache-Control': 'max-age=600, must-revalidate'    // TODO: configure the cache control!
-                });
-                //console.timeEnd("render");
-                image.encode('png', function (err, buffer) {
+              // important to include a buffer, to catch the overlaps
+              //console.time("render");
+              vt.render(map, new mapnik.Image(size, size), {
+                "buffer_size": 8,
+                "scale": parameters.density
+              }, function (err, image) {
+                if (err) {
+                  res.end(err.message);
+                } else {
+                  res.writeHead(200, {
+                    'Content-Type': 'image/png',
+                    'Access-Control-Allow-Origin': '*',
+                    'Cache-Control': 'max-age=600, must-revalidate'    // TODO: configure the cache control!
+                  });
+                  //console.timeEnd("render");
+                  image.encode('png', function (err, buffer) {
 
-                  if (err) {
-                    res.end(err.message);
-                  } else {
-                    res.end(buffer);
-                  }
-                });
-              }
-            });
-          } catch (e) {
-            // something went wrong
-            res.writeHead(500, {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
-            res.end(e.message);
-            console.log(e);
+                    if (err) {
+                      res.end(err.message);
+                    } else {
+                      res.end(buffer);
+                    }
+                  });
+                }
+              });
+            } catch (e) {
+              // something went wrong
+              res.writeHead(500, {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
+              res.end(e.message);
+              console.log(e);
+            }
+
+          } else {
+            if (response.statusCode == 404 ||   // not found
+              response.statusCode == 204 ||   // no content
+              (response.statusCode == 200 && body.length == 0)) {  // accepted but no content
+              // no tile
+              res.writeHead((response.statusCode == 200) ? 204 : response.statusCode, // keep same status code
+                {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
+              res.end();
+            } else {
+              res.writeHead(500, {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
+              res.end();
+            }
           }
 
-        } else if (!error && (
-            response.statusCode == 404 ||   // not found
-            response.statusCode == 204 ||   // no content
-            (response.statusCode == 200 && body.length==0))  // accepted but no content
-          ) {
-          // no tile
-          res.writeHead((response.statusCode == 200) ? 204 : response.statusCode, // keep same status code
-            {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
-          res.end();
-
-        } else {
+        } else { // error
           // something went wrong
+          console.log("Error retrieving vector tile");
           res.writeHead(503, {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
           res.end();
         }
       })
-
     }
   });
 }
