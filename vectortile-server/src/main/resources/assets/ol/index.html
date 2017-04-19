@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<title>GBIF Occurrence Maps — Debug interface</title>
+		<link rel="icon" href="https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-classic"/>
+		<link rel="stylesheet" href="https://tile.gbif.org/ui/ol.css" type="text/css">
+		<script src="https://tile.gbif.org/ui/ol-debug.js"></script>
+		<script src="https://tile.gbif.org/ui/proj4.js"></script>
+		<script src="https://tile.gbif.org/ui/olms.js"></script>
+		<script src="https://tile.gbif.org/ui/common.js"></script>
+
+		<script src="https://tile.gbif.org/ui/GBIF-both.js"></script>
+		<style>
+			html {
+				font-family: sans-serif;
+			}
+			#side {
+				position: absolute;
+				top: 0;
+				right: 0;
+				width: 20%;
+				height: 100%;
+				background: powderblue;
+			}
+			.wrapper {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 80%;
+				height: 100%;
+				background: lavender;
+			}
+			.map {
+				width: 100%;
+				height: 100%;
+			}
+			#progress {
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				height: 5px;
+				background: rgba(0, 255, 0, 1.0);
+				width: 0;
+				transition: width 250ms;
+			}
+			#recentTiles {
+				font-size: 0.6em;
+				width: 100%;
+				overflow: scroll;
+			}
+
+			#projection label {
+			    display: block;
+			}
+			#projection img {
+			    width: 1em;
+			    height: 1em;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="side">
+			<h1>Map preview</h1>
+			<fieldset id="projection">
+				<legend>Projection</legend>
+				<label>
+					<input type="radio" name="projection" value="3857" checked="checked" />
+					<img src="https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-classic"/>
+					Web Mercator
+				</label>
+				<label>
+					<input type="radio" name="projection" value="4326" />
+					<img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-classic"/><img src="https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-classic"/>
+					WGS84 Plate Careé
+				</label>
+				<label>
+					<input type="radio" name="projection" value="3575" />
+					<img src="https://tile.gbif.org/3575/omt/0/0/0@1x.png?style=gbif-classic"/>
+					Arctic LAEA
+				</label>
+				<label>
+					<input type="radio" name="projection" value="3031" />
+					<img src="https://tile.gbif.org/3031/omt/0/0/0@1x.png?style=gbif-classic"/>
+					Antarctic Stereographic
+				</label>
+			</fieldset>
+
+			<fieldset id="data">
+				<legend>Data source</legend>
+				<label>
+					<input type="radio" name="datasource" id="datasource_hbase" value="hbase" checked> Simple (HBase)
+				</label>
+				<!--label>
+					<input type="radio" name="datasource" id="datasource_solr"  value="adhoc"> Ad hoc search (SOLR)
+				</label-->
+			</fieldset>
+
+			<fieldset id="grid">
+				<legend>Tile grid</legend>
+				<label><input id="grid_visible" type="checkbox"/>visibility</label><br/>
+				<label>opacity</label>
+				<input id="grid_opacity" type="range" min="0" max="1" step="0.01"/>
+			</fieldset>
+		</div>
+		<div class="wrapper">
+			<div id="map" class="map"></div>
+			<div id="progress"></div>
+		</div>
+
+		<script src="interface.js"></script>
+	</body>
+</html>

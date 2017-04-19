@@ -12,3 +12,12 @@ GBIF Occurrence Maps in [Mapbox Vector Tile](https://www.mapbox.com/vector-tiles
 The general architecture:
 
 ![Architecture](./assets/architecture.png)
+
+## Debugging interfaces
+
+There are debug/demo interfaces:
+
+* [Vector tiles](https://api.gbif-dev.org/v2/map/debug/ol/)
+* [Raster tiles](https://api.gbif-dev.org/v2/map/demo.html)
+
+TODO: Update to externally available servers, once the deployment is completed.
