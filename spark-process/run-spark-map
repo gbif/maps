@@ -1,0 +1,79 @@
+#!/bin/bash -e
+#
+# Currently intended for use during development.
+#
+
+clear; echo -en "\e[3J"
+
+source ~tim/canned_hive_classpath.sh
+
+env=$1
+
+if [[ $env = 'dev' ]]; then
+    spark_submit=/home/tim/spark/bin/spark-submit
+    num_executors=10
+    executor_memory=6g
+    executor_cores=5
+    config=dev.yml
+    splits="['01','02','03','04','05','06','07','08','09']"
+elif [[ $env = 'uat' ]]; then
+    spark_submit=/home/tim/spark/bin/spark-submit
+    num_executors=15
+    executor_memory=10g
+    executor_cores=4
+    config=uat.yml
+    splits="['01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19', '20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','43','44','45','46','47','48','49','50','51','52','53','54','55','56','57','58','59','60','61','62','63','64','65','66','67','68','69','70','71','72','73','74','75','76','77','78','79','80','81','82','83','84','85','86','87','88','89','90','91','92','93','94','95','96','97','98','99']"
+elif [[ $env = 'prod' ]]; then
+    spark_submit=/home/tim/spark/bin/spark-submit
+    num_executors=15
+    executor_memory=10g
+    executor_cores=4
+    config=prod.yml
+    splits="['01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19', '20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','43','44','45','46','47','48','49','50','51','52','53','54','55','56','57','58','59','60','61','62','63','64','65','66','67','68','69','70','71','72','73','74','75','76','77','78','79','80','81','82','83','84','85','86','87','88','89','90','91','92','93','94','95','96','97','98','99']"
+else
+    echo "Must specify environment"
+    exit 1
+fi
+
+tablename=$(grep tableName $config | head -n 1 | awk '{ print $2 }')
+
+hadoop fs -rm -r -skipTrash "/tmp/$tablename/*" || echo 'Nothing to remove'
+
+echo $tablename
+
+hbase shell <<EOF
+disable '$tablename'
+drop '$tablename'
+create '$tablename',
+  {NAME => 'EPSG_3857', VERSIONS => 1, COMPRESSION => 'SNAPPY', DATA_BLOCK_ENCODING => 'FAST_DIFF', BLOOMFILTER => 'NONE'},
+  {NAME => 'EPSG_4326', VERSIONS => 1, COMPRESSION => 'SNAPPY', DATA_BLOCK_ENCODING => 'FAST_DIFF', BLOOMFILTER => 'NONE'},
+  {NAME => 'EPSG_3575', VERSIONS => 1, COMPRESSION => 'SNAPPY', DATA_BLOCK_ENCODING => 'FAST_DIFF', BLOOMFILTER => 'NONE'},
+  {NAME => 'EPSG_3031', VERSIONS => 1, COMPRESSION => 'SNAPPY', DATA_BLOCK_ENCODING => 'FAST_DIFF', BLOOMFILTER => 'NONE'},
+  {SPLITS => $splits}
+EOF
+
+$spark_submit --master yarn --jars $HIVE_CLASSPATH --num-executors $num_executors --executor-memory $executor_memory --executor-cores $executor_cores --conf spark.yarn.executor.memoryOverhead=2000 --deploy-mode client --class "org.gbif.maps.spark.Backfill" --driver-class-path . spark-process-0.1-SNAPSHOT.jar all $config
+
+for z in $(seq 0 16); do
+    echo
+    echo Loading zoom $z
+    echo
+    echo Loading zoom $z 3857
+    hbase org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles -Dhbase.mapreduce.bulkload.max.hfiles.perRegion.perFamily=1000 -Dcreate.table=no /tmp/$tablename/tiles/EPSG_3857/z$z $tablename
+    echo
+    echo Loading zoom $z 4326
+    hbase org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles -Dhbase.mapreduce.bulkload.max.hfiles.perRegion.perFamily=1000 -Dcreate.table=no /tmp/$tablename/tiles/EPSG_4326/z$z $tablename
+    echo
+    echo Loading zoom $z 3575
+    hbase org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles -Dhbase.mapreduce.bulkload.max.hfiles.perRegion.perFamily=1000 -Dcreate.table=no /tmp/$tablename/tiles/EPSG_3575/z$z $tablename
+    echo
+    echo Loading zoom $z 3031
+    hbase org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles -Dhbase.mapreduce.bulkload.max.hfiles.perRegion.perFamily=1000 -Dcreate.table=no /tmp/$tablename/tiles/EPSG_3031/z$z $tablename
+done
+
+echo
+echo Loading points
+hbase org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles -Dhbase.mapreduce.bulkload.max.hfiles.perRegion.perFamily=1000 -Dcreate.table=no /tmp/$tablename/points/EPSG_4326 $tablename
+
+echo
+echo Completed!
