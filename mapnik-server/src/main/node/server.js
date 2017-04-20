@@ -129,7 +129,7 @@ function createServer(config) {
       // issue the request to the vector tile server and render the tile as a PNG using Mapnik
       console.log("Fetching vector tile:", vectorTileUrl);
       //console.time("getTile");
-      request.get({url: vectorTileUrl, method: 'GET', encoding: null}, function (error, response, body) {
+      request.get({url: vectorTileUrl, method: 'GET', encoding: null, gzip: true}, function (error, response, body) {
 
         if (!error) {
           console.log("Vector tile has HTTP status", response.statusCode, "and size", body.length);
