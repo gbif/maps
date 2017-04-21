@@ -3,17 +3,18 @@ appName: Map build (prod)
 
 # An HBase table name, or a parquet file of occurrence records
 # Hint: Consider using a Hive CTAS query "STORED AS PARQUET" from occurrence_hdfs
-source: prod_a_occurrence
+#source: prod_a_occurrence
+source: /user/hive/warehouse/matt.db/occurrence_map_source
 
 # The base directory into which HFiles will be stored
 targetDirectory: hdfs://ha-nn/tmp/prod_a_maps
 
 # The max record count allowed before the view is built into a tile pyramid
-tilesThreshold: 100000
+tilesThreshold: 250000
 
 # HBase details
 hbase:
-  scannerCaching: 10000
+  scannerCaching: 1000
   zkQuorum: zk1.gbif.org,zk2.gbif.org,zk3.gbif.org
   keySaltModulus: 100
 
@@ -29,7 +30,7 @@ pointFeatures:
 tilePyramid:
   tableName: prod_a_maps
   hfileCount: 100
-  numPartitions: 200
+  numPartitions: 480
   tileBufferSize: 64
   projections:
     # Web Mercator (i.e. like Google maps)

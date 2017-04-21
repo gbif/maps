@@ -17,7 +17,15 @@ The general architecture:
 
 There are debug/demo interfaces:
 
-* [Vector tiles](https://api.gbif-dev.org/v2/map/debug/ol/)
-* [Raster tiles](https://api.gbif-dev.org/v2/map/demo.html)
+* [Vector tiles](https://api.gbif.org/v2/map/debug/ol/)
+* [Vector tiles (Web Mercator only)](https://api.gbif.org/v2/map/debug/)
+* [Raster tiles](https://api.gbif.org/v2/map/demo.html)
 
-TODO: Update to externally available servers, once the deployment is completed.
+<img
+  style="background-image: url(//tile.gbif.org/4326/omt/0/0/0@2x.png?style=gbif-middle); background-size: contain; width: 384px; height: 384px;"
+  src="//api.gbif.org/v2/map/occurrence/density/0/0/0@2x.png?srs=EPSG:4326&style=greenHeat.point"
+/><img
+  style="background-image: url(//tile.gbif.org/4326/omt/0/1/0@2x.png?style=gbif-middle); background-size: contain; width: 384px; height: 384px;"
+  src="//api.gbif.org/v2/map/occurrence/density/0/1/0@2x.png?srs=EPSG:4326&style=greenHeat.point"
+/>
+
