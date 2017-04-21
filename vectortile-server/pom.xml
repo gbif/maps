@@ -5,7 +5,7 @@
   <parent>
     <artifactId>maps-motherpom</artifactId>
     <groupId>org.gbif.maps</groupId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.1.0</version>
   </parent>
 
   <artifactId>vectortile-server</artifactId>
@@ -39,10 +39,8 @@
             </goals>
             <configuration>
               <transformers>
-                <transformer
-                  implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-                <transformer
-                  implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>org.gbif.maps.TileServerApplication</mainClass>
                 </transformer>
               </transformers>
