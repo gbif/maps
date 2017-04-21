@@ -21,11 +21,10 @@ There are debug/demo interfaces:
 * [Vector tiles (Web Mercator only)](https://api.gbif.org/v2/map/debug/)
 * [Raster tiles](https://api.gbif.org/v2/map/demo.html)
 
-<img
-  style="background-image: url(//tile.gbif.org/4326/omt/0/0/0@2x.png?style=gbif-middle); background-size: contain; width: 384px; height: 384px;"
-  src="//api.gbif.org/v2/map/occurrence/density/0/0/0@2x.png?srs=EPSG:4326&style=greenHeat.point"
-/><img
-  style="background-image: url(//tile.gbif.org/4326/omt/0/1/0@2x.png?style=gbif-middle); background-size: contain; width: 384px; height: 384px;"
-  src="//api.gbif.org/v2/map/occurrence/density/0/1/0@2x.png?srs=EPSG:4326&style=greenHeat.point"
-/>
+## The result
 
+<p align="center"><img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:3857&style=purpleYellow.point" width="384" /></p>
+
+<p align="center"><img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:4326&style=purpleYellow.point" width="384" /><img src="https://api.gbif.org/v2/map/occurrence/density/0/1/0@1x.png?srs=EPSG:4326&style=purpleYellow.point" width="384" /></p>
+
+<p align="center"><img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:3575&style=purpleYellow.point" width="384" /> <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:3031&style=purpleYellow.point" width="384" /></p>
