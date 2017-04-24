@@ -134,6 +134,14 @@ function createServer(config) {
         if (!error) {
           console.log("Vector tile has HTTP status", response.statusCode, "and size", body.length);
 
+          // Pass along an ETag if present, to aid caching.
+          // (NB reliant on Varnish to handle If-None-Match request, we always return 200 or 204.)
+          if (response.headers['etag']) {
+            etag = response.headers['etag'];
+          } else {
+            etag = '"' + Date.now() + '"';
+          }
+
           if (response.statusCode == 200 && body.length > 0) {
             //console.timeEnd("getTile");
 
@@ -159,7 +167,8 @@ function createServer(config) {
                   res.writeHead(200, {
                     'Content-Type': 'image/png',
                     'Access-Control-Allow-Origin': '*',
-                    'Cache-Control': 'max-age=600, must-revalidate'    // TODO: configure the cache control!
+                    'Cache-Control': 'public, max-age=600',
+                    'ETag': etag,
                   });
                   //console.timeEnd("render");
                   image.encode('png', function (err, buffer) {
@@ -179,18 +188,21 @@ function createServer(config) {
               console.log(e);
             }
 
+          } else if (response.statusCode == 404 ||   // not found
+                     response.statusCode == 204 ||   // no content
+                     (response.statusCode == 200 && body.length == 0)) {  // accepted but no content
+            // no tile
+            res.writeHead((response.statusCode == 200) ? 204 : response.statusCode, // keep same status code, except empty 200s.
+                          {
+                            'Content-Type': 'image/png',
+                            'Access-Control-Allow-Origin': '*',
+                            'Cache-Control': 'public, max-age=600',
+                            'ETag': etag,
+                          });
+            res.end();
           } else {
-            if (response.statusCode == 404 ||   // not found
-              response.statusCode == 204 ||   // no content
-              (response.statusCode == 200 && body.length == 0)) {  // accepted but no content
-              // no tile
-              res.writeHead((response.statusCode == 200) ? 204 : response.statusCode, // keep same status code
-                {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
-              res.end();
-            } else {
-              res.writeHead(500, {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
-              res.end();
-            }
+            res.writeHead(500, {'Content-Type': 'image/png'}); // type only for ease of use with e.g. leaflet
+            res.end();
           }
 
         } else { // error

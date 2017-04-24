@@ -48,7 +48,7 @@ class Params {
    * @param response
    */
   static void enableCORS(HttpServletResponse response) {
-    response.addHeader("Allow-Control-Allow-Methods", "GET,OPTIONS");
+    response.addHeader("Allow-Control-Allow-Methods", "GET,HEAD,OPTIONS");
     response.addHeader("Access-Control-Allow-Origin", "*");
   }
 

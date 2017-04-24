@@ -104,7 +104,11 @@ public final class TileResource {
 
     enableCORS(response);
     String mapKey = mapKey(request);
-    return getTile(z,x,y,mapKey,srs,basisOfRecord,year,verbose,bin,hexPerTile);
+    byte[] tile = getTile(z,x,y,mapKey,srs,basisOfRecord,year,verbose,bin,hexPerTile);
+
+    // TODO: Set either a date or a hash as the ETag, to aid caching.
+    //response.setHeader("ETag", String.format("W/\"%d\"", tile.length));
+    return tile;
   }
 
 
