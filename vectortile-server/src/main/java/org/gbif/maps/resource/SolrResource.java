@@ -107,11 +107,6 @@ public final class SolrResource {
     // Handle datelines in the SOLRResponse.
     OccurrenceHeatmapResponse datelineAdjustedResponse = datelineAdjustedResponse(solrResponse);
 
-
-    Double2D[] boundary = bufferedTileBoundary(z, x, y, false);
-    final Point2D tileBoundarySW = new Point2D.Double(boundary[0].getX(), boundary[0].getY());
-    final Point2D tileBoundaryNE = new Point2D.Double(boundary[1].getX(), boundary[1].getY());
-
     // iterate the data structure from SOLR painting cells
     // (note: this is not pretty, but neither is the result from SOLR... some cleanup here would be beneficial)
     final List<List<Integer>> countsInts = datelineAdjustedResponse.getCountsInts2D();

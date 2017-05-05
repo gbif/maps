@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * A conatiner object to produce JSON in TileJson format.
+ * A container object to produce JSON in TileJson format.
  * @see https://github.com/mapbox/tilejson-spec
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
