@@ -92,6 +92,12 @@ function parseUrl(parsedRequest) {
  * Parse /v1 GBIF API URLs, and handle as much as we can.
  *
  * This is not my nicest code.  Hopefully you don't need to touch it.
+ *
+ * We don't handle:
+ * - "resolution" (1, 2, 4 or 8px dots on the map)
+ * - colours, other than those used by our own map widget
+ * - non-contiguous year ranges
+ * - "no year" combined with a non-complete year range
  */
 function v1ParseUrl(parsedRequest) {
   var z = parseInt(parsedRequest.query.z);
