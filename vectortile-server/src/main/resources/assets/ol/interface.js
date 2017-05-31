@@ -33,6 +33,39 @@ var layers = {
 	}
 };
 
+// TODO: Tidy up.
+function createStatsStyle() {
+  var fill = new ol.style.Fill({color: '#000000'});
+  var stroke = new ol.style.Stroke({color: '#000000', width: 1});
+  var text = new ol.style.Text({
+    text: 'XYXYXY',
+    fill: fill,
+    stroke: stroke,
+    font: '16px "Open Sans", "Arial Unicode MS"'
+  });
+
+  var styles = [];
+  return function (feature, resolution) {
+    var length = 0;
+    //console.log(feature);
+    text.setText('Occurrences: ' + feature.get('total'));
+    //console.log(feature.get('total'));
+    styles[length++] = new ol.style.Style({
+      stroke: new ol.style.Stroke({color: '#000000'}),
+      text: text
+    });
+    styles.length = length;
+    return styles;
+  };
+}
+var statsLayer = new ol.layer.Vector({
+  source: new ol.source.Vector({
+    url: '/map/occurrence/density/.json',
+    format: new ol.format.GeoJSON()
+  }),
+  style: createStatsStyle()
+});
+
 var views = {
 	"3857": new ol.View({
 		center: ol.proj.fromLonLat([0, 0], 'EPSG:3857'),
@@ -93,6 +126,7 @@ function setProjection(srs) {
 //	l.push(currentLayers['occurrenceadhoc_vector']);
 //	l.push(currentLayers['occurrence_raster']);
 	l.push(currentLayers['grid']);
+	l.push(statsLayer);
 
 	map.getLayers().clear();
 	map.getLayers().extend(l);

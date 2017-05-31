@@ -1,5 +1,6 @@
 package org.gbif.maps.resource;
 
+import org.gbif.maps.Statistics;
 import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.filter.PointFeatureFilters;
 import org.gbif.maps.common.filter.Range;
@@ -12,6 +13,8 @@ import org.gbif.maps.io.PointFeature;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -24,6 +27,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
@@ -59,7 +63,6 @@ public final class TileResource {
   // we always use high resolution tiles for the point data which are small by definition
   private static final int POINT_TILE_SIZE = 4096;
   private static final int POINT_TILE_BUFFER = POINT_TILE_SIZE / 4;
-  private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final VectorTileDecoder DECODER = new VectorTileDecoder();
   static {
     DECODER.setAutoScale(false); // important to avoid auto scaling to 256 tiles
@@ -111,6 +114,42 @@ public final class TileResource {
     return tile;
   }
 
+  @GET
+  @Path(".json")
+  @Timed
+  @Produces(MediaType.APPLICATION_JSON)
+  public String capabilities(
+      @QueryParam("basisOfRecord") List<String> basisOfRecord,
+      @QueryParam("year") String year,
+      @DefaultValue("false") @QueryParam("verbose") boolean verbose,
+      @Context HttpServletResponse response,
+      @Context HttpServletRequest request
+  ) throws Exception {
+
+    enableCORS(response);
+    String mapKey = mapKey(request);
+
+    byte[] westTile = getTile(0,0,0,mapKey,"EPSG:4326",basisOfRecord,year,verbose,null,0);
+    VectorTileDecoder.FeatureIterable westFeatures = DECODER.decode(westTile);
+    Iterable<VectorTileDecoder.Feature> westIterable = () -> westFeatures.iterator();
+    Stream<VectorTileDecoder.Feature> westFeatureStream = StreamSupport.stream(westIterable.spliterator(), false);
+    Statistics westStatistics = westFeatureStream.collect(new Statistics().featureCollector());
+
+    byte[] eastTile = getTile(0,1,0,mapKey,"EPSG:4326",basisOfRecord,year,verbose,null,0);
+    VectorTileDecoder.FeatureIterable eastFeatures = DECODER.decode(eastTile);
+    Iterable<VectorTileDecoder.Feature> eastIterable = () -> eastFeatures.iterator();
+    Stream<VectorTileDecoder.Feature> eastFeatureStream = StreamSupport.stream(eastIterable.spliterator(), false);
+    Statistics eastStatistics = eastFeatureStream.collect(new Statistics().featureCollector());
+
+    LOG.info("WestStatistics {}", westStatistics);
+    LOG.info("EastStatistics {}", eastStatistics);
+
+    westStatistics.combineWestAndEast(eastStatistics);
+
+    // TODO: Set either a date or a hash as the ETag, to aid caching.
+    //response.setHeader("ETag", String.format("W/\"%d\"", tile.length));
+    return westStatistics.getGeoJSON();
+  }
 
   byte[] getTile(
     int z,

@@ -29,16 +29,16 @@ class Params {
   static final int HEX_TILE_SIZE = 4096;
   static final String DEFAULT_HEX_PER_TILE = "51";
 
-  // Maps the http parameter for the type to the HBase row key prefix for that map.
+  // Maps the HTTP parameter for the type to the HBase row key prefix for that map.
   // This aligns with the Spark processing that populates HBase of course, but maps the internal key to the
   // http parameter.
-  static final Map<String, String> MAP_TYPES = ImmutableMap.of(
-    "taxonKey","1",
-    "datasetKey","2",
-    "publishingOrg", "3",
-    "country", "4",
-    "publishingCountry", "5"
-  );
+  static final Map<String, String> MAP_TYPES = new ImmutableMap.Builder()
+    .put("taxonKey","1")
+    .put("datasetKey","2")
+    .put("publishingOrg", "3")
+    .put("country", "4")
+    .put("publishingCountry", "5")
+    .build();
 
   // The key for all maps
   static final String ALL_MAP_KEY = "0:0";

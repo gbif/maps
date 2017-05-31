@@ -83,17 +83,19 @@ public class PointFeatureFilters {
             features.incrementAndGet();
             encoder.addFeature(layerName, meta, point);
 
-            // Zoom 0 is a special case, whereby we copy data across the dateline into buffers
-            if (z==0 && pixel.getX()<buffer) {
-              Double2D adjustedPixel = new Double2D(pixel.getX() + tileSize, pixel.getY());
-              Point point2 = GEOMETRY_FACTORY.createPoint(new Coordinate(adjustedPixel.getX(), adjustedPixel.getY()));
-              encoder.addFeature(layerName, meta, point2);
-
-            } else if (z==0 && pixel.getX()>=tileSize-buffer) {
-              Double2D adjustedPixel = new Double2D(pixel.getX() - tileSize, pixel.getY());
-              Point point2 = GEOMETRY_FACTORY.createPoint(new Coordinate(adjustedPixel.getX(), adjustedPixel.getY()));
-              encoder.addFeature(layerName, meta, point2);
-
+            LOG.error("TODO: This code needs review for dateline handling");
+            // Rushed commit before working on servers.
+            if (schema == TileSchema.WEB_MERCATOR) {
+              // Zoom 0 is a special case, whereby we copy data across the dateline into buffers
+              if (z==0 && pixel.getX()<buffer) {
+                Double2D adjustedPixel = new Double2D(pixel.getX() + tileSize, pixel.getY());
+                Point point2 = GEOMETRY_FACTORY.createPoint(new Coordinate(adjustedPixel.getX(), adjustedPixel.getY()));
+                encoder.addFeature(layerName, meta, point2);
+              } else if (z==0 && pixel.getX()>=tileSize-buffer) {
+                Double2D adjustedPixel = new Double2D(pixel.getX() - tileSize, pixel.getY());
+                Point point2 = GEOMETRY_FACTORY.createPoint(new Coordinate(adjustedPixel.getX(), adjustedPixel.getY()));
+                encoder.addFeature(layerName, meta, point2);
+              }
             }
           });
     LOG.info("Collected {} features in the tile {}/{}/{}", features.get(), z, x, y);
