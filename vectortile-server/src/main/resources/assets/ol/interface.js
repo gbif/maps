@@ -60,7 +60,7 @@ function createStatsStyle() {
 }
 var statsLayer = new ol.layer.Vector({
   source: new ol.source.Vector({
-    url: '/map/occurrence/density/.json',
+    url: '../../occurrence/density/.json',
     format: new ol.format.GeoJSON()
   }),
   style: createStatsStyle()
