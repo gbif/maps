@@ -83,8 +83,7 @@ public class PointFeatureFilters {
             features.incrementAndGet();
             encoder.addFeature(layerName, meta, point);
 
-            LOG.error("TODO: This code needs review for dateline handling");
-            // Rushed commit before working on servers.
+            // Mercator is the only projection we support that has date line wrapping needs (4326 has 2 tiles in z0)
             if (schema == TileSchema.WEB_MERCATOR) {
               // Zoom 0 is a special case, whereby we copy data across the dateline into buffers
               if (z==0 && pixel.getX()<buffer) {

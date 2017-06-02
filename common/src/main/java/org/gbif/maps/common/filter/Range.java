@@ -9,6 +9,8 @@ public class Range {
   private final Integer lower;
   private final Integer upper;
 
+  public static final Range UNBOUNDED = new Range(null, null);
+
   /**
    * Constructs the range, which can be unbounded on either sides by supplying null.
    * @param lower the lower bounds where null indicates unbounded
@@ -21,6 +23,8 @@ public class Range {
     this.lower = lower;
     this.upper = upper;
   }
+
+
 
   /**
    * If the range is unbounded on both sides, then returns true.  Otherwise ensures that the year given is not null and

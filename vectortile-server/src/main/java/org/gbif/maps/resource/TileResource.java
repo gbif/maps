@@ -5,6 +5,7 @@ import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.filter.PointFeatureFilters;
 import org.gbif.maps.common.filter.Range;
 import org.gbif.maps.common.filter.VectorTileFilters;
+import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
@@ -64,6 +65,13 @@ public final class TileResource {
   private static final int POINT_TILE_SIZE = 4096;
   private static final int POINT_TILE_BUFFER = POINT_TILE_SIZE / 4;
   private static final VectorTileDecoder DECODER = new VectorTileDecoder();
+
+  // extents of the WGS84 Plate Careé Zoom 0 tiles
+  static final Double2D ZOOM_0_WEST_NW = new Double2D(-180, 90);
+  static final Double2D ZOOM_0_WEST_SE = new Double2D(0, -90);
+  static final Double2D ZOOM_0_EAST_NW = new Double2D(0, 90);
+  static final Double2D ZOOM_0_EAST_SE = new Double2D(180, -90);
+
   static {
     DECODER.setAutoScale(false); // important to avoid auto scaling to 256 tiles
   }
@@ -109,46 +117,30 @@ public final class TileResource {
     String mapKey = mapKey(request);
     byte[] tile = getTile(z,x,y,mapKey,srs,basisOfRecord,year,verbose,bin,hexPerTile);
 
-    // TODO: Set either a date or a hash as the ETag, to aid caching.
-    //response.setHeader("ETag", String.format("W/\"%d\"", tile.length));
+    // TODO: Consider setting a date or a hash as the ETag, to aid caching.
     return tile;
   }
 
+  /**
+   * Returns a capabilities response with the extent and year range built by inspecting the zoom 0 tiles of the
+   * EPSG:4326 projection.
+   */
   @GET
-  @Path(".json")
+  @Path("capabilities.json")
   @Timed
   @Produces(MediaType.APPLICATION_JSON)
-  public String capabilities(
-      @QueryParam("basisOfRecord") List<String> basisOfRecord,
-      @QueryParam("year") String year,
-      @DefaultValue("false") @QueryParam("verbose") boolean verbose,
-      @Context HttpServletResponse response,
-      @Context HttpServletRequest request
-  ) throws Exception {
+  public Capabilities capabilities(@Context HttpServletResponse response, @Context HttpServletRequest request)
+    throws Exception {
 
     enableCORS(response);
     String mapKey = mapKey(request);
 
-    byte[] westTile = getTile(0,0,0,mapKey,"EPSG:4326",basisOfRecord,year,verbose,null,0);
-    VectorTileDecoder.FeatureIterable westFeatures = DECODER.decode(westTile);
-    Iterable<VectorTileDecoder.Feature> westIterable = () -> westFeatures.iterator();
-    Stream<VectorTileDecoder.Feature> westFeatureStream = StreamSupport.stream(westIterable.spliterator(), false);
-    Statistics westStatistics = westFeatureStream.collect(new Statistics().featureCollector());
-
-    byte[] eastTile = getTile(0,1,0,mapKey,"EPSG:4326",basisOfRecord,year,verbose,null,0);
-    VectorTileDecoder.FeatureIterable eastFeatures = DECODER.decode(eastTile);
-    Iterable<VectorTileDecoder.Feature> eastIterable = () -> eastFeatures.iterator();
-    Stream<VectorTileDecoder.Feature> eastFeatureStream = StreamSupport.stream(eastIterable.spliterator(), false);
-    Statistics eastStatistics = eastFeatureStream.collect(new Statistics().featureCollector());
-
-    LOG.info("WestStatistics {}", westStatistics);
-    LOG.info("EastStatistics {}", eastStatistics);
-
-    westStatistics.combineWestAndEast(eastStatistics);
-
-    // TODO: Set either a date or a hash as the ETag, to aid caching.
-    //response.setHeader("ETag", String.format("W/\"%d\"", tile.length));
-    return westStatistics.getGeoJSON();
+    Capabilities.CapabilitiesBuilder builder = Capabilities.CapabilitiesBuilder.newBuilder();
+    builder.collect(getTile(0,0,0,mapKey,"EPSG:4326",null,null,true,null,0), ZOOM_0_WEST_NW, ZOOM_0_WEST_SE);
+    builder.collect(getTile(0,1,0,mapKey,"EPSG:4326",null,null,true,null,0), ZOOM_0_EAST_NW, ZOOM_0_EAST_SE);
+    Capabilities capabilities = builder.build();
+    LOG.info("Capabilities: {}", capabilities);
+    return capabilities;
   }
 
   byte[] getTile(
@@ -237,26 +229,4 @@ public final class TileResource {
       return encoder.encode();
     }
   }
-
-
-  /*
-@GET
-  @Path("/occurrence/density.json")
-  @Timed
-  @Produces(MediaType.APPLICATION_JSON)
-  public TileJson allTileJson(@Context HttpServletResponse response, @Context HttpServletRequest request) throws IOException {
-    enableCORS(response);
-    return TileJson.TileJsonBuilder
-      .newBuilder()
-      .withAttribution("GBIF")
-      .withDescription("The tileset for the simple data layer")
-      .withId("GBIF:simple")
-      .withName("GBIF Occurrence Density (simple)")
-      .withVectorLayers(new TileJson.VectorLayer[] {
-        new TileJson.VectorLayer("occurrence", "The GBIF occurrence data")
-      })
-      .withTiles(new String[]{"http://localhost/api/occurrence/density/{z}/{x}/{y}.mvt?" + request.getQueryString()})
-      .build();
-  }
-  */
 }
