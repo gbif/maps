@@ -1,6 +1,5 @@
 package org.gbif.maps.resource;
 
-import org.gbif.maps.Statistics;
 import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.filter.PointFeatureFilters;
 import org.gbif.maps.common.filter.Range;
