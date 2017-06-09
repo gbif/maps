@@ -64,7 +64,7 @@ public class PointFeatureFilters {
     source.stream()
           .filter(filterFeatureByBasisOfRecord(basisOfRecords))
           .filter(filterFeatureByYear(years))
-          .filter(filterFeatureByTile(projection, z, x, y, tileSize, buffer)) // filter to the tile
+          .filter(filterFeatureByTile(projection, schema, z, x, y, tileSize, buffer)) // filter to the tile
           .collect(
             // accumulate counts by year, for each pixel
             Collectors.groupingBy(toTileLocalPixelXY(projection, schema, z, x, y, tileSize, buffer),
@@ -85,6 +85,7 @@ public class PointFeatureFilters {
 
             // Mercator is the only projection we support that has date line wrapping needs (4326 has 2 tiles in z0)
             if (schema == TileSchema.WEB_MERCATOR) {
+
               // Zoom 0 is a special case, whereby we copy data across the dateline into buffers
               if (z==0 && pixel.getX()<buffer) {
                 Double2D adjustedPixel = new Double2D(pixel.getX() + tileSize, pixel.getY());
@@ -132,15 +133,15 @@ public class PointFeatureFilters {
    * @param buffer The allowable buffer in pixels around the tile
    * @return
    */
-  public static Predicate<Feature> filterFeatureByTile(final TileProjection projection, final int z,
-                                                       final long x, final long y, final int tileSize,
+  public static Predicate<Feature> filterFeatureByTile(final TileProjection projection, TileSchema schema,
+                                                       final int z, final long x, final long y, final int tileSize,
                                                        final int buffer) {
     return new Predicate<Feature>() {
       @Override
       public boolean test(Feature f) {
         if (projection.isPlottable(f.getLatitude(), f.getLongitude())) {
           Double2D pixelXY = projection.toGlobalPixelXY(f.getLatitude(), f.getLongitude(), z);
-          return Tiles.tileContains(z, x, y, tileSize, pixelXY, buffer);
+          return Tiles.tileContains(z, x, y, tileSize, schema, pixelXY, buffer);
         } else {
           return false;
         }

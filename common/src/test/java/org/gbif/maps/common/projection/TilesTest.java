@@ -64,15 +64,15 @@ public class TilesTest {
 
   @Test
   public void testTileContains() {
-    assertTrue(Tiles.tileContains(1, 0, 0, 512, new Double2D(256,256), 0));
-    assertTrue(Tiles.tileContains(1, 1, 1, 255, new Double2D(256,256), 0));
-    assertTrue(Tiles.tileContains(1, 1, 1, 256, new Double2D(250,250), 10));
-    assertFalse(Tiles.tileContains(1, 1, 1, 256, new Double2D(245,245), 10));
+    assertTrue(Tiles.tileContains(1, 0, 0, 512, TileSchema.WEB_MERCATOR, new Double2D(256,256), 0));
+    assertTrue(Tiles.tileContains(1, 1, 1, 255, TileSchema.WEB_MERCATOR, new Double2D(256,256), 0));
+    assertTrue(Tiles.tileContains(1, 1, 1, 256, TileSchema.WEB_MERCATOR, new Double2D(250,250), 10));
+    assertFalse(Tiles.tileContains(1, 1, 1, 256, TileSchema.WEB_MERCATOR, new Double2D(245,245), 10));
   }
 
   @Test
   public void testTileContainsDateline() {
-    assertTrue(Tiles.tileContains(1, 1, 0, 512, new Double2D(10,10), 64)); // East buffer
-    assertTrue(Tiles.tileContains(1, 0, 0, 512, new Double2D(1023,10), 64)); // West buffer
+    assertTrue(Tiles.tileContains(1, 1, 0, 512, TileSchema.WEB_MERCATOR, new Double2D(10,10), 64)); // East buffer
+    assertTrue(Tiles.tileContains(1, 0, 0, 512, TileSchema.WEB_MERCATOR, new Double2D(1023,10), 64)); // West buffer
   }
 }

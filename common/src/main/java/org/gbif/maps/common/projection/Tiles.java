@@ -87,7 +87,8 @@ public class Tiles {
    *
    * @return true if the the pixel falls on the tile or within the buffer zone
    */
-  public static boolean tileContains(int z, long x, long y, int tileSize, Double2D globalPixelXY, int bufferPixels) {
+  public static boolean tileContains(int z, long x, long y, int tileSize, TileSchema schema, Double2D globalPixelXY,
+                                     int bufferPixels) {
 
     boolean verticallyContained = globalPixelXY.getY() >= y * tileSize - bufferPixels &&
                                   globalPixelXY.getY() <= y * tileSize + bufferPixels + tileSize;
@@ -99,7 +100,7 @@ public class Tiles {
 
     // handle dateline wrapping if it is a match vertically
     if (!contained && verticallyContained) {
-      long maxTileAddress = (1 << z) - 1;
+      long maxTileAddress = (long) Math.pow(2, z+schema.getZzTilesHorizontal()-1) - 1;
 
       // if the tile adjoins the dateline and it is a match vertically
       if (x == 0) {

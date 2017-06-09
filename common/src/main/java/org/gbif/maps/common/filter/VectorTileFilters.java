@@ -87,7 +87,7 @@ public class VectorTileFilters {
     Iterable<VectorTileDecoder.Feature> iterable = () -> features.iterator();
     Stream<VectorTileDecoder.Feature> featureStream =
       StreamSupport.stream(iterable.spliterator(), false)
-                   .filter(filterFeatureByTile(z,x,y,sourceX,sourceY,tileSize,bufferSize));
+                   .filter(filterFeatureByTile(schema, z,x,y,sourceX,sourceY,tileSize,bufferSize));
 
     // only filter years if a range is given (performance optimisation)
     if (!years.isUnbounded()) {
@@ -370,7 +370,7 @@ public class VectorTileFilters {
    * @param buffer
    * @return
    */
-  public static Predicate<VectorTileDecoder.Feature> filterFeatureByTile(final int z, final long x, final long y,
+  public static Predicate<VectorTileDecoder.Feature> filterFeatureByTile(final TileSchema schema, final int z, final long x, final long y,
                                                                          final long sourceX, final long sourceY,
                                                                          final int tileSize, final int bufferSize) {
     return new Predicate<VectorTileDecoder.Feature>() {
@@ -380,7 +380,7 @@ public class VectorTileFilters {
           Point p = (Point) f.getGeometry();
           // global addressing of the pixel to consider filtering
           Double2D pixelXY = new Double2D(tileSize * sourceX + p.getX(), tileSize * sourceY + p.getY());
-          return Tiles.tileContains(z, x, y, tileSize, pixelXY, bufferSize);
+          return Tiles.tileContains(z, x, y, tileSize, schema, pixelXY, bufferSize);
         } else {
           return false; // anything other than a point is unexpected, so we will simply skip gracefully
         }
