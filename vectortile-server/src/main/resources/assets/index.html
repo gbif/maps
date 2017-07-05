@@ -24,7 +24,7 @@
   </script>
 
   <!-- include cartodb.js needed only so we can get the BaseURLs -->
-  <script src="http://libs.cartocdn.com/cartodb.js/v3/3.15/cartodb.core.js"></script>
+  <script src="https://cartodb-libs.global.ssl.fastly.net/cartodb.js/v3/3.15/cartodb.js"></script>
 
 </head>
 <body>
@@ -33,7 +33,7 @@
 <div class='features features-about'>
   <h4>GBIF Map Diagnostics</h4>
 
-  <h5>NOT YET UPDATED TO NEW TILE GRIDS</h5>
+  <h5><strong>NOT YET UPDATED TO NEW TILE GRIDS.</strong>  Polar projection base layers aren't exactly aligned, and WGS84 won't work.</h5>
 
   <form id="config" class="form-horizontal">
 
@@ -218,13 +218,14 @@ function setBaseURL(propertyName, sql) {
 }
 function initCDBBaseURLs() {
   setBaseURL("epsg3857", "SELECT cartodb_id,the_geom_webmercator FROM world_borders_hd_copy");
-  setBaseURL("epsg4326", "SELECT ST_SCALE(the_geom, 111319.44444444444444, 111319.44444444444444) AS the_geom_webmercator " +
+  setBaseURL("epsg4326", "SELECT ST_Scale(the_geom, 111319.44444444444444, 111319.44444444444444) AS the_geom_webmercator " +
              "FROM world_borders_hd_copy");
-  setBaseURL("epsg3575", "SELECT cartodb_id,ST_Transform(ST_INTERSECTION(the_geom," +
-             "ST_GeomFromText('POLYGON((-180 0, -180 90, 180 90, 180 0, -180 0))', 4326)),3575) AS the_geom_webmercator " +
+  // The scale parameters have been guessed rather than calculated. It's not clear to me what the calculation would be.
+  setBaseURL("epsg3575", "SELECT cartodb_id,ST_Scale(ST_Transform(ST_INTERSECTION(the_geom," +
+             "ST_GeomFromText('POLYGON((-180 0, -180 90, 180 90, 180 0, -180 0))', 4326)),3575), 2.225, 2.225) AS the_geom_webmercator " +
              "FROM world_borders_hd_copy");
-  setBaseURL("epsg3031", "SELECT cartodb_id,ST_Transform(ST_INTERSECTION(the_geom," +
-             "ST_GeomFromText('POLYGON((-180 -90, -180 0, 180 0, 180 -90, -180 -90))', 4326)),3031) AS the_geom_webmercator  " +
+  setBaseURL("epsg3031", "SELECT cartodb_id,ST_Scale(ST_Transform(ST_INTERSECTION(the_geom," +
+             "ST_GeomFromText('POLYGON((-180 -90, -180 0, 180 0, 180 -90, -180 -90))', 4326)),3031), 1.625, 1.625) AS the_geom_webmercator  " +
              "FROM world_borders_hd_copy");
 }
 
@@ -401,12 +402,12 @@ map.on('style.load', function () {
 });
 
 noUiSlider.create(slider, {
-  start: [1700, 2016],
+  start: [1700, 2017],
   step: 1,
   connect: true,
   range: {
     'min': 1700,
-    'max': 2016
+    'max': 2017
   }
 });
 
