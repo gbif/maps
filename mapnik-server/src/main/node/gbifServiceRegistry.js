@@ -4,6 +4,8 @@ var quickLocalIp = require('quick-local-ip');
 
 var gbifServiceRegistry = {};
 
+var serviceName = "mapnik-server";
+
 /**
  * Register the service in ZooKeeper, with data sufficiently close to what
  * our Java gbif-microservice provides.
@@ -27,7 +29,7 @@ gbifServiceRegistry.register = function(config) {
     if (err) throw err;
     console.log ("ZooKeeper session established, id=%s", zk.client_id);
 
-    var zkPath = "/"+config.service.zkPath+"/mapnik-server";
+    var zkPath = "/"+config.service.zkPath+"/"+serviceName;
 
     // Create ZK parent node
     zk.a_create (zkPath, "", null, () => {});
@@ -42,7 +44,7 @@ gbifServiceRegistry.register = function(config) {
 
     zkValue =
       {
-        "name": "mapnik-server",
+        "name": serviceName,
         "id": uuid,
         "address": ip,
         "port": port,
@@ -50,7 +52,7 @@ gbifServiceRegistry.register = function(config) {
         "payload": {
           "@class": "org.gbif.ws.discovery.conf.ServiceDetails",
           "groupId": "org.gbif.maps",
-          "artifactId": "mapnik-server",
+          "artifactId": serviceName,
           "version": config.service.version,
           "serviceConfiguration": {
             "httpPort": port,
@@ -68,9 +70,9 @@ gbifServiceRegistry.register = function(config) {
             "discoverable": true
           },
           "status": "RUNNING",
-          "name": "mapnik-server",
+          "name": serviceName,
           "externalUrl": url,
-          "fullName": "mapnik-server-" + config.service.version
+          "fullName": serviceName + "-" + config.service.version
         },
         "registrationTimeUTC": Date.now(),
         "serviceType": "DYNAMIC",
