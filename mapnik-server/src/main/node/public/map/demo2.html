@@ -60,7 +60,7 @@
     };
 
     L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}@1x.png',
-      {style: "classic.poly", bin:"hex", hexPerTile:27, taxonKey:"9703", detectRetina: false}).addTo(map);
+      {style: "classic.poly", bin:"hex", hexPerTile:54, taxonKey:"9703", tileSize: 512, zoomOffset: -1, minZoom: 1, maxZoom: 17}).addTo(map);
   </script>
 </body>
 </html>

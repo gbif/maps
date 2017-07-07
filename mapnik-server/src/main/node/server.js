@@ -12,16 +12,16 @@ const mapnik = require('mapnik')
  * Compile the CartoCss into Mapnik stylesheets into a lookup dictionary
  */
 var namedStyles = {};
+namedStyles["blue.marker"] = compileStylesheetSync("./cartocss/blue-marker.mss")
 namedStyles["classic.point"] = compileStylesheetSync("./cartocss/classic-dot.mss")
 namedStyles["classic.poly"] = compileStylesheetSync("./cartocss/classic-poly.mss")
 namedStyles["green.poly"] = compileStylesheetSync("./cartocss/green-poly.mss")
 namedStyles["green2.poly"] = compileStylesheetSync("./cartocss/green2-poly.mss")
-namedStyles["orange.marker"] = compileStylesheetSync("./cartocss/orange-marker.mss")
-namedStyles["blue.marker"] = compileStylesheetSync("./cartocss/blue-marker.mss")
-namedStyles["outline.poly"] = compileStylesheetSync("./cartocss/outline-poly.mss")
 namedStyles["greenHeat.point"] = compileStylesheetSync("./cartocss/green-heat-dot.mss")
-namedStyles["purpleYellow.point"] = compileStylesheetSync("./cartocss/purple-yellow-dot.mss")
+namedStyles["orange.marker"] = compileStylesheetSync("./cartocss/orange-marker.mss")
+namedStyles["outline.poly"] = compileStylesheetSync("./cartocss/outline-poly.mss")
 namedStyles["purpleWhite.point"] = compileStylesheetSync("./cartocss/purple-white-dot.mss")
+namedStyles["purpleYellow.point"] = compileStylesheetSync("./cartocss/purple-yellow-dot.mss")
 namedStyles["red.point"] = compileStylesheetSync("./cartocss/red-dot.mss")
 function compileStylesheetSync(filename) {
   // snippet simulating a TileJSON response from Tilelive, required only to give the layers for the CartoParser
@@ -57,7 +57,8 @@ var assetsHTML = [
   '/map/demo6.html',
   '/map/demo7.html',
   '/map/demo8.html',
-  '/map/demo-cartodb.html'];
+  '/map/demo-cartodb.html',
+  '/map/style-debugging.html'];
 
 function parseUrl(parsedRequest) {
   if (parsedRequest.pathname.endsWith(".png")) {
@@ -69,11 +70,12 @@ function parseUrl(parsedRequest) {
     var y = parseInt(dirs[dirs.length - 1]);
 
     // find the compiled stylesheet from the given style parameter, defaulting if omitted or bogus
-    var stylesheet = (parsedRequest.query.style in namedStyles)
-      ? namedStyles[parsedRequest.query.style]
-      : namedStyles[defaultStyle];
+    var style = (parsedRequest.query.style in namedStyles) ? parsedRequest.query.style : defaultStyle;
+    var stylesheet = namedStyles[style];
+    var dotStyle = style.indexOf('point') > -1 && style.indexOf('Heat') < 0;
 
-    var density = parseInt(parsedRequest.pathname.substring(parsedRequest.pathname.length - 6, parsedRequest.pathname.length - 5));
+    var sDensity = parsedRequest.pathname.substring(parsedRequest.pathname.length - 6, parsedRequest.pathname.length - 5);
+    var density = (sDensity == 'H') ? 0.5 : parseInt(sDensity);
 
     if (!(isNaN(z) || isNaN(x) || isNaN(y) || isNaN(density))) {
       return {
@@ -81,7 +83,8 @@ function parseUrl(parsedRequest) {
         "x": x,
         "y": y,
         "density": density,
-        "stylesheet": stylesheet
+        "stylesheet": stylesheet,
+        "dotStyle": dotStyle
       }
     }
   }
@@ -103,6 +106,17 @@ function v1ParseUrl(parsedRequest) {
   var z = parseInt(parsedRequest.query.z);
   var x = parseInt(parsedRequest.query.x);
   var y = parseInt(parsedRequest.query.y);
+
+  // This gets us 256 pixel tiles.
+  var density = 0.5;
+
+  var stylesheet = namedStyles['classic.point'];
+
+  if (parsedRequest.query.saturation == "true") {
+    stylesheet = namedStyles['purpleWhite.point'];
+  } else if (parsedRequest.query.colors == ",,#CC0000FF") {
+    stylesheet = namedStyles['red.point'];
+  }
 
   var type = parsedRequest.query.type;
   var key = parsedRequest.query.key;
@@ -226,17 +240,6 @@ function v1ParseUrl(parsedRequest) {
     throw Error("Can't display undated records as well as a range of dated ones.\n");
   }
 
-  var stylesheet = namedStyles['classic.point'];
-
-  if (parsedRequest.query.saturation == "true") {
-    stylesheet = namedStyles['purpleWhite.point'];
-  } else if (parsedRequest.query.colors == ",,#CC0000FF") {
-    stylesheet = namedStyles['red.point'];
-  }
-
-  // This gets us 256 pixel tiles.
-  var density = 0.5;
-
   return {
     "z": z,
     "x": x,
@@ -254,6 +257,7 @@ function vectorRequest(parsedRequest) {
   // Remove raster parameters, to improve cacheability
   delete parsedRequest.query.style;
   delete parsedRequest.search; // Must be removed to force regeneration of query string
+  parsedRequest.pathname = parsedRequest.pathname.replace("@Hx.png", ".mvt");
   parsedRequest.pathname = parsedRequest.pathname.replace("@1x.png", ".mvt");
   parsedRequest.pathname = parsedRequest.pathname.replace("@2x.png", ".mvt");
   parsedRequest.pathname = parsedRequest.pathname.replace("@3x.png", ".mvt");
@@ -359,7 +363,8 @@ function createServer(config) {
           if (response.statusCode == 200 && body.length > 0) {
             //console.timeEnd("getTile");
 
-            var size = 512 * parameters.density;
+            var dotStyle = parameters.dotStyle;
+            var size = (dotStyle) ? 1024 : 512 * parameters.density;
 
             try {
               var map = new mapnik.Map(size, size, mercator.proj4);
@@ -373,7 +378,7 @@ function createServer(config) {
               //console.time("render");
               vt.render(map, new mapnik.Image(size, size), {
                 "buffer_size": 8,
-                "scale": parameters.density
+                "scale": dotStyle ? 1 : parameters.density
               }, function (err, image) {
                 if (err) {
                   res.end(err.message);
@@ -385,8 +390,46 @@ function createServer(config) {
                     'ETag': etag,
                   });
                   //console.timeEnd("render");
-                  image.encode('png', function (err, buffer) {
 
+                  // For dotStyles, produce them at double resolution, then reduce to the correct size and set transparency
+                  // to all-or-nothing.
+                  if (dotStyle) {
+                    size = 512;
+
+                    //console.time("resize");
+                    // The available in node-mapnik to resize don't work correctly — a pixel around the edge is lost,
+                    // and the transparency calculation makes things blurry.
+                    var doubleSize = image.data();
+                    // A 3-wide 2-high image would look like:
+                    // RGBA-RGBA-RGBA
+                    // RGBA-RGBA-RGBA
+                    var correctSize = new Buffer(doubleSize.length / 4);
+                    for (var j = 0; j < size; j += 1) {
+                      for (var i = 0; i < 4 * size; i += 4) {
+                        correctSize[4 * size * j + i + 0] = doubleSize[4 * 4 * size * j + 2 * i + 0];
+                        correctSize[4 * size * j + i + 1] = doubleSize[4 * 4 * size * j + 2 * i + 1];
+                        correctSize[4 * size * j + i + 2] = doubleSize[4 * 4 * size * j + 2 * i + 2];
+                        if (correctSize[4 * size * j + i] + correctSize[4 * size * j + i + 1] + correctSize[4 * size * j + i + 2] > 0) {
+                          correctSize[4 * size * j + i + 3] = 255;
+                        }
+                        else {
+                          correctSize[4 * size * j + i + 3] = 0;
+                        }
+                      }
+                    }
+
+                    var image = new mapnik.Image.fromBufferSync(size, size, correctSize);
+
+                    if (parameters.density != 1) {
+                      image.premultiply();
+                      console.log("resizing");
+                      image = image.resizeSync(512 * parameters.density, 512 * parameters.density);
+                    }
+
+                    //console.timeEnd("resize");
+                  }
+
+                  image.encode('png', function (err, buffer) {
                     if (err) {
                       res.end(err.message);
                     } else {
