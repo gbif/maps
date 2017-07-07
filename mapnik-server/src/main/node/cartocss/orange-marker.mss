@@ -14,10 +14,10 @@
 }
 
 #occurrence {
-  [total <= 10] { marker-width: 4;  }
-  [total > 10][total <= 100] { marker-width: 8;  }
-  [total > 100][total <= 1000] { marker-width: 12;  }
-  [total > 1000][total <= 10000] { marker-width: 14;  }
-  [total > 10000][total <= 100000] { marker-width: 16;  }
-  [total > 100000] { marker-width: 25;  }
+                  [total <=     10] { marker-width:  4;  }
+  [total >     10][total <=    100] { marker-width:  8;  }
+  [total >    100][total <=   1000] { marker-width: 12;  }
+  [total >   1000][total <=  10000] { marker-width: 14;  }
+  [total >  10000][total <= 100000] { marker-width: 16;  }
+  [total > 100000]                  { marker-width: 25;  }
 }
