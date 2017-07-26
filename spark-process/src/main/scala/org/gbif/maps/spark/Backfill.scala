@@ -38,7 +38,7 @@ object Backfill {
         sqlContext.read.parquet(config.source)
       }
       else {
-        logger.info("Reading from HBase table {}", config.source)
+        logger.info("Reading from HBase snapshot table {}", config.source)
 
         HBaseInput.readFromHBase(config, sc)
       }

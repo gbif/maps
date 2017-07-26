@@ -123,11 +123,13 @@ class ProjectionConfig  (
   * Configuration specific to the HBase.
   */
 class HBaseConfiguration (
-  @JsonProperty("scannerCaching") _scannerCaching: String,
   @JsonProperty("zkQuorum") _zkQuorum: String,
+  @JsonProperty("rootDir") _rootDir: String,
+  @JsonProperty("restoreDir") _restoreDir: String,
   @JsonProperty("keySaltModulus") _keySaltModulus: Int
 ) extends Serializable {
-  val scannerCaching = Preconditions.checkNotNull(_scannerCaching, "scannerCaching cannot be null" : Object)
+  val rootDir = Preconditions.checkNotNull(_rootDir, "rootDir cannot be null" : Object)
+  val restoreDir = Preconditions.checkNotNull(_restoreDir, "restoreDir cannot be null" : Object)
   val zkQuorum = Preconditions.checkNotNull(_zkQuorum, "zkQuorum cannot be null" : Object)
   val keySaltModulus = Preconditions.checkNotNull(_keySaltModulus, "keySaltModulus cannot be null" : Object)
 }

@@ -1,15 +1,20 @@
 package org.gbif.maps.spark
 
-import org.apache.hadoop.hbase.mapreduce.TableInputFormat
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.hbase.client.Scan
+import org.apache.hadoop.hbase.mapreduce.TableSnapshotInputFormat
+import org.apache.hadoop.hbase.mapreduce.{TableInputFormat, TableSnapshotInputFormatImpl}
+import org.apache.hadoop.hbase.protobuf.ProtobufUtil
 import org.apache.hadoop.hbase.{HBaseConfiguration, HConstants}
-import org.apache.hadoop.hbase.util.Bytes
+import org.apache.hadoop.hbase.util.{Base64, Bytes}
+import org.apache.hadoop.mapreduce.Job
 import org.apache.spark._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 import org.slf4j.LoggerFactory
 
 /**
-  * Reads occurrence data from HBase, producing a DataFrame.
+  * Reads occurrence data from an HBase snapshot producing a DataFrame.
   */
 object HBaseInput {
   val logger = LoggerFactory.getLogger("org.gbif.maps.spark.HBaseInput")
@@ -17,7 +22,7 @@ object HBaseInput {
   def readFromHBase(config: MapConfiguration, sc: SparkContext) : DataFrame = {
     val hbaseConf = HBaseConfiguration.create()
     hbaseConf.set(HConstants.ZOOKEEPER_QUORUM, config.hbase.zkQuorum)
-    hbaseConf.set(HConstants.HBASE_CLIENT_SCANNER_CACHING, config.hbase.scannerCaching)
+    hbaseConf.set("hbase.rootdir", config.hbase.rootDir)
 
     val sqlContext = new SQLContext(sc)
 
@@ -46,13 +51,19 @@ object HBaseInput {
       ("hasGeospatialIssues", BooleanType)
     )
 
-    val scanColumns = fieldNamesAndTypes.map(_._1).foldLeft("")( (a, b) => a + columnFamily+":"+b+" " ).trim
-    hbaseConf.set(TableInputFormat.INPUT_TABLE, config.source)
-    hbaseConf.set(TableInputFormat.SCAN_COLUMN_FAMILY, columnFamily)
-    hbaseConf.set(TableInputFormat.SCAN_COLUMNS, scanColumns)
+    // Set up the scan to only be concerned about the columns of interest
+    val scan = new Scan
+    val cf = Bytes.toBytes("o")
+    fieldNamesAndTypes.foreach(ft => {
+      scan.addColumn(cf, Bytes.toBytes(ft._1))
+    })
+    hbaseConf.set(TableInputFormat.SCAN, convertScanToString(scan))
 
-    val hBaseRDD = sc.newAPIHadoopRDD(hbaseConf,
-      classOf[TableInputFormat],
+    val job = Job.getInstance(hbaseConf)
+    TableSnapshotInputFormat.setInput(job, config.source, new Path(config.hbase.restoreDir))
+
+    val hBaseRDD = sc.newAPIHadoopRDD(job.getConfiguration,
+      classOf[TableSnapshotInputFormat],
       classOf[org.apache.hadoop.hbase.io.ImmutableBytesWritable],
       classOf[org.apache.hadoop.hbase.client.Result])
 
@@ -95,5 +106,13 @@ object HBaseInput {
     }}
 
     sqlContext.createDataFrame(rowRDD, schema)
+  }
+
+  /**
+    * Copied from TableMapReduceUtil
+    */
+  def convertScanToString(scan : Scan) = {
+    val proto = ProtobufUtil.toScan(scan);
+    Base64.encodeBytes(proto.toByteArray());
   }
 }

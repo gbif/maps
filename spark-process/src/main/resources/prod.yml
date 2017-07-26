@@ -1,10 +1,12 @@
 # Used only for the spark application name
 appName: Map build (prod)
 
-# An HBase table name, or a parquet file of occurrence records
+# An HBase snapshot table name, or a parquet file of occurrence records
 # Hint: Consider using a Hive CTAS query "STORED AS PARQUET" from occurrence_hdfs
-#source: prod_a_occurrence
-source: /user/hive/warehouse/matt.db/occurrence_map_source
+#source: /user/hive/warehouse/matt.db/occurrence_map_source
+
+# hbase shell> snapshot 'prod_a_occurrence', 'occurrence_snapshot_20170725'
+source: occurrence_snapshot_20170725
 
 # The base directory into which HFiles will be stored
 targetDirectory: hdfs://ha-nn/tmp/prod_a_maps
@@ -14,9 +16,11 @@ tilesThreshold: 250000
 
 # HBase details
 hbase:
-  scannerCaching: 1000
   zkQuorum: zk1.gbif.org,zk2.gbif.org,zk3.gbif.org
+  rootDir: /hbase
+  restoreDir: hdfs://ha-nn/tmp
   keySaltModulus: 100
+
 
 # Applies only to those map views that have few enough records to be stored as features
 pointFeatures:
