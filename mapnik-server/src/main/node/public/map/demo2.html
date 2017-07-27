@@ -22,6 +22,10 @@
 
     var map = L.map('map').setView(new L.LatLng(0, 0), 1);
 
+    L.tileLayer('//tile.gbif.org/3857/omt/{z}/{x}/{y}@1x.png?style=gbif-dark', {
+        tileSize: 512, zoomOffset: -1, minZoom: 1, maxZoom: 17
+    }).addTo(map);
+
     L.GBIFSimple = L.TileLayer.extend({
 
       options: {

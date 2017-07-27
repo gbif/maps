@@ -18,6 +18,7 @@ namedStyles["classic.poly"] = compileStylesheetSync("./cartocss/classic-poly.mss
 namedStyles["green.poly"] = compileStylesheetSync("./cartocss/green-poly.mss")
 namedStyles["green2.poly"] = compileStylesheetSync("./cartocss/green2-poly.mss")
 namedStyles["greenHeat.point"] = compileStylesheetSync("./cartocss/green-heat-dot.mss")
+namedStyles["iNaturalist.point"] = compileStylesheetSync("./cartocss/iNaturalist-dot.mss")
 namedStyles["orange.marker"] = compileStylesheetSync("./cartocss/orange-marker.mss")
 namedStyles["outline.poly"] = compileStylesheetSync("./cartocss/outline-poly.mss")
 namedStyles["purpleWhite.point"] = compileStylesheetSync("./cartocss/purple-white-dot.mss")
@@ -57,7 +58,9 @@ var assetsHTML = [
   '/map/demo6.html',
   '/map/demo7.html',
   '/map/demo8.html',
+  '/map/demo9.html',
   '/map/demo-cartodb.html',
+  '/map/legacy-style-debugging.html',
   '/map/style-debugging.html'];
 
 function parseUrl(parsedRequest) {
@@ -73,6 +76,7 @@ function parseUrl(parsedRequest) {
     var style = (parsedRequest.query.style in namedStyles) ? parsedRequest.query.style : defaultStyle;
     var stylesheet = namedStyles[style];
     var dotStyle = style.indexOf('point') > -1 && style.indexOf('Heat') < 0;
+    var dotResolution = (parsedRequest.query.pointSize) ? parsedRequest.query.pointSize : Math.pow(2, Math.floor(z/4));
 
     var sDensity = parsedRequest.pathname.substring(parsedRequest.pathname.length - 6, parsedRequest.pathname.length - 5);
     var density = (sDensity == 'H') ? 0.5 : parseInt(sDensity);
@@ -84,7 +88,8 @@ function parseUrl(parsedRequest) {
         "y": y,
         "density": density,
         "stylesheet": stylesheet,
-        "dotStyle": dotStyle
+        "dotStyle": dotStyle,
+        "dotResolution": dotResolution
       }
     }
   }
@@ -116,16 +121,21 @@ function v1ParseUrl(parsedRequest) {
     stylesheet = namedStyles['purpleWhite.point'];
   } else if (parsedRequest.query.colors == ",,#CC0000FF") {
     stylesheet = namedStyles['red.point'];
+  } else if (parsedRequest.query.palette == "reds" || parsedRequest.query.colors == ',10,#F7005Ae6|10,100,#D50067e6|100,1000,#B5006Ce6|1000,10000,#94006Ae6|10000,100000,#72005Fe6|100000,,#52034Ee6') {
+    stylesheet = namedStyles['iNaturalist.point'];
   }
 
   var type = parsedRequest.query.type;
   var key = parsedRequest.query.key;
+  var resolution = parsedRequest.query.resolution;
+  if (!resolution) resolution = 1;
 
   var mapKey;
   if (type == "TAXON") mapKey = "taxonKey="+key
   else if (type == "DATASET") mapKey = "datasetKey="+key
-  else if (type == "PUBLISHER") mapKey = "publishingOrganizationKey="+key
+  else if (type == "PUBLISHER") mapKey = "publishingOrg="+key
   else if (type == "COUNTRY") mapKey = "country="+key
+  else if (type == "PUBLISHING_COUNTRY") mapKey = "publishingCountry="+key
   else mapKey = null;
 
   var basisOfRecord = new Set();
@@ -143,8 +153,10 @@ function v1ParseUrl(parsedRequest) {
   var obs, sp, oth;
 
   var layers = parsedRequest.query.layer;
-  if (!Array.isArray(layers)) {
+  if (layers && !Array.isArray(layers)) {
     layers = [layers];
+  } else if (!layers) {
+    layers = [];
   }
 
   for (var l of layers) {
@@ -248,7 +260,9 @@ function v1ParseUrl(parsedRequest) {
     "stylesheet": stylesheet,
     "year": year,
     "key": mapKey,
-    "basisOfRecord": Array.from(basisOfRecord)
+    "basisOfRecord": Array.from(basisOfRecord),
+    "dotStyle": true,
+    "dotResolution": resolution * 2 // Doubled because we're shrinking the tiles to half the designed size.
   }
 }
 
@@ -311,7 +325,7 @@ function createServer(config) {
       // Handle map tiles.
 
       var parameters, vectorTileUrl;
-      if (parsedRequest.pathname.indexOf('tile.png') > 0) {
+      if (parsedRequest.pathname.indexOf('tile') > 0) {
         try {
           console.log("Legacy try");
           parameters = v1ParseUrl(parsedRequest);
@@ -364,7 +378,8 @@ function createServer(config) {
             //console.timeEnd("getTile");
 
             var dotStyle = parameters.dotStyle;
-            var size = (dotStyle) ? 1024 : 512 * parameters.density;
+            var dotSize = parameters.dotResolution;
+            var size = (dotStyle) ? 1024 / dotSize : 512 * parameters.density;
 
             try {
               var map = new mapnik.Map(size, size, mercator.proj4);
@@ -394,7 +409,7 @@ function createServer(config) {
                   // For dotStyles, produce them at double resolution, then reduce to the correct size and set transparency
                   // to all-or-nothing.
                   if (dotStyle) {
-                    size = 512;
+                    size = 512 / dotSize;
 
                     //console.time("resize");
                     // The available in node-mapnik to resize don't work correctly — a pixel around the edge is lost,
@@ -420,9 +435,8 @@ function createServer(config) {
 
                     var image = new mapnik.Image.fromBufferSync(size, size, correctSize);
 
-                    if (parameters.density != 1) {
+                    if (parameters.density != 1 || parameters.dotResolution != 1) {
                       image.premultiply();
-                      console.log("resizing");
                       image = image.resizeSync(512 * parameters.density, 512 * parameters.density);
                     }
 

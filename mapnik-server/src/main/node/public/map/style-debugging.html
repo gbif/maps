@@ -9,9 +9,6 @@
     html, body {
       background-color: white;
     }
-    th {
-      font-family: monospace;
-    }
     section {
       display: flex;
       flex-wrap: wrap;
@@ -24,6 +21,8 @@
     img {
       outline: 1px dashed red;
       margin: 0.5em;
+      width: 512px;
+      height: 512px;
     }
     .dark {
       background: dimgrey;
@@ -92,6 +91,22 @@
     <div>
       <p>purpleYellow.point</p>
       <img src="./occurrence/density/0/0/0@1x.png?srs=EPSG:4326&style=purpleYellow.point"/>
+    </div>
+    <div>
+      <p>purpleYellow.point 1px</p>
+      <img src="./occurrence/density/0/0/0@1x.png?srs=EPSG:4326&style=purpleYellow.point&pointSize=1"/>
+    </div>
+    <div>
+      <p>purpleYellow.point 2px</p>
+      <img src="./occurrence/density/0/0/0@1x.png?srs=EPSG:4326&style=purpleYellow.point&pointSize=2"/>
+    </div>
+    <div>
+      <p>purpleYellow.point 4px</p>
+      <img src="./occurrence/density/0/0/0@1x.png?srs=EPSG:4326&style=purpleYellow.point&pointSize=4"/>
+    </div>
+    <div>
+      <p>purpleYellow.point 8px</p>
+      <img src="./occurrence/density/0/0/0@1x.png?srs=EPSG:4326&style=purpleYellow.point&pointSize=8"/>
     </div>
     <div>
       <p>red.point</p>
