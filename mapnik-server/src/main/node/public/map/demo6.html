@@ -84,10 +84,10 @@
   };
 
   L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}@'+pixel_ratio+'x.png',
-          {style: "outline.poly", bin: "hex", "hexPerTile": 10,  year:"2000,2016", taxonKey:212, tileSize: 512}).addTo(map);
+          {style: "outline.poly", bin: "hex", "hexPerTile": 41,  year:"2000,2016", publishingOrg:"7b8aff00-a9f8-11d8-944b-b8a03c50a862", tileSize: 512}).addTo(map);
 
   L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}@'+pixel_ratio+'x.png',
-          {style: "blue.marker", bin: "hex", "hexPerTile": 10,  year:"2000,2016", taxonKey:212, tileSize: 512}).addTo(map);
+          {style: "blue.marker", bin: "hex", "hexPerTile": 41,  year:"2000,2016", publishingOrg:"7b8aff00-a9f8-11d8-944b-b8a03c50a862", tileSize: 512}).addTo(map);
 </script>
 </body>
 </html>
