@@ -1,12 +1,6 @@
 package org.gbif.maps.common.bin;
 
-import org.gbif.maps.common.projection.Double2D;
-import org.gbif.maps.common.projection.TileProjection;
-import org.gbif.maps.common.projection.Tiles;
-import org.gbif.maps.io.PointFeature;
-
 import java.io.IOException;
-import java.text.DecimalFormat;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -23,13 +17,11 @@ import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
 import no.ecc.vectortile.VectorTileDecoder;
 import no.ecc.vectortile.VectorTileEncoder;
-import org.codetome.hexameter.core.api.defaults.DefaultSatelliteData;
 import org.codetome.hexameter.core.api.Hexagon;
 import org.codetome.hexameter.core.api.HexagonOrientation;
 import org.codetome.hexameter.core.api.HexagonalGrid;
 import org.codetome.hexameter.core.api.HexagonalGridBuilder;
 import org.codetome.hexameter.core.api.HexagonalGridLayout;
-import org.codetome.hexameter.core.api.contract.SatelliteData;
 import org.codetome.hexameter.core.backport.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,15 +72,14 @@ public class HexBin {
 
     // In order to tessellate we need to add an extra 1/2 to the user requested tiles, and round up to an odd number.
     // e.g. 9 will result in 9.5 tiles painted (so would 8)
-    minHexPerTile = minHexPerTile%2 == 0 ? minHexPerTile+1 : minHexPerTile; // round up to nearest odd number
+    hexPerTile = minHexPerTile%2 == 0 ? minHexPerTile+1 : minHexPerTile; // round up to nearest odd number
     double w = 1.5 * (((double)minHexPerTile + 1) / 2);
-    this.hexPerTile = (int) Math.ceil(minHexPerTile);
 
     hexWidth = tileSize / w;
     radius = hexWidth / 2;
     hexHeight = (Math.sqrt(3)/2) * hexWidth;
 
-    LOG.debug("Radius [{}], width[{}], height[{}]", radius, hexWidth, hexHeight);
+    LOG.debug("Radius [{}], width[{}], height[{}], hexPerTile[{}]", radius, hexWidth, hexHeight, hexPerTile);
   }
 
   public byte[] bin(byte[] sourceTile, int z, long x, long y) throws IOException {
@@ -99,10 +90,11 @@ public class HexBin {
 
     HexagonalGrid grid = newGridInstance();
 
-    // Hexagons do not align at boundaries, and therefore we need to determine the offsets to ensure polygons
+    // Hexagons do not align at tile boundaries, and therefore we need to determine the offsets to ensure polygons
     // meet correctly across tiles.  The maximum offset is 1.5 cells horizontally and 1 cell vertically due to using
     // flat top tiles.  This is apparent when you see a picture. See http://www.redblobgames.com/grids/hexagons/#basics
-    final double gridOffsetX = (x*tileSize)%(1.5*hexWidth);
+    // The extra ¼ tile aligns the hexagons' centroids, change - to + to have "3 in 1" pattern instead.
+    final double gridOffsetX = (x*tileSize)%(1.5*hexWidth) - 0.25*hexWidth;
     final double gridOffsetY = (y*tileSize)%hexHeight;
 
     LOG.debug("Radius [{}], width[{}], height[{}]", radius, hexWidth, hexHeight);

@@ -60,6 +60,7 @@ var assetsHTML = [
   '/map/demo8.html',
   '/map/demo9.html',
   '/map/demo-cartodb.html',
+  '/map/hexagon-debugging.html',
   '/map/legacy-style-debugging.html',
   '/map/style-debugging.html'];
 
