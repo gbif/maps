@@ -53,6 +53,7 @@ object HBaseInput {
 
     // Set up the scan to only be concerned about the columns of interest
     val scan = new Scan
+    scan.setCaching(10000);
     val cf = Bytes.toBytes("o")
     fieldNamesAndTypes.foreach(ft => {
       scan.addColumn(cf, Bytes.toBytes(ft._1))

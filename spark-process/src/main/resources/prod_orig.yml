@@ -1,22 +1,22 @@
-###
-# Values declared PROVIDED_AT_RUNTIME are populated from the workflow context.
-###
-
-
 # Used only for the spark application name
 appName: Map build (prod)
 
-source: PROVIDED_AT_RUNTIME
+# An HBase snapshot table name, or a parquet file of occurrence records
+# Hint: Consider using a Hive CTAS query "STORED AS PARQUET" from occurrence_hdfs
+#source: /user/hive/warehouse/matt.db/occurrence_map_source
+
+# hbase shell> snapshot 'prod_a_occurrence', 'occurrence_snapshot_20170725'
+source: occurrence_snapshot_20170725
 
 # The base directory into which HFiles will be stored
-targetDirectory: PROVIDED_AT_RUNTIME
+targetDirectory: hdfs://ha-nn/tmp/prod_a_maps
 
 # The max record count allowed before the view is built into a tile pyramid
 tilesThreshold: 250000
 
 # HBase details
 hbase:
-  zkQuorum: PROVIDED_AT_RUNTIME
+  zkQuorum: zk1.gbif.org,zk2.gbif.org,zk3.gbif.org
   rootDir: /hbase
   restoreDir: hdfs://ha-nn/tmp
   keySaltModulus: 100
@@ -25,16 +25,16 @@ hbase:
 # Applies only to those map views that have few enough records to be stored as features
 pointFeatures:
   numTasks: 200 # controls the parallelism
-  tableName: PROVIDED_AT_RUNTIME
+  tableName: prod_a_maps
   hfileCount: 32
 
 # TilePyramid applies to views where there are more records than the tilesThreshold
 # Notes:
 #   For hfileCount > 32 you must use -Dhbase.mapreduce.bulkload.max.hfiles.perRegion.perFamily=XXX when bulk loading
 tilePyramid:
-  tableName: PROVIDED_AT_RUNTIME
+  tableName: prod_a_maps
   hfileCount: 100
-  numPartitions: 400
+  numPartitions: 480
   tileBufferSize: 64
   projections:
     # Web Mercator (i.e. like Google maps)

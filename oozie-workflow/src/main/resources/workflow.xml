@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<workflow-app xmlns="uri:oozie:workflow:0.4.5" name="maps-backfill">
+
+  <global>
+    <job-tracker>${wf:conf("hadoop.jobtracker")}</job-tracker>
+    <name-node>${wf:conf("hdfs.namenode")}</name-node>
+    <configuration>
+      <property>
+        <name>oozie.launcher.mapred.job.queue.name</name>
+        <value>${wf:conf("hadoop.queuename")}</value>
+      </property>
+    </configuration>
+  </global>
+
+  <start to="prepare" />
+
+  <!--
+    Prepare will mark the timestamp, snapshot the source HBase occurrence table into a snapshot using the timestamp
+    and create the target table also using the timestamp.  The context params are returned for future actions to use
+    the runtime specific values (e.g. snapshot name, directory, target tables etc).
+  -->
+  <action name="prepare">
+    <java>
+      <main-class>org.gbif.maps.workflow.PrepareBackfill</main-class>
+      <arg>${wf:conf("gbif.map.zk.quorum")}</arg>
+      <arg>${wf:conf("gbif.map.sourceTable")}</arg>
+      <arg>${wf:conf("gbif.map.targetTablePrefix")}</arg>
+      <arg>${wf:conf("gbif.map.mode")}</arg>
+      <arg>${wf:conf("gbif.map.keySaltModulus")}</arg>
+      <arg>${wf:conf("gbif.map.targetDirectory")}</arg>
+      <capture-output />
+    </java>
+    <ok to="generateHFiles" />
+    <error to="kill" />
+  </action>
+
+  <!--
+    GenerateHFiles will create the HFiles partitioned and suitable for loading into the target table.
+  -->
+  <action name="generateHFiles">
+    <spark xmlns="uri:oozie:spark-action:0.1">
+      <job-tracker>${wf:conf("hadoop.jobtracker")}</job-tracker>
+      <name-node>${wf:conf("hdfs.namenode")}</name-node>
+      <configuration>
+        <property>
+          <name>oozie.launcher.mapreduce.map.memory.mb</name>
+          <value>4096</value>
+        </property>
+        <property>
+          <name>oozie.launcher.mapreduce.map.java.opts</name>
+          <value>-Xmx3g</value>
+        </property>
+      </configuration>
+      <master>yarn-cluster</master>
+      <name>Map backfill points</name>
+      <class>org.gbif.maps.spark.Backfill</class>
+      <jar>lib/spark-process-0.1.3-SNAPSHOT.jar</jar>
+      <spark-opts>${wf:conf("gbif.map.spark.opts")}</spark-opts>
+      <arg>points</arg>
+      <!--arg>tiles</arg-->
+      <arg>${wf:conf("gbif.map.spark.conf")}</arg>
+      <arg>${toPropertiesStr(wf:actionData('prepare'))}</arg>
+    </spark>
+    <ok to="goLive" />
+    <error to="kill" />
+  </action>
+
+  <!--
+    Bulkloads the HFiles into the target table, updates the ZK metastore with the table names and cleans up.
+  -->
+  <action name="goLive">
+    <java>
+      <main-class>org.gbif.maps.workflow.FinaliseBackfill</main-class>
+      <arg>${toPropertiesStr(wf:actionData('prepare'))}</arg>
+    </java>
+    <ok to="end" />
+    <error to="kill" />
+  </action>
+
+  <kill name="kill">
+    <message>Map building failed:[${wf:errorMessage(wf:lastErrorNode())}]</message>
+  </kill>
+
+  <end name="end" />
+
+</workflow-app>

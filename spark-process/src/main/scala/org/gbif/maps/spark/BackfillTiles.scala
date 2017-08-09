@@ -52,6 +52,10 @@ object BackfillTiles {
 
     val keySalter = new ModulusSalt(config.hbase.keySaltModulus); // salted HBase keys
 
+    // TESTING Repartitioning because data skew here gets conflated quickly due to the flatMap and results in "stragglers"
+    // In particular the source can be unbalanced regions from HBase since the occurrence table is not partitioned well
+    //val tiles = df.repartition(config.tilePyramid.numPartitions).flatMap(row => {
+
     val tiles = df.flatMap(row => {
       val res = mutable.ArrayBuffer[((String, ZXY, EncodedPixel, Feature.BasisOfRecord, Year), Int)]()
       val projection = Tiles.fromEPSG(projectionConfig.srs, projectionConfig.tileSize)
@@ -91,9 +95,11 @@ object BackfillTiles {
       }
       res
     }).reduceByKey(_+_, config.tilePyramid.numPartitions).map(r => {
+    //}).reduceByKey(_+_).map(r => {
       // ((type, zxy, bor), (pixel, year, count))
       ((r._1._1 : String, r._1._2 : ZXY, r._1._4 : Feature.BasisOfRecord), (r._1._3 : EncodedPixel, r._1._5 : Year, r._2 /*Count*/))
     }).partitionBy(new TileGroupPartitioner(config.tilePyramid.numPartitions))
+    //})
 
     // Maintain the same key structure of type+zxy+bor and rewrite values into a map of "PixelYear" → count
     val appendVal = { (m: MMap[Long,Int], v: (Int,Short,Int)) =>

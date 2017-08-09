@@ -1,16 +1,20 @@
 package org.gbif.maps.spark
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import org.apache.hadoop.hbase.KeyValue
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.{HashPartitioner, SparkContext}
+import org.apache.spark.SparkContext
 import org.gbif.maps.common.hbase.ModulusSalt
 import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord
 import org.slf4j.LoggerFactory
+
+import scala.collection.mutable.{Map => MMap}
 
 import scala.collection.mutable
 import scala.collection.Set
@@ -26,14 +30,19 @@ import scala.collection.Set
 object BackfillPoints {
   val logger = LoggerFactory.getLogger("org.gbif.maps.spark.BackfillPoints")
 
-  def build(sc :SparkContext, df : DataFrame, keys: Set[String], config: MapConfiguration): Unit = {
+  //def build(sc :SparkContext, df : DataFrame, keys: Set[String], config: MapConfiguration): Unit = {
+  def build(sc :SparkContext, df : DataFrame, config: MapConfiguration): Unit = {
 
     val keySalter = new ModulusSalt(config.hbase.keySaltModulus); // salted HBase keys
 
     // collect a count by location, bor and year for each mapKey
+
+    val runningCount = MMap[String,Int]().withDefaultValue(0)
+
     val pointSource = df.flatMap(row => {
       // extract the keys for the record and filter to only those that have been determined as suitable
-      val mapKeys = MapUtils.mapKeysForRecord(row).intersect(keys)
+      //val mapKeys = MapUtils.mapKeysForRecord(row).intersect(keys)
+      val mapKeys = MapUtils.mapKeysForRecord(row)
 
       // extract the dimensions of interest from the record
       val lat = row.getDouble(row.fieldIndex("decimallatitude"))
@@ -51,7 +60,13 @@ object BackfillPoints {
       // Stuctured as: mapKey, latitude, longitude, basisOfRecord, year -> count
       val res = mutable.ArrayBuffer[((String, Double, Double, Feature.BasisOfRecord, Short), Long)]()
       mapKeys.foreach(mapKey => {
-        res += (((mapKey, lat, lng, bor, year),1))
+        runningCount(mapKey) += 1
+
+        // accumulate only the first N records
+        if (runningCount(mapKey) <= config.tilesThreshold) {
+          res += (((mapKey, lat, lng, bor, year),1))
+        }
+
       })
 
       res
@@ -91,7 +106,7 @@ object BackfillPoints {
     })
 
     // save the results
-    res.saveAsNewAPIHadoopFile(config.targetDirectory + "/points/EPSG_4326", classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat], Configurations.hfileOutputConfiguration(config, config.pointFeatures.tableName))
+    res.saveAsNewAPIHadoopFile(config.targetDirectory + "/points", classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat], Configurations.hfileOutputConfiguration(config, config.pointFeatures.tableName))
 
   }
 }

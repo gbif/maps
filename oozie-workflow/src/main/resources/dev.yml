@@ -4,7 +4,7 @@
 
 
 # Used only for the spark application name
-appName: Map build (prod)
+appName: Map build (dev)
 
 source: PROVIDED_AT_RUNTIME
 
@@ -12,14 +12,14 @@ source: PROVIDED_AT_RUNTIME
 targetDirectory: PROVIDED_AT_RUNTIME
 
 # The max record count allowed before the view is built into a tile pyramid
-tilesThreshold: 250000
+tilesThreshold: 100000
 
 # HBase details
 hbase:
   zkQuorum: PROVIDED_AT_RUNTIME
   rootDir: /hbase
-  restoreDir: hdfs://ha-nn/tmp
-  keySaltModulus: 100
+  restoreDir: hdfs://nameservice1/tmp
+  keySaltModulus: 10
 
 
 # Applies only to those map views that have few enough records to be stored as features
@@ -34,7 +34,7 @@ pointFeatures:
 tilePyramid:
   tableName: PROVIDED_AT_RUNTIME
   hfileCount: 100
-  numPartitions: 400
+  numPartitions: 200
   tileBufferSize: 64
   projections:
     # Web Mercator (i.e. like Google maps)

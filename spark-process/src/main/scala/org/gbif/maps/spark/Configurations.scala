@@ -65,8 +65,8 @@ class MapConfiguration (
   @JsonProperty("tilePyramid") _tilePyramid: TilePyramidConfiguration
 ) extends Serializable {
   val appName = Preconditions.checkNotNull(_appName, "appName cannot be null" : Object)
-  val source = Preconditions.checkNotNull(_source, "source cannot be null" : Object)
-  val targetDirectory = Preconditions.checkNotNull(_targetDirectory, "targetDirectory cannot be null" : Object)
+  var source:String = Preconditions.checkNotNull(_source, "source cannot be null" : Object)
+  var targetDirectory = Preconditions.checkNotNull(_targetDirectory, "targetDirectory cannot be null" : Object)
   val tilesThreshold = Preconditions.checkNotNull(_tilesThreshold, "tilesThreshold cannot be null" : Object)
   val hbase = Preconditions.checkNotNull(_hbase, "hbase cannot be null" : Object)
   val pointFeatures = Preconditions.checkNotNull(_pointFeatures, "pointFeatures cannot be null" : Object)
@@ -82,7 +82,7 @@ class PointFeaturesConfiguration (
   @JsonProperty("hfileCount") _hfileCount: Int
 ) extends Serializable {
   val numTasks = Preconditions.checkNotNull(_numTasks, "pointNumTasks cannot be null" : Object)
-  val tableName = Preconditions.checkNotNull(_tableName, "tableName cannot be null" : Object)
+  var tableName = Preconditions.checkNotNull(_tableName, "tableName cannot be null" : Object)
   val hfileCount = Preconditions.checkNotNull(_hfileCount, "hfileCount cannot be null" : Object)
 }
 
@@ -96,7 +96,7 @@ class TilePyramidConfiguration (
   @JsonProperty("numPartitions") _numPartitions: Int,
   @JsonProperty("tileBufferSize") _tileBufferSize: Int
 ) extends Serializable {
-  val tableName = Preconditions.checkNotNull(_tableName, "tableName cannot be null" : Object)
+  var tableName = Preconditions.checkNotNull(_tableName, "tableName cannot be null" : Object)
   val hfileCount = Preconditions.checkNotNull(_hfileCount, "hfileCount cannot be null" : Object)
   val projections = Preconditions.checkNotNull(_projections, "projections cannot be null" : Object)
   val numPartitions = Preconditions.checkNotNull(_numPartitions, "numPartitions cannot be null" : Object)
@@ -130,6 +130,6 @@ class HBaseConfiguration (
 ) extends Serializable {
   val rootDir = Preconditions.checkNotNull(_rootDir, "rootDir cannot be null" : Object)
   val restoreDir = Preconditions.checkNotNull(_restoreDir, "restoreDir cannot be null" : Object)
-  val zkQuorum = Preconditions.checkNotNull(_zkQuorum, "zkQuorum cannot be null" : Object)
+  var zkQuorum = Preconditions.checkNotNull(_zkQuorum, "zkQuorum cannot be null" : Object)
   val keySaltModulus = Preconditions.checkNotNull(_keySaltModulus, "keySaltModulus cannot be null" : Object)
 }

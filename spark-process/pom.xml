@@ -89,59 +89,60 @@
     <dependency>
       <groupId>org.gbif.maps</groupId>
       <artifactId>common</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-      <!-- see https://ileriseviye.wordpress.com/2014/12/04/how-to-fix-class-javax-servlet-filterregistrations-signer-information-does-not-match-signer-information-of-other-classes-in-the-same-package-when-unit-testing-with-spark-streaming/ -->
+      <!-- Confirm this is actually needed, now they are excluded in the common project -->
       <exclusions>
         <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>*</artifactId>
+          <groupId>com.puppycrawl.tools</groupId>
+          <artifactId>checkstyle</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.codehaus.jackson</groupId>
-          <artifactId>*</artifactId>
+          <groupId>org.mockito</groupId>
+          <artifactId>mockito-all</artifactId>
         </exclusion>
       </exclusions>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-mapreduce-client-core</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-yarn-api</artifactId>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-client</artifactId>
+      <exclusions>
+        <!--
+          This is excluded since it stops the MRAppMaster in Oozie from even starting (when in Oozie).
+        -->
+        <exclusion>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
+
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-server</artifactId>
+      <!--
+        This is excluded since it stops the MRAppMaster in Oozie from even starting (when in Oozie).
+       -->
       <exclusions>
+        <exclusion>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>org.mortbay.jetty</groupId>
           <artifactId>*</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
       </exclusions>
-      <scope>provided</scope>
     </dependency>
+
+    <!--
+      Needed when running in oozie for the SnapshotInputFormat to function (NoClassDefs thrown otherwise).
+    -->
+    <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-hadoop-compat</artifactId>
+      <version>1.2.0-cdh5.12.0</version>
+    </dependency>
+
+
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
@@ -179,15 +180,12 @@
       <!-- Important: Dropwizard conflicts with this, so be explicit -->
       <version>${jackson.spark.version}</version>
     </dependency>
-
     <!-- Tests -->
     <dependency>
       <groupId>org.scalatest</groupId>
       <artifactId>scalatest-funsuite_2.10</artifactId>
     </dependency>
-
   </dependencies>
-
   <profiles>
     <!--
       Provides all the necessary scala jars to run Spark in the IDE, which are normally marked as provided scope.
@@ -258,5 +256,4 @@
       </dependencies>
     </profile>
   </profiles>
-
 </project>

@@ -72,6 +72,18 @@ public class ModulusSalt implements Serializable {
   }
 
   /**
+   * A utility to provide the region boundaries for preparing tables programatically.
+   * @return the structure necessary to programmatically create HBase tables.
+   */
+  public byte[][] getTableRegions() {
+    byte[][] regions = new byte[modulus][digitCount];
+    for (int i = 0; i<modulus; i++) {
+      regions[i] = leftPadZeros(i, digitCount).getBytes(UTF8_CHARSET);
+    }
+    return regions;
+  }
+
+  /**
    * Returns the number of digits in the number.  This will obly provide sensible results for number>0 and the input
    * is not sanitized.
    *
