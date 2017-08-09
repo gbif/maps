@@ -4,7 +4,7 @@
   <title>Maps Demo 2</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
-  <link rel="icon" href="//tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-dark"/>
+  <link rel="icon" href="//tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-classic"/>
   <style>
     html, body, #map {
       height: 100%;
@@ -22,7 +22,7 @@
 
     var map = L.map('map').setView(new L.LatLng(0, 0), 1);
 
-    L.tileLayer('//tile.gbif.org/3857/omt/{z}/{x}/{y}@1x.png?style=gbif-dark', {
+    L.tileLayer('//tile.gbif.org/3857/omt/{z}/{x}/{y}@1x.png?style=gbif-classic', {
         tileSize: 512, zoomOffset: -1, minZoom: 1, maxZoom: 17
     }).addTo(map);
 
@@ -64,7 +64,7 @@
     };
 
     L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}@1x.png',
-      {style: "classic.poly", bin:"hex", hexPerTile:54, taxonKey:"9703", tileSize: 512, zoomOffset: -1, minZoom: 1, maxZoom: 17}).addTo(map);
+      {style: "classic.poly", bin:"hex", hexPerTile:71, taxonKey:"9703", tileSize: 512, zoomOffset: -1, minZoom: 1, maxZoom: 17}).addTo(map);
   </script>
 </body>
 </html>
