@@ -124,10 +124,10 @@ public final class RegressionResource {
     enableCORS(response);
     String mapKey = mapKey(request);
 
-    byte[] speciesLayer = tiles.getTile(z, x, y, mapKey, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE);
+    byte[] speciesLayer = tiles.getTile(z, x, y, mapKey, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
     mapKey = Params.MAP_TYPES.get("taxonKey") + ":" + higherTaxonKey;
     byte[] higherTaxaLayer = tiles.getTile(z, x, y, mapKey, srs,
-                                           SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE);
+                                           SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
 
     // determine the global pixel origin address at the top left of the tile, used for uniquely identifying the hexagons
     Long2D originXY = new Long2D(x * TILE_SIZE, y * TILE_SIZE);

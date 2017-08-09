@@ -102,15 +102,26 @@
     <hr id="styleHR"/>
 
     <div class="form-group col-sm-12" id="style">
-      <label class="radio-inline">
-        <input type="radio" name="bin" id="point" value="" checked> Default
-      </label>
-      <label class="radio-inline">
-        <input type="radio" name="bin" id="hex-small" value="hex"> Hex (small)
-      </label>
-      <label class="radio-inline">
-        <input type="radio" name="bin" id="hex-large" value="hex"> Hex (large)
-      </label>
+      <p>
+        <label class="radio-inline">
+          <input type="radio" name="bin" id="point" value="" checked> Default
+        </label>
+        <label class="radio-inline">
+          <input type="radio" name="bin" id="hex-small" value="hex"> Hex (small)
+        </label>
+        <label class="radio-inline">
+          <input type="radio" name="bin" id="hex-large" value="hex"> Hex (large)
+        </label>
+      </p>
+      <p>
+        <label class="radio-inline">
+          <input type="radio" name="bin" id="square-small" value="square"> Square (small)
+        </label>
+        <label class="radio-inline">
+          <input type="radio" name="bin" id="square-large" value="square"> Square (large)
+        </label>
+
+      </p>
     </div>
 
     <hr/>
@@ -200,6 +211,10 @@ function queryParams() {
     config.params.push("hexPerTile=61");
   } else if (document.getElementById('hex-large').checked) {
     config.params.push("hexPerTile=21");
+  } else if (document.getElementById('square-small').checked) {
+    config.params.push("squareSize=32");
+  } else if (document.getElementById('square-large').checked) {
+    config.params.push("squareSize=128");
   }
 
   return config.params;

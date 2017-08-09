@@ -1,6 +1,7 @@
 package org.gbif.maps.resource;
 
 import org.gbif.maps.common.bin.HexBin;
+import org.gbif.maps.common.bin.SquareBin;
 import org.gbif.maps.common.filter.PointFeatureFilters;
 import org.gbif.maps.common.filter.Range;
 import org.gbif.maps.common.filter.VectorTileFilters;
@@ -40,6 +41,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.gbif.maps.resource.Params.BIN_MODE_SQUARE;
+import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
+import static org.gbif.maps.resource.Params.SQUARE_TILE_SIZE;
 import static org.gbif.maps.resource.Params.enableCORS;
 import static org.gbif.maps.resource.Params.mapKey;
 import static org.gbif.maps.resource.Params.toMinMaxYear;
@@ -108,13 +112,14 @@ public final class TileResource {
     @DefaultValue("false") @QueryParam("verbose") boolean verbose,
     @QueryParam("bin") String bin,
     @DefaultValue(DEFAULT_HEX_PER_TILE) @QueryParam("hexPerTile") int hexPerTile,
+    @DefaultValue(DEFAULT_SQUARE_SIZE) @QueryParam("squareSize") int squareSize,
     @Context HttpServletResponse response,
     @Context HttpServletRequest request
     ) throws Exception {
 
     enableCORS(response);
     String mapKey = mapKey(request);
-    byte[] tile = getTile(z,x,y,mapKey,srs,basisOfRecord,year,verbose,bin,hexPerTile);
+    byte[] tile = getTile(z,x,y,mapKey,srs,basisOfRecord,year,verbose,bin,hexPerTile,squareSize);
 
     // TODO: Consider setting a date or a hash as the ETag, to aid caching.
     return tile;
@@ -135,8 +140,8 @@ public final class TileResource {
     String mapKey = mapKey(request);
 
     Capabilities.CapabilitiesBuilder builder = Capabilities.CapabilitiesBuilder.newBuilder();
-    builder.collect(getTile(0,0,0,mapKey,"EPSG:4326",null,null,true,null,0), ZOOM_0_WEST_NW, ZOOM_0_WEST_SE);
-    builder.collect(getTile(0,1,0,mapKey,"EPSG:4326",null,null,true,null,0), ZOOM_0_EAST_NW, ZOOM_0_EAST_SE);
+    builder.collect(getTile(0,0,0,mapKey,"EPSG:4326",null,null,true,null,0,0), ZOOM_0_WEST_NW, ZOOM_0_WEST_SE);
+    builder.collect(getTile(0,1,0,mapKey,"EPSG:4326",null,null,true,null,0,0), ZOOM_0_EAST_NW, ZOOM_0_EAST_SE);
     Capabilities capabilities = builder.build();
     LOG.info("Capabilities: {}", capabilities);
     return capabilities;
@@ -152,9 +157,11 @@ public final class TileResource {
     String year,
     boolean verbose,
     String bin,
-    int hexPerTile
+    int hexPerTile,
+    int squareSize
   ) throws Exception {
-    Preconditions.checkArgument(bin == null || BIN_MODE_HEX.equalsIgnoreCase(bin), "Unsupported bin mode");
+    Preconditions.checkArgument(bin == null || BIN_MODE_HEX.equalsIgnoreCase(bin) || BIN_MODE_SQUARE.equalsIgnoreCase(bin),
+                                "Unsupported bin mode");
     LOG.info("MapKey: {}", mapKey);
 
     Range years = toMinMaxYear(year);
@@ -175,8 +182,17 @@ public final class TileResource {
         return vectorTile;
       }
 
+    } else if (BIN_MODE_SQUARE.equalsIgnoreCase(bin)) {
+      SquareBin binner = new SquareBin(SQUARE_TILE_SIZE, squareSize);
+      try {
+        return binner.bin(vectorTile, z, x, y);
+      } catch (IllegalArgumentException e) {
+        // happens on empty tiles
+        return vectorTile;
+      }
+
     } else {
-      throw new IllegalArgumentException("Unsupported bin mode"); // cannot happen due to conditional check above
+      throw new IllegalArgumentException("Unsupported bin mode: " + bin); // cannot happen due to conditional check above
     }
   }
 

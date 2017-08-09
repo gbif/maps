@@ -26,8 +26,11 @@ class Params {
 
   // Parameters for dealing with hexagon binning
   static final String BIN_MODE_HEX = "hex";
+  static final String BIN_MODE_SQUARE = "square";
   static final int HEX_TILE_SIZE = 4096;
+  static final int SQUARE_TILE_SIZE = 4096;
   static final String DEFAULT_HEX_PER_TILE = "51";
+  static final String DEFAULT_SQUARE_SIZE = "16";
 
   // Maps the HTTP parameter for the type to the HBase row key prefix for that map.
   // This aligns with the Spark processing that populates HBase of course, but maps the internal key to the

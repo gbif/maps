@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
  * See <a href="http://www.redblobgames.com/grids/hexagons">the excellent www.redblobgames.com</a> site for the math
  * surrounding hexagons which was used for this implementation.
  */
-public class HexBin {
+public class HexBin implements Binnable {
   private static final Logger LOG = LoggerFactory.getLogger(HexBin.class);
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final VectorTileDecoder DECODER = new VectorTileDecoder();
@@ -82,6 +82,7 @@ public class HexBin {
     LOG.debug("Radius [{}], width[{}], height[{}], hexPerTile[{}]", radius, hexWidth, hexHeight, hexPerTile);
   }
 
+  @Override
   public byte[] bin(byte[] sourceTile, int z, long x, long y) throws IOException {
     VectorTileDecoder.FeatureIterable tile = DECODER.decode(sourceTile, LAYER_NAME);
     Preconditions.checkArgument(tile.getLayerNames().contains(LAYER_NAME), "Tile is missing the expected layer: "
