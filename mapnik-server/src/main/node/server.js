@@ -12,18 +12,34 @@ const mapnik = require('mapnik')
  * Compile the CartoCss into Mapnik stylesheets into a lookup dictionary
  */
 var namedStyles = {};
-namedStyles["blue.marker"] = compileStylesheetSync("./cartocss/blue-marker.mss")
+
+// Heat styles (used in gbif.org)
+namedStyles["purpleHeat.point"] = compileStylesheetSync("./cartocss/purple-heat-dot.mss")
+namedStyles["blueHeat.point"] = compileStylesheetSync("./cartocss/blue-heat-dot.mss")
+namedStyles["orangeHeat.point"] = compileStylesheetSync("./cartocss/orange-heat-dot.mss")
+namedStyles["greenHeat.point"] = compileStylesheetSync("./cartocss/green-heat-dot.mss")
+
+// Classic GBIF styling (used in gbif.org)(used in gbif.org)
 namedStyles["classic.point"] = compileStylesheetSync("./cartocss/classic-dot.mss")
 namedStyles["classic.poly"] = compileStylesheetSync("./cartocss/classic-poly.mss")
+
+// Purple yellow colour ramp (used in gbif.org)
+namedStyles["purpleYellow.point"] = compileStylesheetSync("./cartocss/purple-yellow-dot.mss")
+namedStyles["purpleYellow.poly"] = compileStylesheetSync("./cartocss/purple-yellow-poly.mss")
+
+// Cluster styles (used in gbif.org)
+namedStyles["outline.poly"] = compileStylesheetSync("./cartocss/outline-poly.mss")
+namedStyles["blue.marker"] = compileStylesheetSync("./cartocss/blue-marker.mss")
+namedStyles["orange.marker"] = compileStylesheetSync("./cartocss/orange-marker.mss")
+
+// Miscelaneous styles
 namedStyles["green.poly"] = compileStylesheetSync("./cartocss/green-poly.mss")
 namedStyles["green2.poly"] = compileStylesheetSync("./cartocss/green2-poly.mss")
-namedStyles["greenHeat.point"] = compileStylesheetSync("./cartocss/green-heat-dot.mss")
 namedStyles["iNaturalist.point"] = compileStylesheetSync("./cartocss/iNaturalist-dot.mss")
-namedStyles["orange.marker"] = compileStylesheetSync("./cartocss/orange-marker.mss")
-namedStyles["outline.poly"] = compileStylesheetSync("./cartocss/outline-poly.mss")
 namedStyles["purpleWhite.point"] = compileStylesheetSync("./cartocss/purple-white-dot.mss")
-namedStyles["purpleYellow.point"] = compileStylesheetSync("./cartocss/purple-yellow-dot.mss")
 namedStyles["red.point"] = compileStylesheetSync("./cartocss/red-dot.mss")
+
+
 function compileStylesheetSync(filename) {
   // snippet simulating a TileJSON response from Tilelive, required only to give the layers for the CartoParser
   var tilejson = {
@@ -49,6 +65,7 @@ var defaultStyle = "classic.point";
  * Should this become more complex, then express or similar should be consider.
  */
 var assetsHTML = [
+  '/map/styles.html',
   '/map/demo.html',
   '/map/demo1.html',
   '/map/demo2.html',
@@ -59,6 +76,7 @@ var assetsHTML = [
   '/map/demo7.html',
   '/map/demo8.html',
   '/map/demo9.html',
+  '/map/demo10.html',
   '/map/demo-cartodb.html',
   '/map/hexagon-debugging.html',
   '/map/legacy-style-debugging.html',
@@ -346,6 +364,7 @@ function createServer(config) {
         try {
           parameters = parseUrl(parsedRequest);
           vectorTileUrl = vectorRequest(parsedRequest);
+
         } catch (e) {
           res.writeHead(400, {
             'Content-Type': 'image/png',

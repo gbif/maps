@@ -2,7 +2,7 @@
   marker-width: 3.95;
   marker-line-width: 0;
   marker-allow-overlap: true;
-  marker-fill: #369617;
+  marker-fill: #FF21FD;
   marker-comp-op: screen;
 
   [zoom >= 11] { marker-width:  3.95; }
