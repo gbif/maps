@@ -38,6 +38,7 @@ namedStyles["green2.poly"] = compileStylesheetSync("./cartocss/green2-poly.mss")
 namedStyles["iNaturalist.point"] = compileStylesheetSync("./cartocss/iNaturalist-dot.mss")
 namedStyles["purpleWhite.point"] = compileStylesheetSync("./cartocss/purple-white-dot.mss")
 namedStyles["red.point"] = compileStylesheetSync("./cartocss/red-dot.mss")
+namedStyles["fire.point"] = compileStylesheetSync("./cartocss/fire-dot.mss")
 
 
 function compileStylesheetSync(filename) {
@@ -77,6 +78,7 @@ var assetsHTML = [
   '/map/demo8.html',
   '/map/demo9.html',
   '/map/demo10.html',
+  '/map/demo11.html',
   '/map/demo-cartodb.html',
   '/map/hexagon-debugging.html',
   '/map/legacy-style-debugging.html',
@@ -365,6 +367,7 @@ function createServer(config) {
           parameters = parseUrl(parsedRequest);
           vectorTileUrl = vectorRequest(parsedRequest);
 
+
         } catch (e) {
           res.writeHead(400, {
             'Content-Type': 'image/png',
@@ -377,6 +380,8 @@ function createServer(config) {
           return;
         }
       }
+
+      //vectorTileUrl = vectorTileUrl.replace("localhost:7001", "api.gbif-uat.org/v2")
 
       // issue the request to the vector tile server and render the tile as a PNG using Mapnik
       console.log("Fetching vector tile:", vectorTileUrl);
