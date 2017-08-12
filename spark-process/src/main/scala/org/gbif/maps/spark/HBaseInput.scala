@@ -48,7 +48,12 @@ object HBaseInput {
       ("taxonKey", IntegerType),
 
       ("year", IntegerType),
-      ("hasGeospatialIssues", BooleanType)
+
+      ("_iss_ZERO_COORDINATE", BooleanType),
+      ("_iss_COORDINATE_INVALID", BooleanType),
+      ("_iss_COORDINATE_OUT_OF_RANGE", BooleanType),
+      ("_iss_COUNTRY_COORDINATE_MISMATCH", BooleanType)
+
     )
 
     // Set up the scan to only be concerned about the columns of interest
@@ -76,11 +81,18 @@ object HBaseInput {
     val empty = new Array[Byte](4)
     val emptyBoolean = new Array[Byte](1)
 
+
     val rowRDD = hBaseRDD.filter{ case(_, result) => {
-      // Filter out records without a position, or with a geospatial issue
+
+      // Filter out records without a position, or with a geospatial issue (any value means issue)
+      // see https://github.com/gbif/gbif-api/blob/master/src/main/java/org/gbif/api/vocabulary/OccurrenceIssue.java#L377
       Option(result.getValue(o, Bytes.toBytes("decimalLatitude"))).nonEmpty &&
       Option(result.getValue(o, Bytes.toBytes("decimalLongitude"))).nonEmpty &&
-      ! Bytes.toBoolean(Option(result.getValue(o, Bytes.toBytes("hasGeospatialIssues"))).getOrElse(emptyBoolean))
+      Option(result.getValue(o, Bytes.toBytes("_iss_ZERO_COORDINATE"))).isEmpty &&
+      Option(result.getValue(o, Bytes.toBytes("_iss_COORDINATE_INVALID"))).isEmpty &&
+      Option(result.getValue(o, Bytes.toBytes("_iss_COORDINATE_OUT_OF_RANGE"))).isEmpty &&
+      Option(result.getValue(o, Bytes.toBytes("_iss_COUNTRY_COORDINATE_MISMATCH"))).isEmpty
+
     }}.map{ case(_, result) => {
       Row(
         Bytes.toString(Option(result.getValue(o, Bytes.toBytes("datasetKey"))).getOrElse(empty)),
@@ -102,7 +114,10 @@ object HBaseInput {
         Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("taxonKey"))).getOrElse(empty)),
 
         Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("year"))).getOrElse(empty)),
-        Bytes.toBoolean(Option(result.getValue(o, Bytes.toBytes("hasGeospatialIssues"))).getOrElse(emptyBoolean))
+        Option(result.getValue(o, Bytes.toBytes("_iss_ZERO_COORDINATE"))).isEmpty,
+        Option(result.getValue(o, Bytes.toBytes("_iss_COORDINATE_INVALID"))).isEmpty,
+        Option(result.getValue(o, Bytes.toBytes("_iss_COORDINATE_OUT_OF_RANGE"))).isEmpty,
+        Option(result.getValue(o, Bytes.toBytes("_iss_COUNTRY_COORDINATE_MISMATCH"))).isEmpty
       )
     }}
 
