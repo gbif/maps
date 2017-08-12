@@ -102,9 +102,11 @@ public class FinaliseBackfill {
 
       } else {
         for (String projection : PROJECTIONS) {
-          Path hfiles = new Path(params.getTargetDirectory(), new Path("tiles", new Path(projection)));
-          System.out.println("Loading HBase table[" + params.getTargetTable()+ "] from [" + hfiles + "]");
-          loader.doBulkLoad(hfiles, hTable);
+          for (int zoom=0; zoom<=20; zoom++) {
+            Path hfiles = new Path(params.getTargetDirectory(), new Path("tiles", new Path(projection, "z" + zoom)));
+            System.out.println("Zoom[" + zoom +"] Loading HBase table[" + params.getTargetTable()+ "] from [" + hfiles + "]");
+            loader.doBulkLoad(hfiles, hTable);
+          }
         }
       }
     }

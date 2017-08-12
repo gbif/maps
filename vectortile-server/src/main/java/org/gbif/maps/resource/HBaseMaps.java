@@ -1,6 +1,9 @@
 package org.gbif.maps.resource;
 
 import org.gbif.maps.common.hbase.ModulusSalt;
+import org.gbif.maps.common.meta.MapMetastore;
+import org.gbif.maps.common.meta.MapTables;
+import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.io.PointFeature;
 
 import java.io.IOException;
@@ -31,13 +34,37 @@ import org.slf4j.LoggerFactory;
 public class HBaseMaps {
   private static final Logger LOG = LoggerFactory.getLogger(HBaseMaps.class);
   private final Connection connection;
-  private final String tableName;
+  private final MapMetastore metastore;
   private final ModulusSalt salt;
 
-  public HBaseMaps(Configuration conf, String tableName, int saltModulus) throws IOException {
+  public HBaseMaps(Configuration conf, String tableName, int saltModulus) throws Exception {
     connection = ConnectionFactory.createConnection(conf);
-    this.tableName = tableName;
+    metastore = Metastores.newStaticMapsMeta(tableName,tableName); // backward compatible version
     salt = new ModulusSalt(saltModulus);
+  }
+
+  public HBaseMaps(Configuration conf, MapMetastore metastore, int saltModulus) throws Exception {
+    connection = ConnectionFactory.createConnection(conf);
+    this.metastore = metastore;
+    salt = new ModulusSalt(saltModulus);
+  }
+
+  private TableName pointTable() throws Exception {
+    MapTables meta = metastore.read();
+    if (meta == null) {
+      LOG.error("No point metadata exists");
+      throw new IllegalStateException("Unable to read point metadata to locate table");
+    }
+    return TableName.valueOf(meta.getPointTable());
+  }
+
+  private TableName tileTable() throws Exception {
+    MapTables meta = metastore.read();
+    if (meta == null) {
+      LOG.error("No tile metadata exists");
+      throw new IllegalStateException("Unable to read tile metadata to locate table");
+    }
+    return TableName.valueOf(meta.getTileTable());
   }
 
   private LoadingCache<String, Optional<PointFeature.PointFeatures>> pointCache = CacheBuilder
@@ -48,8 +75,8 @@ public class HBaseMaps {
       new CacheLoader<String, Optional<PointFeature.PointFeatures>>() {
         @Override
         public Optional<PointFeature.PointFeatures> load(String rowKey) throws Exception {
-          LOG.info("Table {}", tableName);
-          try (Table table = connection.getTable(TableName.valueOf(tableName))) {
+          LOG.info("Table {}", metastore.read().getPointTable());
+          try (Table table = connection.getTable(pointTable())) {
             LOG.info(salt.saltToString(rowKey));
             byte[] saltedKey = salt.salt(rowKey);
             Get get = new Get(saltedKey);
@@ -74,8 +101,8 @@ public class HBaseMaps {
       new CacheLoader<TileKey, Optional<byte[]>>() {
         @Override
         public Optional<byte[]> load(TileKey rowCell) throws Exception {
-          try (Table table = connection.getTable(TableName.valueOf(tableName))) {
-
+          LOG.info("Table {}", metastore.read().getTileTable());
+          try (Table table = connection.getTable(tileTable())) {
             String unsalted = rowCell.rowKey + ":" + rowCell.zxy();
             byte[] saltedKey = salt.salt(unsalted);
             LOG.info(salt.saltToString(unsalted));
@@ -116,7 +143,7 @@ public class HBaseMaps {
     Stopwatch timer = new Stopwatch().start();
     try {
 
-      try (Table table = connection.getTable(TableName.valueOf(tableName))) {
+      try (Table table = connection.getTable(tileTable())) {
         Get get = new Get(Bytes.toBytes(mapKey));
         String columnFamily = srs.replaceAll(":", "_").toUpperCase();
         get.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(z + ":" + x + ":" + y));

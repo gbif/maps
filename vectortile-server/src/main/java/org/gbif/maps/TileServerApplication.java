@@ -1,6 +1,9 @@
 package org.gbif.maps;
 
 import org.gbif.common.search.solr.builders.CloudSolrServerBuilder;
+import org.gbif.maps.common.meta.MapMetastore;
+import org.gbif.maps.common.meta.Metastores;
+import org.gbif.maps.resource.HBaseMaps;
 import org.gbif.maps.resource.NoContentResponseFilter;
 import org.gbif.maps.resource.RegressionResource;
 import org.gbif.maps.resource.SolrResource;
@@ -42,7 +45,7 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
   }
 
   @Override
-  public final void run(TileServerConfiguration configuration, Environment environment) throws IOException {
+  public final void run(TileServerConfiguration configuration, Environment environment) throws Exception {
     Configuration conf = HBaseConfiguration.create();
     conf.set("hbase.zookeeper.quorum", configuration.getHbase().getZookeeperQuorum());
 
@@ -53,14 +56,25 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
                                                                           configuration.getSolr().getRequestHandler());
 
 
-    // tileSize must match the preprocessed tiles in HBase
-    String tableName = configuration.getHbase().getTableName();
+    // Either use Zookeeper or static config to locate tables
+    HBaseMaps hbaseMaps = null;
+    if (configuration.getMetastore() != null) {
+      MapMetastore meta = Metastores.newZookeeperMapsMeta(configuration.getMetastore().getZookeeperQuorum(), 1000,
+                                                  configuration.getMetastore().getPath());
+      hbaseMaps = new HBaseMaps(conf, meta, configuration.getHbase().getSaltModulus());
+
+    } else {
+      //
+      MapMetastore meta = Metastores.newStaticMapsMeta(configuration.getHbase().getTableName(),
+                                                       configuration.getHbase().getTableName());
+      hbaseMaps = new HBaseMaps(conf, meta, configuration.getHbase().getSaltModulus());
+    }
+
 
     TileResource tiles = new TileResource(conf,
-                                          configuration.getHbase().getTableName(),
+                                          hbaseMaps,
                                           configuration.getHbase().getTileSize(),
-                                          configuration.getHbase().getBufferSize(),
-                                          configuration.getHbase().getSaltModulus());
+                                          configuration.getHbase().getBufferSize());
     environment.jersey().register(tiles);
 
     environment.jersey().register(new RegressionResource(tiles, client));

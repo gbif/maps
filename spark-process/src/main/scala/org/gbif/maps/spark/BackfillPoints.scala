@@ -60,7 +60,8 @@ object BackfillPoints {
       // Stuctured as: mapKey, latitude, longitude, basisOfRecord, year -> count
       val res = mutable.ArrayBuffer[((String, Double, Double, Feature.BasisOfRecord, Short), Long)]()
       mapKeys.foreach(mapKey => {
-        runningCount(mapKey) += 1
+        var count = runningCount(mapKey) + 1
+        runningCount.put(mapKey,count)
 
         // accumulate only the first N records
         if (runningCount(mapKey) <= config.tilesThreshold) {

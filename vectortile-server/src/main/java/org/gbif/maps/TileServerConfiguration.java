@@ -1,5 +1,6 @@
 package org.gbif.maps;
 
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -18,6 +19,10 @@ public class TileServerConfiguration extends Configuration {
   @Valid
   @NotNull
   private SolrConfiguration solr;
+
+  @Valid
+  @Nullable
+  private Metastore metastore;
 
   @Valid
   @NotNull
@@ -48,6 +53,46 @@ public class TileServerConfiguration extends Configuration {
 
   @JsonProperty
   public void setService(ServiceConfiguration service) { this.service = service; }
+
+  @JsonProperty
+  public Metastore getMetastore() {
+    return metastore;
+  }
+
+  @JsonProperty
+  public void setMetastore(@Nullable Metastore metastore) {
+    this.metastore = metastore;
+  }
+
+  public static class Metastore extends Configuration {
+    @Valid
+    @NotNull
+    private String zookeeperQuorum;
+
+    @Valid
+    @NotNull
+    private String path;
+
+    @JsonProperty
+    public String getZookeeperQuorum() {
+      return zookeeperQuorum;
+    }
+
+    @JsonProperty
+    public String getPath() {
+      return path;
+    }
+
+    @JsonProperty
+    public void setPath(String path) {
+      this.path = path;
+    }
+
+    @JsonProperty
+    public void setZookeeperQuorum(String zookeeperQuorum) {
+      this.zookeeperQuorum = zookeeperQuorum;
+    }
+  }
 
   public static class HBaseConfiguration extends Configuration {
     @Valid

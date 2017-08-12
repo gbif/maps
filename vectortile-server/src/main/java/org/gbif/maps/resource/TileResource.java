@@ -86,14 +86,13 @@ public final class TileResource {
   /**
    * Construct the resource
    * @param conf The application configuration
-   * @param tileSize The tile size for the preprocessed tiles (not point tiles which are always full resolution)
+   * @param hbaseMaps The data layer to the maps
    * @param bufferSize The buffer size for preprocessed tiles
-   * @param saltModulus The salt modulus to use
    * @throws IOException If HBase cannot be reached
    */
-  public TileResource(Configuration conf, String hbaseTableName, int tileSize, int bufferSize, int saltModulus)
-    throws IOException {
-    this.hbaseMaps = new HBaseMaps(conf, hbaseTableName, saltModulus);
+  public TileResource(Configuration conf, HBaseMaps hbaseMaps, int tileSize, int bufferSize)
+    throws Exception {
+    this.hbaseMaps = hbaseMaps;
     this.tileSize = tileSize;
     this.bufferSize = bufferSize;
   }
@@ -217,31 +216,29 @@ public final class TileResource {
                                     @Nullable Set<String> basisOfRecords, @NotNull  Range years, boolean verbose)
     throws IOException {
 
-    // depending on the query, direct the request attempting to load the point features first, before defaulting
-    // to tile views
-    Optional<PointFeature.PointFeatures> optionalFeatures = hbaseMaps.getPoints(mapKey);
-    if (optionalFeatures.isPresent()) {
-      TileProjection projection = Tiles.fromEPSG(srs, POINT_TILE_SIZE);
-      PointFeature.PointFeatures features = optionalFeatures.get();
-      LOG.info("Found {} features and tile schema {}", features.getFeaturesCount(), TileSchema.fromSRS(srs));
-      VectorTileEncoder encoder = new VectorTileEncoder(POINT_TILE_SIZE, POINT_TILE_BUFFER, false);
+    // Attempt to get a preprepared tile first, before falling back to a point tile
+    Optional<byte[]> encoded = hbaseMaps.getTile(mapKey, srs, z, x, y);
+    if (encoded.isPresent()) {
+      VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
+      LOG.info("Found tile with encoded length of: " + encoded.get().length);
 
-      PointFeatureFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, features.getFeaturesList(),
+      VectorTileFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, encoded.get(),
+                                            years, basisOfRecords, verbose);
+      return encoder.encode();
+    } else {
+      VectorTileEncoder encoder = new VectorTileEncoder(POINT_TILE_SIZE, POINT_TILE_BUFFER, false);
+      Optional<PointFeature.PointFeatures> optionalFeatures = hbaseMaps.getPoints(mapKey);
+      if (optionalFeatures.isPresent()) {
+        TileProjection projection = Tiles.fromEPSG(srs, POINT_TILE_SIZE);
+        PointFeature.PointFeatures features = optionalFeatures.get();
+        LOG.info("Found {} features and tile schema {}", features.getFeaturesCount(), TileSchema.fromSRS(srs));
+
+        PointFeatureFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, features.getFeaturesList(),
                                                 projection, TileSchema.fromSRS(srs), z, x, y, POINT_TILE_SIZE, POINT_TILE_BUFFER,
                                                 years, basisOfRecords);
 
-      return encoder.encode();
-    } else {
-      VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
-
-      Optional<byte[]> encoded = hbaseMaps.getTile(mapKey, srs, z, x, y);
-      if (encoded.isPresent()) {
-        LOG.info("Found tile with encoded length of: " + encoded.get().length);
-
-        VectorTileFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, encoded.get(),
-                                              years, basisOfRecords, verbose);
       }
-      return encoder.encode();
+      return encoder.encode(); // may be empty
     }
   }
 }
