@@ -28,6 +28,7 @@
       <arg>${wf:conf("gbif.map.mode")}</arg>
       <arg>${wf:conf("gbif.map.keySaltModulus")}</arg>
       <arg>${wf:conf("gbif.map.targetDirectory")}</arg>
+      <arg>${wf:conf("gbif.map.zk.metadataPath")}</arg>
       <capture-output />
     </java>
     <ok to="generateHFiles" />
@@ -54,10 +55,9 @@
       <master>yarn-cluster</master>
       <name>Map backfill points</name>
       <class>org.gbif.maps.spark.Backfill</class>
-      <jar>lib/spark-process-0.1.3-SNAPSHOT.jar</jar>
+      <jar>lib/spark-process-0.1.4-SNAPSHOT.jar</jar>
       <spark-opts>${wf:conf("gbif.map.spark.opts")}</spark-opts>
-      <arg>points</arg>
-      <!--arg>tiles</arg-->
+      <arg>${wf:conf("gbif.map.mode")}</arg>
       <arg>${wf:conf("gbif.map.spark.conf")}</arg>
       <arg>${toPropertiesStr(wf:actionData('prepare'))}</arg>
     </spark>

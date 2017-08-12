@@ -26,6 +26,7 @@ public class WorkflowParams {
   public static String OOZIE_TARGET_DIRECTORY = "gbif.map.targetDirectory";
   public static String OOZIE_MODE = "gbif.map.mode";
   public static String OOZIE_KEY_SALT_MODULUS = "gbif.map.keySaltModulus";
+  public static String OOZIE_ZK_MAP_METADATA_PATH = "gbif.map.zk.metadataPath";
 
   private String zkQuorum;
   private String timestamp;
@@ -36,6 +37,7 @@ public class WorkflowParams {
   private String targetDirectory;
   private String mode;
   private int keySaltModulus;
+  private String zkMetaDataPath;
 
   private WorkflowParams() {}
 
@@ -55,6 +57,7 @@ public class WorkflowParams {
       params.snapshotTable = params.sourceTable + "_" + params.timestamp;
       params.targetTable = params.targetTablePrefix + "_" + params.mode + "_" + params.timestamp;
       params.targetDirectory = args[5] + "_" + params.timestamp; // location where HFiles will be placed
+      params.zkMetaDataPath = args[6];
 
       return params;
 
@@ -83,6 +86,7 @@ public class WorkflowParams {
       params.snapshotTable = props.getProperty(OOZIE_SNAPSHOT_TABLE);
       params.targetTable = props.getProperty(OOZIE_TARGET_TABLE);
       params.targetDirectory = props.getProperty(OOZIE_TARGET_DIRECTORY);
+      params.zkMetaDataPath = props.getProperty(OOZIE_ZK_MAP_METADATA_PATH);
 
       return params;
 
@@ -128,6 +132,10 @@ public class WorkflowParams {
     return keySaltModulus;
   }
 
+  public String getZkMetaDataPath() {
+    return zkMetaDataPath;
+  }
+
   @Override
   public String toString() {
     return "WorkflowParams{" +
@@ -140,6 +148,7 @@ public class WorkflowParams {
            ", targetDirectory='" + targetDirectory + '\'' +
            ", mode='" + mode + '\'' +
            ", keySaltModulus=" + keySaltModulus +
+           ", zkMetaDataPath=" + zkMetaDataPath +
            '}';
   }
 
@@ -159,6 +168,7 @@ public class WorkflowParams {
         props.setProperty(OOZIE_TARGET_DIRECTORY, getTargetDirectory());
         props.setProperty(OOZIE_MODE, getMode());
         props.setProperty(OOZIE_KEY_SALT_MODULUS, String.valueOf(getKeySaltModulus()));
+        props.setProperty(OOZIE_ZK_MAP_METADATA_PATH, getZkMetaDataPath());
         props.store(os, ""); // persist
 
       } catch (FileNotFoundException e) {

@@ -3,6 +3,7 @@ package org.gbif.maps.common.filter;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Stopwatch;
@@ -49,7 +50,9 @@ public class VectorTileFiltersPerformance {
   }
 
   public static void main(String[] args) throws IOException {
-    Stopwatch timer = Stopwatch.createStarted();
+    Stopwatch timer = new Stopwatch();
+    timer.start();
+
     byte[] sample = sampleTile();
     LOG.info("Time to create sample {}ms", timer.elapsed(TimeUnit.MILLISECONDS));
     timer.reset().start();

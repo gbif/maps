@@ -1,6 +1,9 @@
 package org.gbif.maps.workflow;
 
 import org.gbif.maps.common.hbase.ModulusSalt;
+import org.gbif.maps.common.meta.MapMetastore;
+import org.gbif.maps.common.meta.MapTables;
+import org.gbif.maps.common.meta.Metastores;
 
 import java.io.IOException;
 import java.util.List;
@@ -45,6 +48,35 @@ public class FinaliseBackfill {
     WorkflowParams params = WorkflowParams.buildFromOozie(args[0]);
     System.out.println(params.toString());
 
+    loadTable(params); // load HBase (throws exception on error)
+    updateMeta(params); // update the metastore in ZK
+    // TODO: cleanup tables
+  }
+
+  /**
+   * Updates the tile or point table registration in the metadata, depending on the mode in which we are running.
+   */
+  private static void updateMeta(WorkflowParams params) throws Exception {
+    // 1 sec retries
+    MapMetastore metastore = Metastores.newZookeeperMapsMeta(params.getZkQuorum(), 1000, params.getZkMetaDataPath());
+
+    MapTables meta = metastore.read(); // we update any existing values
+
+    // NOTE: there is the possibility of a race condition here if 2 instances are updating different modes
+    // simulataneously
+    if ("points".equalsIgnoreCase(params.getMode())) {
+      MapTables newMeta = new MapTables((meta == null) ? null : meta.getTileTable(), params.getTargetTable());
+      System.out.println("Updating metadata with: " + newMeta);
+      metastore.update(new MapTables(null, params.getTargetTable()));
+
+    } else {
+      MapTables newMeta = new MapTables(params.getTargetTable(), (meta == null) ? null : meta.getPointTable());
+      System.out.println("Updating metadata with: " + newMeta);
+      metastore.update(newMeta);
+    }
+  }
+
+  private static void loadTable(WorkflowParams params) throws Exception {
     Configuration conf = HBaseConfiguration.create();
     conf.set(HConstants.ZOOKEEPER_QUORUM, params.getZkQuorum());
 
