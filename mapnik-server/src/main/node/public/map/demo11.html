@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Maps Demo 10</title>
+  <title>Maps Demo 4</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
   <link rel="icon" href="//tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-dark"/>
@@ -13,20 +13,41 @@
       background-color: black;
     }
   </style>
-  <link rel="stylesheet" href="https://npmcdn.com/leaflet@1.0.0-rc.3/dist/leaflet.css" />
+  <link rel="stylesheet" href="//tile.gbif.org/ui/leaflet.css" type="text/css">
+  <script src="//tile.gbif.org/ui/leaflet-src.js"></script>
+  <script src="//tile.gbif.org/ui/proj4.js"></script>
+  <script src="//tile.gbif.org/ui/proj4leaflet.js"></script>
 </head>
 <body>
   <div id="map"></div>
-  <script src="https://npmcdn.com/leaflet@1.0.0-rc.3/dist/leaflet.js"></script>
   <script>
-    var map = L.map('map').setView(new L.LatLng(0, 0), 1);
+    var pixel_ratio = window.devicePixelRatio || 1;
 
-    L.tileLayer('//tile.gbif.org/3857/omt/{z}/{x}/{y}@1x.png?style=gbif-dark', {
-        tileSize: 512, zoomOffset: -1, minZoom: 1, maxZoom: 17
+    var max_zoom = 16;
+    var tile_size = 256;
+
+    var extent = 180.0;
+    var resolutions = Array(max_zoom + 1).fill().map((_, i) => ( extent / tile_size / Math.pow(2, i) ));
+
+    var crs = new L.Proj.CRS(
+      'EPSG:4326',
+      '+proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees',
+      {
+        origin: [-180.0, 90.0],
+        bounds: L.bounds([-180, 90], [180, -90]),
+        resolutions: resolutions
+      }
+    );
+
+    var map = L.map('map', {
+      crs: crs
+    }).setView([0, 0], 1);
+
+    L.tileLayer('//tile.gbif.org/4326/omt/{z}/{x}/{y}@'+pixel_ratio+'x.png?style=gbif-dark', {
+      tileSize: tile_size
     }).addTo(map);
 
     L.GBIFSimple = L.TileLayer.extend({
-
       options: {
         attribution: 'GBIF.org',
         errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', // empty tile
@@ -34,7 +55,7 @@
 
       defaultGBIFParams: {
         style: "classic",
-        srs: "EPSG:4326",
+        srs: "EPSG:4326"
       },
 
       initialize: function (url, options) {
@@ -62,10 +83,10 @@
       return new L.GBIFSimple(url, options);
     };
 
-
-
     L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}@1x.png',
-      {srs: "EPSG:3857", style: "fire.point"}).addTo(map);
+      {style: "fire.point", tileSize: 256}).addTo(map);
+
+
   </script>
 </body>
 </html>

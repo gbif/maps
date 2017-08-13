@@ -39,6 +39,7 @@ namedStyles["iNaturalist.point"] = compileStylesheetSync("./cartocss/iNaturalist
 namedStyles["purpleWhite.point"] = compileStylesheetSync("./cartocss/purple-white-dot.mss")
 namedStyles["red.point"] = compileStylesheetSync("./cartocss/red-dot.mss")
 namedStyles["fire.point"] = compileStylesheetSync("./cartocss/fire-dot.mss")
+namedStyles["glacier.point"] = compileStylesheetSync("./cartocss/glacier-dot.mss")
 
 
 function compileStylesheetSync(filename) {
@@ -79,6 +80,7 @@ var assetsHTML = [
   '/map/demo9.html',
   '/map/demo10.html',
   '/map/demo11.html',
+  '/map/demo12.html',
   '/map/demo-cartodb.html',
   '/map/hexagon-debugging.html',
   '/map/legacy-style-debugging.html',

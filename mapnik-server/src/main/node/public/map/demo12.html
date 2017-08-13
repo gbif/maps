@@ -24,7 +24,7 @@
   var pixel_ratio = window.devicePixelRatio || 1;
 
   var max_zoom = 16;
-  var tile_size = 512;
+  var tile_size = 256;
 
   var extent = 180.0;
   var resolutions = Array(max_zoom + 1).fill().map((_, i) => ( extent / tile_size / Math.pow(2, i) ));
@@ -83,8 +83,10 @@
     return new L.GBIFSimple(url, options);
   };
 
-  L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}@'+pixel_ratio+'x.png',
-          {style: "green.poly", bin: "hex", year:"2000,2017", hexPerTile:117, taxonKey:212, tileSize: 512}).addTo(map);
+  L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}@1x.png',
+          {style: "glacier.point", tileSize: 256}).addTo(map);
+
+
 </script>
 </body>
 </html>

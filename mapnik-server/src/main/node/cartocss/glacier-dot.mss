@@ -1,15 +1,15 @@
 #occurrence {
-  marker-width: 2;
+  marker-width: 1;
   marker-line-width: 0;
   marker-allow-overlap: true;
   marker-fill: #206EFF;
   marker-comp-op: screen;
 
-                 [total <=    10] { marker-fill: #5E0700;  }
-  [total >    10][total <=   100] { marker-fill: #EF4712;  }
-  [total >   100][total <=  1000] { marker-fill: #DC6902;  }
-  [total >  1000][total <= 10000] { marker-fill: #F09C00;  }
-  [total > 10000]                 { marker-fill: #F2F7F0;  }
+                 [total <=    10] { marker-fill: #045a8d;  }
+  [total >    10][total <=   100] { marker-fill: #2b8cbe;  }
+  [total >   100][total <=  1000] { marker-fill: #74a9cf;  }
+  [total >  1000][total <= 10000] { marker-fill: #bdc9e1;  }
+  [total > 10000]                 { marker-fill: #f1eef6;  }
 
   [zoom >= 11] { marker-width:  3.95; }
   [zoom >= 12] { marker-width:  6.25; }
