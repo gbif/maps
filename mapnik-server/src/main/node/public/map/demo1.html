@@ -2,9 +2,11 @@
 <html>
 <head>
   <title>Maps Demo 1</title>
-  <meta charset="utf-8" />
+  <meta charset="utf-8"/>
   <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
-  <link rel="icon" href="//tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-dark"/>
+  <link rel="icon" href="https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-dark"/>
+  <link rel="stylesheet" href="https://tile.gbif.org/ui/ol.css" type="text/css">
+  <script src="https://tile.gbif.org/ui/ol.js"></script>
   <style>
     html, body, #map {
       height: 100%;
@@ -13,58 +15,55 @@
       background-color: black;
     }
   </style>
-  <link rel="stylesheet" href="https://npmcdn.com/leaflet@1.0.0-rc.3/dist/leaflet.css" />
 </head>
 <body>
   <div id="map"></div>
-  <script src="https://npmcdn.com/leaflet@1.0.0-rc.3/dist/leaflet.js"></script>
   <script>
-    var map = L.map('map').setView(new L.LatLng(0, 0), 1);
+    var pixel_ratio = parseInt(window.devicePixelRatio) || 1;
 
-    L.tileLayer('//tile.gbif.org/3857/omt/{z}/{x}/{y}@1x.png?style=gbif-dark', {
-        tileSize: 512, zoomOffset: -1, minZoom: 1, maxZoom: 17
-    }).addTo(map);
-
-    L.GBIFSimple = L.TileLayer.extend({
-
-      options: {
-        attribution: 'GBIF.org',
-        errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', // empty tile
-      },
-
-      defaultGBIFParams: {
-        style: "classic",
-        srs: "EPSG:4326",
-      },
-
-      initialize: function (url, options) {
-        this._url = url;
-
-        // all keys that are not TileLayer options go to GBIF params
-        var gbifParams = L.extend({}, this.defaultGBIFParams);
-        for (var i in options) {
-          if (!(i in this.options)) {
-            gbifParams[i] = options[i];
-          }
-        }
-
-        options = L.setOptions(this, options);
-        this.gbifParams = gbifParams;
-      },
-
-      getTileUrl: function (coords) {
-        var url = L.TileLayer.prototype.getTileUrl.call(this, coords);
-        return url + L.Util.getParamString(this.gbifParams, url)
-      },
+    var tile_grid_16 = ol.tilegrid.createXYZ({
+      minZoom: 0,
+      maxZoom: 16,
+      tileSize: 512,
     });
 
-    L.gbifSimpleLayer = function (url, options) {
-      return new L.GBIFSimple(url, options);
-    };
+    var tile_grid_16_256 = ol.tilegrid.createXYZ({
+      minZoom: 0,
+      maxZoom: 16,
+      tileSize: 256,
+    });
 
+    var layers = [];
 
-    L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}@1x.png',
-      {srs: "EPSG:3857", style: "greenHeat.point"}).addTo(map);
+    var base_raster_style = 'gbif-dark';
+    layers.push(new ol.layer.Tile({
+      source: new ol.source.TileImage({
+        projection: 'EPSG:3857',
+        tileGrid: tile_grid_16,
+        tilePixelRatio: 1,
+        url: 'https://tile.gbif.org/3857/omt/{z}/{x}/{y}@'+pixel_ratio+'x.png?style='+base_raster_style,
+        wrapX: true
+      })
+    }));
+
+    layers.push(new ol.layer.Tile({
+      source: new ol.source.TileImage({
+        projection: 'EPSG:3857',
+        tileGrid: tile_grid_16_256,
+        tilePixelRatio: 1,
+        url: './occurrence/density/{z}/{x}/{y}@1x.png?srs=EPSG:3857&style=greenHeat.point',
+        wrapX: true
+      })
+    }));
+
+    var map = new ol.Map({
+      layers: layers,
+      target: 'map',
+      view: new ol.View({
+        center: [0, 0],
+        zoom: 1
+      }),
+    });
   </script>
 </body>
 </html>

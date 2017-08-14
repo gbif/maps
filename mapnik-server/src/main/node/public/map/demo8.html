@@ -2,104 +2,76 @@
 <html>
 <head>
   <title>Maps Demo 8</title>
-  <meta charset="utf-8" />
+  <meta charset="utf-8"/>
   <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
-  <link rel="icon" href="//tile.gbif.org/3031/omt/0/0/0@1x.png?style=osm-bright"/>
+  <link rel="icon" href="https://tile.gbif.org/3031/omt/0/0/0@1x.png?style=osm-bright"/>
+  <link rel="stylesheet" href="https://tile.gbif.org/ui/ol.css" type="text/css">
+  <script src="https://tile.gbif.org/ui/ol.js"></script>
+  <script src="https://tile.gbif.org/ui/proj4.js"></script>
   <style>
     html, body, #map {
       height: 100%;
       padding: 0;
       margin: 0;
-      background-color: ghostwhite;
+      background-color: black;
     }
   </style>
-  <link rel="stylesheet" href="//tile.gbif.org/ui/leaflet.css" type="text/css">
-  <script src="//tile.gbif.org/ui/leaflet-src.js"></script>
-  <script src="//tile.gbif.org/ui/proj4.js"></script>
-  <script src="//tile.gbif.org/ui/proj4leaflet.js"></script>
 </head>
 <body>
 <div id="map"></div>
 <script>
-  var pixel_ratio = window.devicePixelRatio || 1;
+  proj4.defs("EPSG:3031", "+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs");
 
-  var max_zoom = 16;
+  var pixel_ratio = parseInt(window.devicePixelRatio) || 1;
+
+  var halfWidth = 12367396.2185; // To the Equator
+  var extent = [-halfWidth, -halfWidth, halfWidth, halfWidth];
+  ol.proj.get("EPSG:3031").setExtent(extent);
   var tile_size = 512;
+  var max_zoom = 16;
+  var resolutions = Array.from(new Array(max_zoom+1), (x,i) => (halfWidth/(tile_size*Math.pow(2,i-1))));
 
-  var extent = 12367396.2185; // To the Equator
-  var resolutions = Array(max_zoom + 1).fill().map((_, i) => ( extent / tile_size / Math.pow(2, i-1) ));
-
-  var crs = new L.Proj.CRS(
-      'EPSG:3031',
-      "+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs",
-      {
-          origin: [-extent, extent],
-          projectedBounds: L.bounds(L.point(-extent, extent), L.point(extent, -extent)),
-          resolutions: resolutions
-      }
-  );
-
-  var map = L.map('map', {
-    crs: crs,
-  }).setView([-85, 160], 2);
-
-  // This gets round a bug, when Leaflet tries to find the coordinates for pixels outside the projection (e.g. top left corner of top left tile).
-  // https://github.com/kartena/Proj4Leaflet/issues/82
-  // Restricting the view is probably necessary to avoid the problem properly.  Or fixing the problem properly.
-  try {
-    L.tileLayer('//tile.gbif.org/3031/omt/{z}/{x}/{y}@'+pixel_ratio+'x.png?style=osm-bright', {
-      tileSize: 512,
-      minZoom: 0,
-      maxZoom: 14
-    }).addTo(map);
-  }
-  catch (err) {
-    console.error(err);
-  }
-
-  L.GBIFSimple = L.TileLayer.extend({
-    options: {
-      attribution: 'GBIF.org',
-      errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', // empty tile
-    },
-
-    defaultGBIFParams: {
-      style: "classic",
-      srs: "EPSG:3031"
-    },
-
-    initialize: function (url, options) {
-      this._url = url;
-
-      // all keys that are not TileLayer options go to GBIF params
-      var gbifParams = L.extend({}, this.defaultGBIFParams);
-      for (var i in options) {
-        if (!(i in this.options)) {
-          gbifParams[i] = options[i];
-        }
-      }
-
-      options = L.setOptions(this, options);
-      this.gbifParams = gbifParams;
-    },
-
-    getTileUrl: function (coords) {
-      var url = L.TileLayer.prototype.getTileUrl.call(this, coords);
-      return url + L.Util.getParamString(this.gbifParams, url)
-    },
+  var tile_grid_16 = new ol.tilegrid.TileGrid({
+    extent: extent,
+    origin: [-halfWidth, halfWidth],
+    minZoom: 0,
+    maxZoom: 16,
+    resolutions: resolutions,
+    tileSize: tile_size,
   });
 
-  L.gbifSimpleLayer = function (url, options) {
-    return new L.GBIFSimple(url, options);
-  };
+  var layers = [];
 
-  try {
-    L.gbifSimpleLayer('./occurrence/density/{z}/{x}/{y}@'+pixel_ratio+'x.png',
-            {style: "purpleYellow.point", taxonKey:2481660, tileSize: 512}).addTo(map);
-  }
-  catch (err) {
-    console.error(err);
-  }
+  var base_raster_style = 'osm-bright';
+  layers.push(new ol.layer.Tile({
+    source: new ol.source.TileImage({
+      projection: 'EPSG:3031',
+      tileGrid: tile_grid_16,
+      tilePixelRatio: 1,
+      url: 'https://tile.gbif.org/3031/omt/{z}/{x}/{y}@'+pixel_ratio+'x.png?style='+base_raster_style,
+      wrapX: true
+    })
+  }));
+
+  layers.push(new ol.layer.Tile({
+    source: new ol.source.TileImage({
+      projection: 'EPSG:3031',
+      tileGrid: tile_grid_16,
+      tilePixelRatio: 1,
+      url: './occurrence/density/{z}/{x}/{y}@'+pixel_ratio+'x.png?srs=EPSG:3031&style=purpleYellow.point&taxonKey=2481660',
+      wrapX: true
+    })
+  }));
+
+  var map = new ol.Map({
+    layers: layers,
+    target: 'map',
+    view: new ol.View({
+      center: [0, 0],
+      projection: 'EPSG:3031',
+      zoom: 3
+    }),
+  });
 </script>
 </body>
 </html>
