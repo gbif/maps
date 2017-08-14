@@ -40,9 +40,14 @@ import org.apache.hadoop.mapreduce.v2.app.MRAppMaster;
  * </ol>
  */
 public class FinaliseBackfill {
+  // TODO: Move this to configuration
   private final static String[] PROJECTIONS = {
     "EPSG_3857", "EPSG_4326", "EPSG_3575", "EPSG_3031"
   };
+
+  // TODO: Move this to configuration
+  private final static int MAX_ZOOM = 16;
+
 
   public static void main(String[] args) throws Exception {
     WorkflowParams params = WorkflowParams.buildFromOozie(args[0]);
@@ -67,7 +72,7 @@ public class FinaliseBackfill {
     if ("points".equalsIgnoreCase(params.getMode())) {
       MapTables newMeta = new MapTables((meta == null) ? null : meta.getTileTable(), params.getTargetTable());
       System.out.println("Updating metadata with: " + newMeta);
-      metastore.update(new MapTables(null, params.getTargetTable()));
+      metastore.update(newMeta);
 
     } else {
       MapTables newMeta = new MapTables(params.getTargetTable(), (meta == null) ? null : meta.getPointTable());
@@ -102,7 +107,7 @@ public class FinaliseBackfill {
 
       } else {
         for (String projection : PROJECTIONS) {
-          for (int zoom=0; zoom<=20; zoom++) {
+          for (int zoom=0; zoom<=MAX_ZOOM; zoom++) {
             Path hfiles = new Path(params.getTargetDirectory(), new Path("tiles", new Path(projection, "z" + zoom)));
             System.out.println("Zoom[" + zoom +"] Loading HBase table[" + params.getTargetTable()+ "] from [" + hfiles + "]");
             loader.doBulkLoad(hfiles, hTable);

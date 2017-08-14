@@ -49,6 +49,7 @@ class ZKMapMetastore implements MapMetastore, Closeable {
 
     LOG.info("Starting watcher for {}", zkNodePath);
     zkNodeCache.start(true);
+
     updateInternal(zkNodeCache); // set the inital state
   }
 
@@ -75,6 +76,7 @@ class ZKMapMetastore implements MapMetastore, Closeable {
    */
   void updateInternal(NodeCache cache) {
     try {
+
       ChildData child = cache.getCurrentData();
       mapTables = MapTables.deserialize(child.getData());
       LOG.info("MapTables for {} updated {}", zkNodePath, mapTables);

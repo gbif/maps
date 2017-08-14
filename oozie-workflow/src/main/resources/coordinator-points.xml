@@ -1,0 +1,14 @@
+<!--
+  Rebuilds the map point tiles on a 120 minute schedule.
+
+  TODO:
+    1) template this for start and the app path for the hdfs://ha-nn
+-->
+<coordinator-app name="OccurrenceHDFSBuild-Points" frequency="${coord:minutes(120)}"
+                 start="2017-08-13T08:00Z" end="2050-05-28T09:28Z" timezone="UTC" xmlns="uri:oozie:coordinator:0.4">
+  <action>
+    <workflow>
+      <app-path>hdfs://ha-nn/maps-backfill-workflow</app-path>
+    </workflow>
+  </action>
+</coordinator-app>
