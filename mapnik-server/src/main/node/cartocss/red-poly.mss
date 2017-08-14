@@ -3,6 +3,5 @@
  */
 
 #occurrence {
-  dot-width: 2;
-  dot-fill: #cc0000;
+  polygon-fill: #cc0000;
 }

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hexagon Debugging</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <link rel="icon" href="./occurrence/density/1/0/0@1x.png?srs=EPSG:4326&style=green2.poly&taxonKey=1&bin=hex&hexPerTile=7"/>
+  <style>
+    html, body {
+      background-color: white;
+      text-align: center;
+    }
+    section {
+      display: flex;
+    }
+    div {
+      outline: 1px dashed black;
+      display: grid;
+      grid-template-columns: 2;
+      grid-template-rows: 2;
+    }
+    img {
+      outline: 0.5px dashed rgba(255, 0, 0, 0.25);
+      margin: 0;
+      width: 512px;
+      height: 512px;
+      opacity: 0.5;
+    }
+    .img-1 {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .img-2 {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .img-3 {
+      grid-column: 1;
+      grid-row: 2;
+    }
+    .img-4 {
+      grid-column: 2;
+      grid-row: 2;
+    }
+    .img-5 {
+      grid-column: 2;
+      grid-row: 2;
+      width: 256px;
+      height: 256px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Binning debugging</h1>
+
+  <p>Hexagons (7): green2.poly and outline.poly</p>
+
+  <section>
+    <div style="background-image: url('./occurrence/density/0/0/0@2x.png?srs=EPSG:4326&style=outline.poly&taxonKey=1&bin=hex&hexPerTile=7')">
+      <img class="img-1" src="./occurrence/density/1/0/0@1x.png?srs=EPSG:4326&style=green2.poly&taxonKey=1&bin=hex&hexPerTile=7"/>
+      <img class="img-2" src="./occurrence/density/1/1/0@1x.png?srs=EPSG:4326&style=green2.poly&taxonKey=1&bin=hex&hexPerTile=7"/>
+      <img class="img-3" src="./occurrence/density/1/0/1@1x.png?srs=EPSG:4326&style=green2.poly&taxonKey=1&bin=hex&hexPerTile=7"/>
+      <img class="img-4" src="./occurrence/density/1/1/1@1x.png?srs=EPSG:4326&style=green2.poly&taxonKey=1&bin=hex&hexPerTile=7"/>
+      <img class="img-5" src="./occurrence/density/2/2/2@Hx.png?srs=EPSG:4326&style=outline.poly&taxonKey=1&bin=hex&hexPerTile=7"/>
+    </div>
+  </section>
+
+  <p>Squares (512): green2.poly and outline.poly</p>
+  <section>
+    <div style="background-image: url('./occurrence/density/0/0/0@2x.png?srs=EPSG:4326&style=outline.poly&taxonKey=1&bin=square&squareSize=512')">
+      <img class="img-1" src="./occurrence/density/1/0/0@1x.png?srs=EPSG:4326&style=green2.poly&taxonKey=1&bin=square&squareSize=512"/>
+      <img class="img-2" src="./occurrence/density/1/1/0@1x.png?srs=EPSG:4326&style=green2.poly&taxonKey=1&bin=square&squareSize=512"/>
+      <img class="img-3" src="./occurrence/density/1/0/1@1x.png?srs=EPSG:4326&style=green2.poly&taxonKey=1&bin=square&squareSize=512"/>
+      <img class="img-4" src="./occurrence/density/1/1/1@1x.png?srs=EPSG:4326&style=green2.poly&taxonKey=1&bin=square&squareSize=512"/>
+      <img class="img-5" src="./occurrence/density/2/2/2@Hx.png?srs=EPSG:4326&style=outline.poly&taxonKey=1&bin=square&squareSize=512"/>
+    </div>
+  </section>
+</body>
+</html>

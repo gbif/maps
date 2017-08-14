@@ -19,28 +19,32 @@ namedStyles["blueHeat.point"] = compileStylesheetSync("./cartocss/blue-heat-dot.
 namedStyles["orangeHeat.point"] = compileStylesheetSync("./cartocss/orange-heat-dot.mss")
 namedStyles["greenHeat.point"] = compileStylesheetSync("./cartocss/green-heat-dot.mss")
 
-// Classic GBIF styling (used in gbif.org)(used in gbif.org)
+// Classic GBIF styling (used in gbif.org)
 namedStyles["classic.point"] = compileStylesheetSync("./cartocss/classic-dot.mss")
 namedStyles["classic.poly"] = compileStylesheetSync("./cartocss/classic-poly.mss")
+// Also V1
+namedStyles["classic-noborder.poly"] = compileStylesheetSync("./cartocss/classic-noborder-poly.mss")
 
 // Purple yellow colour ramp (used in gbif.org)
 namedStyles["purpleYellow.point"] = compileStylesheetSync("./cartocss/purple-yellow-dot.mss")
 namedStyles["purpleYellow.poly"] = compileStylesheetSync("./cartocss/purple-yellow-poly.mss")
+namedStyles["purpleYellow-noborder.poly"] = compileStylesheetSync("./cartocss/purple-yellow-noborder-poly.mss")
 
 // Cluster styles (used in gbif.org)
 namedStyles["outline.poly"] = compileStylesheetSync("./cartocss/outline-poly.mss")
 namedStyles["blue.marker"] = compileStylesheetSync("./cartocss/blue-marker.mss")
 namedStyles["orange.marker"] = compileStylesheetSync("./cartocss/orange-marker.mss")
 
-// Miscelaneous styles
+// Miscellaneous styles
 namedStyles["green.poly"] = compileStylesheetSync("./cartocss/green-poly.mss")
 namedStyles["green2.poly"] = compileStylesheetSync("./cartocss/green2-poly.mss")
-namedStyles["iNaturalist.point"] = compileStylesheetSync("./cartocss/iNaturalist-dot.mss")
-namedStyles["purpleWhite.point"] = compileStylesheetSync("./cartocss/purple-white-dot.mss")
-namedStyles["red.point"] = compileStylesheetSync("./cartocss/red-dot.mss")
 namedStyles["fire.point"] = compileStylesheetSync("./cartocss/fire-dot.mss")
 namedStyles["glacier.point"] = compileStylesheetSync("./cartocss/glacier-dot.mss")
 
+// Styles for compatibility with V1 API
+namedStyles["iNaturalist.poly"] = compileStylesheetSync("./cartocss/iNaturalist-poly.mss")
+namedStyles["purpleWhite.poly"] = compileStylesheetSync("./cartocss/purple-white-poly.mss")
+namedStyles["red.poly"] = compileStylesheetSync("./cartocss/red-poly.mss")
 
 function compileStylesheetSync(filename) {
   // snippet simulating a TileJSON response from Tilelive, required only to give the layers for the CartoParser
@@ -82,7 +86,7 @@ var assetsHTML = [
   '/map/demo11.html',
   '/map/demo12.html',
   '/map/demo-cartodb.html',
-  '/map/hexagon-debugging.html',
+  '/map/binning-debugging.html',
   '/map/legacy-style-debugging.html',
   '/map/style-debugging.html'];
 
@@ -99,7 +103,6 @@ function parseUrl(parsedRequest) {
     var style = (parsedRequest.query.style in namedStyles) ? parsedRequest.query.style : defaultStyle;
     var stylesheet = namedStyles[style];
     var dotStyle = style.indexOf('point') > -1 && style.indexOf('Heat') < 0;
-    var dotResolution = (parsedRequest.query.pointSize) ? parsedRequest.query.pointSize : Math.pow(2, Math.floor(z/4));
 
     var sDensity = parsedRequest.pathname.substring(parsedRequest.pathname.length - 6, parsedRequest.pathname.length - 5);
     var density = (sDensity == 'H') ? 0.5 : parseInt(sDensity);
@@ -112,7 +115,6 @@ function parseUrl(parsedRequest) {
         "density": density,
         "stylesheet": stylesheet,
         "dotStyle": dotStyle,
-        "dotResolution": dotResolution
       }
     }
   }
@@ -138,20 +140,27 @@ function v1ParseUrl(parsedRequest) {
   // This gets us 256 pixel tiles.
   var density = 0.5;
 
-  var stylesheet = namedStyles['classic.point'];
+  var resolution = parsedRequest.query.resolution;
+  var squareSize;
+  switch (resolution) {
+    case  "2": squareSize =  32; break;
+    case  "4": squareSize =  64; break;
+    case  "8": squareSize = 128; break;
+    case "16": squareSize = 256; break;
+    default  : squareSize =  16;
+  }
 
+  var stylesheet = namedStyles['classic-noborder.poly'];
   if (parsedRequest.query.saturation == "true") {
-    stylesheet = namedStyles['purpleWhite.point'];
+    stylesheet = namedStyles['purpleWhite.poly'];
   } else if (parsedRequest.query.colors == ",,#CC0000FF") {
-    stylesheet = namedStyles['red.point'];
+    stylesheet = namedStyles['red.poly'];
   } else if (parsedRequest.query.palette == "reds" || parsedRequest.query.colors == ',10,#F7005Ae6|10,100,#D50067e6|100,1000,#B5006Ce6|1000,10000,#94006Ae6|10000,100000,#72005Fe6|100000,,#52034Ee6') {
-    stylesheet = namedStyles['iNaturalist.point'];
+    stylesheet = namedStyles['iNaturalist.poly'];
   }
 
   var type = parsedRequest.query.type;
   var key = parsedRequest.query.key;
-  var resolution = parsedRequest.query.resolution;
-  if (!resolution) resolution = 1;
 
   var mapKey;
   if (type == "TAXON") mapKey = "taxonKey="+key
@@ -284,8 +293,8 @@ function v1ParseUrl(parsedRequest) {
     "year": year,
     "key": mapKey,
     "basisOfRecord": Array.from(basisOfRecord),
-    "dotStyle": true,
-    "dotResolution": resolution * 2 // Doubled because we're shrinking the tiles to half the designed size.
+    "dotStyle": false,
+    "squareSize": squareSize
   }
 }
 
@@ -306,7 +315,7 @@ function vectorRequest(parsedRequest) {
   return url.format(parsedRequest);
 }
 
-function v1VectorRequest(z, x, y, year, key, basisOfRecord, parsedRequest) {
+function v1VectorRequest(z, x, y, year, key, basisOfRecord, squareSize, parsedRequest) {
   delete parsedRequest.search; // Must be removed to force regeneration of query string
 
   var params = "srs=EPSG:3857";
@@ -321,6 +330,10 @@ function v1VectorRequest(z, x, y, year, key, basisOfRecord, parsedRequest) {
 
   if (key) {
     params += "&" + key;
+  }
+
+  if (squareSize) {
+    params += "&bin=square&squareSize=" + squareSize;
   }
 
   parsedRequest.search = params;
@@ -352,7 +365,7 @@ function createServer(config) {
         try {
           console.log("Legacy try");
           parameters = v1ParseUrl(parsedRequest);
-          vectorTileUrl = v1VectorRequest(parameters.z, parameters.x, parameters.y, parameters.year, parameters.key, parameters.basisOfRecord, parsedRequest);
+          vectorTileUrl = v1VectorRequest(parameters.z, parameters.x, parameters.y, parameters.year, parameters.key, parameters.basisOfRecord, parameters.squareSize, parsedRequest);
         } catch (e) {
           res.writeHead(410, {
             'Content-Type': 'image/png',
@@ -383,8 +396,6 @@ function createServer(config) {
         }
       }
 
-      //vectorTileUrl = vectorTileUrl.replace("localhost:7001", "api.gbif-uat.org/v2")
-
       // issue the request to the vector tile server and render the tile as a PNG using Mapnik
       console.log("Fetching vector tile:", vectorTileUrl);
       //console.time("getTile");
@@ -405,8 +416,7 @@ function createServer(config) {
             //console.timeEnd("getTile");
 
             var dotStyle = parameters.dotStyle;
-            var dotSize = parameters.dotResolution;
-            var size = (dotStyle) ? 1024 / dotSize : 512 * parameters.density;
+            var size = (dotStyle) ? 1024 : 512 * parameters.density;
 
             try {
               var map = new mapnik.Map(size, size, mercator.proj4);
@@ -436,7 +446,7 @@ function createServer(config) {
                   // For dotStyles, produce them at double resolution, then reduce to the correct size and set transparency
                   // to all-or-nothing.
                   if (dotStyle) {
-                    size = 512 / dotSize;
+                    size = 512;
 
                     //console.time("resize");
                     // The available in node-mapnik to resize don't work correctly — a pixel around the edge is lost,
@@ -462,7 +472,7 @@ function createServer(config) {
 
                     var image = new mapnik.Image.fromBufferSync(size, size, correctSize);
 
-                    if (parameters.density != 1 || parameters.dotResolution != 1) {
+                    if (parameters.density != 1) {
                       image.premultiply();
                       image = image.resizeSync(512 * parameters.density, 512 * parameters.density);
                     }

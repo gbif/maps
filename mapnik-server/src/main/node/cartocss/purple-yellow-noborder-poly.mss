@@ -8,11 +8,4 @@
   [total >  1000][total <=  5000] { polygon-fill: #eeab79; }
   [total >  5000][total <= 10000] { polygon-fill: #f7cb8e; }
   [total > 10000]                 { polygon-fill: #ffebaa; }
-
-  // The offset and gamma avoid the appearance of misalignment with squares.
-  line-color: "#7b7b7b";
-  line-width: 0.5;
-  line-gamma: 0.5;
-  line-opacity: 1.0;
-  line-offset: -0.1;
 }
