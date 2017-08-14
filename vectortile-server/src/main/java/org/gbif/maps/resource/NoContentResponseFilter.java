@@ -5,8 +5,6 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 
-import com.sun.tools.internal.ws.wsdl.document.http.HTTPConstants;
-import org.apache.commons.httpclient.params.HttpParams;
 import org.mortbay.jetty.Response;
 
 /**

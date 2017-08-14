@@ -1,6 +1,7 @@
 package org.gbif.maps.resource;
 
 import org.gbif.maps.common.bin.HexBin;
+import org.gbif.maps.common.bin.SquareBin;
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.TileSchema;
@@ -37,8 +38,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.gbif.maps.resource.Params.BIN_MODE_HEX;
+import static org.gbif.maps.resource.Params.BIN_MODE_SQUARE;
 import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
+import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
 import static org.gbif.maps.resource.Params.HEX_TILE_SIZE;
+import static org.gbif.maps.resource.Params.SQUARE_TILE_SIZE;
 import static org.gbif.maps.resource.Params.enableCORS;
 
 /**
@@ -81,6 +85,7 @@ public final class SolrResource {
     @DefaultValue("EPSG:4326") @QueryParam("srs") String srs,
     @QueryParam("bin") String bin,
     @DefaultValue(DEFAULT_HEX_PER_TILE) @QueryParam("hexPerTile") int hexPerTile,
+    @DefaultValue(DEFAULT_SQUARE_SIZE) @QueryParam("squareSize") int squareSize,
     @Context HttpServletResponse response,
     @Context HttpServletRequest request
     ) throws Exception {
@@ -90,7 +95,8 @@ public final class SolrResource {
     OccurrenceHeatmapRequest heatmapRequest = OccurrenceHeatmapRequestProvider.buildOccurrenceHeatmapRequest(request);
 
 
-    Preconditions.checkArgument(bin == null || BIN_MODE_HEX.equalsIgnoreCase(bin), "Unsupported bin mode");
+    Preconditions.checkArgument(bin == null || BIN_MODE_HEX.equalsIgnoreCase(bin)
+        || BIN_MODE_SQUARE.equalsIgnoreCase(bin), "Unsupported bin mode");
 
     // Note (Tim R): by testing in production index, we determine that 4 is a sensible performance choice
     // every 4 zoom levels the grid resolution increases
@@ -149,8 +155,8 @@ public final class SolrResource {
               Map<String, Object> meta = new HashMap();
               meta.put("total", count);
 
-              // for hexagon binning, we add the cell center point, otherwise the geometry
-              if (BIN_MODE_HEX.equalsIgnoreCase(bin)) {
+              // for binning, we add the cell center point, otherwise the geometry
+              if (bin != null) {
                 // hack: use just the center points for each cell
                 Coordinate center = new Coordinate(centerX, centerY);
                 encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPoint(center));
@@ -189,6 +195,9 @@ public final class SolrResource {
       HexBin binner = new HexBin(HEX_TILE_SIZE, hexPerTile);
       return binner.bin(encodedTile, z, x, y);
 
+    } else if (BIN_MODE_SQUARE.equalsIgnoreCase(bin) && countsInts!=null && !countsInts.isEmpty()) {
+      SquareBin binner = new SquareBin(SQUARE_TILE_SIZE, squareSize);
+      return binner.bin(encodedTile, z, x, y);
     } else {
       return encodedTile;
     }
