@@ -44,7 +44,7 @@
     source: new ol.source.TileImage({
       projection: 'EPSG:4326',
       tileGrid: tile_grid_16,
-      tilePixelRatio: 1,
+      tilePixelRatio: pixel_ratio,
       url: 'https://tile.gbif.org/4326/omt/{z}/{x}/{y}@'+pixel_ratio+'x.png?style='+base_raster_style,
       wrapX: true
     })
@@ -54,7 +54,7 @@
     source: new ol.source.TileImage({
       projection: 'EPSG:4326',
       tileGrid: tile_grid_16,
-      tilePixelRatio: 1,
+      tilePixelRatio: pixel_ratio,
       url: './occurrence/density/{z}/{x}/{y}@'+pixel_ratio+'x.png?srs=EPSG:4326&style=outline.poly&publishingOrg=7b8aff00-a9f8-11d8-944b-b8a03c50a862&bin=hex&hexPerTile=41&year=2000,2017',
       wrapX: true
     })
@@ -64,7 +64,7 @@
     source: new ol.source.TileImage({
       projection: 'EPSG:4326',
       tileGrid: tile_grid_16,
-      tilePixelRatio: 1,
+      tilePixelRatio: pixel_ratio,
       url: './occurrence/density/{z}/{x}/{y}@'+pixel_ratio+'x.png?srs=EPSG:4326&style=blue.marker&publishingOrg=7b8aff00-a9f8-11d8-944b-b8a03c50a862&bin=hex&hexPerTile=41&year=2000,2017',
       wrapX: true
     })

@@ -40,7 +40,7 @@
     source: new ol.source.TileImage({
       projection: 'EPSG:3857',
       tileGrid: tile_grid_16,
-      tilePixelRatio: 1,
+      tilePixelRatio: pixel_ratio,
       url: 'https://tile.gbif.org/3857/omt/{z}/{x}/{y}@'+pixel_ratio+'x.png?style='+base_raster_style,
       wrapX: true
     })
@@ -50,7 +50,7 @@
     source: new ol.source.TileImage({
       projection: 'EPSG:3857',
       tileGrid: tile_grid_16_256,
-      tilePixelRatio: 1,
+      tilePixelRatio: pixel_ratio,
       url: './occurrence/density/{z}/{x}/{y}@1x.png?srs=EPSG:3857&style=blueHeat.point&publishingOrg=1cd669d0-80ea-11de-a9d0-f1765f95f18b',
       wrapX: true
     })
