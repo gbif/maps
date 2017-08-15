@@ -1,18 +1,21 @@
 const request = require('request')
     , http = require('http')
-    , fs = require('fs')
-    , yaml = require('yaml-js')
     , gbifServiceRegistry = require('./gbifServiceRegistry')
     , routes = require('./routes')
-    , renderer = require('./renderer');
+    , renderer = require('./renderer')
+    , config = require('./config');
 
-function createServer(config) {
+function createServer() {
   return http.createServer(function(req, res) {
     console.log("Request:", req.url);
 
     var x = routes(req, res);
-    var parameters = x.parameters;
-    var vectorTileUrl = x.vectorTileUrl;
+    if (x) {
+      var parameters = x.parameters;
+      var vectorTileUrl = x.vectorTileUrl;
+    } else {
+      return;
+    }
 
     // issue the request to the vector tile server and render the tile as a PNG using Mapnik
     console.log("Fetching vector tile:", vectorTileUrl);
@@ -90,35 +93,32 @@ function exitHandler() {
  * Extract the configuration and start the server.  This expects a config file in YAML format and a port
  * as the only arguments.  No sanitization is performed on the file existence or content.
  */
-//try {
-//  process.on('SIGHUP', () => {console.log("Ignoring SIGHUP")});
+try {
+  process.on('SIGHUP', () => {console.log("Ignoring SIGHUP")});
 
   // Log if we crash.
-  // process.on('uncaughtException', function (exception) {
-  //   console.trace(exception);
-  //   exitHandler();
-  // });
-  // process.on('unhandledRejection', (reason, p) => {
-  //   console.log("Unhandled Rejection at: Promise ", p, " reason: ", reason);
-  //   exitHandler();
-  // });
+  process.on('uncaughtException', function (exception) {
+    console.trace(exception);
+    exitHandler();
+  });
+  process.on('unhandledRejection', (reason, p) => {
+    console.log("Unhandled Rejection at: Promise ", p, " reason: ", reason);
+    exitHandler();
+  });
 
   // Set up server.
-  var configFile = process.argv[2];
   var port = parseInt(process.argv[3]);
-  console.log("Using config: " + configFile);
   console.log("Using port: " + port);
-  var config = yaml.load(fs.readFileSync(configFile, "utf8"));
-  var server = createServer(config)
+  var server = createServer()
   server.listen(port);
 
   // Set up ZooKeeper.
-//  gbifServiceRegistry.register(config);
+  gbifServiceRegistry.register(config);
 
   // Aim to exit cleanly.
-//  process.on('SIGINT', exitHandler.bind());
-//  process.on('SIGTERM', exitHandler.bind());
-//  process.on('exit', exitHandler.bind());
-//} catch (e) {
-//  console.error(e);
-//}
+  process.on('SIGINT', exitHandler.bind());
+  process.on('SIGTERM', exitHandler.bind());
+  process.on('exit', exitHandler.bind());
+} catch (e) {
+  console.error(e);
+}

@@ -56,6 +56,14 @@ function compileStylesheetSync(filename) {
 }
 var defaultStyle = "classic.point";
 
-module.exports = function(style) {
+function Styles() {}
+
+Styles.prototype.getStyleName = function(style) {
+  return (style in namedStyles) ? style : defaultStyle;
+}
+
+Styles.prototype.getStyle = function(style) {
   return (style in namedStyles) ? namedStyles[style] : namedStyles[defaultStyle];
 }
+
+module.exports = new Styles();

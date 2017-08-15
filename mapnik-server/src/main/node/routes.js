@@ -1,17 +1,19 @@
 const request = require('request')
-    , http = require('http')
     , url = require('url')
     , fs = require('fs')
+    , config = require('./config')
     , styles = require('./styles');
+
+function Routes() {}
 
 /**
  * The server supports the ability to provide assets which need to be explicitly registered in order to be secure.
- * (e.g. trying to expose files using URL hack such as http://api.gbif.org/v1/map/../../../hosts)
+ * (e.g. trying to expose files using URL hack such as http://api.gbif.org/v2/map/../../../hosts)
  *
- * Should this become more complex, then express or similar should be consider.
+ * Should this become more complex, then express or similar should be considered.
  */
 var assetsHTML = [
-  '/map/styles.html',
+  '/map/binning-debugging.html',
   '/map/demo.html',
   '/map/demo1.html',
   '/map/demo2.html',
@@ -26,10 +28,9 @@ var assetsHTML = [
   '/map/demo11.html',
   '/map/demo12.html',
   '/map/demo-cartodb.html',
-  '/map/binning-debugging.html',
   '/map/legacy-style-debugging.html',
-  '/map/style-debugging.html'];
-
+  '/map/style-debugging.html',
+  '/map/styles.html'];
 
 function parseUrl(parsedRequest) {
   if (parsedRequest.pathname.endsWith(".png")) {
@@ -41,8 +42,8 @@ function parseUrl(parsedRequest) {
     var y = parseInt(dirs[dirs.length - 1]);
 
     // find the compiled stylesheet from the given style parameter, defaulting if omitted or bogus
-    var style = parsedRequest.query.style; // TODO (parsedRequest.query.style in namedStyles) ? parsedRequest.query.style : defaultStyle;
-    var stylesheet = styles(style);
+    var style = styles.getStyleName(parsedRequest.query.style);
+    var stylesheet = styles.getStyle(style);
     var dotStyle = style.indexOf('point') > -1 && style.indexOf('Heat') < 0;
 
     var sDensity = parsedRequest.pathname.substring(parsedRequest.pathname.length - 6, parsedRequest.pathname.length - 5);
@@ -68,7 +69,6 @@ function parseUrl(parsedRequest) {
  * This is not my nicest code.  Hopefully you don't need to touch it.
  *
  * We don't handle:
- * - "resolution" (1, 2, 4 or 8px dots on the map)
  * - colours, other than those used by our own map widget
  * - non-contiguous year ranges
  * - "no year" combined with a non-complete year range
@@ -81,6 +81,7 @@ function v1ParseUrl(parsedRequest) {
   // This gets us 256 pixel tiles.
   var density = 0.5;
 
+  // We use square binning to handle all resolutions
   var resolution = parsedRequest.query.resolution;
   var squareSize;
   switch (resolution) {
@@ -91,13 +92,13 @@ function v1ParseUrl(parsedRequest) {
     default  : squareSize =  16;
   }
 
-  var stylesheet = styles('classic-noborder.poly');
+  var stylesheet = styles.getStyle('classic-noborder.poly');
   if (parsedRequest.query.saturation == "true") {
-    stylesheet = styles('purpleWhite.poly');
+    stylesheet = styles.getStyle('purpleWhite.poly');
   } else if (parsedRequest.query.colors == ",,#CC0000FF") {
-    stylesheet = styles('red.poly');
+    stylesheet = styles.getStyle('red.poly');
   } else if (parsedRequest.query.palette == "reds" || parsedRequest.query.colors == ',10,#F7005Ae6|10,100,#D50067e6|100,1000,#B5006Ce6|1000,10000,#94006Ae6|10000,100000,#72005Fe6|100000,,#52034Ee6') {
-    stylesheet = styles('iNaturalist.poly');
+    stylesheet = styles.getStyle('iNaturalist.poly');
   }
 
   var type = parsedRequest.query.type;
@@ -249,9 +250,9 @@ function vectorRequest(parsedRequest) {
   parsedRequest.pathname = parsedRequest.pathname.replace("@2x.png", ".mvt");
   parsedRequest.pathname = parsedRequest.pathname.replace("@3x.png", ".mvt");
   parsedRequest.pathname = parsedRequest.pathname.replace("@4x.png", ".mvt");
-  parsedRequest.hostname = 'api.gbif.org'; //config.tileServer.host;
-  parsedRequest.port = 80; //config.tileServer.port;
-  parsedRequest.pathname = '/v2' + parsedRequest.pathname; //config.tileServer.prefix + parsedRequest.pathname;
+  parsedRequest.hostname = config.tileServer.host;
+  parsedRequest.port = config.tileServer.port;
+  parsedRequest.pathname = config.tileServer.prefix + parsedRequest.pathname;
   parsedRequest.protocol = "http:";
   return url.format(parsedRequest);
 }
@@ -287,59 +288,53 @@ function v1VectorRequest(z, x, y, year, key, basisOfRecord, squareSize, parsedRe
   return url.format(parsedRequest);
 }
 
-
-
-
-
-
 module.exports = function(req, res) {
+  var parsedRequest = url.parse(req.url, true)
 
-    var parsedRequest = url.parse(req.url, true)
+  // Handle registered assets
+  if (assetsHTML.indexOf(parsedRequest.path) != -1) {
+    res.writeHead(200, {'Content-Type': 'text/html'});
+    res.end(fs.readFileSync('./public' + parsedRequest.path));
+    return;
+  }
 
-    // handle registered assets
-    if (assetsHTML.indexOf(parsedRequest.path) != -1) {
-      res.writeHead(200, {'Content-Type': 'text/html'});
-      res.end(fs.readFileSync('./public' + parsedRequest.path));
+  // Handle map tiles.
+  var parameters, vectorTileUrl;
+
+  // V1 API
+  if (parsedRequest.pathname.indexOf('tile') > 0) {
+    try {
+      console.log("Legacy try");
+      parameters = v1ParseUrl(parsedRequest);
+      vectorTileUrl = v1VectorRequest(parameters.z, parameters.x, parameters.y, parameters.year, parameters.key, parameters.basisOfRecord, parameters.squareSize, parsedRequest);
+      return {"parameters": parameters, "vectorTileUrl": vectorTileUrl};
+    } catch (e) {
+      res.writeHead(410, {
+        'Content-Type': 'image/png',
+        'Access-Control-Allow-Origin': '*',
+        'X-Error': "Some features of GBIF's V1 map API have been deprecated.  See http://www.gbif.org/developer/maps for further information.",
+        'X-Error-Detail': e.message
+      });
+      res.end(fs.readFileSync('./public/map/deprecated-warning-tile.png'));
+      console.log("V1 request failed", e.message);
       return;
-    } else {
-      // Handle map tiles.
-
-      var parameters, vectorTileUrl;
-      if (parsedRequest.pathname.indexOf('tile') > 0) {
-        try {
-          console.log("Legacy try");
-          parameters = v1ParseUrl(parsedRequest);
-          vectorTileUrl = v1VectorRequest(parameters.z, parameters.x, parameters.y, parameters.year, parameters.key, parameters.basisOfRecord, parameters.squareSize, parsedRequest);
-        } catch (e) {
-          res.writeHead(410, {
-            'Content-Type': 'image/png',
-            'Access-Control-Allow-Origin': '*',
-            'X-Error': "Some features of GBIF's V1 map API have been deprecated.  See http://www.gbif.org/developer/maps for further information.",
-            'X-Error-Detail': e.message
-          });
-          res.end(fs.readFileSync('./public/map/deprecated-warning-tile.png'));
-          console.log("V1 request failed", e.message);
-          return;
-        }
-      } else {
-        try {
-          parameters = parseUrl(parsedRequest);
-          vectorTileUrl = vectorRequest(parsedRequest);
-
-        } catch (e) {
-          res.writeHead(400, {
-            'Content-Type': 'image/png',
-            'Access-Control-Allow-Origin': '*',
-            'X-Error': "Unable to parse request; see http://www.gbif.org/developer/maps for information.",
-            'X-Error-Detail': e.message
-          });
-          res.end(fs.readFileSync('./public/map/400.png'));
-          console.log("V2 request failed", e.message);
-          return;
-        }
-      }
     }
+  }
 
-  return {"parameters": parameters, "vectorTileUrl": vectorTileUrl};
-
+  // V2 API
+  try {
+    parameters = parseUrl(parsedRequest);
+    vectorTileUrl = vectorRequest(parsedRequest);
+    return {"parameters": parameters, "vectorTileUrl": vectorTileUrl};
+  } catch (e) {
+    res.writeHead(400, {
+      'Content-Type': 'image/png',
+      'Access-Control-Allow-Origin': '*',
+      'X-Error': "Unable to parse request; see http://www.gbif.org/developer/maps for information.",
+      'X-Error-Detail': e.message
+    });
+    res.end(fs.readFileSync('./public/map/400.png'));
+    console.log("V2 request failed", e.message);
+    return;
+  }
 }
