@@ -91,7 +91,7 @@ public final class RegressionResource {
   }
 
   /**
-   * Returns the vector tile for hte surface of information which is the result of applying the regression for the
+   * Returns the vector tile for the surface of information which is the result of applying the regression for the
    * given query against the higherTaxonKey.  E.g. It allows you to normalise Puma concolor against Puma or Felidae
    * depending on the higher taxonKey.
    *
@@ -99,8 +99,7 @@ public final class RegressionResource {
    * @param x              The tile x
    * @param y              The tile y
    * @param srs            The projection
-   * @param higherTaxonKey The taxon key to normalize against.  This is expected to be a higher taxon of the target
-   *                       species
+   * @param higherTaxonKey The taxon key to normalize against.  This is expected to be a higher taxon of the target species
    * @param response       The HTTP response
    * @param request        The HTTP request
    *
@@ -124,16 +123,19 @@ public final class RegressionResource {
     enableCORS(response);
     String mapKey = mapKey(request);
 
-    byte[] speciesLayer = tiles.getTile(z, x, y, mapKey, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
+    DatedVectorTile speciesLayer = tiles.getTile(z, x, y, mapKey, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
+
     mapKey = Params.MAP_TYPES.get("taxonKey") + ":" + higherTaxonKey;
-    byte[] higherTaxaLayer = tiles.getTile(z, x, y, mapKey, srs,
-                                           SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
+    DatedVectorTile higherTaxaLayer = tiles.getTile(z, x, y, mapKey, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
 
     // determine the global pixel origin address at the top left of the tile, used for uniquely identifying the hexagons
     Long2D originXY = new Long2D(x * TILE_SIZE, y * TILE_SIZE);
 
     response.setStatus(204);
-    return regression(speciesLayer, higherTaxaLayer, minYears, originXY);
+    if (speciesLayer.date != null) {
+      response.setHeader("ETag", String.format("W/\"%s\"", speciesLayer.date));
+    }
+    return regression(speciesLayer.tile, higherTaxaLayer.tile, minYears, originXY);
   }
 
   /**

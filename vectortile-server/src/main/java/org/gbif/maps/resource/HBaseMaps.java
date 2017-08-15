@@ -163,6 +163,16 @@ public class HBaseMaps {
     }
   }
 
+  Optional<String> getTileDate() {
+    try {
+      return Optional.of(metastore.read().getTileTableDate());
+    } catch (Exception e) {
+      // there is nothing the caller can do.  Swallow this here, logging the error
+      LOG.error("Unexpected error loading tile data from HBase.  Returning no tile.", e);
+      return Optional.absent();
+    }
+  }
+
   /**
    * Returns the point data from HBase if they exist.
    */
@@ -173,6 +183,16 @@ public class HBaseMaps {
     } catch (ExecutionException e) {
       // there is nothing the caller can do.  Swallow this here, logging the error
       LOG.error("Unexpected error loading point data from HBase.  Returning empty features collection.", e);
+      return Optional.absent();
+    }
+  }
+
+  Optional<String> getPointsDate() {
+    try {
+      return Optional.of(metastore.read().getPointTableDate());
+    } catch (Exception e) {
+      // there is nothing the caller can do.  Swallow this here, logging the error
+      LOG.error("Unexpected error loading tile data from HBase.  Returning no tile.", e);
       return Optional.absent();
     }
   }

@@ -40,7 +40,7 @@ public class CapabilitiesTest {
     VectorTileEncoder encoder = new VectorTileEncoder(TILE_SIZE, TILE_SIZE/4, false);
     encoder.addFeature("Layer1", ImmutableMap.of("1900", 10, "1910", 20, "total", 30), point(-67d, -124d));
     encoder.addFeature("layer2", ImmutableMap.of("1900", 10, "1930", 10, "total", 20), point(13d, -34.3d));
-    builder.collect(encoder.encode(), ZOOM_0_WEST_NW, ZOOM_0_WEST_SE);
+    builder.collect(encoder.encode(), ZOOM_0_WEST_NW, ZOOM_0_WEST_SE, "2017-08-15T16:28Z");
 
     Capabilities capabilities = builder.build();
     assertEquals("Western tile failed minLat", -68, capabilities.getMinLat());
@@ -50,12 +50,13 @@ public class CapabilitiesTest {
     assertEquals("Western tile failed total", 50, capabilities.getTotal());
     assertEquals("Western tile failed minYear", Integer.valueOf(1900), capabilities.getMinYear());
     assertEquals("Western tile failed maxYear", Integer.valueOf(1930), capabilities.getMaxYear());
+    assertEquals("Western tile failed generated", "2017-08-15T16:28Z", capabilities.getGenerated());
 
     // Eastern tile
     encoder = new VectorTileEncoder(TILE_SIZE, TILE_SIZE/4, false);
     encoder.addFeature("Layer1", ImmutableMap.of("1900", 10, "1910", 20, "total", 30), point(-77.2d, 12d));
     encoder.addFeature("layer3", ImmutableMap.of("1900", 10, "1950", 10, "total", 20), point(17.2d, 13d));
-    builder.collect(encoder.encode(), ZOOM_0_EAST_NW, ZOOM_0_EAST_SE);
+    builder.collect(encoder.encode(), ZOOM_0_EAST_NW, ZOOM_0_EAST_SE, "2017-08-15T16:28Z");
 
     // now both tiles in the capabilities
     capabilities = builder.build();

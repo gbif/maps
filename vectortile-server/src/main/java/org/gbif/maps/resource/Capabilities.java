@@ -23,6 +23,7 @@ public class Capabilities {
   private final Double minLat, minLng, maxLat, maxLng;
   private final Integer minYear, maxYear;
   private final int total;
+  private final String generated;
 
   private Capabilities(
     Double minLat,
@@ -31,7 +32,8 @@ public class Capabilities {
     Double maxLng,
     Integer minYear,
     Integer maxYear,
-    int total
+    int total,
+    String generated
   ) {
     this.minLat = minLat;
     this.minLng = minLng;
@@ -40,6 +42,7 @@ public class Capabilities {
     this.minYear = minYear;
     this.maxYear = maxYear;
     this.total = total;
+    this.generated = generated;
   }
 
   public int getMinLat() {
@@ -70,6 +73,10 @@ public class Capabilities {
     return total;
   }
 
+  public String getGenerated() {
+    return generated;
+  }
+
   private static int floorOrCeil(Double d, int defaultValue) {
     if (d == null) return defaultValue;
     else if (d<0) return (int) Math.floor(d);
@@ -88,6 +95,7 @@ public class Capabilities {
            ", minYear=" + minYear +
            ", maxYear=" + maxYear +
            ", total=" + total +
+           ", generated=" + generated +
            '}';
   }
 
@@ -104,6 +112,7 @@ public class Capabilities {
     private double maxLat = Double.NaN, maxLng = Double.NaN;
     private int minYear = Integer.MAX_VALUE, maxYear = Integer.MIN_VALUE;
     private int total;
+    private String generated;
 
     static {
       DECODER.setAutoScale(false); // important to avoid auto scaling to 256 tiles
@@ -122,7 +131,8 @@ public class Capabilities {
         Double.isNaN(maxLng) ? null : maxLng,
         Integer.MAX_VALUE == minYear ? null : minYear,
         Integer.MIN_VALUE == maxYear ? null : maxYear,
-        total
+        total,
+        generated
       );
     }
 
@@ -134,7 +144,7 @@ public class Capabilities {
      * @param tileSE The lat,lng of the tiles Souyth East
      * @throws IOException On encoding issues only
      */
-    void collect(byte[] tile, Double2D tileNW, Double2D tileSE) throws IOException {
+    void collect(byte[] tile, Double2D tileNW, Double2D tileSE, String date) throws IOException {
       if (tile != null) { // defensive coding
 
         double minX = Double.MAX_VALUE,  minY = Double.MAX_VALUE;
@@ -182,6 +192,8 @@ public class Capabilities {
           maxLat = Double.isNaN(maxLat) ? maxLat1 : Math.max(maxLat, maxLat1);
           maxLng = Double.isNaN(maxLng) ? maxLng1 : Math.max(maxLng, maxLng1);
         }
+
+        generated = date;
       }
     }
 

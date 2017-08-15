@@ -14,8 +14,6 @@ import org.gbif.maps.io.PointFeature;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -34,7 +32,6 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
-import com.vividsolutions.jts.geom.GeometryFactory;
 import no.ecc.vectortile.VectorTileDecoder;
 import no.ecc.vectortile.VectorTileEncoder;
 import org.apache.hadoop.conf.Configuration;
@@ -118,10 +115,13 @@ public final class TileResource {
 
     enableCORS(response);
     String mapKey = mapKey(request);
-    byte[] tile = getTile(z,x,y,mapKey,srs,basisOfRecord,year,verbose,bin,hexPerTile,squareSize);
+    DatedVectorTile datedVectorTile = getTile(z,x,y,mapKey,srs,basisOfRecord,year,verbose,bin,hexPerTile,squareSize);
 
-    // TODO: Consider setting a date or a hash as the ETag, to aid caching.
-    return tile;
+    if (datedVectorTile.date != null) {
+      // A weak ETag is set, as tiles may not be byte-for-byte identical after filtering and binning.
+      response.setHeader("ETag", String.format("W/\"%s\"", datedVectorTile.date));
+    }
+    return datedVectorTile.tile;
   }
 
   /**
@@ -139,14 +139,21 @@ public final class TileResource {
     String mapKey = mapKey(request);
 
     Capabilities.CapabilitiesBuilder builder = Capabilities.CapabilitiesBuilder.newBuilder();
-    builder.collect(getTile(0,0,0,mapKey,"EPSG:4326",null,null,true,null,0,0), ZOOM_0_WEST_NW, ZOOM_0_WEST_SE);
-    builder.collect(getTile(0,1,0,mapKey,"EPSG:4326",null,null,true,null,0,0), ZOOM_0_EAST_NW, ZOOM_0_EAST_SE);
+    DatedVectorTile west = getTile(0,0,0,mapKey,"EPSG:4326",null,null,true,null,0,0);
+    DatedVectorTile east = getTile(0,1,0,mapKey,"EPSG:4326",null,null,true,null,0,0);
+    builder.collect(west.tile, ZOOM_0_WEST_NW, ZOOM_0_WEST_SE, west.date);
+    builder.collect(east.tile, ZOOM_0_EAST_NW, ZOOM_0_EAST_SE, east.date);
     Capabilities capabilities = builder.build();
     LOG.info("Capabilities: {}", capabilities);
+
+    if (capabilities.getGenerated() != null) {
+      response.setHeader("ETag", String.format("\"%s\"", capabilities.getGenerated()));
+    }
+
     return capabilities;
   }
 
-  byte[] getTile(
+  DatedVectorTile getTile(
     int z,
     long x,
     long y,
@@ -166,28 +173,28 @@ public final class TileResource {
     Range years = toMinMaxYear(year);
     Set<String> bors = basisOfRecord == null || basisOfRecord.isEmpty() ? null : Sets.newHashSet(basisOfRecord);
 
-    byte[] vectorTile = filteredVectorTile(z, x, y, mapKey, srs, bors, years, verbose);
+    DatedVectorTile datedVectorTile = filteredVectorTile(z, x, y, mapKey, srs, bors, years, verbose);
 
     // depending on the query, direct the request
     if (bin == null) {
-      return vectorTile;
+      return datedVectorTile;
 
     } else if (BIN_MODE_HEX.equalsIgnoreCase(bin)) {
       HexBin binner = new HexBin(HEX_TILE_SIZE, hexPerTile);
       try {
-        return binner.bin(vectorTile, z, x, y);
+        return new DatedVectorTile(binner.bin(datedVectorTile.tile, z, x, y), datedVectorTile.date);
       } catch (IllegalArgumentException e) {
         // happens on empty tiles
-        return vectorTile;
+        return datedVectorTile;
       }
 
     } else if (BIN_MODE_SQUARE.equalsIgnoreCase(bin)) {
       SquareBin binner = new SquareBin(SQUARE_TILE_SIZE, squareSize);
       try {
-        return binner.bin(vectorTile, z, x, y);
+        return new DatedVectorTile(binner.bin(datedVectorTile.tile, z, x, y), datedVectorTile.date);
       } catch (IllegalArgumentException e) {
         // happens on empty tiles
-        return vectorTile;
+        return datedVectorTile;
       }
 
     } else {
@@ -212,33 +219,36 @@ public final class TileResource {
    * @return A byte array representing an encoded vector tile.  The tile may be empty.
    * @throws IOException Only if the data in HBase is corrupt and cannot be decoded.  This is fatal.
    */
-  private byte[] filteredVectorTile(int z, long x, long y, String mapKey, String srs,
-                                    @Nullable Set<String> basisOfRecords, @NotNull  Range years, boolean verbose)
+  private DatedVectorTile filteredVectorTile(int z, long x, long y, String mapKey, String srs,
+                                    @Nullable Set<String> basisOfRecords, @NotNull Range years, boolean verbose)
     throws IOException {
 
     // Attempt to get a preprepared tile first, before falling back to a point tile
     Optional<byte[]> encoded = hbaseMaps.getTile(mapKey, srs, z, x, y);
+    String date;
     if (encoded.isPresent()) {
       VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
-      LOG.info("Found tile with encoded length of: " + encoded.get().length);
+      date = hbaseMaps.getTileDate().orNull();
+      LOG.info("Found tile with encoded length of {} and date {}", encoded.get().length, date);
 
       VectorTileFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, encoded.get(),
                                             years, basisOfRecords, verbose);
-      return encoder.encode();
+      return new DatedVectorTile(encoder.encode(), date);
     } else {
       VectorTileEncoder encoder = new VectorTileEncoder(POINT_TILE_SIZE, POINT_TILE_BUFFER, false);
+      date = hbaseMaps.getPointsDate().orNull();
       Optional<PointFeature.PointFeatures> optionalFeatures = hbaseMaps.getPoints(mapKey);
       if (optionalFeatures.isPresent()) {
         TileProjection projection = Tiles.fromEPSG(srs, POINT_TILE_SIZE);
         PointFeature.PointFeatures features = optionalFeatures.get();
-        LOG.info("Found {} features and tile schema {}", features.getFeaturesCount(), TileSchema.fromSRS(srs));
+        LOG.info("Found {} features and tile schema {} at date {}", features.getFeaturesCount(),
+            TileSchema.fromSRS(srs), date);
 
         PointFeatureFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, features.getFeaturesList(),
                                                 projection, TileSchema.fromSRS(srs), z, x, y, POINT_TILE_SIZE, POINT_TILE_BUFFER,
                                                 years, basisOfRecords);
-
       }
-      return encoder.encode(); // may be empty
+      return new DatedVectorTile(encoder.encode(), date); // may be empty
     }
   }
 }
