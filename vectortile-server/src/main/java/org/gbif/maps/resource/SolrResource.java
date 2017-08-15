@@ -161,15 +161,6 @@ public final class SolrResource {
                 Coordinate center = new Coordinate(centerX, centerY);
                 encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPoint(center));
 
-                // handle datelines for zoom 0 by copying the features into the appropriate buffer
-                if (z==0 && centerX < bufferSize) {
-                  center = new Coordinate(centerX + tileSize, centerY);
-                  encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPoint(center));
-                } else if (z==0 && centerX > tileSize - bufferSize) {
-                  center = new Coordinate(centerX - tileSize, centerY);
-                  encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPoint(center));
-                }
-
               } else {
                 // default behaviour with polygon squares for the cells
                 Coordinate[] coords = new Coordinate[] {
@@ -182,9 +173,7 @@ public final class SolrResource {
 
                 encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPolygon(coords));
               }
-
             }
-          //}
         }
       }
     }
