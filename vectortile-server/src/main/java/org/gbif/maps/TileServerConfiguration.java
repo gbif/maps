@@ -11,7 +11,7 @@ import org.gbif.ws.discovery.conf.ServiceConfiguration;
 /**
  * Application configuration with sensible defaults if applicable.
  */
-public class TileServerConfiguration extends Configuration {
+public class  TileServerConfiguration extends Configuration {
   @Valid
   @NotNull
   private HBaseConfiguration hbase;

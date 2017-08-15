@@ -138,42 +138,42 @@ public final class SolrResource {
             double minYAsNorm = cellSW.getY();
             double maxYAsNorm = cellNE.getY();
 
-              // convert the lat,lng into pixel coordinates
-              Double2D swGlobalXY = projection.toGlobalPixelXY(maxYAsNorm, minXAsNorm, z);
-              Double2D neGlobalXY = projection.toGlobalPixelXY(minYAsNorm, maxXAsNorm, z);
-              Double2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
-              Double2D neTileXY = Tiles.toTileLocalXY(neGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
+            // convert the lat,lng into pixel coordinates
+            Double2D swGlobalXY = projection.toGlobalPixelXY(maxYAsNorm, minXAsNorm, z);
+            Double2D neGlobalXY = projection.toGlobalPixelXY(minYAsNorm, maxXAsNorm, z);
+            Double2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
+            Double2D neTileXY = Tiles.toTileLocalXY(neGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
 
-              int minX = (int) swTileXY.getX();
-              int maxX = (int) neTileXY.getX();
-              double centerX = minX + (((double) maxX - minX) / 2);
+            int minX = (int) swTileXY.getX();
+            int maxX = (int) neTileXY.getX();
+            double centerX = minX + (((double) maxX - minX) / 2);
 
-              int minY = (int) swTileXY.getY();
-              int maxY = (int) neTileXY.getY();
-              double centerY = minY + (((double) maxY - minY) / 2);
+            int minY = (int) swTileXY.getY();
+            int maxY = (int) neTileXY.getY();
+            double centerY = minY + (((double) maxY - minY) / 2);
 
-              Map<String, Object> meta = new HashMap();
-              meta.put("total", count);
+            Map<String, Object> meta = new HashMap();
+            meta.put("total", count);
 
-              // for binning, we add the cell center point, otherwise the geometry
-              if (bin != null) {
-                // hack: use just the center points for each cell
-                Coordinate center = new Coordinate(centerX, centerY);
-                encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPoint(center));
+            // for binning, we add the cell center point, otherwise the geometry
+            if (bin != null) {
+              // hack: use just the center points for each cell
+              Coordinate center = new Coordinate(centerX, centerY);
+              encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPoint(center));
 
-              } else {
-                // default behaviour with polygon squares for the cells
-                Coordinate[] coords = new Coordinate[] {
-                  new Coordinate(swTileXY.getX(), swTileXY.getY()),
-                  new Coordinate(neTileXY.getX(), swTileXY.getY()),
-                  new Coordinate(neTileXY.getX(), neTileXY.getY()),
-                  new Coordinate(swTileXY.getX(), neTileXY.getY()),
-                  new Coordinate(swTileXY.getX(), swTileXY.getY())
-                };
+            } else {
+              // default behaviour with polygon squares for the cells
+              Coordinate[] coords = new Coordinate[] {
+                new Coordinate(swTileXY.getX(), swTileXY.getY()),
+                new Coordinate(neTileXY.getX(), swTileXY.getY()),
+                new Coordinate(neTileXY.getX(), neTileXY.getY()),
+                new Coordinate(swTileXY.getX(), neTileXY.getY()),
+                new Coordinate(swTileXY.getX(), swTileXY.getY())
+              };
 
-                encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPolygon(coords));
-              }
+              encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPolygon(coords));
             }
+          }
         }
       }
     }
