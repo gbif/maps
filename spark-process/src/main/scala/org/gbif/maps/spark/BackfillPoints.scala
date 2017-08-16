@@ -30,19 +30,13 @@ import scala.collection.Set
 object BackfillPoints {
   val logger = LoggerFactory.getLogger("org.gbif.maps.spark.BackfillPoints")
 
-  //def build(sc :SparkContext, df : DataFrame, keys: Set[String], config: MapConfiguration): Unit = {
-  def build(sc :SparkContext, df : DataFrame, config: MapConfiguration): Unit = {
+  def build(sc :SparkContext, df : DataFrame, keys: Set[String], config: MapConfiguration): Unit = {
 
     val keySalter = new ModulusSalt(config.hbase.keySaltModulus); // salted HBase keys
 
-    // collect a count by location, bor and year for each mapKey
-
-    val runningCount = MMap[String,Int]().withDefaultValue(0)
-
     val pointSource = df.flatMap(row => {
       // extract the keys for the record and filter to only those that have been determined as suitable
-      //val mapKeys = MapUtils.mapKeysForRecord(row).intersect(keys)
-      val mapKeys = MapUtils.mapKeysForRecord(row)
+      val mapKeys = MapUtils.mapKeysForRecord(row).intersect(keys)
 
       // extract the dimensions of interest from the record
       val lat = row.getDouble(row.fieldIndex("decimallatitude"))
@@ -60,14 +54,7 @@ object BackfillPoints {
       // Stuctured as: mapKey, latitude, longitude, basisOfRecord, year -> count
       val res = mutable.ArrayBuffer[((String, Double, Double, Feature.BasisOfRecord, Short), Long)]()
       mapKeys.foreach(mapKey => {
-        var count = runningCount(mapKey) + 1
-        runningCount.put(mapKey,count)
-
-        // accumulate only the first N records
-        if (runningCount(mapKey) <= config.tilesThreshold) {
           res += (((mapKey, lat, lng, bor, year),1))
-        }
-
       })
 
       res

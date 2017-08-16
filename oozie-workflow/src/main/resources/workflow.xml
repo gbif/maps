@@ -53,9 +53,9 @@
         </property>
       </configuration>
       <master>yarn-cluster</master>
-      <name>Map backfill points</name>
+      <name>Map processing [${wf:conf("gbif.map.mode")}]</name>
       <class>org.gbif.maps.spark.Backfill</class>
-      <jar>lib/spark-process-0.1.4-SNAPSHOT.jar</jar>
+      <jar>lib/spark-process-0.1.5-SNAPSHOT.jar</jar>
       <spark-opts>${wf:conf("gbif.map.spark.opts")}</spark-opts>
       <arg>${wf:conf("gbif.map.mode")}</arg>
       <arg>${wf:conf("gbif.map.spark.conf")}</arg>

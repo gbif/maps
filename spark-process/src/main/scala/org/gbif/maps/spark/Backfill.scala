@@ -67,13 +67,19 @@ object Backfill {
 
     logger.info("DataFrame columns are {}", df.columns)
 
+    // get a count of records per mapKey
+    val counts = df.flatMap(MapUtils.mapKeysForRecord(_)).countByValue()
+
+
     if (Set("all","points").contains(args(0))) {
-      BackfillPoints.build(sc,df,config)
+      // upto the threshold we can store points
+      val mapKeys = counts.filter(r => {r._2<config.tilesThreshold})
+      println("MapKeys suitable for storing as point maps: " + mapKeys.size)
+
+      BackfillPoints.build(sc,df,mapKeys.keySet,config)
     }
 
     if (Set("all","tiles").contains(args(0))) {
-      // get a count of records per mapKey
-      val counts = df.flatMap(MapUtils.mapKeysForRecord(_)).countByValue()
 
       // above the threshold we build a pyramid
       val mapKeys = counts.filter(r => {r._2>=config.tilesThreshold})
@@ -81,8 +87,6 @@ object Backfill {
 
       //val pool = Executors.newFixedThreadPool(config.tilePyramid.projections.length)
       //val jobs : ListBuffer[Callable[Unit]] = new ListBuffer[Callable[Unit]]()
-
-
 
       config.tilePyramid.projections.foreach(proj => {
         println("Building tiles for projection" + proj.srs)
