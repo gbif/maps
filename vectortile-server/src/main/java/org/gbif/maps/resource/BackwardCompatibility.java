@@ -21,6 +21,7 @@ import static org.gbif.maps.resource.TileResource.*;
  * Provide backward compatibility for the /v1/map/density/tile.json API call.
  *
  * Ignore layer and year handling, the logs suggest this isn't used, although the V1 tile-server does support it.
+ * (Code possibly implementing it anyway was removed on 2017-08-22.)
  */
 @Path("density")
 @Singleton
@@ -75,119 +76,6 @@ public class BackwardCompatibility {
       default:
         mapKey = ALL_MAP_KEY;
     }
-
-    /*
-     * Only the map key is taken into account for the V2 capabilities.
-     *
-     * This code isn't tested, but it could work.  See mapnik-server for a working Javascript version.
-     *
-    Set<String> basisOfRecord = new HashSet();
-
-    // Year ranges.  We assume ranges given are continuous, but don't permit showing no-year records as well as a range —
-    // unless the whole range (pre-1900 to 2020) is selected, then no year filter is requested.
-    int
-        obsStart = 9999,
-        obsEnd = -1,
-        spStart = 9999,
-        spEnd = -1,
-        othStart = 9999,
-        othEnd = -1;
-    boolean noYear = false;
-    boolean obs = false, sp = false, oth = false;
-
-    for (String l : layers) {
-      if (l == "LIVING") {
-        basisOfRecord.add("LIVING_SPECIMEN");
-      } else if (l == "FOSSIL") {
-        basisOfRecord.add("FOSSIL_SPECIMEN");
-      } else {
-        int first_ = l.indexOf('_');
-        int second_ = l.indexOf('_', first_+1);
-
-        String prefix = l.substring(0, first_);
-        String startYear = l.substring(first_+1, second_);
-        String endYear = l.substring(second_+1);
-
-        if ("NO".equals(startYear)) {
-          noYear = true;
-        } else if ("PRE".equals(startYear)) {
-          startYear = "0";
-        }
-
-        switch (prefix) {
-          case "OBS":
-            basisOfRecord.add("OBSERVATION");
-            basisOfRecord.add("HUMAN_OBSERVATION");
-            basisOfRecord.add("MACHINE_OBSERVATION");
-            if (startYear != "NO") {
-              obsStart = Math.min(obsStart, Integer.parseInt(startYear));
-              obsEnd = Math.max(obsEnd, Integer.parseInt(endYear));
-            }
-            obs = true;
-            break;
-          case "SP":
-            basisOfRecord.add("PRESERVED_SPECIMEN");
-            if (startYear != "NO") {
-              spStart = Math.min(spStart, Integer.parseInt(startYear));
-              spEnd = Math.max(spEnd, Integer.parseInt(endYear));
-            }
-            sp = true;
-            break;
-          case "OTH":
-            basisOfRecord.add("MATERIAL_SAMPLE");
-            basisOfRecord.add("LITERATURE");
-            basisOfRecord.add("UNKNOWN");
-            if (startYear != "NO") {
-              othStart = Math.min(othStart, Integer.parseInt(startYear));
-              othEnd = Math.max(othEnd, Integer.parseInt(endYear));
-            }
-            oth = true;
-            break;
-          default:
-        }
-      }
-    }
-
-    // If all are selected, don't filter.
-    if (basisOfRecord.size() == 9) {
-      basisOfRecord.clear();
-    }
-
-    String year;
-
-    // All year filters must apply to all record types.
-    boolean yearsMismatch = false;
-    yearsMismatch &= obs && sp  && (obsStart !=  spStart || obsEnd !=  spEnd);
-    yearsMismatch &= obs && oth && (obsStart != othStart || obsEnd != othEnd);
-    yearsMismatch &=  sp && oth && ( spStart != othStart ||  spEnd != othEnd);
-
-    if (!yearsMismatch) {
-      if (obs && obsStart == 9999 || sp && spStart == 9999 || oth && othStart == 9999) {
-        year = null;
-      } else if (obs) {
-        year = obsStart + "," + obsEnd;
-      } else if (sp) {
-        year = spStart + "," + spEnd;
-      } else if (oth) {
-        year = othStart + "," + othEnd;
-      } else {
-        // Only fossils and/or living
-        year = null;
-      }
-    } else {
-      String detail = "OBS "+obsStart+"-"+obsEnd+"; "+
-          "SP "+spStart+"-"+spEnd+"; "+
-          "OTH "+othStart+"-"+othEnd+"\n";
-
-      throw new RuntimeException("Start and end years must be the same for each layer (BasisOfRecord): "+detail);
-    }
-
-    if (year == "0,2020" && noYear) {
-      year = null;
-    } else if (year != null && noYear) {
-      throw new RuntimeException("Can't display undated records as well as a range of dated ones.\n");
-    }
-     */
 
     Capabilities.CapabilitiesBuilder builder = Capabilities.CapabilitiesBuilder.newBuilder();
     DatedVectorTile west = tileResource.getTile(0,0,0,mapKey,"EPSG:4326",null,null,true,null,0,0);
