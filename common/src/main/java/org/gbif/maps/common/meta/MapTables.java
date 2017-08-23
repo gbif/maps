@@ -1,6 +1,8 @@
 package org.gbif.maps.common.meta;
 
 import java.io.Serializable;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10,7 +12,7 @@ import java.util.regex.Pattern;
  */
 public class MapTables implements Serializable {
   private static final Pattern PIPE = Pattern.compile("\\|");
-  private static final Pattern TABLE_TIMESTAMP = Pattern.compile("(20\\d\\d)(\\d\\d)(\\d\\d)_(\\d\\d)(\\d\\d)$");
+  private static final Pattern TABLE_TIMESTAMP = Pattern.compile("(20\\d\\d\\d\\d\\d\\d_\\d\\d\\d\\d)$");
   private final String tileTable;
   private final String pointTable;
   private final String tileTableDate;
@@ -28,12 +30,10 @@ public class MapTables implements Serializable {
     String date;
     Matcher matcher = TABLE_TIMESTAMP.matcher(table);
     if (matcher.find()) {
-      String year   = matcher.group(1);
-      String month  = matcher.group(2);
-      String day    = matcher.group(3);
-      String hour   = matcher.group(4);
-      String minute = matcher.group(5);
-      date = String.format("%s-%s-%sT%s:%sZ", year, month, day, hour, minute);
+      // It's possible to be off-by-one if tiles are generated during the DST switch.
+      ZonedDateTime time = ZonedDateTime.parse(matcher.group(1),
+          DateTimeFormatter.ofPattern("yyyyMMdd_HHmm").withZone(ZoneId.of("Europe/Copenhagen")));
+      date = time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mmX").withZone(ZoneId.of("UTC")));
     } else {
       date = null;
     }
