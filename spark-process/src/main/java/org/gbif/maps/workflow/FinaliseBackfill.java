@@ -132,6 +132,8 @@ public class FinaliseBackfill {
       try (
         Connection connection = ConnectionFactory.createConnection(conf);
         Admin admin = connection.getAdmin();
+        // 1 sec retries
+        MapMetastore metastore = Metastores.newZookeeperMapsMeta(params.getZkQuorum(), 1000, params.getZkMetaDataPath());
       ) {
 
         // remove the snapshot created in this workflow only
@@ -140,7 +142,7 @@ public class FinaliseBackfill {
 
         // remove all but the last 2 tables
         // table names are suffixed with a timestamp e.g. prod_d_maps_points_20180616_1320
-        String tablesPattern = params.getTargetTablePrefix() + "_" + params.getMode() + "_d{8}_d{4}";
+        String tablesPattern = params.getTargetTablePrefix() + "_" + params.getMode() + "_\\d{8}_\\d{4}";
         TableName[] tables = admin.listTableNames(tablesPattern);
         Arrays.sort(tables, new Comparator<TableName>() {  // TableName does not order lexigraphically by default
           @Override
@@ -148,9 +150,20 @@ public class FinaliseBackfill {
             return o1.getNameAsString().compareTo(o2.getNamespaceAsString());
           }
         });
+
+        MapTables meta = metastore.read();
+        System.out.println("Current live tables[" + meta + "]");
+
         for (int i=0; i<tables.length-2; i++) {
-          // Defensive coding: safeguard against corrupt table names
-          if (!params.getTargetTable().equalsIgnoreCase(tables[i].getNamespaceAsString())) {
+          // Defensive coding: read the metastore each time to minimise possible misue resulting in race conditions
+          meta = metastore.read();
+
+          // Defensive coding: don't delete anything that is the intended target, or currently in use
+          if (!params.getTargetTable().equalsIgnoreCase(tables[i].getNamespaceAsString()) &&
+              !meta.getPointTable().equalsIgnoreCase(tables[i].getNamespaceAsString()) &&
+              !meta.getTileTable().equalsIgnoreCase(tables[i].getNamespaceAsString())
+            ) {
+
             System.out.println("Disabling HBase table[" + tables[i].getNameAsString() + "]");
             //admin.disableTable(tables[i]);
             System.out.println("Deleting HBase table[" + tables[i].getNameAsString() + "]");
