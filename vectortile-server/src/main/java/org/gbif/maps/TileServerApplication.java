@@ -3,15 +3,9 @@ package org.gbif.maps;
 import org.gbif.common.search.solr.builders.CloudSolrServerBuilder;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
-import org.gbif.maps.resource.HBaseMaps;
-import org.gbif.maps.resource.NoContentResponseFilter;
-import org.gbif.maps.resource.RegressionResource;
-import org.gbif.maps.resource.SolrResource;
-import org.gbif.maps.resource.TileResource;
+import org.gbif.maps.resource.*;
 import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapsService;
 import org.gbif.ws.discovery.lifecycle.DiscoveryLifeCycle;
-
-import java.io.IOException;
 
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
@@ -83,6 +77,8 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
     environment.jersey().register(new SolrResource(solrService,
                                                    configuration.getSolr().getTileSize(),
                                                    configuration.getSolr().getBufferSize()));
+
+    environment.jersey().register(new BackwardCompatibility(tiles));
 
     environment.jersey().register(NoContentResponseFilter.class);
 

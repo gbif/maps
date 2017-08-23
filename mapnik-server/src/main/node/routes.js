@@ -1,10 +1,7 @@
-const request = require('request')
+const fs = require('fs')
     , url = require('url')
-    , fs = require('fs')
     , config = require('./config')
     , styles = require('./styles');
-
-function Routes() {}
 
 /**
  * The server supports the ability to provide assets which need to be explicitly registered in order to be secure.
@@ -13,6 +10,12 @@ function Routes() {}
  * Should this become more complex, then express or similar should be considered.
  */
 var assetsHTML = [
+  '/legacy/',
+  '/legacy/index.html',
+  '/legacy/css/main.css',
+  '/legacy/css/main.min-2fcc9ee56412da1d589f1a08f2bf348a.css',
+  '/legacy/script.js',
+  '/legacy/script.min-52480f0428c66051f608e79159f5357a.js',
   '/map/binning-debugging.html',
   '/map/demo.html',
   '/map/demo1.html',
@@ -28,7 +31,9 @@ var assetsHTML = [
   '/map/demo11.html',
   '/map/demo12.html',
   '/map/demo-cartodb.html',
+  '/map/heat-debugging.html',
   '/map/legacy-style-debugging.html',
+  '/map/pixel-style-debugging.html',
   '/map/style-debugging.html',
   '/map/styles.html'];
 
@@ -43,8 +48,6 @@ function parseUrl(parsedRequest) {
 
     // find the compiled stylesheet from the given style parameter, defaulting if omitted or bogus
     var style = styles.getStyleName(parsedRequest.query.style);
-    var stylesheet = styles.getStyle(style);
-    var dotStyle = style.indexOf('point') > -1 && style.indexOf('Heat') < 0;
 
     var sDensity = parsedRequest.pathname.substring(parsedRequest.pathname.length - 6, parsedRequest.pathname.length - 5);
     var density = (sDensity == 'H') ? 0.5 : parseInt(sDensity);
@@ -55,8 +58,7 @@ function parseUrl(parsedRequest) {
         "x": x,
         "y": y,
         "density": density,
-        "stylesheet": stylesheet,
-        "dotStyle": dotStyle,
+        "style": style
       }
     }
   }
@@ -92,13 +94,13 @@ function v1ParseUrl(parsedRequest) {
     default  : squareSize =  16;
   }
 
-  var stylesheet = styles.getStyle('classic-noborder.poly');
+  var style = styles.getStyleName('classic-noborder.poly');
   if (parsedRequest.query.saturation == "true") {
-    stylesheet = styles.getStyle('purpleWhite.poly');
+    style = styles.getStyleName('purpleWhite.poly');
   } else if (parsedRequest.query.colors == ",,#CC0000FF") {
-    stylesheet = styles.getStyle('red.poly');
+    style = styles.getStyleName('red.poly');
   } else if (parsedRequest.query.palette == "reds" || parsedRequest.query.colors == ',10,#F7005Ae6|10,100,#D50067e6|100,1000,#B5006Ce6|1000,10000,#94006Ae6|10000,100000,#72005Fe6|100000,,#52034Ee6') {
-    stylesheet = styles.getStyle('iNaturalist.poly');
+    style = styles.getStyleName('iNaturalist.poly');
   }
 
   var type = parsedRequest.query.type;
@@ -223,7 +225,14 @@ function v1ParseUrl(parsedRequest) {
   if (year == "0,2020" && noYear) {
     year = null;
   } else if (year && noYear) {
-    throw Error("Can't display undated records as well as a range of dated ones.\n");
+    if (year == "1900,2020") {
+      // The developer API make-your-own-map interface didn't include PRE_1900, so many people who intended to include
+      // all records omitted this layer.
+      console.log("Altering 1900-2020 + undated to all occurrences, since this poor default was in our documentation.");
+      year = null;
+    } else {
+      throw Error("Can't display undated records as well as a range of dated ones.\n");
+    }
   }
 
   return {
@@ -231,11 +240,10 @@ function v1ParseUrl(parsedRequest) {
     "x": x,
     "y": y,
     "density": density,
-    "stylesheet": stylesheet,
+    "style": style,
     "year": year,
     "key": mapKey,
     "basisOfRecord": Array.from(basisOfRecord),
-    "dotStyle": false,
     "squareSize": squareSize
   }
 }
@@ -244,6 +252,7 @@ function vectorRequest(parsedRequest) {
   // reformat the request to the type expected by the VectorTile Server
   // Remove raster parameters, to improve cacheability
   delete parsedRequest.query.style;
+  delete parsedRequest.query.locale;
   delete parsedRequest.search; // Must be removed to force regeneration of query string
   parsedRequest.pathname = parsedRequest.pathname.replace("@Hx.png", ".mvt");
   parsedRequest.pathname = parsedRequest.pathname.replace("@1x.png", ".mvt");
@@ -292,9 +301,20 @@ module.exports = function(req, res) {
   var parsedRequest = url.parse(req.url, true)
 
   // Handle registered assets
-  if (assetsHTML.indexOf(parsedRequest.path) != -1) {
-    res.writeHead(200, {'Content-Type': 'text/html'});
-    res.end(fs.readFileSync('./public' + parsedRequest.path));
+  if (assetsHTML.indexOf(parsedRequest.pathname) != -1) {
+    var path = parsedRequest.pathname;
+
+    var type = 'text/html';
+    if (path.indexOf('.css') > 0) {
+      type = 'text/css';
+    } else if (path.indexOf('.js') > 0) {
+      type = 'text/javascript';
+    }
+    res.writeHead(200, {'Content-Type': type});
+
+    if (path == "/legacy/") path = "/legacy/index.html";
+
+    res.end(fs.readFileSync('./public' + path));
     return;
   }
 
@@ -325,7 +345,8 @@ module.exports = function(req, res) {
   try {
     parameters = parseUrl(parsedRequest);
     vectorTileUrl = vectorRequest(parsedRequest);
-    return {"parameters": parameters, "vectorTileUrl": vectorTileUrl};
+    heatVectorTileUrls = heatVectorRequest(parsedRequest, parameters.z, parameters.x, parameters.y);
+    return {"parameters": parameters, "vectorTileUrl": vectorTileUrl, "heatVectorTileUrls": heatVectorTileUrls};
   } catch (e) {
     res.writeHead(400, {
       'Content-Type': 'image/png',
@@ -337,4 +358,37 @@ module.exports = function(req, res) {
     console.log("V2 request failed", e.message);
     return;
   }
+}
+
+/*
+ * Calculate the URLs for the four tiles one zoom level deeper.
+ */
+function heatVectorRequest(vectorRequest, z, x, y) {
+
+  var zxy = z+'/'+x+'/'+y;
+
+  var zxyTl = (z+1)+'/'+(x*2  )+'/'+(y*2  );
+  var zxyTr = (z+1)+'/'+(x*2+1)+'/'+(y*2  );
+  var zxyBl = (z+1)+'/'+(x*2  )+'/'+(y*2+1);
+  var zxyBr = (z+1)+'/'+(x*2+1)+'/'+(y*2+1);
+
+  //console.log(zxy, '→', zxyTl, zxyTr, zxyBl, zxyBr);
+
+  var vectorRequests = [];
+  vectorRequests[0] = new url.parse(url.format(vectorRequest));
+  vectorRequests[1] = new url.parse(url.format(vectorRequest));
+  vectorRequests[2] = new url.parse(url.format(vectorRequest));
+  vectorRequests[3] = new url.parse(url.format(vectorRequest));
+
+  vectorRequests[0].pathname = vectorRequests[0].pathname.replace(zxy, zxyTl);
+  vectorRequests[1].pathname = vectorRequests[1].pathname.replace(zxy, zxyTr);
+  vectorRequests[2].pathname = vectorRequests[2].pathname.replace(zxy, zxyBl);
+  vectorRequests[3].pathname = vectorRequests[3].pathname.replace(zxy, zxyBr);
+
+  return [
+    url.format(vectorRequests[0]),
+    url.format(vectorRequests[1]),
+    url.format(vectorRequests[2]),
+    url.format(vectorRequests[3])
+    ];
 }

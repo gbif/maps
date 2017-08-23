@@ -1,16 +1,12 @@
 package org.gbif.maps.resource;
 
-import org.gbif.maps.common.filter.Range;
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.Int2D;
 
 import java.io.IOException;
 import java.time.Year;
-import java.util.Calendar;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import com.google.common.collect.Maps;
 import com.vividsolutions.jts.geom.Point;
 import no.ecc.vectortile.VectorTileDecoder;
 
