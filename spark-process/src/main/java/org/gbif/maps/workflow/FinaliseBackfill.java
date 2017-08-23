@@ -138,7 +138,7 @@ public class FinaliseBackfill {
 
         // remove the snapshot created in this workflow only
         System.out.println("Deleting HBase snapshot[" + params.getSnapshotTable()+ "]");
-        //admin.deleteSnapshot(params.getSnapshotTable());
+        admin.deleteSnapshot(params.getSnapshotTable());
 
         // remove all but the last 2 tables
         // table names are suffixed with a timestamp e.g. prod_d_maps_points_20180616_1320
@@ -165,9 +165,9 @@ public class FinaliseBackfill {
             ) {
 
             System.out.println("Disabling HBase table[" + tables[i].getNameAsString() + "]");
-            //admin.disableTable(tables[i]);
+            admin.disableTable(tables[i]);
             System.out.println("Deleting HBase table[" + tables[i].getNameAsString() + "]");
-            //admin.deleteTable(tables[i]);
+            admin.deleteTable(tables[i]);
           }
         }
       }
