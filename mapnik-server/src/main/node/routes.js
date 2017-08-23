@@ -10,6 +10,12 @@ const fs = require('fs')
  * Should this become more complex, then express or similar should be considered.
  */
 var assetsHTML = [
+  '/legacy/',
+  '/legacy/index.html',
+  '/legacy/css/main.css',
+  '/legacy/css/main.min-2fcc9ee56412da1d589f1a08f2bf348a.css',
+  '/legacy/script.js',
+  '/legacy/script.min-52480f0428c66051f608e79159f5357a.js',
   '/map/binning-debugging.html',
   '/map/demo.html',
   '/map/demo1.html',
@@ -296,8 +302,19 @@ module.exports = function(req, res) {
 
   // Handle registered assets
   if (assetsHTML.indexOf(parsedRequest.path) != -1) {
-    res.writeHead(200, {'Content-Type': 'text/html'});
-    res.end(fs.readFileSync('./public' + parsedRequest.path));
+    var path = parsedRequest.path;
+
+    var type = 'text/html';
+    if (path.indexOf('.css') > 0) {
+      type = 'text/css';
+    } else if (path.indexOf('.js') > 0) {
+      type = 'text/javascript';
+    }
+    res.writeHead(200, {'Content-Type': type});
+
+    if (path == "/legacy/") path = "/legacy/index.html";
+
+    res.end(fs.readFileSync('./public' + path));
     return;
   }
 
