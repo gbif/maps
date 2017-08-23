@@ -1,6 +1,6 @@
-var uuid = require('uuid');
-var ZooKeeper = require ("zookeeper");
-var quickLocalIp = require('quick-local-ip');
+const quickLocalIp = require('quick-local-ip')
+    , uuid = require('uuid')
+    , ZooKeeper = require ("zookeeper");
 
 var gbifServiceRegistry = {};
 
@@ -35,17 +35,17 @@ gbifServiceRegistry.register = function(config) {
     zk.a_create (zkPath, "", null, () => {});
 
     // Create ZK instance node
-    uuid = uuid.v4();
+    var zkUuid = uuid.v4();
 
-    host = config.service.host;
-    port = parseInt(process.argv[3]);
-    ip = quickLocalIp.getLocalIP4();
-    url = "http://"+host+":"+port+"/";
+    var host = config.service.host;
+    var port = parseInt(process.argv[3]);
+    var ip = quickLocalIp.getLocalIP4();
+    var url = "http://"+host+":"+port+"/";
 
-    zkValue =
+    var zkValue =
       {
         "name": serviceName,
-        "id": uuid,
+        "id": zkUuid,
         "address": ip,
         "port": port,
         "sslPort": null,
@@ -86,7 +86,7 @@ gbifServiceRegistry.register = function(config) {
         }
       };
 
-    zk.a_create (zkPath+"/"+uuid, JSON.stringify(zkValue), ZooKeeper.ZOO_EPHEMERAL, function (rc, error, path)  {
+    zk.a_create (zkPath+"/"+zkUuid, JSON.stringify(zkValue), ZooKeeper.ZOO_EPHEMERAL, function (rc, error, path)  {
       if (rc != 0) {
         console.log ("ZooKeeper node create result: %d, error: '%s', path=%s", rc, error, path);
       } else {
