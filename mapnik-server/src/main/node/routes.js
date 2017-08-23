@@ -301,8 +301,8 @@ module.exports = function(req, res) {
   var parsedRequest = url.parse(req.url, true)
 
   // Handle registered assets
-  if (assetsHTML.indexOf(parsedRequest.path) != -1) {
-    var path = parsedRequest.path;
+  if (assetsHTML.indexOf(parsedRequest.pathname) != -1) {
+    var path = parsedRequest.pathname;
 
     var type = 'text/html';
     if (path.indexOf('.css') > 0) {
