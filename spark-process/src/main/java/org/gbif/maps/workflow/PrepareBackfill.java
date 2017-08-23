@@ -47,7 +47,6 @@ public class PrepareBackfill {
       conf.set(HConstants.ZOOKEEPER_QUORUM, params.getZkQuorum());
       try (
         Connection connection = ConnectionFactory.createConnection(conf);
-        MRAppMaster m = null;
         Admin admin = connection.getAdmin();
       ) {
         System.out.format("Snapshotting %s to %s", params.getSourceTable(), params.getSnapshotTable());
