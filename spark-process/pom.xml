@@ -99,6 +99,11 @@
           <groupId>org.mockito</groupId>
           <artifactId>mockito-all</artifactId>
         </exclusion>
+        <!-- This could perhaps be improved, but it does introduce circular dependencies -->
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>log4j-over-slf4j</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>

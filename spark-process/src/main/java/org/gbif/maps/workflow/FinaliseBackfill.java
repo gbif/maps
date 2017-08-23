@@ -6,6 +6,10 @@ import org.gbif.maps.common.meta.MapTables;
 import org.gbif.maps.common.meta.Metastores;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
@@ -55,7 +59,7 @@ public class FinaliseBackfill {
 
     loadTable(params); // load HBase (throws exception on error)
     updateMeta(params); // update the metastore in ZK
-    // TODO: cleanup tables
+    cleanup(params);
   }
 
   /**
@@ -115,5 +119,50 @@ public class FinaliseBackfill {
         }
       }
     }
+  }
+
+  /**
+   * Deletes the snapshot and old tables whereby we keep the 2 latest tables only.
+   */
+  private static void cleanup(WorkflowParams params) throws Exception {
+    try {
+      System.out.println("Connecting to HBase");
+      Configuration conf = HBaseConfiguration.create();
+      conf.set(HConstants.ZOOKEEPER_QUORUM, params.getZkQuorum());
+      try (
+        Connection connection = ConnectionFactory.createConnection(conf);
+        Admin admin = connection.getAdmin();
+      ) {
+
+        // remove the snapshot created in this workflow only
+        System.out.println("Deleting HBase snapshot[" + params.getSnapshotTable()+ "]");
+        //admin.deleteSnapshot(params.getSnapshotTable());
+
+        // remove all but the last 2 tables
+        // table names are suffixed with a timestamp e.g. prod_d_maps_points_20180616_1320
+        String tablesPattern = params.getTargetTablePrefix() + "_" + params.getMode() + "_d{8}_d{4}";
+        TableName[] tables = admin.listTableNames(tablesPattern);
+        Arrays.sort(tables, new Comparator<TableName>() {  // TableName does not order lexigraphically by default
+          @Override
+          public int compare(TableName o1, TableName o2) {
+            return o1.getNameAsString().compareTo(o2.getNamespaceAsString());
+          }
+        });
+        for (int i=0; i<tables.length-2; i++) {
+          // Defensive coding: safeguard against corrupt table names
+          if (!params.getTargetTable().equalsIgnoreCase(tables[i].getNamespaceAsString())) {
+            System.out.println("Disabling HBase table[" + tables[i].getNameAsString() + "]");
+            //admin.disableTable(tables[i]);
+            System.out.println("Deleting HBase table[" + tables[i].getNameAsString() + "]");
+            //admin.deleteTable(tables[i]);
+          }
+        }
+      }
+    } catch (IOException e) {
+      System.err.println("Unable to clean HBase tables");
+      e.printStackTrace();
+      throw e; // deliberate log and throw to keep logs together
+    }
+
   }
 }
