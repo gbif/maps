@@ -11,9 +11,12 @@ const fs = require('fs')
  */
 var assetsHTML = [
   '/legacy/',
-  '/legacy/index.html',
   '/legacy/css/main.css',
   '/legacy/css/main.min-2fcc9ee56412da1d589f1a08f2bf348a.css',
+  '/legacy/ie/ie8.js',
+  '/legacy/images/marker-icon.png',
+  '/legacy/index.html',
+  '/legacy/point.html',
   '/legacy/script.js',
   '/legacy/script.min-52480f0428c66051f608e79159f5357a.js',
   '/map/binning-debugging.html',
@@ -309,6 +312,8 @@ module.exports = function(req, res) {
       type = 'text/css';
     } else if (path.indexOf('.js') > 0) {
       type = 'text/javascript';
+    } else if (path.indexOf('.js') > 0) {
+      type = 'image/png';
     }
     res.writeHead(200, {'Content-Type': type});
 
