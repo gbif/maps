@@ -107,7 +107,8 @@ object BackfillTiles {
       m += ((py, v._3))
     }
     val merge = { (m1: MMap[Long,Int], m2: MMap[Long,Int]) =>
-      m1 ++= m2
+      // merge maps accummulating the counts
+      m1 ++ m2.map{ case (k,v) => k -> (v + m1.getOrElse(k,0)) }
     }
     val tiles2 = tiles.aggregateByKey(MMap[Long,Int]().empty)(appendVal, merge)
 
