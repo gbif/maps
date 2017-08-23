@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Heat Maps Style Debugging</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <link rel="icon" href="./occurrence/density/0/0/0@Hx.png?srs=EPSG:3857&style=greenHeat.point"/>
+  <style>
+    html, body {
+      background-color: white;
+    }
+    section {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    div {
+      border: 1px solid black;
+      margin: 0 1em 1em 0;
+      text-align: center;
+      line-height: 0;
+    }
+    img {
+      outline: 1px dashed red;
+      margin: 0;
+      padding: 0;
+      display: inline-block;
+    }
+    .dark {
+      background: dimgrey;
+      color: whitesmoke;
+    }
+  </style>
+</head>
+<body>
+  <h1>Heat map style debugging</h1>
+  <p>Checking the styles work at all resolutions.</p>
+
+  <section>
+    <div class="dark">
+      <p>greenHeat.point 4096</p>
+      <img src="./occurrence/density/0/0/0@4x.png?srs=EPSG:3857&style=greenHeat.point" width="512"/>
+    </div>
+    <div class="dark">
+      <p>greenHeat.point 2048</p>
+      <img src="./occurrence/density/0/0/0@3x.png?srs=EPSG:3857&style=greenHeat.point" width="512"/>
+    </div>
+    <div class="dark">
+      <p>greenHeat.point 1024</p>
+      <img src="./occurrence/density/0/0/0@2x.png?srs=EPSG:3857&style=greenHeat.point" width="512"/>
+    </div>
+    <div class="dark">
+      <p>greenHeat.point 512</p>
+      <img src="./occurrence/density/0/0/0@1x.png?srs=EPSG:3857&style=greenHeat.point" width="512"/>
+    </div>
+    <div class="dark">
+      <p>greenHeat.point 256</p>
+      <img src="./occurrence/density/1/0/0@Hx.png?srs=EPSG:3857&style=greenHeat.point" width="256"/>
+      <img src="./occurrence/density/1/1/0@Hx.png?srs=EPSG:3857&style=greenHeat.point" width="256"/><br/>
+      <img src="./occurrence/density/1/0/1@Hx.png?srs=EPSG:3857&style=greenHeat.point" width="256"/>
+      <img src="./occurrence/density/1/1/1@Hx.png?srs=EPSG:3857&style=greenHeat.point" width="256"/>
+    </div>
+    <div class="dark">
+      <p>greenHeat.point</p>
+      <img src="http://mblissett-linux.gbif.org/greenHeatOrig/greenHeatOrig_1-0-0.png" width="256"/>
+      <img src="http://mblissett-linux.gbif.org/greenHeatOrig/greenHeatOrig_1-1-0.png" width="256"/><br/>
+      <img src="http://mblissett-linux.gbif.org/greenHeatOrig/greenHeatOrig_1-0-1.png" width="256"/>
+      <img src="http://mblissett-linux.gbif.org/greenHeatOrig/greenHeatOrig_1-1-1.png" width="256"/>
+    </div>
+  </section>
+</body>
+</html>

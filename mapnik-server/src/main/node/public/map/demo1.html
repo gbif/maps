@@ -23,14 +23,8 @@
 
     var tile_grid_16 = ol.tilegrid.createXYZ({
       minZoom: 0,
-      maxZoom: 16,
+      maxZoom: 15,
       tileSize: 512,
-    });
-
-    var tile_grid_16_256 = ol.tilegrid.createXYZ({
-      minZoom: 0,
-      maxZoom: 16,
-      tileSize: 256,
     });
 
     var layers = [];
@@ -49,7 +43,7 @@
     layers.push(new ol.layer.Tile({
       source: new ol.source.TileImage({
         projection: 'EPSG:3857',
-        tileGrid: tile_grid_16_256,
+        tileGrid: tile_grid_16,
         tilePixelRatio: pixel_ratio,
         url: './occurrence/density/{z}/{x}/{y}@1x.png?srs=EPSG:3857&style=greenHeat.point',
         wrapX: true

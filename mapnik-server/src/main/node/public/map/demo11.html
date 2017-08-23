@@ -27,24 +27,14 @@
   var extent = 180.0;
   var tile_size = 512;
   var max_zoom = 16;
-  var resolutions =     Array(max_zoom+1).fill().map((_, i) => ( extent / tile_size / Math.pow(2, i) ));
+  var resolutions = Array(max_zoom+1).fill().map((_, i) => ( extent / tile_size / Math.pow(2, i) ));
 
   var tile_grid_16 = new ol.tilegrid.TileGrid({
     extent: ol.proj.get('EPSG:4326').getExtent(),
     minZoom: 0,
-    maxZoom: 16,
+    maxZoom: 15,
     resolutions: resolutions,
     tileSize: tile_size,
-  });
-
-  var tile_size_256 = 256;
-  var resolutions_256 = Array(max_zoom+1).fill().map((_, i) => ( extent / tile_size_256 / Math.pow(2, i) ));
-  var tile_grid_16_256 = new ol.tilegrid.TileGrid({
-    extent: ol.proj.get('EPSG:4326').getExtent(),
-    minZoom: 0,
-    maxZoom: 16,
-    resolutions: resolutions_256,
-    tileSize: tile_size_256,
   });
 
   var layers = [];
@@ -63,7 +53,7 @@
   layers.push(new ol.layer.Tile({
     source: new ol.source.TileImage({
       projection: 'EPSG:4326',
-      tileGrid: tile_grid_16_256,
+      tileGrid: tile_grid_16,
       tilePixelRatio: pixel_ratio,
       url: './occurrence/density/{z}/{x}/{y}@'+pixel_ratio+'x.png?srs=EPSG:4326&style=fire.point',
       wrapX: true

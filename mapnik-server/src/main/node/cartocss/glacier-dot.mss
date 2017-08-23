@@ -1,5 +1,5 @@
 #occurrence {
-  marker-width: 1;
+  marker-width: 2;
   marker-line-width: 0;
   marker-allow-overlap: true;
   marker-fill: #206EFF;

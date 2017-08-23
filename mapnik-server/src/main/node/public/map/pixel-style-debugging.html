@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Maps Style Debugging</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <link rel="icon" href="./occurrence/density/0/0/0@Hx.png?srs=EPSG:3857&style=purpleYellow.point"/>
+  <style>
+    html, body {
+      background-color: lightslategray;
+    }
+    section {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    div {
+      border: 1px solid black;
+      margin: 0 1em 1em 0;
+      text-align: center;
+    }
+    img {
+      outline: 1px dashed limegreen;
+      margin: 0.5em;
+    }
+    section img {
+      width: 512px;
+      height: 512px;
+    }
+    div.ontop {
+      display: grid;
+      grid-template-columns: 1;
+      grid-template-rows: 1;
+      padding: 0.5em;
+    }
+    .ontop img {
+      outline: 0.5px dashed rgba(50, 205, 50, 0.25);
+      margin: 0;
+      width: 1024px;
+      height:1024px;
+      grid-column: 1;
+      grid-row: 1;
+    }
+  </style>
+</head>
+<body>
+  <h1>Style debugging</h1>
+  <p>Checking the styles work at all resolutions.</p>
+
+  <script type="text/javascript">
+    function changeDensity(d) {
+        [].forEach.call(document.images, function (v, i) {
+            document.images[i].src = document.images[i].src.replace(/@.x/, d);
+        });
+    }
+  </script>
+
+  <p>
+    Change pixel density (i.e. tile size)
+    <button onclick="javascript:changeDensity('@Hx')">@Hx</button>
+    <button onclick="javascript:changeDensity('@1x')">@1x</button>
+    <button onclick="javascript:changeDensity('@2x')">@2x</button>
+    <button onclick="javascript:changeDensity('@3x')">@3x</button>
+    <button onclick="javascript:changeDensity('@4x')">@4x</button>
+  </p>
+
+  <h2>Point (pixel) sizes, sparse data</h2>
+  <section>
+    <div>
+      <p>purpleYellow-noborder.poly squarSize=16 (1px)</p>
+      <img src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&taxonKey=4729&style=purpleYellow-noborder.poly&bin=square&squareSize=16"/>
+    </div>
+    <div>
+      <p>purpleYellow-noborder.poly squareSize=32 (2px)</p>
+      <img src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&taxonKey=4729&style=purpleYellow-noborder.poly&bin=square&squareSize=32"/>
+    </div>
+    <div>
+      <p>purpleYellow-noborder.poly squareSize=64 (4px)</p>
+      <img src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&taxonKey=4729&style=purpleYellow-noborder.poly&bin=square&squareSize=64"/>
+    </div>
+    <div>
+      <p>purpleYellow-noborder.poly squareSize=128 (8px)</p>
+      <img src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&taxonKey=4729&style=purpleYellow-noborder.poly&bin=square&squareSize=128"/>
+    </div>
+  </section>
+
+  <h2>Testing alignment</h2>
+  <p>red.poly 128, purpleWhite.poly 64, classic.poly 32, red.poly 16</p>
+  <div class="ontop">
+    <img src="./occurrence/density/0/1/0@2x.png?srs=EPSG:4326&taxonKey=4729&style=red.poly&bin=square&squareSize=128"/>
+    <img src="./occurrence/density/0/1/0@2x.png?srs=EPSG:4326&taxonKey=4729&style=purpleWhite.poly&bin=square&squareSize=64"/>
+    <img src="./occurrence/density/0/1/0@2x.png?srs=EPSG:4326&taxonKey=4729&style=classic.poly&bin=square&squareSize=32"/>
+    <img src="./occurrence/density/0/1/0@2x.png?srs=EPSG:4326&taxonKey=4729&style=red.poly&bin=square&squareSize=16"/>
+  </div>
+
+  <p>red.poly 128, purpleWhite.poly 64, classic.poly 32, red.poly 16</p>
+  <div class="ontop">
+    <img src="./occurrence/density/0/1/0@2x.png?srs=EPSG:4326&style=red.poly&bin=square&squareSize=128"/>
+    <img src="./occurrence/density/0/1/0@2x.png?srs=EPSG:4326&style=purpleWhite.poly&bin=square&squareSize=64"/>
+    <img src="./occurrence/density/0/1/0@2x.png?srs=EPSG:4326&style=classic.poly&bin=square&squareSize=32"/>
+    <img src="./occurrence/density/0/1/0@2x.png?srs=EPSG:4326&style=red.poly&bin=square&squareSize=16"/>
+  </div>
+</body>
+</html>
