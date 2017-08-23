@@ -219,7 +219,14 @@ function v1ParseUrl(parsedRequest) {
   if (year == "0,2020" && noYear) {
     year = null;
   } else if (year && noYear) {
-    throw Error("Can't display undated records as well as a range of dated ones.\n");
+    if (year == "1900,2020") {
+      // The developer API make-your-own-map interface didn't include PRE_1900, so many people who intended to include
+      // all records omitted this layer.
+      console.log("Altering 1900-2020 + undated to all occurrences, since this poor default was in our documentation.");
+      year = null;
+    } else {
+      throw Error("Can't display undated records as well as a range of dated ones.\n");
+    }
   }
 
   return {
