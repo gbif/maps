@@ -101,9 +101,9 @@ public class BackwardCompatibility {
 
     V1TileJson(Capabilities c) {
       this.count = c.getTotal();
-      this.minimumLatitude = c.getMinLat();
+      this.minimumLatitude = Math.max(-85.0511, c.getMinLat());
+      this.maximumLatitude = Math.min( 85.0511, c.getMaxLat());
       this.minimumLongitude = c.getMinLng();
-      this.maximumLatitude = c.getMaxLat();
       this.maximumLongitude = c.getMaxLng();
     }
 
