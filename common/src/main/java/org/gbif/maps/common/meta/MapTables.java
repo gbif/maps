@@ -26,18 +26,20 @@ public class MapTables implements Serializable {
     this.pointTableDate = tableDate(pointTable);
   }
 
+  /**
+   * @return the date inferred from the table name or null if it cannot be found
+   */
   private String tableDate(String table) {
-    String date;
-    Matcher matcher = TABLE_TIMESTAMP.matcher(table);
-    if (matcher.find()) {
-      // It's possible to be off-by-one if tiles are generated during the DST switch.
-      ZonedDateTime time = ZonedDateTime.parse(matcher.group(1),
-          DateTimeFormatter.ofPattern("yyyyMMdd_HHmm").withZone(ZoneId.of("Europe/Copenhagen")));
-      date = time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mmX").withZone(ZoneId.of("UTC")));
-    } else {
-      date = null;
+    if (table != null) {
+      Matcher matcher = TABLE_TIMESTAMP.matcher(table);
+      if (matcher.find()) {
+        // It's possible to be off-by-one if tiles are generated during the DST switch.
+        ZonedDateTime time = ZonedDateTime.parse(matcher.group(1),
+                                                 DateTimeFormatter.ofPattern("yyyyMMdd_HHmm").withZone(ZoneId.of("Europe/Copenhagen")));
+        return time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mmX").withZone(ZoneId.of("UTC")));
+      }
     }
-    return date;
+    return null;
   }
 
   public String getPointTable() {
