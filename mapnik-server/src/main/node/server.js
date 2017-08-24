@@ -65,6 +65,7 @@ function createServer(config) {
         console.log("Error retrieving vector tile", error);
         res.writeHead(503, {'Content-Type': 'image/png', 'Access-Control-Allow-Origin': '*', 'X-Error': error.message});
         res.end(fs.readFileSync('./public/map/503.png'));
+        return;
       }
 
       console.log("Vector tile has HTTP status", response.statusCode, "and size", body.length);
