@@ -1,3 +1,5 @@
+"use strict";
+
 var mapnik = require('mapnik')
   , tm = require('./tm')
   , _ = require('underscore')

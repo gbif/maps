@@ -1,3 +1,5 @@
+"use strict";
+
 const async = require('async')
     , mapnik = require('mapnik')
     , styles = require('./styles');
@@ -102,7 +104,7 @@ function heatMapRender(parameters, vectorTiles, res) {
    to produce the normal size (512).  Coloured pixels are set to opaque.
  */
 function manipulatePixelStyle(image, density) {
-  size = 512;
+  var size = 512;
 
   //console.time("resize");
   // The method available in node-mapnik to resize don't work correctly — a pixel around the edge is lost,

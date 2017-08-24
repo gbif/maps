@@ -1,3 +1,5 @@
+"use strict";
+
 const quickLocalIp = require('quick-local-ip')
     , uuid = require('uuid')
     , ZooKeeper = require ("zookeeper");

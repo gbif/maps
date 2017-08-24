@@ -1,3 +1,5 @@
+"use strict";
+
 const async = require('async')
     , fs = require('fs')
     , http = require('http')
@@ -61,7 +63,7 @@ function createServer(config) {
       if (error) {
         // something went wrong
         console.log("Error retrieving vector tile", error);
-        res.writeHead(503, {'Content-Type': 'image/png', 'Access-Control-Allow-Origin': '*', 'X-Error': e.message});
+        res.writeHead(503, {'Content-Type': 'image/png', 'Access-Control-Allow-Origin': '*', 'X-Error': error.message});
         res.end(fs.readFileSync('./public/map/503.png'));
       }
 

@@ -1,3 +1,5 @@
+"use strict";
+
 /**
  * Contains only those methods required for the carto.js and cherry picked from
  *   https://github.com/mapbox/mapbox-studio-classic/blob/mb-pages/lib/tm.js
@@ -38,6 +40,6 @@ tm.extent = {
 };
 // Reverse the above hash to allow for srs name lookups.
 tm.srsname = {};
-for (name in tm.srs) tm.srsname[tm.srs[name]] = name;
+for (var name in tm.srs) tm.srsname[tm.srs[name]] = name;
 
 module.exports = tm;

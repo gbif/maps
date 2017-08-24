@@ -1,3 +1,5 @@
+"use strict";
+
 const fs = require('fs')
     , url = require('url')
     , config = require('./config')
@@ -324,7 +326,7 @@ module.exports = function(req, res) {
   }
 
   // Handle map tiles.
-  var parameters, vectorTileUrl;
+  var parameters, vectorTileUrl, heatVectorTileUrls;
 
   // V1 API
   if (parsedRequest.pathname.indexOf('tile') > 0) {
