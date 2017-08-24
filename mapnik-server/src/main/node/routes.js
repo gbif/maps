@@ -18,6 +18,8 @@ var assetsHTML = [
   '/legacy/ie/ie8.js',
   '/legacy/images/marker-icon.png',
   '/legacy/index.html',
+  '/legacy/map-events.js',
+  '/legacy/null',
   '/legacy/point.html',
   '/legacy/script.js',
   '/legacy/script.min-52480f0428c66051f608e79159f5357a.js',

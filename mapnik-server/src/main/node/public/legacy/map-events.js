@@ -1,0 +1,1 @@
+function GBIFMapListener(){var n=[];this.subscribe=function(e){n.push(e)},this.onMessage=function(e){void 0!==e.data.searchUrl&&n.forEach(function(n){n(e.data.origin,e.data.searchUrl)})},window.addEventListener?window.addEventListener("message",this.onMessage,!1):window.attachEvent&&window.attachEvent("onmessage",this.onMessage)}
