@@ -104,7 +104,7 @@ object BackfillTiles {
     // Maintain the same key structure of type+zxy+bor and rewrite values into a map of "PixelYear" → count
     val appendVal = { (m: MMap[Long,Int], v: (Int,Short,Int)) =>
       val py = encodePixelYear(v._1, v._2)
-      m += ((py, v._3))
+      m += ((py, v._3 + m.getOrElse(py,0)))
     }
     val merge = { (m1: MMap[Long,Int], m2: MMap[Long,Int]) =>
       // merge maps accummulating the counts
