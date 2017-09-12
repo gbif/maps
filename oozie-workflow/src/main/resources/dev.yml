@@ -18,9 +18,7 @@ tilesThreshold: 100000
 hbase:
   zkQuorum: PROVIDED_AT_RUNTIME
   rootDir: /hbase
-  restoreDir: hdfs://nameservice1/tmp
   keySaltModulus: 10
-
 
 # Applies only to those map views that have few enough records to be stored as features
 pointFeatures:

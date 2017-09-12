@@ -3,6 +3,9 @@
 ###
 
 
+#TODO: THIS IS NOT USED - the one in the spark-process jar will be picked up
+
+
 # Used only for the spark application name
 appName: Map build (prod)
 
@@ -18,7 +21,6 @@ tilesThreshold: 250000
 hbase:
   zkQuorum: PROVIDED_AT_RUNTIME
   rootDir: /hbase
-  restoreDir: hdfs://ha-nn/tmp
   keySaltModulus: 100
 
 

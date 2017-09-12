@@ -66,7 +66,7 @@ object HBaseInput {
     hbaseConf.set(TableInputFormat.SCAN, convertScanToString(scan))
 
     val job = Job.getInstance(hbaseConf)
-    TableSnapshotInputFormat.setInput(job, config.source, new Path(config.hbase.restoreDir))
+    TableSnapshotInputFormat.setInput(job, config.source, new Path(config.targetDirectory + "/restore"))
 
     val hBaseRDD = sc.newAPIHadoopRDD(job.getConfiguration,
       classOf[TableSnapshotInputFormat],

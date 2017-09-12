@@ -18,7 +18,6 @@ tilesThreshold: 100000
 hbase:
   zkQuorum: zk1.gbif.org,zk2.gbif.org,zk3.gbif.org
   rootDir: /hbase
-  restoreDir: hdfs://ha-nn/tmp
   keySaltModulus: 100
 
 # Applies only to those map views that have few enough records to be stored as features

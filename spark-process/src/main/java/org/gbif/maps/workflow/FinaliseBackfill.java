@@ -52,7 +52,6 @@ public class FinaliseBackfill {
   // TODO: Move this to configuration
   private final static int MAX_ZOOM = 16;
 
-
   public static void main(String[] args) throws Exception {
     WorkflowParams params = WorkflowParams.buildFromOozie(args[0]);
     System.out.println(params.toString());
@@ -125,9 +124,9 @@ public class FinaliseBackfill {
    * Deletes the snapshot and old tables whereby we keep the 2 latest tables only.
    */
   private static void cleanup(WorkflowParams params) throws Exception {
+    Configuration conf = HBaseConfiguration.create();
     try {
       System.out.println("Connecting to HBase");
-      Configuration conf = HBaseConfiguration.create();
       conf.set(HConstants.ZOOKEEPER_QUORUM, params.getZkQuorum());
       try (
         Connection connection = ConnectionFactory.createConnection(conf);
@@ -177,5 +176,16 @@ public class FinaliseBackfill {
       throw e; // deliberate log and throw to keep logs together
     }
 
+    // Cleanup the working directory, especially since there are the restore files from HBase which are numerous
+    System.out.println("Deleting working directory [" + params.getTargetDirectory() + "]");
+    /*
+    Disabled until confidence the snapshots are in correct place
+    FsShell shell = new FsShell(conf);
+    try {
+      shell.run(new String[]{"-rm","-r","--skipTrash", params.getTargetDirectory()});
+    } catch (Exception e) {
+      throw new IOException("Unable to delete the working directory", e);
+    }
+    */
   }
 }

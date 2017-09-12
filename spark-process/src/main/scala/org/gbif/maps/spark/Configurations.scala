@@ -125,11 +125,9 @@ class ProjectionConfig  (
 class HBaseConfiguration (
   @JsonProperty("zkQuorum") _zkQuorum: String,
   @JsonProperty("rootDir") _rootDir: String,
-  @JsonProperty("restoreDir") _restoreDir: String,
   @JsonProperty("keySaltModulus") _keySaltModulus: Int
 ) extends Serializable {
   val rootDir = Preconditions.checkNotNull(_rootDir, "rootDir cannot be null" : Object)
-  val restoreDir = Preconditions.checkNotNull(_restoreDir, "restoreDir cannot be null" : Object)
   var zkQuorum = Preconditions.checkNotNull(_zkQuorum, "zkQuorum cannot be null" : Object)
   val keySaltModulus = Preconditions.checkNotNull(_keySaltModulus, "keySaltModulus cannot be null" : Object)
 }
