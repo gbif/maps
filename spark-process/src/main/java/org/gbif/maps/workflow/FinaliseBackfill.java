@@ -176,16 +176,19 @@ public class FinaliseBackfill {
       throw e; // deliberate log and throw to keep logs together
     }
 
-    // Cleanup the working directory, especially since there are the restore files from HBase which are numerous
-    System.out.println("Deleting working directory [" + params.getTargetDirectory() + "]");
-    /*
-    Disabled until confidence the snapshots are in correct place
-    FsShell shell = new FsShell(conf);
-    try {
-      shell.run(new String[]{"-rm","-r","--skipTrash", params.getTargetDirectory()});
-    } catch (Exception e) {
-      throw new IOException("Unable to delete the working directory", e);
+    // Cleanup the working directory if in /tmp to avoid many small files
+    if (params.getTargetDirectory().startsWith("/tmp")) {
+      System.out.println("Deleting working directory [" + params.getTargetDirectory() + "]");
+      FsShell shell = new FsShell(conf);
+      try {
+        shell.run(new String[]{"-rm","-r","--skipTrash", params.getTargetDirectory()});
+      } catch (Exception e) {
+        throw new IOException("Unable to delete the working directory", e);
+      }
+    } else {
+      System.out.println("Working directory [" + params.getTargetDirectory() + "] will not be removed automatically "
+                         + "- only /tmp/* working directories will be cleaned");
     }
-    */
+
   }
 }
