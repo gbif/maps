@@ -176,8 +176,9 @@ public class FinaliseBackfill {
       throw e; // deliberate log and throw to keep logs together
     }
 
-    // Cleanup the working directory if in /tmp to avoid many small files
-    if (params.getTargetDirectory().startsWith("/tmp")) {
+    // Cleanup the working directory if in hdfs://nameserver/tmp/* to avoid many small files
+    String regex = "hdfs://[-_a-zA-Z0-9]+/tmp/.+"; // defensive, cleaning only /tmp in hdfs
+    if (params.getTargetDirectory().matches(regex)) {
       System.out.println("Deleting working directory [" + params.getTargetDirectory() + "]");
       FsShell shell = new FsShell(conf);
       try {
