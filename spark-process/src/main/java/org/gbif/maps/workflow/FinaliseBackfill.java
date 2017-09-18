@@ -179,10 +179,13 @@ public class FinaliseBackfill {
     // Cleanup the working directory if in hdfs://nameserver/tmp/* to avoid many small files
     String regex = "hdfs://[-_a-zA-Z0-9]+/tmp/.+"; // defensive, cleaning only /tmp in hdfs
     if (params.getTargetDirectory().matches(regex)) {
-      System.out.println("Deleting working directory [" + params.getTargetDirectory() + "]");
       FsShell shell = new FsShell(conf);
       try {
-        shell.run(new String[]{"-rm","-r","--skipTrash", params.getTargetDirectory()});
+        String dir = params.getTargetDirectory().substring(params.getTargetDirectory().indexOf("/tmp"));
+        System.out.println("Deleting working directory [" + params.getTargetDirectory() + "] which translates to ["
+                           + "-rm -r --skiptrash " + dir + "]");
+
+        shell.run(new String[]{"-rm","-r","--skipTrash", dir});
       } catch (Exception e) {
         throw new IOException("Unable to delete the working directory", e);
       }
