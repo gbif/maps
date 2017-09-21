@@ -238,7 +238,7 @@ function v1ParseUrl(parsedRequest) {
       console.log("Altering 1900-2020 + undated to all occurrences, since this poor default was in our documentation.");
       year = null;
     } else {
-      throw Error("Can't display undated records as well as a range of dated ones.\n");
+      throw Error("Can't display undated records as well as a range of dated ones.");
     }
   }
 
