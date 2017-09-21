@@ -39,11 +39,13 @@
         [].forEach.call(document.images, function (v, i) {
             document.images[i].src = document.images[i].src.replace(/@.x/, d);
         });
+        document.getElementById('currentDensity').innerHTML = d.slice(1,2);
     }
   </script>
 
   <p>
-    Change pixel density (i.e. tile size)
+    Change pixel density (i.e. tile size).  This screen has pixel density <script type="text/javascript">document.write(window.devicePixelRatio);</script>.
+    Current density is <span id="currentDensity">1</span>.
     <button onclick="javascript:changeDensity('@Hx')">@Hx</button>
     <button onclick="javascript:changeDensity('@1x')">@1x</button>
     <button onclick="javascript:changeDensity('@2x')">@2x</button>
