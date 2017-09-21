@@ -4,14 +4,16 @@ const async = require('async')
     , fs = require('fs')
     , http = require('http')
     , request = require('request')
+    , stoppable = require('stoppable')
     , config = require('./config')
     , gbifServiceRegistry = require('./gbifServiceRegistry')
     , renderer = require('./renderer')
     , routes = require('./routes')
     , styles = require('./styles');
 
+var server;
+
 function createServer(config) {
-  var timing = config.logging.timing;
   var timeout = config.tileServer.timeout;
 
   return http.createServer(function(req, res) {
@@ -32,10 +34,9 @@ function createServer(config) {
     if (styles.isHeatStyle(parameters.style)) {
       async.map(heatVectorTileUrls,
         function (url, callback) {
-          console.log("Fetching vector tile (heat):", url);
-          if (timing) console.time("getTile");
+          console.time("Heat get "+url);
           request.get({url: url, method: 'GET', encoding: null, gzip: true, timeout: timeout}, function (error, response, body) {
-            if (timing) console.timeEnd("getTile");
+            console.timeEnd("Heat get "+url);
             console.log(url, "Vector tile has HTTP status", response ? response.statusCode : '-', "and size", body ? body.length : '-');
             callback(error, {body: body, etag: response ? response.headers['etag'] : null});
           })
@@ -55,10 +56,9 @@ function createServer(config) {
     }
 
     // issue the request to the vector tile server and render the tile as a PNG using Mapnik
-    console.log("Fetching vector tile:", vectorTileUrl);
-    if (timing) console.time("getTile");
+    console.time("Get "+vectorTileUrl);
     request.get({url: vectorTileUrl, method: 'GET', encoding: null, gzip: true, timeout: timeout}, function (error, response, body) {
-      if (timing) console.timeEnd("getTile");
+      console.timeEnd("Get "+vectorTileUrl);
 
       if (error) {
         // something went wrong
@@ -120,10 +120,7 @@ function writeHeaders(status, etagIn, res) {
  */
 function exitHandler() {
   console.log("Completing requests");
-  // Until https://github.com/nodejs/node/issues/2642 is fixed, we can't wait for connections to end.
-  //server.close(function () {
-    process.exit(0);
-  //});
+  server.stop();
 }
 
 /**
@@ -147,7 +144,7 @@ try {
   // Set up server.
   var port = parseInt(process.argv[3]);
   console.log("Using port: " + port);
-  var server = createServer(config);
+  server = stoppable(createServer(config), 1000);
   server.listen(port);
 
   // Set up ZooKeeper.

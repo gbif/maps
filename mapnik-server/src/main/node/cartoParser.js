@@ -40,7 +40,6 @@ parser.parseToXML = function(styles, tilejson) {
   opts.Layer = layers.map(function(layer) {
     return {
       id:layer.id,
-      name:layer.id,
       'class':layer['class'],
       srs:tm.srs['900913']
     }
