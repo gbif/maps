@@ -22,7 +22,7 @@ There are different kinds of maps:
   2. Ad hoc search maps, which are significantly slower in performance and resolution, but provide the means to filter data using the complete occurrence search API.
 
 #### Examples for occurrence density maps
-Simple (note, hasGeospatialIssue is not explicitly declared, but is always true for simple maps)
+Simple (note, hasGeospatialIssue is not explicitly declared, but is always false for simple maps)
   - /map/occurrence/density/{z}/{x}/{y}.mvt?taxonKey=212
   - /map/occurrence/density/{z}/{x}/{y}.mvt?taxonKey=212&year=1980,2014
   - /map/occurrence/density/{z}/{x}/{y}.mvt?taxonKey=212&year=1980,2014&basisOfRecord=OBSERVATION&basisOfRecord=HUMAN_OBSERVATION

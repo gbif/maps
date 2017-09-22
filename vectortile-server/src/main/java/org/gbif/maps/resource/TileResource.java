@@ -61,9 +61,6 @@ public final class TileResource {
   // layers together
   private static final String LAYER_OCCURRENCE = "occurrence";
 
-  // we always use high resolution tiles for the point data which are small by definition
-  private static final int POINT_TILE_SIZE = 4096;
-  private static final int POINT_TILE_BUFFER = POINT_TILE_SIZE / 4;
   private static final VectorTileDecoder DECODER = new VectorTileDecoder();
 
   // extents of the WGS84 Plate Careé Zoom 0 tiles
@@ -235,17 +232,18 @@ public final class TileResource {
                                             years, basisOfRecords, verbose);
       return new DatedVectorTile(encoder.encode(), date);
     } else {
-      VectorTileEncoder encoder = new VectorTileEncoder(POINT_TILE_SIZE, POINT_TILE_BUFFER, false);
+      // The tile size is chosen to match the size of preprepared tiles.
+      VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
       date = hbaseMaps.getPointsDate().orNull();
       Optional<PointFeature.PointFeatures> optionalFeatures = hbaseMaps.getPoints(mapKey);
       if (optionalFeatures.isPresent()) {
-        TileProjection projection = Tiles.fromEPSG(srs, POINT_TILE_SIZE);
+        TileProjection projection = Tiles.fromEPSG(srs, tileSize);
         PointFeature.PointFeatures features = optionalFeatures.get();
         LOG.info("Found {} features and tile schema {} at date {}", features.getFeaturesCount(),
             TileSchema.fromSRS(srs), date);
 
         PointFeatureFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, features.getFeaturesList(),
-                                                projection, TileSchema.fromSRS(srs), z, x, y, POINT_TILE_SIZE, POINT_TILE_BUFFER,
+                                                projection, TileSchema.fromSRS(srs), z, x, y, tileSize, bufferSize,
                                                 years, basisOfRecords);
       }
       return new DatedVectorTile(encoder.encode(), date); // may be empty

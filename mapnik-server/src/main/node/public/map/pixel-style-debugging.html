@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Maps Style Debugging</title>
+  <title>Map Pixel Style Debugging</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
   <link rel="icon" href="./occurrence/density/0/0/0@Hx.png?srs=EPSG:3857&style=purpleYellow.point"/>
   <style>
     html, body {
-      background-color: lightslategray;
+      background-color: #eeeeee;
     }
     section {
       display: flex;
@@ -46,15 +46,6 @@
   <h1>Style debugging</h1>
   <p>Checking the styles work at all resolutions.</p>
 
-  <script type="text/javascript">
-    function changeDensity(d) {
-        [].forEach.call(document.images, function (v, i) {
-            document.images[i].src = document.images[i].src.replace(/@.x/, d);
-        });
-        document.getElementById('currentDensity').innerHTML = d.slice(1,2);
-    }
-  </script>
-
   <p>
     Change pixel density (i.e. tile size).  This screen has pixel density <script type="text/javascript">document.write(window.devicePixelRatio);</script>.
     Current density is <span id="currentDensity">1</span>.
@@ -65,24 +56,49 @@
     <button onclick="javascript:changeDensity('@4x')">@4x</button>
   </p>
 
-  <h2>Point (pixel) sizes, sparse data</h2>
+  <h2>Pixel styles using point data</h2>
   <section>
     <div>
-      <p>purpleYellow-noborder.poly squarSize=16 (1px)</p>
-      <img src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&taxonKey=4729&style=purpleYellow-noborder.poly&bin=square&squareSize=16"/>
+      <p>purpleYellow.point (point-based data)</p>
+      <img src="./occurrence/density/6/29/29@2x.png?srs=EPSG:3857&country=SN&style=purpleYellow.point"/>
     </div>
     <div>
-      <p>purpleYellow-noborder.poly squareSize=32 (2px)</p>
-      <img src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&taxonKey=4729&style=purpleYellow-noborder.poly&bin=square&squareSize=32"/>
+      <p>purpleYellow.point (preprepared data)</p>
+      <img src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&publishingCountry=AU&style=purpleYellow.point"/>
+    </div>
+  </section>
+
+  <h2>Pixel styles using square binned data</h2>
+  <section>
+    <div>
+      <p>purpleYellow-noborder.poly squareSize=8 (1px)</p>
+      <img src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&publishingCountry=AU&style=purpleYellow-noborder.poly&bin=square&squareSize=8"/>
     </div>
     <div>
-      <p>purpleYellow-noborder.poly squareSize=64 (4px)</p>
-      <img src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&taxonKey=4729&style=purpleYellow-noborder.poly&bin=square&squareSize=64"/>
+      <p>purpleYellow-noborder.poly squareSize=16 (2px)</p>
+      <img src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&publishingCountry=AU&style=purpleYellow-noborder.poly&bin=square&squareSize=16"/>
     </div>
     <div>
-      <p>purpleYellow-noborder.poly squareSize=128 (8px)</p>
-      <img src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&taxonKey=4729&style=purpleYellow-noborder.poly&bin=square&squareSize=128"/>
+      <p>purpleYellow-noborder.poly squareSize=32 (4px)</p>
+      <img src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&publishingCountry=AU&style=purpleYellow-noborder.poly&bin=square&squareSize=32"/>
     </div>
+    <div>
+      <p>purpleYellow-noborder.poly squareSize=64 (8px)</p>
+      <img src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&publishingCountry=AU&style=purpleYellow-noborder.poly&bin=square&squareSize=64"/>
+    </div>
+    <div>
+      <p>purpleYellow-noborder.poly squareSize=128 (16px)</p>
+      <img src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&publishingCountry=AU&style=purpleYellow-noborder.poly&bin=square&squareSize=128"/>
+    </div>
+
+    <!--div>
+      <p>
+        squareSize=4 gives 0.5px at 512px wide, so on HiDPI screens (@2x) we can see individual pixels. However, this won't work as our vector
+        tiles have extent 512.
+      </p>
+      <p>purpleYellow-noborder.poly squareSize=4 (0.5px &mdash; HiDPI screens only)</p>
+      <img src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&publishingCountry=AU&style=purpleYellow-noborder.poly&bin=square&squareSize=4"/>
+    </div-->
   </section>
 
   <h2>Testing alignment</h2>
@@ -101,5 +117,15 @@
     <img src="./occurrence/density/0/1/0@2x.png?srs=EPSG:4326&style=classic.poly&bin=square&squareSize=32"/>
     <img src="./occurrence/density/0/1/0@2x.png?srs=EPSG:4326&style=red.poly&bin=square&squareSize=16"/>
   </div>
+
+  <script type="text/javascript">
+    function changeDensity(d) {
+        [].forEach.call(document.images, function (v, i) {
+            document.images[i].src = document.images[i].src.replace(/@.x/, d);
+        });
+        document.getElementById('currentDensity').innerHTML = d.slice(1,2);
+    }
+    changeDensity('@'+window.devicePixelRatio+'x');
+  </script>
 </body>
 </html>

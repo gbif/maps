@@ -34,15 +34,6 @@
   <h1>Style debugging</h1>
   <p>Checking the styles work at all resolutions.</p>
 
-  <script type="text/javascript">
-    function changeDensity(d) {
-        [].forEach.call(document.images, function (v, i) {
-            document.images[i].src = document.images[i].src.replace(/@.x/, d);
-        });
-        document.getElementById('currentDensity').innerHTML = d.slice(1,2);
-    }
-  </script>
-
   <p>
     Change pixel density (i.e. tile size).  This screen has pixel density <script type="text/javascript">document.write(window.devicePixelRatio);</script>.
     Current density is <span id="currentDensity">1</span>.
@@ -111,5 +102,15 @@
       <img src="./occurrence/density/0/0/0@1x.png?srs=EPSG:4326&style=purpleYellow-noborder.poly&bin=square&squareSize=64"/>
     </div>
   </section>
+
+  <script type="text/javascript">
+    function changeDensity(d) {
+        [].forEach.call(document.images, function (v, i) {
+            document.images[i].src = document.images[i].src.replace(/@.x/, d);
+        });
+        document.getElementById('currentDensity').innerHTML = d.slice(1,2);
+    }
+    changeDensity('@'+window.devicePixelRatio+'x');
+  </script>
 </body>
 </html>

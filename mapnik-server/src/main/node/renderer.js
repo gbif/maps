@@ -12,6 +12,7 @@ function renderTile(parameters, vectorTile, callback) {
   var scale = isHardPixelStyle ? 1 : parameters.density;
 
   // Hard pixel styles are produced at double vector tile resolution, then resized.
+  // (NB point vector tiles have extent 512, but binned vector tiles have extent 4096.)
   var size = isHardPixelStyle ? 1024 : 512 * parameters.density;
 
   if (!vectorTile || vectorTile.length == 0) {
@@ -104,7 +105,7 @@ function heatMapRender(parameters, vectorTiles, res) {
    to produce the normal size (512).  Coloured pixels are set to opaque.
  */
 function manipulatePixelStyle(image, density) {
-  var size = 512;
+  var size = image.width() / 2;
 
   //console.time("resize");
   // The method available in node-mapnik to resize don't work correctly — a pixel around the edge is lost,
@@ -135,7 +136,7 @@ function manipulatePixelStyle(image, density) {
   // Scale the image for hi-DPI tiles if required.
   if (density != 1) {
     image.premultiply();
-    image = image.resizeSync(512 * density, 512 * density);
+    image = image.resizeSync(size * density, size * density);
   }
 
   //console.timeEnd("resize");
