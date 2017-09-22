@@ -1,113 +1,342 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="utf-8"/>
-		<title>GBIF Occurrence Maps — Debug interface</title>
-		<link rel="icon" href="https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-classic"/>
-		<link rel="stylesheet" href="https://tile.gbif.org/ui/ol.css" type="text/css">
-		<script src="https://tile.gbif.org/ui/ol-debug.js"></script>
-		<script src="https://tile.gbif.org/ui/proj4.js"></script>
-		<script src="https://tile.gbif.org/ui/olms.js"></script>
-		<script src="https://tile.gbif.org/ui/common.js"></script>
+  <head>
+    <meta charset="utf-8"/>
+    <title>GBIF Occurrence Maps — Toolbox</title>
+    <link  href="https://tile.gbif-uat.org/3857/omt/0/0/0@1x.png?style=gbif-classic" rel="icon" />
+    <link  href="https://tile.gbif-uat.org/ui/ol.css" rel="stylesheet" type="text/css">
+    <script src="https://tile.gbif-uat.org/ui/ol-debug.js"></script>
+    <script src="https://tile.gbif-uat.org/ui/proj4.js"></script>
 
-		<script src="https://tile.gbif.org/ui/GBIF-both.js"></script>
-		<style>
-			html {
-				font-family: sans-serif;
-			}
-			#side {
-				position: absolute;
-				top: 0;
-				right: 0;
-				width: 20%;
-				height: 100%;
-				background: powderblue;
-			}
-			.wrapper {
-				position: absolute;
-				top: 0;
-				left: 0;
-				width: 80%;
-				height: 100%;
-				background: lavender;
-			}
-			.map {
-				width: 100%;
-				height: 100%;
-			}
-			#progress {
-				position: absolute;
-				bottom: 0;
-				left: 0;
-				height: 5px;
-				background: rgba(0, 255, 0, 1.0);
-				width: 0;
-				transition: width 250ms;
-			}
-			#recentTiles {
-				font-size: 0.6em;
-				width: 100%;
-				overflow: scroll;
-			}
+    <link href="nouislider.css" rel="stylesheet">
+    <script src="nouislider.min.js"></script>
 
-			#projection label {
-			    display: block;
-			}
-			#projection img {
-			    width: 1em;
-			    height: 1em;
-			}
-		</style>
-	</head>
-	<body>
-		<div id="side">
-			<h1>Map preview</h1>
-			<fieldset id="projection">
-				<legend>Projection</legend>
-				<label>
-					<input type="radio" name="projection" value="3857" checked="checked" />
-					<img src="https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-classic"/>
-					Web Mercator
-				</label>
-				<label>
-					<input type="radio" name="projection" value="4326" />
-					<img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-classic"/><img src="https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-classic"/>
-					WGS84 Plate Careé
-				</label>
-				<label>
-					<input type="radio" name="projection" value="3575" />
-					<img src="https://tile.gbif.org/3575/omt/0/0/0@1x.png?style=gbif-classic"/>
-					Arctic LAEA
-				</label>
-				<label>
-					<input type="radio" name="projection" value="3031" />
-					<img src="https://tile.gbif.org/3031/omt/0/0/0@1x.png?style=gbif-classic"/>
-					Antarctic Stereographic
-				</label>
-			</fieldset>
+    <script src="GBIF-tile-schemas.js"></script>
+    <script src="GBIF-layers.js"></script>
+    <style>
+      html {
+        font-family: sans-serif;
+      }
+      #side {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 25%;
+        height: 100%;
+        background: powderblue;
+        overflow: scroll;
+      }
 
-			<fieldset id="data">
-				<legend>Data source</legend>
-				<label>
-					<input type="radio" name="datasource" id="datasource_hbase" value="hbase" checked> Simple (HBase)
-				</label>
-				<!--label>
-					<input type="radio" name="datasource" id="datasource_solr"  value="adhoc"> Ad hoc search (SOLR)
-				</label-->
-			</fieldset>
+      .wrapper {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 75%;
+        height: 100%;
+        background: lavender;
+      }
+      .map {
+        width: 100%;
+        height: 100%;
+      }
 
-			<fieldset id="grid">
-				<legend>Tile grid</legend>
-				<label><input id="grid_visible" type="checkbox"/>visibility</label><br/>
-				<label>opacity</label>
-				<input id="grid_opacity" type="range" min="0" max="1" step="0.01"/>
-			</fieldset>
-		</div>
-		<div class="wrapper">
-			<div id="map" class="map"></div>
-			<div id="progress"></div>
-		</div>
+      #projection label {
+        display: block;
+      }
+      #projection img {
+        width: 1em;
+        height: 1em;
+      }
+      .styles img {
+        background: #fff;
+        width: 2em;
+        height: 2em;
+      }
 
-		<script src="interface.js"></script>
-	</body>
+      .styles label > input {
+        visibility: hidden;
+        position: absolute;
+      }
+      .styles label > input + img {
+        cursor: pointer;
+        border: 2px solid powderblue;
+      }
+      .styles label > input:checked + img {
+        border: 2px solid magenta;
+      }
+
+      fieldset {
+        margin: 0.25em 0.25em;
+        padding: 0.25em 0.25em;
+        border: 1px solid black;
+      }
+      fieldset ul {
+        margin: 0;
+        columns: 2;
+        padding-left: 1em;
+        font-size: 0.75em;
+      }
+      fieldset p {
+        margin: 0.25em;
+        padding: 0;
+        font-size: 0.85em;
+      }
+      .columns {
+        columns: 2;
+        font-size: 0.75em;
+      }
+
+      #year_slider {
+        margin: 0.5em;
+      }
+      h1 {
+        text-align: center;
+        margin: 0.75rem 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="side">
+      <h1>GBIF Map Toolbox</h1>
+      <fieldset id="projection">
+        <legend>Projection</legend>
+        <label>
+          <input type="radio" name="projection" value="3857" checked="checked" />
+          <img src="https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-classic"/>
+          Web Mercator
+        </label>
+        <label>
+          <input type="radio" name="projection" value="4326" />
+          <img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-classic"/><img src="https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-classic"/>
+          WGS84 Plate Careé
+        </label>
+        <label>
+          <input type="radio" name="projection" value="3575" />
+          <img src="https://tile.gbif.org/3575/omt/0/0/0@1x.png?style=gbif-classic"/>
+          Arctic LAEA
+        </label>
+        <label>
+          <input type="radio" name="projection" value="3031" />
+          <img src="https://tile.gbif.org/3031/omt/0/0/0@1x.png?style=gbif-classic"/>
+          Antarctic Stereographic
+        </label>
+      </fieldset>
+
+      <fieldset id="basemap_styles">
+        <legend>Base map style</legend>
+        <div class="styles">
+          <label>
+            <input type="radio" name="basemap_style" value="gbif-classic" checked="checked" />
+            <img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-classic" title="gbif-classic"/>
+          </label>
+          <label>
+            <input type="radio" name="basemap_style" value="gbif-light" />
+            <img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-light" title="gbif-light"/>
+          </label>
+          <label>
+            <input type="radio" name="basemap_style" value="gbif-middle" />
+            <img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-middle" title="gbif-middle"/>
+          </label>
+          <label>
+            <input type="radio" name="basemap_style" value="gbif-dark" />
+            <img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-dark" title="gbif-dark"/>
+          </label>
+          <label>
+            <input type="radio" name="basemap_style" value="osm-bright" />
+            <img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=osm-bright" title="osm-bright"/>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset id="data">
+        <legend>Data source</legend>
+        <label>
+          <input type="radio" name="datasource" id="datasource_hbase" value="density" checked="checked"> Simple (HBase)
+        </label>
+        <label>
+          <input type="radio" name="datasource" id="datasource_solr"  value="adhoc"> Ad-hoc search (SOLR)
+        </label>
+        <p><em>If choosing Ad-hoc search, first choose either WGS84 or raster tiles (or both).</em></p>
+      </fieldset>
+
+      <fieldset id="render">
+        <legend>Tile type</legend>
+        <label>
+          <input type="radio" name="render" id="render_vector" value="vector" checked="checked"> Vector (MVT)
+        </label>
+        <label>
+          <input type="radio" name="render" id="render_raster"  value="raster"> Raster (PNG)
+        </label>
+
+        <div class="styles">
+          <p><em>Style selection is for raster tiles only at present.  You need to choose a point/poly style according to the chosen binning.</em></p>
+          <label>
+            <input type="radio" name="raster_style" value="purpleHeat.point" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=purpleHeat.point&srs=EPSG:4326&taxonKey=797" title="purpleHeat.point"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="blueHeat.point" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=blueHeat.point&srs=EPSG:4326&taxonKey=797" title="blueHeat.point"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="orangeHeat.point" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=orangeHeat.point&srs=EPSG:4326&taxonKey=797" title="orangeHeat.point"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="greenHeat.point" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=greenHeat.point&srs=EPSG:4326&taxonKey=797" title="greenHeat.point"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="classic.point" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=classic.point&srs=EPSG:4326&taxonKey=797" title="classic.point"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="purpleYellow.point" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=purpleYellow.point&srs=EPSG:4326&taxonKey=797" title="purpleYellow.point"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="fire.point" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=fire.point&srs=EPSG:4326&taxonKey=797" title="fire.point"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="glacier.point" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=glacier.point&srs=EPSG:4326&taxonKey=797" title="glacier.point"/>
+          </label>
+
+          <label>
+            <input type="radio" name="raster_style" value="classic.poly" checked="checked" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&hexPerTile=20&style=classic.poly&srs=EPSG:4326&taxonKey=797" title="classic.poly"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="classic-noborder.poly" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&hexPerTile=20&style=classic-noborder.poly&srs=EPSG:4326&taxonKey=797" title="classic-noborder.poly"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="purpleYellow.poly" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&hexPerTile=20&style=purpleYellow.poly&srs=EPSG:4326&taxonKey=797" title="purpleYellow.poly"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="purpleYellow-noborder.poly" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&hexPerTile=20&style=purpleYellow-noborder.poly&srs=EPSG:4326&taxonKey=797" title="purpleYellow-noborder.poly"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="green.poly" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&hexPerTile=20&style=green.poly&srs=EPSG:4326&taxonKey=797" title="green.poly"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="green2.poly" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&hexPerTile=20&style=green2.poly&srs=EPSG:4326&taxonKey=797" title="green2.poly"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="iNaturalist.poly" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&hexPerTile=20&style=iNaturalist.poly&srs=EPSG:4326&taxonKey=797" title="iNaturalist.poly"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="purpleWhite.poly" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&hexPerTile=20&style=purpleWhite.poly&srs=EPSG:4326&taxonKey=797" title="purpleWhite.poly"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="red.poly" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&hexPerTile=20&style=red.poly&srs=EPSG:4326&taxonKey=797" title="red.poly"/>
+          </label>
+
+          <label>
+            <input type="radio" name="raster_style" value="blue.marker" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&hexPerTile=20&style=blue.marker&srs=EPSG:4326&taxonKey=797" title="blue.marker"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="orange.marker" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&hexPerTile=20&style=orange.marker&srs=EPSG:4326&taxonKey=797" title="orange.marker"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="outline.poly" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&hexPerTile=20&style=outline.poly&srs=EPSG:4326&taxonKey=797" title="outline.poly"/>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset id="key">
+        <label for="map_key">Map key</label>
+        <input type="text" id="map_key" placeholder="Everything" value="">
+
+        <ul>
+          <li><a href="#" onclick="setMapKey('');">Everything</a></li>
+          <li><a href="#" onclick="setMapKey('taxonKey=1');">Animals</a></li>
+          <li><a href="#" onclick="setMapKey('taxonKey=6');">Plants</a></li>
+          <li><a href="#" onclick="setMapKey('taxonKey=5231190');">House sparrow</a></li>
+          <li><a href="#" onclick="setMapKey('taxonKey=9703');">Cats</a></li>
+          <li><a href="#" onclick="setMapKey('country=US');">United States</a></li>
+          <li><a href="#" onclick="setMapKey('datasetKey=4fa7b334-ce0d-4e88-aaae-2e0c138d049e');">eBird</a></li>
+          <li><a href="#" onclick="setMapKey('taxonKey=2435098');">Puma</a></li>
+          <li><a href="#" onclick="setMapKey('publishingOrg=57254bd0-8256-11d8-b7ed-b8a03c50a862');">BGBM</a></li>
+          <li><a href="#" onclick="setMapKey('publishingCountry=FR');">From France</a></li>
+        </ul>
+      </fieldset>
+
+      <fieldset id="binning">
+        <legend>Binning</legend>
+        <label>
+          <input type="radio" name="binning" id="binning_points" value="points" /> Points
+        </label><br/>
+        <label>
+          <input type="radio" name="binning" id="binning_hex" value="hex" checked="checked" /> Hexagons
+          <input id="binning_hex_size" type="range" min="1" max="200" step="1" value="184"/>
+        </label><br/>
+        <label>
+          <input type="radio" name="binning" id="binning_square" value="square" /> Squares
+          <input id="binning_square_size" type="range" min="3" max="12" step="1" value="5"/>
+        </label>
+      </fieldset>
+
+      <fieldset id="year">
+        <legend>Years</legend>
+        <label>
+          <input type="radio" name="year" id="year_all" value="all" checked="checked"> All years
+        </label>
+        <label>
+          <input type="radio" name="year" id="year_range" value="1700,2017"><span id="years_text">1700 - 20XX</span></input><br/>
+          <div id="year_slider"></div>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Basis of Record</legend>
+        <p>
+          Note: If none are selected then no filter is applied, which is equivalent to selecting them all.
+          This is in line with all GBIF search APIs.
+        </p>
+
+        <div class="columns">
+          <label><input type="checkbox" name="basis_of_record" value="OBSERVATION"> Observation</label><br/>
+          <label><input type="checkbox" name="basis_of_record" value="HUMAN_OBSERVATION"> Human Observation</label><br/>
+          <label><input type="checkbox" name="basis_of_record" value="MACHINE_OBSERVATION"> Machine Observation</label><br/>
+          <label><input type="checkbox" name="basis_of_record" value="MATERIAL_SAMPLE"> Material Sample</label><br/>
+          <label><input type="checkbox" name="basis_of_record" value="PRESERVED_SPECIMEN"> Preserved Specimen</label><br/>
+          <label><input type="checkbox" name="basis_of_record" value="FOSSIL_SPECIMEN"> Fossil Specimen</label><br/>
+          <label><input type="checkbox" name="basis_of_record" value="LIVING_SPECIMEN"> Living Specimen</label><br/>
+          <label><input type="checkbox" name="basis_of_record" value="LITERATURE"> Literature</label><br/>
+          <label><input type="checkbox" name="basis_of_record" value="UNKNOWN"> Unknown</label>
+        </div>
+      </fieldset>
+
+      <!--fieldset id="grid">
+        <legend>Tile grid</legend>
+        <label><input id="grid_visible" type="checkbox"/>visibility</label><br/>
+        <label>opacity</label>
+        <input id="grid_opacity" type="range" min="0" max="1" step="0.01"/>
+      </fieldset-->
+
+      <fieldset id="url">
+        <legend>URL templates</legend>
+        <label><input id="base_url_template" type="input" value=""/></label>
+        <label><input id="data_url_template" type="input" value=""/></label>
+      </fieldset>
+    </div>
+    <div class="wrapper">
+      <div id="map" class="map"></div>
+      <div id="progress"></div>
+    </div>
+
+    <script src="interface.js"></script>
+  </body>
 </html>
