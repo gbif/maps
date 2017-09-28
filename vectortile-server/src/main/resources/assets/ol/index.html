@@ -101,12 +101,12 @@
       <fieldset id="projection">
         <legend>Projection</legend>
         <label>
-          <input type="radio" name="projection" value="3857" checked="checked" />
+          <input type="radio" name="projection" value="3857" />
           <img src="https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-classic"/>
           Web Mercator
         </label>
         <label>
-          <input type="radio" name="projection" value="4326" />
+          <input type="radio" name="projection" value="4326" checked="checked" />
           <img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-classic"/><img src="https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-classic"/>
           WGS84 Plate Careé
         </label>
@@ -151,10 +151,10 @@
       <fieldset id="data">
         <legend>Data source</legend>
         <label>
-          <input type="radio" name="datasource" id="datasource_hbase" value="density" checked="checked"> Simple (HBase)
+          <input type="radio" name="datasource" id="datasource_hbase" value="density" checked="checked" /> Simple (HBase)
         </label>
         <label>
-          <input type="radio" name="datasource" id="datasource_solr"  value="adhoc"> Ad-hoc search (SOLR)
+          <input type="radio" name="datasource" id="datasource_solr"  value="adhoc" /> Ad-hoc search (SOLR)
         </label>
         <p><em>If choosing Ad-hoc search, first choose either WGS84 or raster tiles (or both).</em></p>
       </fieldset>
@@ -162,10 +162,10 @@
       <fieldset id="render">
         <legend>Tile type</legend>
         <label>
-          <input type="radio" name="render" id="render_vector" value="vector" checked="checked"> Vector (MVT)
+          <input type="radio" name="render" id="render_vector" value="vector" /> Vector (MVT)
         </label>
         <label>
-          <input type="radio" name="render" id="render_raster"  value="raster"> Raster (PNG)
+          <input type="radio" name="render" id="render_raster"  value="raster" checked="checked" /> Raster (PNG)
         </label>
 
         <div class="styles">
