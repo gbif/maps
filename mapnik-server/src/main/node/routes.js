@@ -59,6 +59,8 @@ function parseUrl(parsedRequest) {
     var sDensity = parsedRequest.pathname.substring(parsedRequest.pathname.length - 6, parsedRequest.pathname.length - 5);
     var density = (sDensity == 'H') ? 0.5 : parseInt(sDensity);
 
+    if (density > 4) density = 4;
+
     if (!(isNaN(z) || isNaN(x) || isNaN(y) || isNaN(density))) {
       return {
         "z": z,
@@ -261,11 +263,7 @@ function vectorRequest(parsedRequest) {
   delete parsedRequest.query.style;
   delete parsedRequest.query.locale;
   delete parsedRequest.search; // Must be removed to force regeneration of query string
-  parsedRequest.pathname = parsedRequest.pathname.replace("@Hx.png", ".mvt");
-  parsedRequest.pathname = parsedRequest.pathname.replace("@1x.png", ".mvt");
-  parsedRequest.pathname = parsedRequest.pathname.replace("@2x.png", ".mvt");
-  parsedRequest.pathname = parsedRequest.pathname.replace("@3x.png", ".mvt");
-  parsedRequest.pathname = parsedRequest.pathname.replace("@4x.png", ".mvt");
+  parsedRequest.pathname = parsedRequest.pathname.replace(/@.x\.png/, ".mvt");
   parsedRequest.hostname = config.tileServer.host;
   parsedRequest.port = config.tileServer.port;
   parsedRequest.pathname = config.tileServer.prefix + parsedRequest.pathname;
