@@ -3,11 +3,8 @@
 ###
 
 
-#TODO: THIS IS NOT USED - the one in the spark-process jar will be picked up
-
-
 # Used only for the spark application name
-appName: Map build (prod)
+appName: Map build (uat)
 
 source: PROVIDED_AT_RUNTIME
 
