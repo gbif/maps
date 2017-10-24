@@ -31,7 +31,7 @@
 
   <properties>
     <jdkLevel>1.8</jdkLevel>
-    <gbif-occurrence.version>0.66</gbif-occurrence.version>
+    <gbif-occurrence.version>0.72</gbif-occurrence.version>
     <slf4j.version>1.7.18</slf4j.version>
     <!-- Important: same version as the PBF library installed -->
     <protoc.version>2.5.0</protoc.version>
