@@ -1,14 +1,8 @@
 package org.gbif.maps.spark
 
-import scala.collection.JavaConverters._
-
-import java.util.concurrent.{Callable, ExecutorService, Executors}
-
 import org.apache.spark.{SparkConf, SparkContext}
 import org.gbif.maps.workflow.WorkflowParams
 import org.slf4j.LoggerFactory
-
-import scala.collection.mutable.ListBuffer
 
 /**
   * This is the driver for backfilling HBase maps.

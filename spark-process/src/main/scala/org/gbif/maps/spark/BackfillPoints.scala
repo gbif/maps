@@ -1,7 +1,5 @@
 package org.gbif.maps.spark
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import org.apache.hadoop.hbase.KeyValue
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat
@@ -13,8 +11,6 @@ import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord
 import org.slf4j.LoggerFactory
-
-import scala.collection.mutable.{Map => MMap}
 
 import scala.collection.mutable
 import scala.collection.Set

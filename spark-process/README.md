@@ -9,7 +9,9 @@ SELECT
 FROM
   prod_b.occurrence_hdfs
 WHERE
-  decimalLatitude IS NOT NULL AND decimalLongitude IS NOT NULL AND hasGeospatialIssues=false;
+  decimalLatitude IS NOT NULL AND decimalLongitude IS NOT NULL
+  AND hasGeospatialIssues = false
+  AND occurrenceStatus != "absent";
   
 CREATE TABLE tim.occurrence_map_source_sample STORED AS parquet AS
 SELECT * FROM tim.occurrence_map_source 

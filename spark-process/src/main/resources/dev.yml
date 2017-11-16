@@ -5,32 +5,32 @@ appName: Map build (development)
 # Hint: Consider using a Hive CTAS query "STORED AS PARQUET" from occurrence_hdfs
 #source: /user/hive/warehouse/tim.db/occurrence_map_source_tenth
 
-# hbase shell> snapshot 'prod_a_occurrence', 'occurrence_snapshot_20170725'
-source: occurrence_snapshot_20170725
+# hbase shell> snapshot 'dev_occurrence', 'dev_occurrence_20171115_1419'
+source: dev_occurrence_20171115_1419
 
 # The base directory into which HFiles will be stored
-targetDirectory: hdfs://nameservice1/tmp/tim_maps
+targetDirectory: hdfs://ha-nn/tmp/matt_test
 
 # The max record count allowed before the view is built into a tile pyramid
 tilesThreshold: 100000
 
 # HBase details
 hbase:
-  zkQuorum: zk1.gbif-dev.org,zk2.gbif-dev.org,zk3.gbif-dev.org
+  zkQuorum: c3zk1.gbif-dev.org,c3zk2.gbif-dev.org,c3zk3.gbif-dev.org
   rootDir: /hbase
   keySaltModulus: 10
 
 # Applies only to those map views that have few enough records to be stored as features
 pointFeatures:
   numTasks: 200 # controls the parallelism
-  tableName: tim_test
+  tableName: matt_test
   hfileCount: 32
 
 # TilePyramid applies to views where there are more records than the tilesThreshold
 # Notes:
 #   For hfileCount > 32 you must use -Dhbase.mapreduce.bulkload.max.hfiles.perRegion.perFamily=XXX when bulk loading
 tilePyramid:
-  tableName: tim_test
+  tableName: matt_test
   hfileCount: 100
   numPartitions: 200
   tileBufferSize: 64

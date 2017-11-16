@@ -3,7 +3,7 @@ package org.gbif.maps.spark
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hbase.client.Scan
 import org.apache.hadoop.hbase.mapreduce.TableSnapshotInputFormat
-import org.apache.hadoop.hbase.mapreduce.{TableInputFormat, TableSnapshotInputFormatImpl}
+import org.apache.hadoop.hbase.mapreduce.TableInputFormat
 import org.apache.hadoop.hbase.protobuf.ProtobufUtil
 import org.apache.hadoop.hbase.{HBaseConfiguration, HConstants}
 import org.apache.hadoop.hbase.util.{Base64, Bytes}
@@ -48,6 +48,7 @@ object HBaseInput {
       ("taxonKey", IntegerType),
 
       ("year", IntegerType),
+      ("v_occurrenceStatus", StringType),
 
       ("_iss_ZERO_COORDINATE", BooleanType),
       ("_iss_COORDINATE_INVALID", BooleanType),
@@ -84,15 +85,16 @@ object HBaseInput {
 
     val rowRDD = hBaseRDD.filter{ case(_, result) => {
 
-      // Filter out records without a position, or with a geospatial issue (any value means issue)
-      // see https://github.com/gbif/gbif-api/blob/master/src/main/java/org/gbif/api/vocabulary/OccurrenceIssue.java#L377
+      // Filter out records without a position, or with a geospatial issue (any value means issue),
+      // or with v_occurrenceStatus=absent.
+      // See https://github.com/gbif/gbif-api/blob/master/src/main/java/org/gbif/api/vocabulary/OccurrenceIssue.java#L377
       Option(result.getValue(o, Bytes.toBytes("decimalLatitude"))).nonEmpty &&
       Option(result.getValue(o, Bytes.toBytes("decimalLongitude"))).nonEmpty &&
       Option(result.getValue(o, Bytes.toBytes("_iss_ZERO_COORDINATE"))).isEmpty &&
       Option(result.getValue(o, Bytes.toBytes("_iss_COORDINATE_INVALID"))).isEmpty &&
       Option(result.getValue(o, Bytes.toBytes("_iss_COORDINATE_OUT_OF_RANGE"))).isEmpty &&
-      Option(result.getValue(o, Bytes.toBytes("_iss_COUNTRY_COORDINATE_MISMATCH"))).isEmpty
-
+      Option(result.getValue(o, Bytes.toBytes("_iss_COUNTRY_COORDINATE_MISMATCH"))).isEmpty &&
+      (! Bytes.toString(Option(result.getValue(o, Bytes.toBytes("v_occurrenceStatus"))).getOrElse(empty)).equalsIgnoreCase("absent"))
     }}.map{ case(_, result) => {
       Row(
         Bytes.toString(Option(result.getValue(o, Bytes.toBytes("datasetKey"))).getOrElse(empty)),
@@ -114,6 +116,8 @@ object HBaseInput {
         Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("taxonKey"))).getOrElse(empty)),
 
         Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("year"))).getOrElse(empty)),
+        // Why are these carried through?
+        Bytes.toString(Option(result.getValue(o, Bytes.toBytes("v_occurrenceStatus"))).getOrElse(empty)),
         Option(result.getValue(o, Bytes.toBytes("_iss_ZERO_COORDINATE"))).isEmpty,
         Option(result.getValue(o, Bytes.toBytes("_iss_COORDINATE_INVALID"))).isEmpty,
         Option(result.getValue(o, Bytes.toBytes("_iss_COORDINATE_OUT_OF_RANGE"))).isEmpty,

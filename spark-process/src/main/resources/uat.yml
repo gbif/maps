@@ -16,7 +16,7 @@ tilesThreshold: 100000
 
 # HBase details
 hbase:
-  zkQuorum: zk1.gbif.org,zk2.gbif.org,zk3.gbif.org
+  zkQuorum: c4zk1.gbif-uat.org,c4zk2.gbif-uat.org,c4zk3.gbif-uat.org
   rootDir: /hbase
   keySaltModulus: 100
 

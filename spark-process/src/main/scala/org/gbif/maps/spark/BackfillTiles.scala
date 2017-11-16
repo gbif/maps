@@ -7,13 +7,13 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.{HFileOutputFormat, PatchedHFileOutputFormat2}
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.{HashPartitioner, Partitioner, SparkContext}
+import org.apache.spark.{Partitioner, SparkContext}
 import org.gbif.maps.common.projection.Tiles
 import org.gbif.maps.common.hbase.ModulusSalt
 import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord
-import org.slf4j.{LoggerFactory, Marker, MarkerFactory}
+import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.{Map => MMap}
 import scala.collection.{Set, mutable}
@@ -24,7 +24,7 @@ import org.gbif.maps.tile._
   */
 object BackfillTiles {
   private val GEOMETRY_FACTORY = new GeometryFactory()
-  private val logger = LoggerFactory.getLogger("org.gbif.maps.spark.BackfillTiles2")
+  private val logger = LoggerFactory.getLogger("org.gbif.maps.spark.BackfillTiles")
 
   /**
     * A partitioner that puts pixels in the same category together but ignores Z, X and Y.

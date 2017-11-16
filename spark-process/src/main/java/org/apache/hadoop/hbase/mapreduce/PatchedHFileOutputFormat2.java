@@ -61,7 +61,6 @@ import org.apache.hadoop.mapreduce.lib.partition.TotalOrderPartitioner;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
-import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.fs.HFileSystem;
 
 /**

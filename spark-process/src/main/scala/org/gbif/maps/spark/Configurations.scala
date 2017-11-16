@@ -7,11 +7,8 @@ import com.google.common.base.Preconditions
 import com.google.common.io.Resources
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.client.HTable
-import org.apache.hadoop.hbase.{HBaseConfiguration, KeyValue}
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable
-import org.apache.hadoop.hbase.io.compress.Compression
+import org.apache.hadoop.hbase.HBaseConfiguration
 import org.apache.hadoop.hbase.mapreduce.{HFileOutputFormat, PatchedHFileOutputFormat2}
-import org.apache.hadoop.mapred.FileOutputFormat
 import org.apache.hadoop.mapreduce.Job
 import org.gbif.maps.common.projection.TileSchema
 

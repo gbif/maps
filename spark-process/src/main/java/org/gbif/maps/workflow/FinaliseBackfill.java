@@ -1,38 +1,23 @@
 package org.gbif.maps.workflow;
 
-import org.gbif.maps.common.hbase.ModulusSalt;
-import org.gbif.maps.common.meta.MapMetastore;
-import org.gbif.maps.common.meta.MapTables;
-import org.gbif.maps.common.meta.Metastores;
-
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.FsShell;
-import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
-import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
 import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.v2.app.MRAppMaster;
+import org.gbif.maps.common.meta.MapMetastore;
+import org.gbif.maps.common.meta.MapTables;
+import org.gbif.maps.common.meta.Metastores;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * Finalising the backfill involves the following:
