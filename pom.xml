@@ -145,8 +145,8 @@
     <module>common</module>
     <module>vectortile-server</module>
     <module>spark-process</module>
-    <module>mapnik-server</module>
     <module>oozie-workflow</module>
+    <module>mapnik-server</module>
   </modules>
 
   <dependencyManagement>
@@ -164,6 +164,16 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
+        <version>${slf4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>jcl-over-slf4j</artifactId>
+        <version>${slf4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>jul-to-slf4j</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
       <dependency>

@@ -1,5 +1,7 @@
 package org.gbif.maps;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.util.ContextInitializer;
 import org.gbif.common.search.solr.builders.CloudSolrServerBuilder;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
@@ -14,6 +16,7 @@ import io.dropwizard.setup.Environment;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.solr.client.solrj.SolrClient;
+import org.slf4j.LoggerFactory;
 
 /**
  * The main entry point for running the member node.
@@ -23,6 +26,11 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
   private static final String APPLICATION_NAME = "GBIF Tile Server";
 
   public static void main(String[] args) throws Exception {
+    LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+    context.reset();
+    ContextInitializer initializer = new ContextInitializer(context);
+    initializer.autoConfig();
+
     new TileServerApplication().run(args);
   }
 
