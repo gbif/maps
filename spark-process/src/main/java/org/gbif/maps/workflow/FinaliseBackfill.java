@@ -168,9 +168,9 @@ public class FinaliseBackfill {
       try {
         String dir = params.getTargetDirectory().substring(params.getTargetDirectory().indexOf("/tmp"));
         System.out.println("Deleting working directory [" + params.getTargetDirectory() + "] which translates to ["
-                           + "-rm -r --skiptrash " + dir + "]");
+                           + "-rm -r -skipTrash " + dir + "]");
 
-        shell.run(new String[]{"-rm","-r","--skipTrash", dir});
+        shell.run(new String[]{"-rm","-r","-skipTrash", dir});
       } catch (Exception e) {
         throw new IOException("Unable to delete the working directory", e);
       }
