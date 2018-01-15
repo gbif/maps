@@ -60,6 +60,7 @@ function parseUrl(parsedRequest) {
     var density = (sDensity == 'H') ? 0.5 : parseInt(sDensity);
 
     if (density > 4) density = 4;
+    if (density < 1) density = 1;
 
     if (!(isNaN(z) || isNaN(x) || isNaN(y) || isNaN(density))) {
       return {
@@ -263,7 +264,7 @@ function vectorRequest(parsedRequest) {
   delete parsedRequest.query.style;
   delete parsedRequest.query.locale;
   delete parsedRequest.search; // Must be removed to force regeneration of query string
-  parsedRequest.pathname = parsedRequest.pathname.replace(/@.x\.png/, ".mvt");
+  parsedRequest.pathname = parsedRequest.pathname.replace(/@[0-9]+x\.png/, ".mvt");
   parsedRequest.hostname = config.tileServer.host;
   parsedRequest.port = config.tileServer.port;
   parsedRequest.pathname = config.tileServer.prefix + parsedRequest.pathname;
