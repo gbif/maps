@@ -264,7 +264,7 @@ function vectorRequest(parsedRequest) {
   delete parsedRequest.query.style;
   delete parsedRequest.query.locale;
   delete parsedRequest.search; // Must be removed to force regeneration of query string
-  parsedRequest.pathname = parsedRequest.pathname.replace(/@[0-9]+x\.png/, ".mvt");
+  parsedRequest.pathname = parsedRequest.pathname.replace(/@[H0-9]+x\.png/, ".mvt");
   parsedRequest.hostname = config.tileServer.host;
   parsedRequest.port = config.tileServer.port;
   parsedRequest.pathname = config.tileServer.prefix + parsedRequest.pathname;
