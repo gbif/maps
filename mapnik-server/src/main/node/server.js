@@ -37,6 +37,12 @@ function createServer(config) {
           console.time("Heat get "+url);
           request.get({url: url, method: 'GET', encoding: null, gzip: true, timeout: timeout}, function (error, response, body) {
             console.timeEnd("Heat get "+url);
+            if (!error && response.statusCode >= 300) {
+              error = {
+                'code': response.statusCode,
+                'message': 'Error from backend (vector tile); try '+url+' yourself'
+              };
+            }
             console.log(url, "Vector tile has HTTP status", response ? response.statusCode : '-', "and size", body ? body.length : '-');
             callback(error, {body: body, etag: response ? response.headers['etag'] : null});
           })
@@ -59,6 +65,13 @@ function createServer(config) {
     console.time("Get "+vectorTileUrl);
     request.get({url: vectorTileUrl, method: 'GET', encoding: null, gzip: true, timeout: timeout}, function (error, response, body) {
       console.timeEnd("Get "+vectorTileUrl);
+
+      if (!error && response.statusCode >= 300) {
+        error = {
+          'code': response.statusCode,
+          'message': 'Error from backend (vector tile); try '+vectorTileUrl+' yourself'
+        };
+      }
 
       if (error) {
         // something went wrong
