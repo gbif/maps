@@ -4,8 +4,8 @@
   TODO:
     1) template this for start and the app path for the hdfs://ha-nn
 -->
-<coordinator-app name="MapBuild-Tiles" frequency="${coord:hours(24)}"
-                 start="2017-08-17T03:00Z" end="2050-05-28T09:28Z" timezone="UTC" xmlns="uri:oozie:coordinator:0.4">
+<coordinator-app name="MapBuild-Tiles" frequency="${coord:days(1)}"
+                 start="2018-02-07T05:00Z" end="2050-05-28T00:00Z" timezone="UTC" xmlns="uri:oozie:coordinator:0.4">
   <action>
     <workflow>
       <app-path>hdfs://ha-nn/maps-backfill-workflow</app-path>
