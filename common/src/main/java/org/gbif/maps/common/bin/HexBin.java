@@ -105,7 +105,7 @@ public class HexBin implements Binnable {
     Set<Hexagon> dataCells = Sets.newHashSet();
     for (VectorTileDecoder.Feature feature : features) {
       double scale = ((double)tileSize) / feature.getExtent(); // adjust for differing tile sizes
-      LOG.debug("Scaling from {} to {} with {}", feature.getExtent(), tileSize, scale);
+      //LOG.debug("Scaling from {} to {} with {}", feature.getExtent(), tileSize, scale);
       Geometry geom = feature.getGeometry();
       Preconditions.checkArgument(geom instanceof Point, "Only Point based vector tiles can be binned");
       Point tileLocalXY = (Point) geom;
@@ -155,12 +155,12 @@ public class HexBin implements Binnable {
       }
 
 
-      LOG.debug("Coords {},{},{},{},{},{}" + coordinates[0],
-               coordinates[1],
-               coordinates[2],
-               coordinates[3],
-               coordinates[4],
-               coordinates[5]);
+      //LOG.debug("Coords {},{},{},{},{},{}" + coordinates[0],
+      //         coordinates[1],
+      //         coordinates[2],
+      //         coordinates[3],
+      //         coordinates[4],
+      //         coordinates[5]);
       encoder.addFeature(LAYER_NAME, meta, poly);
     }
 
