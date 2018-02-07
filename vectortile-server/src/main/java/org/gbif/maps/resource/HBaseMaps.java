@@ -39,7 +39,15 @@ public class HBaseMaps {
 
   public HBaseMaps(Configuration conf, String tableName, int saltModulus) throws Exception {
     connection = ConnectionFactory.createConnection(conf);
-    metastore = Metastores.newStaticMapsMeta(tableName,tableName); // backward compatible version
+
+    if (tableName.contains("|")) {
+      String[] tableNames = tableName.split("|");
+      metastore = Metastores.newStaticMapsMeta(tableNames[0], tableNames[1]);
+    }
+    else {
+      metastore = Metastores.newStaticMapsMeta(tableName, tableName); // backward compatible version
+    }
+
     salt = new ModulusSalt(saltModulus);
   }
 
