@@ -49,10 +49,9 @@ var GBIF_Layers = [];
 
 var gbifBaselayerBase = "https://tile.gbif.org";
 var gbifOccurrenceLayerBase = "https://api.gbif.org/v2";
+gbifOccurrenceLayerBase = "../../..";
 var gbifOccurrenceVectorLayerBase = gbifOccurrenceLayerBase;
 var gbifOccurrenceRasterLayerBase = gbifOccurrenceLayerBase;
-gbifOccurrenceVectorLayerBase = "../../..";
-//gbifOccurrenceRasterLayerBase = "http://localhost:3000";
 
 var densityColours = ["#FFFF00", "#FFCC00", "#FF9900", "#FF6600", "#FF3300", "#FF0000"];
 
