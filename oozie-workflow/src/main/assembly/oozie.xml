@@ -19,6 +19,7 @@
     <dependencySet>
       <outputDirectory>lib</outputDirectory>
       <fileMode>0644</fileMode>
+      <outputFileNameMapping>${artifact.name}.${artifact.extension}</outputFileNameMapping>
       <includes>
         <include>org.gbif.maps:spark-process</include>
       </includes>
