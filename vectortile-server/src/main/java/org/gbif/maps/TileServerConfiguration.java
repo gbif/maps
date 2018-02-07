@@ -111,7 +111,11 @@ public class  TileServerConfiguration extends Configuration {
 
     @Valid
     @NotNull
-    private String tableName;
+    private String tilesTableName;
+
+    @Valid
+    @NotNull
+    private String pointsTableName;
 
     @Valid
     @NotNull
@@ -136,13 +140,23 @@ public class  TileServerConfiguration extends Configuration {
     }
 
     @JsonProperty
-    public String getTableName() {
-      return tableName;
+    public String getTilesTableName() {
+      return tilesTableName;
     }
 
     @JsonProperty
-    public void setTableName(String tableName) {
-      this.tableName = tableName;
+    public void setTilesTableName(String tilesTableName) {
+      this.tilesTableName = tilesTableName;
+    }
+
+    @JsonProperty
+    public String getPointsTableName() {
+      return pointsTableName;
+    }
+
+    @JsonProperty
+    public void setPointsTableName(String pointsTableName) {
+      this.pointsTableName = pointsTableName;
     }
 
     @JsonProperty

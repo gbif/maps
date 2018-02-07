@@ -67,8 +67,8 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
 
     } else {
       //
-      MapMetastore meta = Metastores.newStaticMapsMeta(configuration.getHbase().getTableName(),
-                                                       configuration.getHbase().getTableName());
+      MapMetastore meta = Metastores.newStaticMapsMeta(configuration.getHbase().getTilesTableName(),
+                                                       configuration.getHbase().getPointsTableName());
       hbaseMaps = new HBaseMaps(conf, meta, configuration.getHbase().getSaltModulus());
     }
 

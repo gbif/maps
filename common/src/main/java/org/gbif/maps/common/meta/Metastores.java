@@ -1,30 +1,31 @@
 package org.gbif.maps.common.meta;
 
-import java.io.IOException;
-import javax.annotation.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Suppliers of the MapMetastore implementations.
  */
 public class Metastores {
+  private static final Logger LOG = LoggerFactory.getLogger(Metastores.class);
 
   public static void main(String[] args) throws Exception {
     if (args.length == 2 || args.length == 4) {
       String zkQuorum = args[0];
       String zkPath = args[1];
-      System.out.println("Reading ZK[" + zkQuorum + "], path[" + zkPath+ "]");
+      LOG.info("Reading ZK[{}], path[{}]" + zkQuorum, zkPath);
       MapMetastore meta = newZookeeperMapsMeta(zkQuorum, 1000, zkPath);
-      System.out.println(meta.read());
+      LOG.info("{}", meta.read());
 
       if (args.length == 4) {
         String tileTable = args[2];
         String pointTable = args[3];
-        System.out.println("Update tileTable[" + tileTable + "], pointTable[" + pointTable + "]");
+        LOG.info("Update tileTable[{}], pointTable[{}]", tileTable, pointTable);
         meta.update(new MapTables(tileTable, pointTable));
-        System.out.println("Done.");
+        LOG.info("Done.");
       }
     } else {
-      System.out.println("Usage (supply table names to issue update): Metastores zkQuorum path [pointTable tileTable]");
+      LOG.error("Usage (supply table names to issue update): Metastores zkQuorum path [pointTable tileTable]");
     }
   }
 
@@ -48,6 +49,7 @@ public class Metastores {
    * @return The metastore
    */
   public static MapMetastore newStaticMapsMeta(String tileTable, String pointTable) {
+    LOG.info("Static tileTable[{}], pointTable[{}]", tileTable, pointTable);
     final MapTables data = new MapTables(tileTable, pointTable);
     return new MapMetastore() {
       @Override
