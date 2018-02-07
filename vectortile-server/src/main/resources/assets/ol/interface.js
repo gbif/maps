@@ -5,23 +5,23 @@ var views = {
   "3857": new ol.View({
     center: ol.proj.fromLonLat([0, 0], 'EPSG:3857'),
     projection: ol.proj.get('EPSG:3857'),
-    zoom: 1,
+    zoom: 2,
   }),
   "4326": new ol.View({
     center: [0, 0],
     projection: ol.proj.get('EPSG:4326'),
-    zoom: 1,
+    zoom: 2,
   }),
   "3575": new ol.View({
     center: [0, 0],
     projection: ol.proj.get('EPSG:3575'),
-    zoom: 1,
+    zoom: 2,
   }),
   "3031": new ol.View({
     center: [0, 0],
     extent: ol.proj.get('EPSG:3031').getExtent(),
     projection: ol.proj.get('EPSG:3031'),
-    zoom: 1,
+    zoom: 2,
   }),
 };
 
@@ -41,6 +41,7 @@ var source = 'density';
 var render = 'vector';
 var raster_style = 'classic-noborder.poly';
 var basemap_style = 'gbif-classic';
+var basemap_language = '';
 var binning = {};
 var years = {};
 var bors = {};
@@ -76,7 +77,7 @@ function updateBaseLayer() {
 
   console.log("Updating base layer");
 
-  var l = gbif_layers.baseRaster(srs, {'style': basemap_style});
+  var l = gbif_layers.baseRaster(srs, {'style': basemap_style + basemap_language});
   base_url_template.value = l.getSource().getUrls()[0];
 
   baseLayerGroup.getLayers().clear();
@@ -141,8 +142,9 @@ function setRasterStyle() {
 
 function setBasemapStyle() {
   basemap_style = document.querySelector('input[name=basemap_style]:checked').value;
+  basemap_language = document.querySelector('#basemap_language').value;
 
-  console.log("Setting basemap style to", basemap_style);
+  console.log("Setting basemap style to", basemap_style, basemap_language);
   updateBaseLayer();
 }
 
@@ -244,11 +246,11 @@ for (var i = 0; i < select_binning.length; i++) {
 }
 
 noUiSlider.create(year_slider, {
-  start: [1700, new Date().getFullYear()],
+  start: [1600, new Date().getFullYear()],
   step: 1,
   connect: true,
   range: {
-    'min': 1700,
+    'min': 1600,
     'max': new Date().getFullYear()
   }
 });
@@ -308,6 +310,11 @@ for (var i = 0; i < select_basemap_style.length; i++) {
     setBasemapStyle();
   });
 }
+
+var select_basemap_language = document.getElementById('basemap_language');
+select_basemap_language.onchange = (function(e) {
+  setBasemapStyle();
+});
 
 var map_key_input = document.getElementById('map_key');
 map_key_input.onchange = (function(e) {

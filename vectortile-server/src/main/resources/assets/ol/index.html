@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8"/>
     <title>GBIF Occurrence Maps — Toolbox</title>
-    <link  href="https://tile.gbif-uat.org/3857/omt/0/0/0@1x.png?style=gbif-classic" rel="icon" />
-    <link  href="https://tile.gbif-uat.org/ui/ol.css" rel="stylesheet" type="text/css">
-    <script src="https://tile.gbif-uat.org/ui/ol-debug.js"></script>
-    <script src="https://tile.gbif-uat.org/ui/proj4.js"></script>
+    <link  href="https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-classic" rel="icon" />
+    <link  href="https://tile.gbif.org/ui/ol.css" rel="stylesheet" type="text/css">
+    <script src="https://tile.gbif.org/ui/ol-debug.js"></script>
+    <script src="https://tile.gbif.org/ui/proj4.js"></script>
 
     <link href="nouislider.css" rel="stylesheet">
     <script src="nouislider.min.js"></script>
@@ -130,8 +130,16 @@
             <img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-classic" title="gbif-classic"/>
           </label>
           <label>
+            <input type="radio" name="basemap_style" value="gbif-violet" />
+            <img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-violet" title="gbif-violet"/>
+          </label>
+          <label>
             <input type="radio" name="basemap_style" value="gbif-light" />
             <img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-light" title="gbif-light"/>
+          </label>
+          <label>
+            <input type="radio" name="basemap_style" value="gbif-geyser" />
+            <img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-geyser" title="gbif-geyser"/>
           </label>
           <label>
             <input type="radio" name="basemap_style" value="gbif-middle" />
@@ -142,10 +150,34 @@
             <img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-dark" title="gbif-dark"/>
           </label>
           <label>
+            <input type="radio" name="basemap_style" value="gbif-tuatara" />
+            <img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-tuatara" title="gbif-tuatara"/>
+          </label>
+          <label>
             <input type="radio" name="basemap_style" value="osm-bright" />
             <img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=osm-bright" title="osm-bright"/>
           </label>
         </div>
+      </fieldset>
+
+      <fieldset id="basemap_languages">
+        <legend>Base map language</legend>
+        <div class="languages">
+          <select id="basemap_language">
+            <option value="">Local or none</option>
+            <option value="-ar">&#1575;&#1604;&#1593;&#1585;&#1576;&#1610;&#1577;</option>
+            <option value="-da">Dansk</option>
+            <option value="-de">Deutsche</option>
+            <option value="-en">English</option>
+            <option value="-es">Español</option>
+            <option value="-fr">Français</option>
+            <option value="-ja">Japanese</option>
+            <option value="-pt">Português</option>
+            <option value="-ru">Русский</option>
+            <option value="-zh">中文</option>
+          </select>
+        </div>
+        <p><em>Set to "Local or none" for maps with no labels.</em></p>
       </fieldset>
 
       <fieldset id="data">
