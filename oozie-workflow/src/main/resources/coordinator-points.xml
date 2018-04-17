@@ -1,11 +1,12 @@
 <!--
   Rebuilds the map point tiles on a 120 minute schedule.
+  Omit times when the pyramid tiles are being generated.
 
   TODO:
     1) template this for start and the app path for the hdfs://ha-nn
 -->
-<coordinator-app name="MapBuild-Points" frequency="${coord:hours(2)}"
-                 start="2018-02-07T16:00Z" end="2050-05-28T00:00Z" timezone="UTC" xmlns="uri:oozie:coordinator:0.4">
+<coordinator-app name="MapBuild-Points" frequency="0 0,2,4,10,12,14,16,18,20,22 * * *"
+                 start="2018-04-17T10:00Z" end="2050-05-28T00:00Z" timezone="UTC" xmlns="uri:oozie:coordinator:0.4">
   <action>
     <workflow>
       <app-path>hdfs://ha-nn/maps-backfill-workflow</app-path>
