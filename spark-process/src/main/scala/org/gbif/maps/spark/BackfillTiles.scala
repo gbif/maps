@@ -6,7 +6,7 @@ import org.apache.hadoop.hbase.KeyValue
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.{HFileOutputFormat, PatchedHFileOutputFormat2}
 import org.apache.hadoop.hbase.util.Bytes
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.{Partitioner, SparkContext}
 import org.gbif.maps.common.projection.Tiles
 import org.gbif.maps.common.hbase.ModulusSalt
@@ -48,13 +48,15 @@ object BackfillTiles {
     *
     * @param projectionConfig Configuration of the SRS and zoom levels etc
     */
-  def build(sc: SparkContext, df: DataFrame, keys: Set[String], config: MapConfiguration, projectionConfig: ProjectionConfig) = {
+  def build(spark: SparkSession, df: DataFrame, keys: Set[String], config: MapConfiguration, projectionConfig: ProjectionConfig) = {
 
     val keySalter = new ModulusSalt(config.hbase.keySaltModulus); // salted HBase keys
 
     // TESTING Repartitioning because data skew here gets conflated quickly due to the flatMap and results in "stragglers"
     // In particular the source can be unbalanced regions from HBase since the occurrence table is not partitioned well
     //val tiles = df.repartition(config.tilePyramid.numPartitions).flatMap(row => {
+
+    import spark.implicits._
 
     val tiles = df.flatMap(row => {
       val res = mutable.ArrayBuffer[((String, ZXY, EncodedPixel, Feature.BasisOfRecord, Year), Int)]()
@@ -94,7 +96,7 @@ object BackfillTiles {
         })
       }
       res
-    }).reduceByKey(_+_, config.tilePyramid.numPartitions).map(r => {
+    }).rdd.reduceByKey(_+_, config.tilePyramid.numPartitions).map(r => {
     //}).reduceByKey(_+_).map(r => {
       // ((type, zxy, bor), (pixel, year, count))
       ((r._1._1 : String, r._1._2 : ZXY, r._1._4 : Feature.BasisOfRecord), (r._1._3 : EncodedPixel, r._1._5 : Year, r._2 /*Count*/))
@@ -152,7 +154,7 @@ object BackfillTiles {
           result += (((mapKey, tile.getZXY().toString), tile.asInstanceOf[OccurrenceDensityTile]))
         }
         result
-      }).reduceByKey(tileMerger)
+      }).rdd.reduceByKey(tileMerger)
 
       /**
         * Generate the vector tile and write it as an HFile.

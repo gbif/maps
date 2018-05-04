@@ -4,7 +4,7 @@ import org.apache.hadoop.hbase.KeyValue
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat
 import org.apache.hadoop.hbase.util.Bytes
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.SparkContext
 import org.gbif.maps.common.hbase.ModulusSalt
 import org.gbif.maps.io.PointFeature
@@ -26,7 +26,8 @@ import scala.collection.Set
 object BackfillPoints {
   val logger = LoggerFactory.getLogger("org.gbif.maps.spark.BackfillPoints")
 
-  def build(sc :SparkContext, df : DataFrame, keys: Set[String], config: MapConfiguration): Unit = {
+  def build(spark: SparkSession, df : DataFrame, keys: Set[String], config: MapConfiguration): Unit = {
+    import spark.implicits._
 
     val keySalter = new ModulusSalt(config.hbase.keySaltModulus); // salted HBase keys
 
@@ -54,7 +55,7 @@ object BackfillPoints {
       })
 
       res
-    }).reduceByKey(_+_, config.pointFeatures.numTasks).map(r => {
+    }).rdd.reduceByKey(_+_, config.pointFeatures.numTasks).map(r => {
       // Structured as: mapKey -> lat,lng,bor,year,count
       // NOTE: If we have more than an INT at a single location in one year something in the data is wrong
 

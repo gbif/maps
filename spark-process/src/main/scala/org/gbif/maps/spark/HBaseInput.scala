@@ -10,7 +10,7 @@ import org.apache.hadoop.hbase.util.{Base64, Bytes}
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark._
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext, SparkSession}
 import org.slf4j.LoggerFactory
 
 /**
@@ -19,12 +19,12 @@ import org.slf4j.LoggerFactory
 object HBaseInput {
   val logger = LoggerFactory.getLogger("org.gbif.maps.spark.HBaseInput")
 
-  def readFromHBase(config: MapConfiguration, sc: SparkContext) : DataFrame = {
+  def readFromHBase(config: MapConfiguration, spark: SparkSession) : DataFrame = {
     val hbaseConf = HBaseConfiguration.create()
     hbaseConf.set(HConstants.ZOOKEEPER_QUORUM, config.hbase.zkQuorum)
     hbaseConf.set("hbase.rootdir", config.hbase.rootDir)
 
-    val sqlContext = new SQLContext(sc)
+    val sqlContext = spark.sqlContext
 
     // Fields to read from HBase, and their types as they will be in the DataFrame
     val columnFamily = "o"
@@ -70,7 +70,7 @@ object HBaseInput {
     val job = Job.getInstance(hbaseConf)
     TableSnapshotInputFormat.setInput(job, config.source, new Path(config.targetDirectory + "/restore"))
 
-    val hBaseRDD = sc.newAPIHadoopRDD(job.getConfiguration,
+    val hBaseRDD = spark.sparkContext.newAPIHadoopRDD(job.getConfiguration,
       classOf[TableSnapshotInputFormat],
       classOf[org.apache.hadoop.hbase.io.ImmutableBytesWritable],
       classOf[org.apache.hadoop.hbase.client.Result])

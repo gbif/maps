@@ -1,5 +1,6 @@
 package org.gbif.maps.spark
 
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 import org.gbif.maps.workflow.WorkflowParams
 import org.slf4j.LoggerFactory
@@ -43,34 +44,36 @@ object Backfill {
     }
 
     // setup and read the source
-    val conf = new SparkConf().setAppName(config.appName)
-    conf.setIfMissing("spark.master", "local[2]") // 2 threads for local dev in IDE, ignored when run on a cluster
-    val sc = new SparkContext(conf)
+    val spark = SparkSession
+      .builder()
+      .appName(config.appName)
+      .getOrCreate()
+
+    import spark.implicits._
 
     val df =
       if (config.source.startsWith("/")) {
         logger.info("Reading Parquet file {}", config.source)
-        val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+        val sqlContext = spark.sqlContext
 
         sqlContext.read.parquet(config.source)
       }
       else {
         logger.info("Reading from HBase snapshot table {}", config.source)
-        HBaseInput.readFromHBase(config, sc)
+        HBaseInput.readFromHBase(config, spark)
       }
 
     logger.info("DataFrame columns are {}", df.columns)
 
     // get a count of records per mapKey
-    val counts = df.flatMap(MapUtils.mapKeysForRecord(_)).countByValue()
-
+    val counts = df.flatMap(MapUtils.mapKeysForRecord(_)).rdd.countByValue()
 
     if (Set("all","points").contains(args(0))) {
       // upto the threshold we can store points
       val mapKeys = counts.filter(r => {r._2<config.tilesThreshold})
       println("MapKeys suitable for storing as point maps: " + mapKeys.size)
 
-      BackfillPoints.build(sc,df,mapKeys.keySet,config)
+      BackfillPoints.build(spark, df,mapKeys.keySet,config)
     }
 
     if (Set("all","tiles").contains(args(0))) {
@@ -88,7 +91,7 @@ object Backfill {
         //jobs += new Callable[Unit] {
         //  override def call() = BackfillTiles.build(sc,df,mapKeys.keySet,config, proj)
         //}
-        BackfillTiles.build(sc,df,mapKeys.keySet,config, proj)
+        BackfillTiles.build(spark, df,mapKeys.keySet,config, proj)
       })
 
       //pool.invokeAll(jobs.toList.asJava)
@@ -96,7 +99,7 @@ object Backfill {
 
     }
 
-    sc.stop()
+    spark.stop()
   }
 
   /**
