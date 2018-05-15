@@ -84,6 +84,10 @@
       <version>12.0</version>
     </dependency>
     <dependency>
+      <groupId>net.logstash.logback</groupId>
+      <artifactId>logstash-logback-encoder</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.gbif.maps</groupId>
       <artifactId>common</artifactId>
     </dependency>
