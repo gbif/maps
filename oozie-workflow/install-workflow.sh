@@ -20,16 +20,16 @@ T_FREQUENCY=$(grep '^frequency=' tiles.properties | cut -d= -f 2)
 T_OOZIE=$(grep '^oozie.url=' tiles.properties | cut -d= -f 2)
 
 # Gets the Oozie id of the current coordinator job if it exists
-WID=$(oozie jobs -oozie $OOZIE -jobtype coordinator -filter name=MapBuild-Points | awk 'NR==3 {print $1}')
+WID=$(oozie jobs -oozie $P_OOZIE -jobtype coordinator -filter name=MapBuild-Points | awk 'NR==3 {print $1}')
 if [ -n "$WID" ]; then
   echo "Killing current coordinator job" $WID
-  sudo -u hdfs oozie job -oozie $OOZIE -kill $WID
+  sudo -u hdfs oozie job -oozie $P_OOZIE -kill $WID
 fi
 
-WID=$(oozie jobs -oozie $OOZIE -jobtype coordinator -filter name=MapBuild-Tiles | awk 'NR==3 {print $1}')
+WID=$(oozie jobs -oozie $T_OOZIE -jobtype coordinator -filter name=MapBuild-Tiles | awk 'NR==3 {print $1}')
 if [ -n "$WID" ]; then
   echo "Killing current coordinator job" $WID
-  sudo -u hdfs oozie job -oozie $OOZIE -kill $WID
+  sudo -u hdfs oozie job -oozie $T_OOZIE -kill $WID
 fi
 
 echo "Assembling jar for $ENV"
