@@ -54,8 +54,7 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
     SolrClient client = new CloudSolrServerBuilder()
       .withZkHost(configuration.getSolr().getZookeeperQuorum())
       .withDefaultCollection(configuration.getSolr().getDefaultCollection()).build();
-    OccurrenceHeatmapsService solrService = new OccurrenceHeatmapsService(client,
-                                                                          configuration.getSolr().getRequestHandler());
+    OccurrenceHeatmapsService solrService = new OccurrenceHeatmapsService(client);
 
 
     // Either use Zookeeper or static config to locate tables

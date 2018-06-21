@@ -202,7 +202,7 @@ public final class RegressionResource {
     }
 
     // Default search request handler, no sort order, 1 record (required) and facet support
-    OccurrenceSearchRequestBuilder builder = new OccurrenceSearchRequestBuilder("/search", null, 1, 1, true);
+    OccurrenceSearchRequestBuilder builder = new OccurrenceSearchRequestBuilder(null, 1, 1, true);
     SolrQuery query = builder.build(searchRequest);
 
     query.setFacetLimit(300); // safeguard with 3 centuries of data (this is designed for modern day analysis)

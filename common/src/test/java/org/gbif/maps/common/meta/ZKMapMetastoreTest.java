@@ -1,18 +1,14 @@
 package org.gbif.maps.common.meta;
 
-import java.io.File;
 import java.io.IOException;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.curator.test.TestingServer;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 import static org.junit.Assert.*;
 
@@ -24,9 +20,7 @@ public class ZKMapMetastoreTest {
 
   @Before
   public void startZookeeper() throws Exception {
-    String portAsString = System.getProperty("ZK_PORT") == null ? "2181" : System.getProperty("ZK_PORT");
-
-    zkTestServer = new TestingServer(Integer.parseInt(portAsString));
+    zkTestServer = new TestingServer();
     zk = zkTestServer.getConnectString();
     metastore = Metastores.newZookeeperMapsMeta(zk, 1000, "/gbif-map/test-dev");
     client = CuratorFrameworkFactory.newClient(zk, new RetryNTimes(3, 1000));

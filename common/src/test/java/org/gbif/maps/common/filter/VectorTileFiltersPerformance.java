@@ -50,8 +50,7 @@ public class VectorTileFiltersPerformance {
   }
 
   public static void main(String[] args) throws IOException {
-    Stopwatch timer = new Stopwatch();
-    timer.start();
+    Stopwatch timer = Stopwatch.createStarted();
 
     byte[] sample = sampleTile();
     LOG.info("Time to create sample {}ms", timer.elapsed(TimeUnit.MILLISECONDS));
