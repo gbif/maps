@@ -37,8 +37,8 @@ echo "Assembling jar for $ENV"
 mvn -Dpoints.frequency=$P_FREQUENCY -Dpoints.start=$P_START -Dtiles.frequency=$T_FREQUENCY -Dtiles.start=$T_START -DskipTests -Duser.timezone=UTC clean install
 
 echo "Copy to Hadoop"
-sudo -u hdfs hdfs dfs -rm -r /maps-backfill-workflow-$ENV/
-sudo -u hdfs hdfs dfs -copyFromLocal target/maps-backfill-workflow-$ENV /
+sudo -u hdfs hdfs dfs -rm -r /maps-backfill-workflow/
+sudo -u hdfs hdfs dfs -copyFromLocal target/maps-backfill-workflow /
 
 echo "Start Oozie points job"
 sudo -u hdfs oozie job --oozie $OOZIE -config points.properties -run
