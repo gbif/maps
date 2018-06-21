@@ -41,7 +41,7 @@ sudo -u hdfs hdfs dfs -rm -r /maps-backfill-workflow/
 sudo -u hdfs hdfs dfs -copyFromLocal target/maps-backfill-workflow /
 
 echo "Start Oozie points job"
-sudo -u hdfs oozie job --oozie $OOZIE -config points.properties -run
+sudo -u hdfs oozie job --oozie $P_OOZIE -config points.properties -run
 sleep 5
 echo "Start Oozie tiles job"
-sudo -u hdfs oozie job --oozie $OOZIE -config tiles.properties -run
+sudo -u hdfs oozie job --oozie $T_OOZIE -config tiles.properties -run
