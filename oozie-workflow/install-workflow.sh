@@ -42,6 +42,7 @@ sudo -u hdfs hdfs dfs -copyFromLocal target/maps-backfill-workflow /
 
 echo "Start Oozie points job"
 sudo -u hdfs oozie job --oozie $P_OOZIE -config points.properties -run
-sleep 5
+echo "Waiting 65 seconds, so both jobs don't start in the same minute and clash with snapshot names"
+sleep 65
 echo "Start Oozie tiles job"
 sudo -u hdfs oozie job --oozie $T_OOZIE -config tiles.properties -run
