@@ -32,21 +32,22 @@ object HBaseInput {
       ("datasetKey", StringType),
       ("publishingOrgKey", StringType),
       ("publishingCountry", StringType),
+      ("networkKey", StringType),
       ("countryCode", StringType),
-      ("basisOfRecord", StringType),
 
+      ("basisOfRecord", StringType),
       ("decimalLatitude", DoubleType),
       ("decimalLongitude", DoubleType),
       ("kingdomKey", IntegerType),
       ("phylumKey", IntegerType),
-      ("classKey", IntegerType),
 
+      ("classKey", IntegerType),
       ("orderKey", IntegerType),
       ("familyKey", IntegerType),
       ("genusKey", IntegerType),
       ("speciesKey", IntegerType),
-      ("taxonKey", IntegerType),
 
+      ("taxonKey", IntegerType),
       ("year", IntegerType),
       ("v_occurrenceStatus", StringType),
 
@@ -100,24 +101,26 @@ object HBaseInput {
         Bytes.toString(Option(result.getValue(o, Bytes.toBytes("datasetKey"))).getOrElse(empty)),
         Bytes.toString(Option(result.getValue(o, Bytes.toBytes("publishingOrgKey"))).getOrElse(empty)),
         Bytes.toString(Option(result.getValue(o, Bytes.toBytes("publishingCountry"))).getOrElse(empty)),
+        Bytes.toString(Option(result.getValue(o, Bytes.toBytes("networkKey"))).getOrElse(empty)),
         Bytes.toString(Option(result.getValue(o, Bytes.toBytes("countryCode"))).getOrElse(empty)),
-        Bytes.toString(Option(result.getValue(o, Bytes.toBytes("basisOfRecord"))).getOrElse(empty)),
 
+        Bytes.toString(Option(result.getValue(o, Bytes.toBytes("basisOfRecord"))).getOrElse(empty)),
         Bytes.toDouble(result.getValue(o, Bytes.toBytes("decimalLatitude"))), // Filter ensures not null.
         Bytes.toDouble(result.getValue(o, Bytes.toBytes("decimalLongitude"))),
         Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("kingdomKey"))).getOrElse(empty)),
         Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("phylumKey"))).getOrElse(empty)),
-        Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("classKey"))).getOrElse(empty)),
 
+        Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("classKey"))).getOrElse(empty)),
         Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("orderKey"))).getOrElse(empty)),
         Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("familyKey"))).getOrElse(empty)),
         Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("genusKey"))).getOrElse(empty)),
         Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("speciesKey"))).getOrElse(empty)),
-        Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("taxonKey"))).getOrElse(empty)),
 
+        Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("taxonKey"))).getOrElse(empty)),
         Bytes.toInt(Option(result.getValue(o, Bytes.toBytes("year"))).getOrElse(empty)),
         // Why are these carried through?
         Bytes.toString(Option(result.getValue(o, Bytes.toBytes("v_occurrenceStatus"))).getOrElse(empty)),
+
         Option(result.getValue(o, Bytes.toBytes("_iss_ZERO_COORDINATE"))).isEmpty,
         Option(result.getValue(o, Bytes.toBytes("_iss_COORDINATE_INVALID"))).isEmpty,
         Option(result.getValue(o, Bytes.toBytes("_iss_COORDINATE_OUT_OF_RANGE"))).isEmpty,

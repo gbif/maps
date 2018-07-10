@@ -12,8 +12,8 @@
   <version>0.4-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <description>Map services</description>
-  <url>http://github.org/gbif/maps</url>
+  <description>GBIF Map services</description>
+  <url>https://github.org/gbif/maps</url>
 
   <scm>
     <connection>scm:git:git@github.com:gbif/maps.git</connection>
@@ -25,13 +25,13 @@
   <distributionManagement>
     <site>
       <id>gh-pages</id>
-      <url>http://gbif.github.io/maps/</url>
+      <url>https://gbif.github.io/maps/</url>
     </site>
   </distributionManagement>
 
   <properties>
     <jdkLevel>1.8</jdkLevel>
-    <gbif-occurrence.version>0.82</gbif-occurrence.version>
+    <gbif-occurrence.version>0.84</gbif-occurrence.version>
     <slf4j.version>1.7.25</slf4j.version>
     <!-- Important: same version as the PBF library installed -->
     <protoc.version>2.5.0</protoc.version>

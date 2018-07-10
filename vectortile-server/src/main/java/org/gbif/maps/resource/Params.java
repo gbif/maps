@@ -41,6 +41,7 @@ class Params {
     .put("publishingOrg", "3")
     .put("country", "4")
     .put("publishingCountry", "5")
+    .put("networkKey", "6")
     .build();
 
   // The key for all maps

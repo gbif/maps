@@ -20,7 +20,8 @@ object MapUtils {
     "DATASET" -> 2,
     "PUBLISHER" -> 3,
     "COUNTRY" -> 4,
-    "PUBLISHING_COUNTRY" -> 5)
+    "PUBLISHING_COUNTRY" -> 5,
+    "NETWORK" -> 6)
 
   // Dictionary mapping the GBIF API BasisOfRecord enumeration to the Protobuf versions
   val BASIS_OF_RECORD = Map(
@@ -61,6 +62,7 @@ object MapUtils {
     val publisherKey = row.getString(row.fieldIndex("publishingorgkey"))
     val country = row.getString(row.fieldIndex("countrycode"))
     val publishingCountry = row.getString(row.fieldIndex("publishingcountry"))
+    val networkKey = row.getString(row.fieldIndex("networkKey"))
 
     var taxonIDs = Set[Int]()
     if (!row.isNullAt(row.fieldIndex("kingdomkey"))) taxonIDs+=row.getInt(row.fieldIndex("kingdomkey"))
@@ -77,7 +79,8 @@ object MapUtils {
       toMapKey(MAPS_TYPES("DATASET"), datasetKey),
       toMapKey(MAPS_TYPES("PUBLISHER"), publisherKey),
       toMapKey(MAPS_TYPES("COUNTRY"), country),
-      toMapKey(MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry)
+      toMapKey(MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry),
+      toMapKey(MAPS_TYPES("NETWORK_KEY"), networkKey)
     )
     taxonIDs.foreach(id => {
       res += toMapKey(MAPS_TYPES("TAXON"), id)
