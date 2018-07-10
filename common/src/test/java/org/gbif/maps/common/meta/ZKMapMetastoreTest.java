@@ -47,7 +47,7 @@ public class ZKMapMetastoreTest {
       client.sync().forPath("/gbif-map/test-dev");
       byte[] raw = client.getData().forPath("/gbif-map/test-dev");
       MapTables t2 = MapTables.deserialize(raw);
-      assertEquals("ZooKeeper native read returns different value", t1, metastore.read());
+      assertEquals("ZooKeeper native read returns different value", t1, t2);
 
       Thread.sleep(1000); // not receiving a watch update within 1 sec on a local test means something is suspicious
       assertEquals("Tables not the same after a write", t1, metastore.read());
