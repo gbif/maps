@@ -12,11 +12,11 @@ curl -Ss -H "Authorization: token $TOKEN" -H 'Accept: application/vnd.github.v3.
 curl -Ss -H "Authorization: token $TOKEN" -H 'Accept: application/vnd.github.v3.raw' -O -L https://api.github.com/repos/gbif/gbif-configuration/contents/maps-builder/$ENV/tiles.properties
 
 P_START=$(date +%Y-%m-%d)T$(grep '^startHour=' points.properties | cut -d= -f 2)Z
-P_FREQUENCY=$(grep '^frequency=' points.properties | cut -d= -f 2)
+P_FREQUENCY="$(grep '^frequency=' points.properties | cut -d= -f 2)"
 P_OOZIE=$(grep '^oozie.url=' points.properties | cut -d= -f 2)
 
 T_START=$(date +%Y-%m-%d)T$(grep '^startHour=' tiles.properties | cut -d= -f 2)Z
-T_FREQUENCY=$(grep '^frequency=' tiles.properties | cut -d= -f 2)
+T_FREQUENCY="$(grep '^frequency=' tiles.properties | cut -d= -f 2)"
 T_OOZIE=$(grep '^oozie.url=' tiles.properties | cut -d= -f 2)
 
 # Gets the Oozie id of the current coordinator job if it exists
@@ -34,7 +34,7 @@ fi
 
 echo "Assembling jar for $ENV"
 # Oozie uses timezone UTC
-mvn -Dpoints.frequency=$P_FREQUENCY -Dpoints.start=$P_START -Dtiles.frequency=$T_FREQUENCY -Dtiles.start=$T_START -DskipTests -Duser.timezone=UTC clean install
+mvn -Dpoints.frequency="$P_FREQUENCY" -Dpoints.start="$P_START" -Dtiles.frequency="$T_FREQUENCY" -Dtiles.start="$T_START" -DskipTests -Duser.timezone=UTC clean install
 
 echo "Copy to Hadoop"
 sudo -u hdfs hdfs dfs -rm -r /maps-backfill-workflow/
