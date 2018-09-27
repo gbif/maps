@@ -60,21 +60,43 @@ class Params {
    * Extracts the mapType:Key identifier from the request.
    * If an invalid request is provided (e.g. containing 2 types) then an IAE is thrown.
    * If no type is found, then the key for the all data map is given.
+   *
+   * @return The main map key, and an optional country mask key
    */
-  static String mapKey(HttpServletRequest request) {
+  static String[] mapKeys(HttpServletRequest request) {
     Map<String, String[]> queryParams = request.getParameterMap();
-    String mapKey = null;
+
+    String mapKey = null,
+      countryMaskKey = null;
+
     for (Map.Entry<String, String[]> param : queryParams.entrySet()) {
       if (MAP_TYPES.containsKey(param.getKey())) {
-        if (mapKey != null || param.getValue().length!=1) {
-          throw new IllegalArgumentException("Invalid request: Only one type of map may be requested.  "
-                                             + "Hint: Perhaps you need to use ad hoc mapping?");
+        if (param.getValue().length!=1) {
+          throw new IllegalArgumentException("Invalid request: Only one map may be requested. Perhaps you need to use ad-hoc mapping?");
         } else {
-          mapKey = MAP_TYPES.get(param.getKey()) + ":" + param.getValue()[0];
+          if (param.getKey().equals("country")) {
+            countryMaskKey = MAP_TYPES.get(param.getKey()) + ":" + param.getValue()[0];
+          } else {
+            if (mapKey != null) {
+              throw new IllegalArgumentException("Invalid request: Only one type of map may be requested. Perhaps you need to use ad-hoc mapping?");
+            }
+            mapKey = MAP_TYPES.get(param.getKey()) + ":" + param.getValue()[0];
+          }
         }
       }
     }
-    return mapKey == null ? ALL_MAP_KEY : mapKey;
+
+    // Rearrange if we only have a country
+    if (mapKey == null && countryMaskKey != null) {
+      mapKey = countryMaskKey;
+      countryMaskKey = null;
+    }
+
+    if (mapKey == null && countryMaskKey == null) {
+      mapKey = ALL_MAP_KEY;
+    }
+
+    return new String[]{mapKey, countryMaskKey};
   }
 
   /**

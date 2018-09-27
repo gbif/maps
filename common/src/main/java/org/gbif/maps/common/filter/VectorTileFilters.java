@@ -5,6 +5,7 @@ import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -352,5 +353,32 @@ public class VectorTileFilters {
         return false; // anything other than a point is unexpected, so we will simply skip gracefully
       }
     });
+  }
+
+  /**
+   * Clips a tile to a mask-tile, such as a country.
+   *
+   * @param encoder
+   * @param layerName
+   * @param sourceTile
+   * @param maskTile
+   * @throws IOException
+   */
+  public static void maskTileByTile(VectorTileEncoder encoder, String layerName, byte[] sourceTile, byte[] maskTile)
+    throws IOException {
+
+    Set<Geometry> mask = new HashSet<>();
+
+    for (VectorTileDecoder.Feature feature : DECODER.decode(maskTile)) {
+      mask.add(feature.getGeometry());
+    }
+    LOG.debug("Mask contains {} geometries (points)", mask.size());
+
+    Stream<VectorTileDecoder.Feature> stream = StreamSupport.stream(DECODER.decode(sourceTile, layerName).spliterator(), false);
+    stream
+      .filter(f -> mask.contains(f.getGeometry()))
+      .forEach(f -> encoder.addFeature(layerName, f.getAttributes(), f.getGeometry()));
+
+    encoder.encode();
   }
 }

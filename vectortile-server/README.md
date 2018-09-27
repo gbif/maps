@@ -26,6 +26,7 @@ Simple (note, hasGeospatialIssue is not explicitly declared, but is always false
   - /map/occurrence/density/{z}/{x}/{y}.mvt?taxonKey=212
   - /map/occurrence/density/{z}/{x}/{y}.mvt?taxonKey=212&year=1980,2014
   - /map/occurrence/density/{z}/{x}/{y}.mvt?taxonKey=212&year=1980,2014&basisOfRecord=OBSERVATION&basisOfRecord=HUMAN_OBSERVATION
+  - /map/occurrence/density/{z}/{x}/{y}.mvt?taxonKey=212&year=1980,2014&basisOfRecord=OBSERVATION&basisOfRecord=HUMAN_OBSERVATION&country=US
 
 Ad hoc search
   - /map/occurrence/density/adhoc/{z}/{x}/{y}.mvt?taxonKey=212&hasGeospatialIssue=true

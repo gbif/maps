@@ -49,7 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.gbif.maps.resource.Params.enableCORS;
-import static org.gbif.maps.resource.Params.mapKey;
+import static org.gbif.maps.resource.Params.mapKeys;
 
 /**
  * The resource for the linear regression services.
@@ -121,12 +121,12 @@ public final class RegressionResource {
     @Context HttpServletRequest request
   ) throws Exception {
     enableCORS(response);
-    String mapKey = mapKey(request);
+    String[] mapKeys = mapKeys(request);
 
-    DatedVectorTile speciesLayer = tiles.getTile(z, x, y, mapKey, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
+    DatedVectorTile speciesLayer = tiles.getTile(z, x, y, mapKeys[0], null, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
 
-    mapKey = Params.MAP_TYPES.get("taxonKey") + ":" + higherTaxonKey;
-    DatedVectorTile higherTaxaLayer = tiles.getTile(z, x, y, mapKey, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
+    mapKeys[0] = Params.MAP_TYPES.get("taxonKey") + ":" + higherTaxonKey;
+    DatedVectorTile higherTaxaLayer = tiles.getTile(z, x, y, mapKeys[0], null, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
 
     // determine the global pixel origin address at the top left of the tile, used for uniquely identifying the hexagons
     Long2D originXY = new Long2D(x * TILE_SIZE, y * TILE_SIZE);

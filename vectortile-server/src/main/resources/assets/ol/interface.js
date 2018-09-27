@@ -97,6 +97,7 @@ function updateDataLayer() {
   Object.assign(search, years);
   Object.assign(search, bors);
   Object.assign(search, map_key);
+  Object.assign(search, mask_key);
 
   var raster_search = {};
   Object.assign(raster_search, search);
@@ -225,6 +226,24 @@ function setMapKey(input) {
   updateDataLayer();
 }
 
+function setMaskKey(input) {
+  if (input != null) {
+    mask_key_input.value = input;
+  }
+
+  mask_key = {};
+  if (mask_key_input.value != '') {
+    var paramPairs = mask_key_input.value.split('&');
+    for (var i = 0; i < paramPairs.length; i++) {
+      var params = paramPairs[i].split('=');
+      mask_key[params[0]] = params[1];
+    }
+  }
+
+  console.log("Setting mask_key to", mask_key);
+  updateDataLayer();
+}
+
 var select_projection = document.getElementsByName('projection');
 for (var i = 0; i < select_projection.length; i++) {
   select_projection[i].onchange = (function(e) {
@@ -321,12 +340,18 @@ map_key_input.onchange = (function(e) {
   setMapKey();
 });
 
+var mask_key_input = document.getElementById('mask_key');
+mask_key_input.onchange = (function(e) {
+  setMaskKey();
+});
+
 var base_url_template_input = document.getElementById('base_url_template');
 var data_url_template_input = document.getElementById('data_url_template');
 
 setProjection();
 setBors();
 setMapKey();
+setMaskKey();
 setYears();
 setBinning();
 setRender();

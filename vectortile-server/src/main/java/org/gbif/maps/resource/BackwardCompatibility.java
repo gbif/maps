@@ -78,8 +78,8 @@ public class BackwardCompatibility {
     }
 
     Capabilities.CapabilitiesBuilder builder = Capabilities.CapabilitiesBuilder.newBuilder();
-    DatedVectorTile west = tileResource.getTile(0,0,0,mapKey,"EPSG:4326",null,null,true,null,0,0);
-    DatedVectorTile east = tileResource.getTile(0,1,0,mapKey,"EPSG:4326",null,null,true,null,0,0);
+    DatedVectorTile west = tileResource.getTile(0,0,0,mapKey,null,"EPSG:4326",null,null,true,null,0,0);
+    DatedVectorTile east = tileResource.getTile(0,1,0,mapKey,null,"EPSG:4326",null,null,true,null,0,0);
     builder.collect(west.tile, ZOOM_0_WEST_NW, ZOOM_0_WEST_SE, west.date);
     builder.collect(east.tile, ZOOM_0_EAST_NW, ZOOM_0_EAST_SE, east.date);
     Capabilities capabilities = builder.build();

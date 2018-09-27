@@ -11,6 +11,9 @@
     </layout>
   </appender>
 
+  <logger name="org.gbif" level="DEBUG"/>
+  <logger name="org.gbif.maps.common.bin.HexBin" level="INFO"/>
+
   <root level="INFO">
     <appender-ref ref="CONSOLE"/>
   </root>
