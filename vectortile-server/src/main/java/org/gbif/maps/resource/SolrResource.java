@@ -3,6 +3,7 @@ package org.gbif.maps.resource;
 import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.bin.SquareBin;
 import org.gbif.maps.common.projection.Double2D;
+import org.gbif.maps.common.projection.Long2D;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
@@ -141,8 +142,8 @@ public final class SolrResource {
             // convert the lat,lng into pixel coordinates
             Double2D swGlobalXY = projection.toGlobalPixelXY(maxYAsNorm, minXAsNorm, z);
             Double2D neGlobalXY = projection.toGlobalPixelXY(minYAsNorm, maxXAsNorm, z);
-            Double2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
-            Double2D neTileXY = Tiles.toTileLocalXY(neGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
+            Long2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
+            Long2D neTileXY = Tiles.toTileLocalXY(neGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
 
             int minX = (int) swTileXY.getX();
             int maxX = (int) neTileXY.getX();

@@ -39,7 +39,7 @@ public class Tiles {
    * @param bufferSize The buffer size
    * @return The pixel XY local to the tile in question
    */
-  public static Double2D toTileLocalXY(Double2D globalPixelXY, TileSchema schema, int z, long x, long y, int tileSize, int bufferSize) {
+  public static Long2D toTileLocalXY(Double2D globalPixelXY, TileSchema schema, int z, long x, long y, int tileSize, int bufferSize) {
     long numTilesAtZoom = schema.getZzTilesHorizontal() * 1<<z;
     long maxGlobalPixelAddress = numTilesAtZoom * tileSize;
 
@@ -56,7 +56,7 @@ public class Tiles {
       }
     }
 
-    return new Double2D(localX, localY);
+    return new Long2D(Math.round(localX), Math.round(localY));
   }
 
   /**

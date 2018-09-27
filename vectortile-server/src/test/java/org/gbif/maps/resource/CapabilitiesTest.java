@@ -86,8 +86,8 @@ public class CapabilitiesTest {
   private static Point point(double lat, double lng) {
     Double2D globalXY = PROJ.toGlobalPixelXY(lat, lng, 0);
     Long2D tileXY = Tiles.toTileXY(globalXY, TileSchema.WGS84_PLATE_CAREÉ, 0, TILE_SIZE);
-    Double2D tileLocalXY = Tiles.toTileLocalXY(globalXY, TileSchema.WGS84_PLATE_CAREÉ, 0,
-                                               tileXY.getX(), tileXY.getY(), TILE_SIZE, TILE_SIZE/4);
+    Long2D tileLocalXY = Tiles.toTileLocalXY(globalXY, TileSchema.WGS84_PLATE_CAREÉ, 0,
+                                             tileXY.getX(), tileXY.getY(), TILE_SIZE, TILE_SIZE/4);
     return GEOM_FACTORY.createPoint(new Coordinate(tileLocalXY.getX(),tileLocalXY.getY()));
   }
 }

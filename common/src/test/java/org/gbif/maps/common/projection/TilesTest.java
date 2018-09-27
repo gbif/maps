@@ -9,40 +9,40 @@ public class TilesTest {
 
   @Test
   public void testToTileLocalXY() {
-    assertEquals(new Double2D(  0,  0), Tiles.toTileLocalXY(new Double2D(   0,  0), WEB_MERCATOR, 1, 0, 0, 512, 32));
-    assertEquals(new Double2D( 10,522), Tiles.toTileLocalXY(new Double2D( 522,522), WEB_MERCATOR, 1, 1, 0, 512, 32));
-    assertEquals(new Double2D(513, 10), Tiles.toTileLocalXY(new Double2D(1025, 10), WEB_MERCATOR, 1, 1, 0, 512, 32)); // buffer
-    assertEquals(new Double2D( -1, 10), Tiles.toTileLocalXY(new Double2D(  -1, 10), WEB_MERCATOR, 1, 0, 0, 512, 32)); // buffer
+    assertEquals(new Long2D(  0,  0), Tiles.toTileLocalXY(new Double2D(   0L,  0L), WEB_MERCATOR, 1, 0, 0, 512, 32));
+    assertEquals(new Long2D( 10,522), Tiles.toTileLocalXY(new Double2D( 522,522), WEB_MERCATOR, 1, 1, 0, 512, 32));
+    assertEquals(new Long2D(513, 10), Tiles.toTileLocalXY(new Double2D(1025, 10), WEB_MERCATOR, 1, 1, 0, 512, 32)); // buffer
+    assertEquals(new Long2D( -1, 10), Tiles.toTileLocalXY(new Double2D(  -1, 10), WEB_MERCATOR, 1, 0, 0, 512, 32)); // buffer
 
-    assertEquals(new Double2D(100, 50), Tiles.toTileLocalXY(new Double2D( 612, 50), WEB_MERCATOR, 0, 1, 0, 512, 32));
+    assertEquals(new Long2D(100, 50), Tiles.toTileLocalXY(new Double2D( 612, 50), WEB_MERCATOR, 0, 1, 0, 512, 32));
   }
 
   @Test
   public void testToTileLocalXYDateLine() {
     // In Web Mercator, with one tile at zoom 0, extent at zoom 1 is 1024×1024
-    assertEquals(new Double2D(512, 0), Tiles.toTileLocalXY(new Double2D(   0, 0), WEB_MERCATOR, 1, 1, 0, 512, 32)); // ▙
-    assertEquals(new Double2D(  1,10), Tiles.toTileLocalXY(new Double2D(1025,10), WEB_MERCATOR, 1, 0, 0, 512, 32)); // ▟
-    assertEquals(new Double2D(510,10), Tiles.toTileLocalXY(new Double2D(  -2,10), WEB_MERCATOR, 1, 1, 0, 512, 32)); // ▙
-    assertEquals(new Double2D(514,10), Tiles.toTileLocalXY(new Double2D(   2,10), WEB_MERCATOR, 1, 1, 0, 512, 32)); // ▙
+    assertEquals(new Long2D(512, 0), Tiles.toTileLocalXY(new Double2D(   0, 0), WEB_MERCATOR, 1, 1, 0, 512, 32)); // ▙
+    assertEquals(new Long2D(  1,10), Tiles.toTileLocalXY(new Double2D(1025,10), WEB_MERCATOR, 1, 0, 0, 512, 32)); // ▟
+    assertEquals(new Long2D(510,10), Tiles.toTileLocalXY(new Double2D(  -2,10), WEB_MERCATOR, 1, 1, 0, 512, 32)); // ▙
+    assertEquals(new Long2D(514,10), Tiles.toTileLocalXY(new Double2D(   2,10), WEB_MERCATOR, 1, 1, 0, 512, 32)); // ▙
 
     // In a polar projection, with one tile at zoom 0, extent at zoom 1 is 1024×1024
     // and none of the edges are adjacent anyway
-    assertEquals(new Double2D(-512, 0), Tiles.toTileLocalXY(new Double2D(   0, 0), POLAR, 1, 1, 0, 512, 32)); // ▙
-    assertEquals(new Double2D(1025,10), Tiles.toTileLocalXY(new Double2D(1025,10), POLAR, 1, 0, 0, 512, 32)); // ▟
-    assertEquals(new Double2D(-514,10), Tiles.toTileLocalXY(new Double2D(  -2,10), POLAR, 1, 1, 0, 512, 32)); // ▙
-    assertEquals(new Double2D(-510,10), Tiles.toTileLocalXY(new Double2D(   2,10), POLAR, 1, 1, 0, 512, 32)); // ▙
+    assertEquals(new Long2D(-512, 0), Tiles.toTileLocalXY(new Double2D(   0, 0), POLAR, 1, 1, 0, 512, 32)); // ▙
+    assertEquals(new Long2D(1025,10), Tiles.toTileLocalXY(new Double2D(1025,10), POLAR, 1, 0, 0, 512, 32)); // ▟
+    assertEquals(new Long2D(-514,10), Tiles.toTileLocalXY(new Double2D(  -2,10), POLAR, 1, 1, 0, 512, 32)); // ▙
+    assertEquals(new Long2D(-510,10), Tiles.toTileLocalXY(new Double2D(   2,10), POLAR, 1, 1, 0, 512, 32)); // ▙
 
     // In WGS84 Plate Careé, with two tiles at zoom 0, extent at zoom 1 is 2048×1024
     // Western hemisphere
-    assertEquals(new Double2D(-512, 0), Tiles.toTileLocalXY(new Double2D(   0, 0), WGS84_PLATE_CAREÉ, 1, 1, 0, 512, 32)); // ▙█
-    assertEquals(new Double2D(1025,10), Tiles.toTileLocalXY(new Double2D(1025,10), WGS84_PLATE_CAREÉ, 1, 0, 0, 512, 32)); // ▟█
-    assertEquals(new Double2D(-514,10), Tiles.toTileLocalXY(new Double2D(  -2,10), WGS84_PLATE_CAREÉ, 1, 1, 0, 512, 32)); // ▙█
-    assertEquals(new Double2D(-510,10), Tiles.toTileLocalXY(new Double2D(   2,10), WGS84_PLATE_CAREÉ, 1, 1, 0, 512, 32)); // ▙█
+    assertEquals(new Long2D(-512, 0), Tiles.toTileLocalXY(new Double2D(   0, 0), WGS84_PLATE_CAREÉ, 1, 1, 0, 512, 32)); // ▙█
+    assertEquals(new Long2D(1025,10), Tiles.toTileLocalXY(new Double2D(1025,10), WGS84_PLATE_CAREÉ, 1, 0, 0, 512, 32)); // ▟█
+    assertEquals(new Long2D(-514,10), Tiles.toTileLocalXY(new Double2D(  -2,10), WGS84_PLATE_CAREÉ, 1, 1, 0, 512, 32)); // ▙█
+    assertEquals(new Long2D(-510,10), Tiles.toTileLocalXY(new Double2D(   2,10), WGS84_PLATE_CAREÉ, 1, 1, 0, 512, 32)); // ▙█
     // Eastern hemisphere
-    assertEquals(new Double2D(512, 0), Tiles.toTileLocalXY(new Double2D(   0, 0), WGS84_PLATE_CAREÉ, 1, 3, 0, 512, 32)); // █▙
-    assertEquals(new Double2D(  1,10), Tiles.toTileLocalXY(new Double2D(1025,10), WGS84_PLATE_CAREÉ, 1, 2, 0, 512, 32)); // █▟
-    assertEquals(new Double2D(510,10), Tiles.toTileLocalXY(new Double2D(  -2,10), WGS84_PLATE_CAREÉ, 1, 3, 0, 512, 32)); // █▙
-    assertEquals(new Double2D(514,10), Tiles.toTileLocalXY(new Double2D(   2,10), WGS84_PLATE_CAREÉ, 1, 3, 0, 512, 32)); // █▙
+    assertEquals(new Long2D(512, 0), Tiles.toTileLocalXY(new Double2D(   0, 0), WGS84_PLATE_CAREÉ, 1, 3, 0, 512, 32)); // █▙
+    assertEquals(new Long2D(  1,10), Tiles.toTileLocalXY(new Double2D(1025,10), WGS84_PLATE_CAREÉ, 1, 2, 0, 512, 32)); // █▟
+    assertEquals(new Long2D(510,10), Tiles.toTileLocalXY(new Double2D(  -2,10), WGS84_PLATE_CAREÉ, 1, 3, 0, 512, 32)); // █▙
+    assertEquals(new Long2D(514,10), Tiles.toTileLocalXY(new Double2D(   2,10), WGS84_PLATE_CAREÉ, 1, 3, 0, 512, 32)); // █▙
   }
 
   @Test

@@ -1,6 +1,7 @@
 package org.gbif.maps.common.filter;
 
 import org.gbif.maps.common.projection.Double2D;
+import org.gbif.maps.common.projection.Long2D;
 import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
 
@@ -87,7 +88,7 @@ public class VectorTileFilters {
 
     if (verbose) {
       // merge the data into yearCounts by pixels
-      Map<Double2D, Map<String, Long>> pixels = featureStream.collect(
+      Map<Long2D, Map<String, Long>> pixels = featureStream.collect(
         // accumulate counts by year, for each pixel
         Collectors.toMap(
           toTileLocalPixelXY(schema, z, x, y, sourceX, sourceY, tileSize, bufferSize),
@@ -97,7 +98,7 @@ public class VectorTileFilters {
               // accumulate because the same pixel can be present in different layers (basisOfRecords) in the
               // source tile
               Long.valueOf(v1).longValue();
-              return ((Long)v1).longValue() + ((Long)v2).longValue();
+              return v1.longValue() + v2.longValue();
             }));
             return m1;
           }
@@ -120,7 +121,7 @@ public class VectorTileFilters {
 
     } else {
       // merge the data into total counts only by pixels
-      Map<Double2D, Long> pixels = featureStream.collect(
+      Map<Long2D, Long> pixels = featureStream.collect(
         // accumulate totals for each pixel
         Collectors.toMap(
           toTileLocalPixelXY(schema, z, x, y, sourceX, sourceY, tileSize, bufferSize),
@@ -278,9 +279,9 @@ public class VectorTileFilters {
    * Gets the X,Y point for the feature.
    * @return The function to convert the feature to the location.
    */
-  public static Function<VectorTileDecoder.Feature, Double2D> toTileLocalPixelXY(final TileSchema schema, final int z, final long x, final long y,
-                                                                                 final long sourceX, final long sourceY,
-                                                                                 final int tileSize, final int bufferSize) {
+  public static Function<VectorTileDecoder.Feature, Long2D> toTileLocalPixelXY(final TileSchema schema, final int z, final long x, final long y,
+                                                                               final long sourceX, final long sourceY,
+                                                                               final int tileSize, final int bufferSize) {
     return (f -> {
       if (f.getGeometry() instanceof Point) {
         Point p = (Point) f.getGeometry();

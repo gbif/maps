@@ -1,6 +1,7 @@
 package org.gbif.maps.common.filter;
 
 import org.gbif.maps.common.projection.Double2D;
+import org.gbif.maps.common.projection.Long2D;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
@@ -106,7 +107,7 @@ public class PointFeatureFilters {
    * @param tileSize That we operate with
    * @return The function to convert
    */
-  public static Function<Feature, Double2D> toTileLocalPixelXY(final TileProjection projection, final TileSchema schema,
+  public static Function<Feature, Long2D> toTileLocalPixelXY(final TileProjection projection, final TileSchema schema,
                                                                final int z, final long x, final long y,
                                                                final int tileSize, final int bufferSize) {
     return (f -> {
