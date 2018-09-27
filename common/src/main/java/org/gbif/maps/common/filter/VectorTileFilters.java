@@ -1,33 +1,23 @@
 package org.gbif.maps.common.filter;
 
 import org.gbif.maps.common.projection.Double2D;
-import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
-import org.gbif.maps.io.PointFeature;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
-import no.ecc.vectortile.Filter;
 import no.ecc.vectortile.VectorTileDecoder;
 import no.ecc.vectortile.VectorTileEncoder;
 import org.slf4j.Logger;
@@ -52,7 +42,7 @@ public class VectorTileFilters {
    * Collects data (i.e. accumulates) which matches the filters given from the sourceTile into the encoder.
    *
    * This is intended to be used for cases when one wishes to merge data coming from tiles at different addresses, to
-   * e.g. build up buffer regions from ajacent tiles.  It has the potential to be slow, especially when dealing with
+   * e.g. build up buffer regions from adjacent tiles.  It has the potential to be slow, especially when dealing with
    * large, highly dense tiles.
    *
    * For simple filtering of data, better performance will be available through the
@@ -198,7 +188,7 @@ public class VectorTileFilters {
               // accumulate because the same pixel can be present in different layers (basisOfRecords) in the
               // source tile
               Long.valueOf(v1).longValue();
-              return ((Long)v1).longValue() + ((Long)v2).longValue();
+              return v1.longValue() + v2.longValue();
             }));
             return m1;
           }
@@ -238,49 +228,41 @@ public class VectorTileFilters {
    * Provides a function to accumulate the count within the year range (inclusive)
    */
   public static Function<VectorTileDecoder.Feature, Long> totalCountForYears(final Range years) {
-    return new Function<VectorTileDecoder.Feature, Long>() {
+    return (feature -> {
+      long runningCount = 0;
 
-      @Override
-      public Long apply(VectorTileDecoder.Feature feature) {
-        long runningCount = 0;
-
-        for(Map.Entry<String, Object> e : feature.getAttributes().entrySet()) {
-          try {
-            Integer year = Integer.parseInt(e.getKey());
-            if (years.isContained(year)) {
-              runningCount += (Long) e.getValue();
-            }
-          } catch (NumberFormatException nfe) {
-            LOG.warn("Unexpected non integer metadata entry {}:{}", e.getKey(), e.getValue());
+      for (Map.Entry<String, Object> e : feature.getAttributes().entrySet()) {
+        try {
+          Integer year = Integer.parseInt(e.getKey());
+          if (years.isContained(year)) {
+            runningCount += (Long) e.getValue();
           }
+        } catch (NumberFormatException nfe) {
+          LOG.warn("Unexpected non integer metadata entry {}:{}", e.getKey(), e.getValue());
         }
-        return runningCount;
       }
-    };
+      return runningCount;
+    });
   }
 
   /**
    * Provides a function to accumulate trim attributes to only include the year range desired.
    */
   public static Function<VectorTileDecoder.Feature, Map<String, Long>> attributesPrunedToYears(final Range years) {
-    return new Function<VectorTileDecoder.Feature, Map<String, Long>>() {
-
-      @Override
-      public Map<String, Long> apply(VectorTileDecoder.Feature feature) {
-        Map<String, Long> result = Maps.newHashMap();
-        for(Map.Entry<String, Object> e : feature.getAttributes().entrySet()) {
-          try {
-            Integer year = Integer.parseInt(e.getKey());
-            if (years.isContained(year)) {
-              result.put(e.getKey(), (Long) e.getValue());
-            }
-          } catch (NumberFormatException nfe) {
-            LOG.warn("Unexpected non integer metadata entry {}:{}", e.getKey(), e.getValue());
+    return (feature -> {
+      Map<String, Long> result = Maps.newHashMap();
+      for(Map.Entry<String, Object> e : feature.getAttributes().entrySet()) {
+        try {
+          Integer year = Integer.parseInt(e.getKey());
+          if (years.isContained(year)) {
+            result.put(e.getKey(), (Long) e.getValue());
           }
+        } catch (NumberFormatException nfe) {
+          LOG.warn("Unexpected non integer metadata entry {}:{}", e.getKey(), e.getValue());
         }
-        return result;
       }
-    };
+      return result;
+    });
   }
 
   /**
@@ -288,13 +270,7 @@ public class VectorTileFilters {
    * @return The function to extract the geometry.
    */
   public static Function<VectorTileDecoder.Feature, Geometry> extractGeometry() {
-
-    return new Function<VectorTileDecoder.Feature, Geometry>() {
-      @Override
-      public Geometry apply(VectorTileDecoder.Feature f) {
-        return f.getGeometry();
-      }
-    };
+    return (f -> f.getGeometry());
   }
 
   /**
@@ -304,57 +280,50 @@ public class VectorTileFilters {
   public static Function<VectorTileDecoder.Feature, Double2D> toTileLocalPixelXY(final TileSchema schema, final int z, final long x, final long y,
                                                                                  final long sourceX, final long sourceY,
                                                                                  final int tileSize, final int bufferSize) {
-    return new Function<VectorTileDecoder.Feature, Double2D>() {
-      @Override
-      public Double2D apply(VectorTileDecoder.Feature f) {
-        if (f.getGeometry() instanceof Point) {
-          Point p = (Point) f.getGeometry();
+    return (f -> {
+      if (f.getGeometry() instanceof Point) {
+        Point p = (Point) f.getGeometry();
 
-          // find the tile local pixel address on the target tile (pixel may be coming from an adjacent tile)
-          Double2D pixelXY = new Double2D(tileSize * sourceX + p.getX(), tileSize * sourceY + p.getY());
-          return Tiles.toTileLocalXY(pixelXY, schema, z, x, y, tileSize, bufferSize);
-        } else {
-          throw new IllegalStateException("Only point geometries are supported");
-        }
+        // find the tile local pixel address on the target tile (pixel may be coming from an adjacent tile)
+        Double2D pixelXY = new Double2D(tileSize * sourceX + p.getX(), tileSize * sourceY + p.getY());
+        return Tiles.toTileLocalXY(pixelXY, schema, z, x, y, tileSize, bufferSize);
+      } else {
+        throw new IllegalStateException("Only point geometries are supported");
       }
-    };
+    });
   }
 
   /**
    * Provides a predicate which can be used to filter Features for a year range.  If a min or max year bound is
    * given, then the feature must have a year present.
    *
-   * @param minYear minimum year acceptable (inclusive) or null for unbounded
-   * @param maxYear maximum year acceptable (inclusive) or null for unbounded
+   * @param years Range of years acceptable (inclusive) or null for unbounded
    * @return true if the conditions all pass, of false otherwise.
    */
   public static Predicate<VectorTileDecoder.Feature> filterFeatureByYear(final Range years) {
-    return new Predicate<VectorTileDecoder.Feature>() {
-      @Override
-      public boolean test(VectorTileDecoder.Feature f) {
+    return (f -> {
 
-        // determine the extent of the year range within the tile
-        int minFeatureYear = Integer.MAX_VALUE;
-        int maxFeatureYear = Integer.MIN_VALUE;
-        for (String yearAsStream : f.getAttributes().keySet()) {
-          try {
-            int y = Integer.parseInt(yearAsStream);
-            minFeatureYear = minFeatureYear > y ? y : minFeatureYear;
-            maxFeatureYear = maxFeatureYear < y ? y : maxFeatureYear;
+      // determine the extent of the year range within the tile
+      int minFeatureYear = Integer.MAX_VALUE;
+      int maxFeatureYear = Integer.MIN_VALUE;
+      for (String yearAsStream : f.getAttributes().keySet()) {
+        try {
+          int y = Integer.parseInt(yearAsStream);
+          minFeatureYear = minFeatureYear > y ? y : minFeatureYear;
+          maxFeatureYear = maxFeatureYear < y ? y : maxFeatureYear;
 
-            if (years.isContained(minFeatureYear) || years.isContained(maxFeatureYear)) {
-              return true; // short circuit
-            }
-
-          } catch (Exception e) {
-            // ignore attributes in unexpected formats
+          if (years.isContained(minFeatureYear) || years.isContained(maxFeatureYear)) {
+            return true; // short circuit
           }
-        }
 
-        // some of the years must overlap the filter range
-        return years.isContained(minFeatureYear) || years.isContained(maxFeatureYear);
+        } catch (Exception e) {
+          // ignore attributes in unexpected formats
+        }
       }
-    };
+
+      // some of the years must overlap the filter range
+      return years.isContained(minFeatureYear) || years.isContained(maxFeatureYear);
+    });
   }
 
   /**
@@ -367,25 +336,21 @@ public class VectorTileFilters {
    * @param sourceX
    * @param sourceY
    * @param tileSize
-   * @param buffer
+   * @param bufferSize
    * @return
    */
   public static Predicate<VectorTileDecoder.Feature> filterFeatureByTile(final TileSchema schema, final int z, final long x, final long y,
                                                                          final long sourceX, final long sourceY,
                                                                          final int tileSize, final int bufferSize) {
-    return new Predicate<VectorTileDecoder.Feature>() {
-      @Override
-      public boolean test(VectorTileDecoder.Feature f) {
-        if (f.getGeometry() instanceof Point) {
-          Point p = (Point) f.getGeometry();
-          // global addressing of the pixel to consider filtering
-          Double2D pixelXY = new Double2D(tileSize * sourceX + p.getX(), tileSize * sourceY + p.getY());
-          return Tiles.tileContains(z, x, y, tileSize, schema, pixelXY, bufferSize);
-        } else {
-          return false; // anything other than a point is unexpected, so we will simply skip gracefully
-        }
+    return (f -> {
+      if (f.getGeometry() instanceof Point) {
+        Point p = (Point) f.getGeometry();
+        // global addressing of the pixel to consider filtering
+        Double2D pixelXY = new Double2D(tileSize * sourceX + p.getX(), tileSize * sourceY + p.getY());
+        return Tiles.tileContains(z, x, y, tileSize, schema, pixelXY, bufferSize);
+      } else {
+        return false; // anything other than a point is unexpected, so we will simply skip gracefully
       }
-    };
+    });
   }
-
 }

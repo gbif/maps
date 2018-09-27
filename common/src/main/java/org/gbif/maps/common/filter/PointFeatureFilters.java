@@ -4,9 +4,7 @@ import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
-import org.gbif.maps.io.PointFeature;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,7 +12,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.google.common.collect.Maps;
 import com.vividsolutions.jts.geom.Coordinate;
@@ -31,7 +28,6 @@ import static org.gbif.maps.io.PointFeature.PointFeatures.Feature;
  */
 public class PointFeatureFilters {
   private static final Logger LOG = LoggerFactory.getLogger(PointFeatureFilters.class);
-  private static final int NULL_INT_VALUE = 0; // as specified in the protobuf file
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
 
   /**
@@ -113,13 +109,10 @@ public class PointFeatureFilters {
   public static Function<Feature, Double2D> toTileLocalPixelXY(final TileProjection projection, final TileSchema schema,
                                                                final int z, final long x, final long y,
                                                                final int tileSize, final int bufferSize) {
-    return new Function<Feature, Double2D>() {
-      @Override
-      public Double2D apply(Feature t) {
-        Double2D pixelXY = projection.toGlobalPixelXY(t.getLatitude(),t.getLongitude(), z);
-        return Tiles.toTileLocalXY(pixelXY, schema, z, x, y, tileSize, bufferSize);
-      }
-    };
+    return (f -> {
+      Double2D pixelXY = projection.toGlobalPixelXY(f.getLatitude(), f.getLongitude(), z);
+      return Tiles.toTileLocalXY(pixelXY, schema, z, x, y, tileSize, bufferSize);
+    });
   }
 
   /**
@@ -136,17 +129,14 @@ public class PointFeatureFilters {
   public static Predicate<Feature> filterFeatureByTile(final TileProjection projection, TileSchema schema,
                                                        final int z, final long x, final long y, final int tileSize,
                                                        final int buffer) {
-    return new Predicate<Feature>() {
-      @Override
-      public boolean test(Feature f) {
-        if (projection.isPlottable(f.getLatitude(), f.getLongitude())) {
-          Double2D pixelXY = projection.toGlobalPixelXY(f.getLatitude(), f.getLongitude(), z);
-          return Tiles.tileContains(z, x, y, tileSize, schema, pixelXY, buffer);
-        } else {
-          return false;
-        }
+    return (f -> {
+      if (projection.isPlottable(f.getLatitude(), f.getLongitude())) {
+        Double2D pixelXY = projection.toGlobalPixelXY(f.getLatitude(), f.getLongitude(), z);
+        return Tiles.tileContains(z, x, y, tileSize, schema, pixelXY, buffer);
+      } else {
+        return false;
       }
-    };
+    });
   }
 
   /**
@@ -155,21 +145,18 @@ public class PointFeatureFilters {
    * @return true if the conditions all pass, of false otherwise
    */
   public static Predicate<Feature> filterFeatureByBasisOfRecord(final Set<String> bors) {
-    return new Predicate<Feature>() {
-      @Override
-      public boolean test(Feature f) {
-        if (bors == null || bors.isEmpty()) {
-          return true;
-        } else {
-          for (String bor : bors) {
-            if (bor.equalsIgnoreCase(f.getBasisOfRecord().toString())) {
-              return true;
-            }
+    return (f -> {
+      if (bors == null || bors.isEmpty()) {
+        return true;
+      } else {
+        for (String bor : bors) {
+          if (bor.equalsIgnoreCase(f.getBasisOfRecord().toString())) {
+            return true;
           }
-          return false; // no basis of record match the given options
         }
+        return false; // no basis of record match the given options
       }
-    };
+    });
   }
 
   /**
@@ -179,11 +166,6 @@ public class PointFeatureFilters {
    * @return true if the provided range is null or contains the feature year
    */
   public static Predicate<Feature> filterFeatureByYear(final Range years) {
-    return new Predicate<Feature>() {
-      @Override
-      public boolean test(Feature f) {
-        return years.isContained(f.getYear());
-      }
-    };
+    return (f -> years.isContained(f.getYear()));
   }
 }
