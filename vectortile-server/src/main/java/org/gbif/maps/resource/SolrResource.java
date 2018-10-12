@@ -15,9 +15,11 @@ import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapsService;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -32,8 +34,13 @@ import javax.ws.rs.core.Context;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.geom.Polygon;
 import no.ecc.vectortile.VectorTileEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,18 +66,33 @@ public final class SolrResource {
 
   @VisibleForTesting
   static final double SOLR_QUERY_BUFFER_PERCENTAGE = 0.125;  // 1/8th tile buffer all around, similar to the HBase maps
+  private static final String EPSG_4326 = "EPSG:4326";
 
   private final int tileSize;
   private final int bufferSize;
   private final TileProjection projection;
   private final OccurrenceHeatmapsService solrService;
 
+  //Experimental: keeps a cache of all the calculated geometries from z,x and y.
+  private final LoadingCache<ColRow,Bbox2D> colRowToBbox = CacheBuilder.newBuilder().build(CacheLoader.from(colRow -> {
+
+
+    // get the extent of the cell
+    final Point2D cellSW = new Point2D.Double(colRow.cell.getMinX(), colRow.cell.getMinY());
+    final Point2D cellNE = new Point2D.Double(colRow.cell.getMaxX(), colRow.cell.getMaxY());
+
+    // convert the lat,lng into pixel coordinates
+    Long2D topLeftTile = getTopLeftTile(cellSW, cellNE, colRow.z, colRow.x, colRow.y);
+    Long2D bottomRightTile = getBottomRightTile(cellSW, cellNE, colRow.z, colRow.x, colRow.y);
+    return Bbox2D.of(topLeftTile, bottomRightTile);
+    }));
+
 
   public SolrResource(OccurrenceHeatmapsService solrService, int tileSize, int bufferSize) {
     this.tileSize = tileSize;
     this.bufferSize = bufferSize;
     this.solrService = solrService;
-    projection = Tiles.fromEPSG("EPSG:4326", tileSize);
+    projection = Tiles.fromEPSG(EPSG_4326, tileSize);
   }
 
   @GET
@@ -83,7 +105,7 @@ public final class SolrResource {
     @PathParam("z") int z,
     @PathParam("x") long x,
     @PathParam("y") long y,
-    @DefaultValue("EPSG:4326") @QueryParam("srs") String srs,
+    @DefaultValue(EPSG_4326) @QueryParam("srs") String srs,
     @QueryParam("bin") String bin,
     @DefaultValue(DEFAULT_HEX_PER_TILE) @QueryParam("hexPerTile") int hexPerTile,
     @DefaultValue(DEFAULT_SQUARE_SIZE) @QueryParam("squareSize") int squareSize,
@@ -91,7 +113,7 @@ public final class SolrResource {
     @Context HttpServletRequest request
     ) throws Exception {
     enableCORS(response);
-    Preconditions.checkArgument("EPSG:4326".equalsIgnoreCase(srs),
+    Preconditions.checkArgument(EPSG_4326.equalsIgnoreCase(srs),
                                 "Adhoc search maps are currently only available in EPSG:4326");
     OccurrenceHeatmapRequest heatmapRequest = OccurrenceHeatmapRequestProvider.buildOccurrenceHeatmapRequest(request);
 
@@ -109,7 +131,8 @@ public final class SolrResource {
     LOG.info("SOLR request:{}", heatmapRequest);
 
     OccurrenceHeatmapResponse solrResponse = solrService.searchHeatMap(heatmapRequest);
-    VectorTileEncoder encoder = new VectorTileEncoder (tileSize, bufferSize, false);
+    VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
+    byte[] encodedTile = encoder.encode();
 
     // Handle datelines in the SOLRResponse.
     OccurrenceHeatmapResponse datelineAdjustedResponse = datelineAdjustedResponse(solrResponse);
@@ -117,81 +140,59 @@ public final class SolrResource {
     // iterate the data structure from SOLR painting cells
     // (note: this is not pretty, but neither is the result from SOLR... some cleanup here would be beneficial)
     final List<List<Integer>> countsInts = datelineAdjustedResponse.getCountsInts2D();
-    for (int row = 0; countsInts!=null && row < countsInts.size(); row++) {
+
+    if (countsInts == null || countsInts.isEmpty()) {
+      return encodedTile;
+    }
+    for (int row = 0; row < countsInts.size(); row++) {
       if (countsInts.get(row) != null) {
         for (int column = 0; column < countsInts.get(row).size(); column++) {
           Integer count = countsInts.get(row).get(column);
           if (count != null && count > 0) {
-
-            final Rectangle2D.Double cell = new Rectangle2D.Double(datelineAdjustedResponse.getMinLng(column),
-                                                                   datelineAdjustedResponse.getMinLat(row),
-                                                                   datelineAdjustedResponse.getMaxLng(column)
-                                                                     - datelineAdjustedResponse.getMinLng(column),
-                                                                   datelineAdjustedResponse.getMaxLat(row) -
-                                                                     datelineAdjustedResponse.getMinLat(row));
+            ColRow colRow = ColRow.of(column, row, z, x, y, datelineAdjustedResponse);
 
             // get the extent of the cell
-            final Point2D cellSW = new Point2D.Double(cell.getMinX(), cell.getMinY());
-            final Point2D cellNE = new Point2D.Double(cell.getMaxX(), cell.getMaxY());
-
-            double minXAsNorm = cellSW.getX();
-            double maxXAsNorm = cellNE.getX();
-            double minYAsNorm = cellSW.getY();
-            double maxYAsNorm = cellNE.getY();
-
-            // convert the lat,lng into pixel coordinates
-            Double2D swGlobalXY = projection.toGlobalPixelXY(maxYAsNorm, minXAsNorm, z);
-            Double2D neGlobalXY = projection.toGlobalPixelXY(minYAsNorm, maxXAsNorm, z);
-            Long2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
-            Long2D neTileXY = Tiles.toTileLocalXY(neGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
-
-            int minX = (int) swTileXY.getX();
-            int maxX = (int) neTileXY.getX();
-            double centerX = minX + (((double) maxX - minX) / 2);
-
-            int minY = (int) swTileXY.getY();
-            int maxY = (int) neTileXY.getY();
-            double centerY = minY + (((double) maxY - minY) / 2);
-
-            Map<String, Object> meta = new HashMap<>();
-            meta.put("total", count);
+            Bbox2D bbox2D = colRowToBbox.get(colRow);
 
             // for binning, we add the cell center point, otherwise the geometry
-            if (bin != null) {
-              // hack: use just the center points for each cell
-              Coordinate center = new Coordinate(centerX, centerY);
-              encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPoint(center));
-
-            } else {
-              // default behaviour with polygon squares for the cells
-              Coordinate[] coords = new Coordinate[] {
-                new Coordinate(swTileXY.getX(), swTileXY.getY()),
-                new Coordinate(neTileXY.getX(), swTileXY.getY()),
-                new Coordinate(neTileXY.getX(), neTileXY.getY()),
-                new Coordinate(swTileXY.getX(), neTileXY.getY()),
-                new Coordinate(swTileXY.getX(), swTileXY.getY())
-              };
-
-              encoder.addFeature("occurrence", meta, GEOMETRY_FACTORY.createPolygon(coords));
-            }
+            encoder.addFeature("occurrence", Collections.singletonMap("total", count),
+                               Objects.isNull(bin)? bbox2D.getCenter() : bbox2D.getPolygon());
           }
         }
       }
     }
 
-    byte[] encodedTile = encoder.encode();
-    if (BIN_MODE_HEX.equalsIgnoreCase(bin) && countsInts!=null && !countsInts.isEmpty()) {
+    return encodeTile(bin, z, x, y, hexPerTile, squareSize, encodedTile);
+  }
+
+
+  private byte[] encodeTile(String bin, int z, long x, long y, int hexPerTile, int squareSize, byte[] encodedTile) throws IOException  {
+    if (BIN_MODE_HEX.equalsIgnoreCase(bin)) {
       // binning will throw IAE on no data, so code defensively
       HexBin binner = new HexBin(HEX_TILE_SIZE, hexPerTile);
       return binner.bin(encodedTile, z, x, y);
-
-    } else if (BIN_MODE_SQUARE.equalsIgnoreCase(bin) && countsInts!=null && !countsInts.isEmpty()) {
+    } else if (BIN_MODE_SQUARE.equalsIgnoreCase(bin)) {
       SquareBin binner = new SquareBin(SQUARE_TILE_SIZE, squareSize);
       return binner.bin(encodedTile, z, x, y);
     } else {
       return encodedTile;
     }
   }
+
+  private Long2D getTopLeftTile(Point2D cellSW, Point2D cellNE, int z, long x, long y) {
+    // convert the lat,lng into pixel coordinates
+    Double2D swGlobalXY = projection.toGlobalPixelXY(cellNE.getY(), cellSW.getX(), z);
+
+    return Tiles.toTileLocalXY(swGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
+  }
+
+  private Long2D getBottomRightTile(Point2D cellSW, Point2D cellNE, int z, long x, long y) {
+    // convert the lat,lng into pixel coordinates
+    Double2D neGlobalXY = projection.toGlobalPixelXY(cellSW.getY(), cellNE.getX(), z);
+
+    return Tiles.toTileLocalXY(neGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
+  }
+
 
   /**
    * Returns a new object with the min and max X set correctly for dateline adjustment or the source if the dateline
@@ -209,16 +210,8 @@ public final class SolrResource {
       }
 
       // need to return new object because it sets internal variables (e.g. length) in constructor
-      return new OccurrenceHeatmapResponse(
-          source.getColumns(),
-          source.getRows(),
-          source.getCount(),
-          minX,
-          maxX,
-          source.getMinY(),
-          source.getMaxY(),
-          source.getCountsInts2D()
-        );
+      return new OccurrenceHeatmapResponse(source.getColumns(), source.getRows(), source.getCount(), minX, maxX,
+                                           source.getMinY(), source.getMaxY(), source.getCountsInts2D());
     } else {
       return source;
     }
@@ -230,8 +223,7 @@ public final class SolrResource {
    */
   private static String solrSearchGeom(int z, long x, long y) {
     Double2D[] boundary = bufferedTileBoundary(z, x, y);
-    return "[" + boundary[0].getX() + " " + boundary[0].getY() + " TO "
-           + boundary[1].getX() + " " + boundary[1].getY() + "]";
+    return "[" + boundary[0].getX() + " " + boundary[0].getY() + " TO " + boundary[1].getX() + " " + boundary[1].getY() + "]";
   }
 
   /**
@@ -253,7 +245,7 @@ public final class SolrResource {
     double maxLng = minLng + degreesPerTile + (bufferDegrees * 2);
 
     double maxLat = 90 - (degreesPerTile * y) + bufferDegrees;
-    double minLat = maxLat - degreesPerTile - 2*bufferDegrees;
+    double minLat = maxLat - degreesPerTile - 2 * bufferDegrees;
 
     // handle the dateline wrapping (for all zooms above 0, which needs special attention)
 
@@ -262,5 +254,141 @@ public final class SolrResource {
     minLat = Math.max(minLat, -90);
 
     return new Double2D[] {new Double2D(minLng, minLat), new Double2D(maxLng, maxLat)};
+  }
+
+
+  /**
+   * Utility class used to cache bboxes made for Solr heatmap responses.
+   */
+  private static class Bbox2D {
+
+    private final Long2D topLeft;
+
+    private final Long2D bottomRight;
+
+    //Evaluated lazily
+    private Point center;
+
+    private Polygon polygon;
+
+
+    private Bbox2D(Long2D topLeft, Long2D bottomRight) {
+      this.topLeft = topLeft;
+      this.bottomRight = bottomRight;
+    }
+
+    static Bbox2D of(Long2D topLeft, Long2D bottomRight) {
+      return new Bbox2D(topLeft, bottomRight);
+    }
+
+    public Long2D getTopLeft() {
+      return topLeft;
+    }
+
+    public Long2D getBottomRight() {
+      return bottomRight;
+    }
+
+    Point getCenter() {
+      if (Objects.isNull(center)) {
+        double centerX = center(topLeft.getX(), bottomRight.getX());
+
+        double centerY = center(topLeft.getY(), bottomRight.getY());
+        // hack: use just the center points for each cell
+        center = GEOMETRY_FACTORY.createPoint(new Coordinate(centerX, centerY));
+      }
+      return center;
+    }
+
+    Polygon getPolygon() {
+      if (Objects.isNull(polygon)) {
+       polygon = GEOMETRY_FACTORY.createPolygon(new Coordinate[] {
+        new Coordinate(topLeft.getX(), topLeft.getY()),
+        new Coordinate(bottomRight.getX(), topLeft.getY()),
+        new Coordinate(bottomRight.getX(), bottomRight.getY()),
+        new Coordinate(topLeft.getX(), bottomRight.getY()),
+        new Coordinate(topLeft.getX(), topLeft.getY())
+       });
+      }
+      return polygon;
+
+    }
+
+    private double center(long min, long max) {
+      return min + (((double) max - min) / 2);
+    }
+
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(topLeft, bottomRight);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass())  {
+        return false;
+      }
+      Bbox2D bbox2D = (Bbox2D) o;
+      return Objects.equals(topLeft, bbox2D.topLeft) &&
+             Objects.equals(bottomRight, bbox2D.bottomRight);
+    }
+  }
+
+  /**
+   * Utility class used to cache solr Responses.
+   */
+  private static final class ColRow {
+
+    private final int z;
+
+    private final long x;
+
+    private final long y;
+
+    private final int row;
+
+    private final int column;
+
+    private final Rectangle2D.Double cell;
+
+    private ColRow(int column, int row, int z, long x, long y, Rectangle2D.Double cell) {
+      this.column = column;
+      this.row = row;
+      this.z = z;
+      this.x = x;
+      this.y = y;
+      this.cell = cell;
+    }
+
+    static ColRow of(int column, int row, int z, long x, long y, OccurrenceHeatmapResponse response) {
+      return new ColRow(column, row, z, x, y,
+                        new Rectangle2D.Double(response.getMinLng(column), response.getMinLat(row),
+                                           response.getMaxLng(column) - response.getMinLng(column),
+                                            response.getMaxLat(row) - response.getMinLat(row)));
+    }
+
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(row, column, z, x, y, cell);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      ColRow colRow = (ColRow) o;
+      return column == colRow.column && row == colRow.row && z == colRow.z && x == colRow.x && y == colRow.y
+             && Objects.equals(cell, colRow.cell);
+    }
   }
 }
