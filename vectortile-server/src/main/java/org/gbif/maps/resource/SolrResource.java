@@ -66,7 +66,7 @@ public final class SolrResource {
   private final OccurrenceHeatmapsService solrService;
 
 
-  public SolrResource(OccurrenceHeatmapsService solrService, int tileSize, int bufferSize) throws IOException {
+  public SolrResource(OccurrenceHeatmapsService solrService, int tileSize, int bufferSize) {
     this.tileSize = tileSize;
     this.bufferSize = bufferSize;
     this.solrService = solrService;
@@ -102,11 +102,11 @@ public final class SolrResource {
     // Note (Tim R): by testing in production index, we determine that 4 is a sensible performance choice
     // every 4 zoom levels the grid resolution increases
     //heatmapRequest.setZoom(z); // default behavior
-    int solrLevel = ((int)(z/4))*4;
+    int solrLevel = (z/4) * 4;
     heatmapRequest.setZoom(solrLevel);
 
     heatmapRequest.setGeometry(solrSearchGeom(z, x, y));
-    LOG.info("SOLR request:{}", heatmapRequest.toString());
+    LOG.info("SOLR request:{}", heatmapRequest);
 
     OccurrenceHeatmapResponse solrResponse = solrService.searchHeatMap(heatmapRequest);
     VectorTileEncoder encoder = new VectorTileEncoder (tileSize, bufferSize, false);
@@ -153,7 +153,7 @@ public final class SolrResource {
             int maxY = (int) neTileXY.getY();
             double centerY = minY + (((double) maxY - minY) / 2);
 
-            Map<String, Object> meta = new HashMap();
+            Map<String, Object> meta = new HashMap<>();
             meta.put("total", count);
 
             // for binning, we add the cell center point, otherwise the geometry
@@ -193,10 +193,6 @@ public final class SolrResource {
     }
   }
 
-  private static int clip(int value, int lower, int upper) {
-    return  Math.min(Math.max(value, lower), upper);
-  }
-
   /**
    * Returns a new object with the min and max X set correctly for dateline adjustment or the source if the dateline
    * was not crossed.
@@ -233,7 +229,7 @@ public final class SolrResource {
    * Returns a SOLR search string for the geometry in WGS84 CRS for the tile with a buffer.
    */
   private static String solrSearchGeom(int z, long x, long y) {
-    Double2D[] boundary = bufferedTileBoundary(z, x, y, true);
+    Double2D[] boundary = bufferedTileBoundary(z, x, y);
     return "[" + boundary[0].getX() + " " + boundary[0].getY() + " TO "
            + boundary[1].getX() + " " + boundary[1].getY() + "]";
   }
@@ -247,7 +243,7 @@ public final class SolrResource {
    * @return an envelope for the tile, with the appropriate buffer
    */
   @VisibleForTesting
-  static Double2D[] bufferedTileBoundary(int z, long x, long y, boolean adjustDateline) {
+  static Double2D[] bufferedTileBoundary(int z, long x, long y) {
     int tilesPerZoom = 1 << z;
     double degreesPerTile = 180d/tilesPerZoom;
     double bufferDegrees = SOLR_QUERY_BUFFER_PERCENTAGE * degreesPerTile;
