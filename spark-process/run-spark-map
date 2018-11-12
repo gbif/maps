@@ -54,7 +54,7 @@ create '$tablename',
   {SPLITS => $splits}
 EOF
 
-sudo -u hdfs $spark_submit --master yarn --jars spark-process.jar --num-executors=$num_executors --executor-memory=$executor_memory --executor-cores=$executor_cores --conf spark.yarn.executor.memoryOverhead=2000 --deploy-mode client --class org.gbif.maps.spark.Backfill --driver-class-path . spark-process.jar all $config
+sudo -u hdfs $spark_submit --master yarn --jars spark-process.jar --num-executors=$num_executors --executor-memory=$executor_memory --executor-cores=$executor_cores --conf spark.yarn.executor.memoryOverhead=2000 --deploy-mode client --class org.gbif.maps.spark.Backfill --driver-class-path .:spark-process.jar spark-process.jar all $config
 
 for z in $(seq 0 5); do
     echo
