@@ -107,7 +107,7 @@ object BackfillTiles {
       m += ((py, v._3 + m.getOrElse(py,0)))
     }
     val merge = { (m1: MMap[Long,Int], m2: MMap[Long,Int]) =>
-      // merge maps accummulating the counts
+      // merge maps accumulating the counts
       m1 ++ m2.map{ case (k,v) => k -> (v + m1.getOrElse(k,0)) }
     }
     val tiles2 = tiles.aggregateByKey(MMap[Long,Int]().empty)(appendVal, merge)
@@ -140,6 +140,7 @@ object BackfillTiles {
       */
     var downscale = false;
     (projectionConfig.minZoom to projectionConfig.maxZoom).reverse.foreach(z => {
+      sc.setLocalProperty("callSite.short", "BackfillTiles: "+projectionConfig.srs+" z"+z+"/"+projectionConfig.maxZoom)
 
       //val downscale = z < projectionConfig.maxZoom
 
