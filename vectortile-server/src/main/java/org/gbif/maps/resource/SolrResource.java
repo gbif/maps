@@ -132,7 +132,6 @@ public final class SolrResource {
 
     OccurrenceHeatmapResponse solrResponse = solrService.searchHeatMap(heatmapRequest);
     VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
-    byte[] encodedTile = encoder.encode();
 
     // Handle datelines in the SOLRResponse.
     OccurrenceHeatmapResponse datelineAdjustedResponse = datelineAdjustedResponse(solrResponse);
@@ -142,7 +141,7 @@ public final class SolrResource {
     final List<List<Integer>> countsInts = datelineAdjustedResponse.getCountsInts2D();
 
     if (countsInts == null || countsInts.isEmpty()) {
-      return encodedTile;
+      return encoder.encode();
     }
     for (int row = 0; row < countsInts.size(); row++) {
       if (countsInts.get(row) != null) {
@@ -161,8 +160,7 @@ public final class SolrResource {
         }
       }
     }
-
-    return encodeTile(bin, z, x, y, hexPerTile, squareSize, encodedTile);
+    return encodeTile(bin, z, x, y, hexPerTile, squareSize, encoder.encode());
   }
 
 
