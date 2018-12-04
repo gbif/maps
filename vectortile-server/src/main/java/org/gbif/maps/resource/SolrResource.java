@@ -155,7 +155,7 @@ public final class SolrResource {
 
             // for binning, we add the cell center point, otherwise the geometry
             encoder.addFeature("occurrence", Collections.singletonMap("total", count),
-                               Objects.isNull(bin)? bbox2D.getCenter() : bbox2D.getPolygon());
+                               Objects.nonNull(bin)? bbox2D.getCenter() : bbox2D.getPolygon());
           }
         }
       }
