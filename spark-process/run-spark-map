@@ -41,7 +41,7 @@ tablename=$(grep tableName $config | head -n 1 | awk '{ print $2 }')
 
 sudo -u hdfs hadoop fs -rm -r -skipTrash "/tmp/$tablename/*" || echo 'Nothing to remove'
 
-echo $tablename
+echo Using table $tablename
 
 sudo -u hdfs hbase shell <<EOF
 disable '$tablename'

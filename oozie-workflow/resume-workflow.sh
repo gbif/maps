@@ -21,6 +21,9 @@ if [ -n "$WID" ]; then
   sudo -u hdfs oozie job -oozie $P_OOZIE -resume $WID
 fi
 
+echo "Waiting 65 seconds, so both jobs don't start in the same minute and clash with snapshot names"
+sleep 65
+
 WID=$(oozie jobs -oozie $T_OOZIE -jobtype coordinator -filter name=MapBuild-Tiles | awk 'NR==3 {print $1}')
 if [ -n "$WID" ]; then
   echo "Resuming current coordinator job" $WID
