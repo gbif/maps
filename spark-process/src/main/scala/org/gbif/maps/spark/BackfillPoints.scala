@@ -5,7 +5,6 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.SparkContext
 import org.gbif.maps.common.hbase.ModulusSalt
 import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature

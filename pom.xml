@@ -357,7 +357,7 @@
       </dependency>
       <dependency>
         <groupId>org.scalatest</groupId>
-        <artifactId>scalatest-funsuite_2.10</artifactId>
+        <artifactId>scalatest-funsuite_2.11</artifactId>
         <version>${scalatest.version}</version>
         <scope>test</scope>
       </dependency>

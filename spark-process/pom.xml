@@ -188,7 +188,7 @@
     <!-- Tests -->
     <dependency>
       <groupId>org.scalatest</groupId>
-      <artifactId>scalatest-funsuite_2.10</artifactId>
+      <artifactId>scalatest-funsuite_2.11</artifactId>
     </dependency>
   </dependencies>
   <profiles>

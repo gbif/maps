@@ -59,6 +59,7 @@ object BackfillTiles {
     import spark.implicits._
 
     val tiles = df.flatMap(row => {
+
       val res = mutable.ArrayBuffer[((String, ZXY, EncodedPixel, Feature.BasisOfRecord, Year), Int)]()
       val projection = Tiles.fromEPSG(projectionConfig.srs, projectionConfig.tileSize)
 
@@ -97,11 +98,9 @@ object BackfillTiles {
       }
       res
     }).rdd.reduceByKey(_+_, config.tilePyramid.numPartitions).map(r => {
-    //}).reduceByKey(_+_).map(r => {
       // ((type, zxy, bor), (pixel, year, count))
       ((r._1._1 : String, r._1._2 : ZXY, r._1._4 : Feature.BasisOfRecord), (r._1._3 : EncodedPixel, r._1._5 : Year, r._2 /*Count*/))
     }).partitionBy(new TileGroupPartitioner(config.tilePyramid.numPartitions))
-    //})
 
     // Maintain the same key structure of type+zxy+bor and rewrite values into a map of "PixelYear" → count
     val appendVal = { (m: MMap[Long,Int], v: (Int,Short,Int)) =>
@@ -142,7 +141,7 @@ object BackfillTiles {
       */
     var downscale = false;
     (projectionConfig.minZoom to projectionConfig.maxZoom).reverse.foreach(z => {
-      sc.setLocalProperty("callSite.short", "BackfillTiles: "+projectionConfig.srs+" z"+z+"/"+projectionConfig.maxZoom)
+      spark.sparkContext.setLocalProperty("callSite.short", "BackfillTiles: "+projectionConfig.srs+" z"+z+"/"+projectionConfig.maxZoom)
 
       //val downscale = z < projectionConfig.maxZoom
 
@@ -154,7 +153,7 @@ object BackfillTiles {
           result += (((mapKey, tile.getZXY().toString), tile.asInstanceOf[OccurrenceDensityTile]))
         }
         result
-      }).rdd.reduceByKey(tileMerger)
+      }).reduceByKey(tileMerger)
 
       /**
         * Generate the vector tile and write it as an HFile.
