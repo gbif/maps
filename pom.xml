@@ -47,7 +47,7 @@
     <spark.version>1.6.1</spark.version>
     <geotools.version>15.0</geotools.version>
     <!-- fixed to the version coming with Spark -->
-    <jackson.spark.version>2.4.4</jackson.spark.version>
+    <jackson.spark.version>2.6.7</jackson.spark.version>
     <!-- fixed to the version coming with Dropwizard -->
     <jackson.dropwizard.version>2.6.3</jackson.dropwizard.version>
     <scala.tools.version>2.11</scala.tools.version>

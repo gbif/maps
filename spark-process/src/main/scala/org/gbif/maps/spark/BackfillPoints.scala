@@ -27,9 +27,8 @@ object BackfillPoints {
 
   def build(spark: SparkSession, df : DataFrame, keys: Set[String], config: MapConfiguration): Unit = {
     import spark.implicits._
-
+    
     val keySalter = new ModulusSalt(config.hbase.keySaltModulus); // salted HBase keys
-
     val pointSource = df.flatMap(row => {
       // extract the keys for the record and filter to only those that have been determined as suitable
       val mapKeys = MapUtils.mapKeysForRecord(row).intersect(keys)
