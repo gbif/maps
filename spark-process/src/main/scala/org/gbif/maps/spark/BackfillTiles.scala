@@ -13,6 +13,7 @@ import org.gbif.maps.common.hbase.ModulusSalt
 import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord
+import org.gbif.maps.spark.BackfillPoints.logger
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.{Map => MMap}
@@ -60,7 +61,7 @@ object BackfillTiles {
 
     val tiles = df.flatMap(row => {
 
-      val res = mutable.ArrayBuffer[((String, ZXY, EncodedPixel, Feature.BasisOfRecord, Year), Int)]()
+      val res = mutable.ArrayBuffer[((String, ZXY, EncodedPixel, String, Year), Int)]()
       val projection = Tiles.fromEPSG(projectionConfig.srs, projectionConfig.tileSize)
 
       val lat = row.getDouble(row.fieldIndex("decimallatitude"))
@@ -80,12 +81,13 @@ object BackfillTiles {
         val zxy = new ZXY(zoom, x, y)
 
         // read the fields of interest
-        val bor: BasisOfRecord = try {
-          MapUtils.BASIS_OF_RECORD(row.getString(row.fieldIndex("basisofrecord")))
+        val bor: String = try {
+          row.getString(row.fieldIndex("basisofrecord"))
         } catch {
-          case ex: Exception => { logger.error("Unknown BasisOfRecord {}", row.getString(row.fieldIndex("basisofrecord"))); }
-            PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN
+          case ex: Exception => { logger.error("Unknown BasisOfRecord {}", row.getString(row.fieldIndex("basisofrecord")));  }
+            "UNKNOWN"
         }
+
         val year =
           if (row.isNullAt(row.fieldIndex("year"))) null.asInstanceOf[Short]
           else row.getInt((row.fieldIndex("year"))).asInstanceOf[Short]
@@ -98,8 +100,13 @@ object BackfillTiles {
       }
       res
     }).rdd.reduceByKey(_+_, config.tilePyramid.numPartitions).map(r => {
+
+      // we deferred this because enums in protobuf do not work well with Spark SQL Dataset
+      // Same as: https://github.com/scalapb/ScalaPB/issues/87
+      val bor: BasisOfRecord = MapUtils.BASIS_OF_RECORD(r._1._4)
+
       // ((type, zxy, bor), (pixel, year, count))
-      ((r._1._1 : String, r._1._2 : ZXY, r._1._4 : Feature.BasisOfRecord), (r._1._3 : EncodedPixel, r._1._5 : Year, r._2 /*Count*/))
+      ((r._1._1 : String, r._1._2 : ZXY, bor: Feature.BasisOfRecord), (r._1._3 : EncodedPixel, r._1._5 : Year, r._2 /*Count*/))
     }).partitionBy(new TileGroupPartitioner(config.tilePyramid.numPartitions))
 
     // Maintain the same key structure of type+zxy+bor and rewrite values into a map of "PixelYear" → count
