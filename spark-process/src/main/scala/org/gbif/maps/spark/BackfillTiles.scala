@@ -59,7 +59,7 @@ object BackfillTiles {
 
     import spark.implicits._
 
-    val tiles = df.flatMap(row => {
+    val tiles = df.rdd.flatMap(row => {
 
       val res = mutable.ArrayBuffer[((String, ZXY, EncodedPixel, String, Year), Int)]()
       val projection = Tiles.fromEPSG(projectionConfig.srs, projectionConfig.tileSize)
@@ -99,7 +99,7 @@ object BackfillTiles {
         })
       }
       res
-    }).rdd.reduceByKey(_+_, config.tilePyramid.numPartitions).map(r => {
+    }).reduceByKey(_+_, config.tilePyramid.numPartitions).map(r => {
 
       // we deferred this because enums in protobuf do not work well with Spark SQL Dataset
       // Same as: https://github.com/scalapb/ScalaPB/issues/87

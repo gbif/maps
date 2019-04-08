@@ -79,6 +79,14 @@
             <goals>
               <goal>shade</goal>
             </goals>
+            <configuration>
+              <relocations>
+                <relocation>
+                  <pattern>org.hsqldb</pattern>
+                  <shadedPattern>shared.org.hsqldb</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -199,6 +207,11 @@
       <artifactId>jackson-core</artifactId>
       <!-- Important: Dropwizard conflicts with this, so be explicit -->
       <version>${jackson.spark.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hsqldb</groupId>
+      <artifactId>hsqldb</artifactId>
+      <version>${hsqldb.version}</version>
     </dependency>
     <!-- Tests -->
     <dependency>
