@@ -1,17 +1,18 @@
 package org.gbif.maps.resource;
 
+import com.google.common.base.Throwables;
+import com.google.protobuf.InvalidProtocolBufferException;
 import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.MapTables;
 import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.io.PointFeature;
 
-import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Objects;
-import com.google.common.base.Optional;
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -84,9 +85,15 @@ public class HBaseMaps {
             Result result = table.get(get);
             if (result != null) {
               byte[] encoded = result.getValue(Bytes.toBytes("EPSG_4326"), Bytes.toBytes("features"));
-              return encoded != null ? Optional.of(PointFeature.PointFeatures.parseFrom(encoded)) : Optional.<PointFeature.PointFeatures>absent();
+              return Optional.ofNullable(encoded).map( e -> {
+                try {
+                  return PointFeature.PointFeatures.parseFrom(e);
+                } catch (InvalidProtocolBufferException ex) {
+                  throw Throwables.propagate(ex);
+                }
+              });
             } else {
-              return Optional.absent();
+              return Optional.empty();
             }
           }
         }
@@ -113,9 +120,9 @@ public class HBaseMaps {
             Result result = table.get(get);
             if (result != null) {
               byte[] encoded = result.getValue(Bytes.toBytes(columnFamily), Bytes.toBytes("tile"));
-              return encoded != null ? Optional.of(encoded) : Optional.<byte[]>absent();
+              return Optional.ofNullable(encoded);
             } else {
-              return Optional.absent();
+              return Optional.empty();
             }
           }
         }
@@ -131,7 +138,7 @@ public class HBaseMaps {
     } catch (ExecutionException e) {
       // there is nothing the caller can do.  Swallow this here, logging the error
       LOG.error("Unexpected error loading tile data from HBase.  Returning no tile.", e);
-      return Optional.absent();
+      return Optional.empty();
     }
   }
 
@@ -151,15 +158,15 @@ public class HBaseMaps {
         if (result != null) {
           byte[] encoded = result.getValue(Bytes.toBytes(columnFamily), Bytes.toBytes(z + ":" + x + ":" + y));
           LOG.info("HBase lookup of {} returned {}kb and took {}ms", z + ":" + x + ":" + y, encoded.length / 1024, timer.elapsedMillis());
-          return encoded != null ? Optional.of(encoded) : Optional.<byte[]>absent();
+          return Optional.of(encoded);
         } else {
-          return Optional.absent();
+          return Optional.empty();
         }
       }
     } catch (Exception e) {
       // there is nothing the caller can do.  Swallow this here, logging the error
       LOG.error("Unexpected error loading tile data from HBase.  Returning no tile.", e);
-      return Optional.absent();
+      return Optional.empty();
     }
   }
 
@@ -169,7 +176,7 @@ public class HBaseMaps {
     } catch (Exception e) {
       // there is nothing the caller can do.  Swallow this here, logging the error
       LOG.error("Unexpected error loading tile data from HBase.  Returning no tile.", e);
-      return Optional.absent();
+      return Optional.empty();
     }
   }
 
@@ -183,7 +190,7 @@ public class HBaseMaps {
     } catch (ExecutionException e) {
       // there is nothing the caller can do.  Swallow this here, logging the error
       LOG.error("Unexpected error loading point data from HBase.  Returning empty features collection.", e);
-      return Optional.absent();
+      return Optional.empty();
     }
   }
 
@@ -193,7 +200,7 @@ public class HBaseMaps {
     } catch (Exception e) {
       // there is nothing the caller can do.  Swallow this here, logging the error
       LOG.error("Unexpected error loading tile data from HBase.  Returning no tile.", e);
-      return Optional.absent();
+      return Optional.empty();
     }
   }
 

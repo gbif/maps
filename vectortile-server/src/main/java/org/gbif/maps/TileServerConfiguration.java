@@ -28,7 +28,7 @@ public class  TileServerConfiguration extends Configuration {
 
   @Valid
   @NotNull
-  private SolrConfiguration solr;
+  private EsConfiguration esConfig;
 
   @Valid
   @Nullable
@@ -49,13 +49,13 @@ public class  TileServerConfiguration extends Configuration {
   }
 
   @JsonProperty
-  public SolrConfiguration getSolr() {
-    return solr;
+  public EsConfiguration getEsConfig() {
+    return esConfig;
   }
 
   @JsonProperty
-  public void setSolr(SolrConfiguration solr) {
-    this.solr = solr;
+  public void setEsConfig(EsConfiguration esConfig) {
+    this.esConfig = esConfig;
   }
 
   @JsonProperty
@@ -189,18 +189,15 @@ public class  TileServerConfiguration extends Configuration {
     }
   }
 
-  public static class SolrConfiguration extends Configuration {
-    @Valid
-    @NotNull
-    private String zookeeperQuorum;
+  public static class EsConfiguration extends Configuration {
 
     @Valid
     @NotNull
-    private String defaultCollection;
+    private String[] hosts;
 
     @Valid
     @NotNull
-    private String requestHandler;
+    private String index;
 
     @Valid
     @NotNull
@@ -210,24 +207,34 @@ public class  TileServerConfiguration extends Configuration {
     @NotNull
     private Integer bufferSize;
 
+    @Valid
+    @NotNull
+    private Integer connectTimeout = 3000;
+
+    @Valid
+    @NotNull
+    private Integer socketTimeout = 60000;
+
+    @Valid
+    @NotNull
+    private Integer maxRetryTimeoutMillis = 60000;
+
     @JsonProperty
-    public String getZookeeperQuorum() {
-      return zookeeperQuorum;
+    public String[] getHosts() {
+      return hosts;
+    }
+
+    public void setHosts(String[] hosts) {
+      this.hosts = hosts;
     }
 
     @JsonProperty
-    public void setZookeeperQuorum(String zookeeperQuorum) {
-      this.zookeeperQuorum = zookeeperQuorum;
+    public String getIndex() {
+      return index;
     }
 
-    @JsonProperty
-    public String getDefaultCollection() {
-      return defaultCollection;
-    }
-
-    @JsonProperty
-    public void setDefaultCollection(String defaultCollection) {
-      this.defaultCollection = defaultCollection;
+    public void setIndex(String index) {
+      this.index = index;
     }
 
     @JsonProperty
@@ -235,7 +242,6 @@ public class  TileServerConfiguration extends Configuration {
       return tileSize;
     }
 
-    @JsonProperty
     public void setTileSize(Integer tileSize) {
       this.tileSize = tileSize;
     }
@@ -245,19 +251,35 @@ public class  TileServerConfiguration extends Configuration {
       return bufferSize;
     }
 
-    @JsonProperty
     public void setBufferSize(Integer bufferSize) {
       this.bufferSize = bufferSize;
     }
 
     @JsonProperty
-    public String getRequestHandler() {
-      return requestHandler;
+    public Integer getConnectTimeout() {
+      return connectTimeout;
+    }
+
+    public void setConnectTimeout(Integer connectTimeout) {
+      this.connectTimeout = connectTimeout;
     }
 
     @JsonProperty
-    public void setRequestHandler(String requestHandler) {
-      this.requestHandler = requestHandler;
+    public Integer getSocketTimeout() {
+      return socketTimeout;
+    }
+
+    public void setSocketTimeout(Integer socketTimeout) {
+      this.socketTimeout = socketTimeout;
+    }
+
+    @JsonProperty
+    public Integer getMaxRetryTimeoutMillis() {
+      return maxRetryTimeoutMillis;
+    }
+
+    public void setMaxRetryTimeoutMillis(Integer maxRetryTimeoutMillis) {
+      this.maxRetryTimeoutMillis = maxRetryTimeoutMillis;
     }
   }
 

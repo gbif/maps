@@ -1,11 +1,14 @@
 package org.gbif.maps.resource;
 
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
 import org.gbif.api.model.occurrence.search.OccurrenceSearchRequest;
 import org.gbif.api.vocabulary.BasisOfRecord;
 import org.gbif.maps.common.projection.Long2D;
-import org.gbif.occurrence.search.OccurrenceSearchRequestBuilder;
-import org.gbif.occurrence.search.solr.OccurrenceSolrField;
 
 import java.io.IOException;
 import java.util.List;
@@ -35,16 +38,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Polygon;
 import no.ecc.vectortile.VectorTileDecoder;
 import no.ecc.vectortile.VectorTileEncoder;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.response.FacetField;
-import org.apache.solr.client.solrj.response.QueryResponse;
+import org.gbif.occurrence.search.es.EsSearchRequestBuilder;
+import org.gbif.occurrence.search.es.OccurrenceEsField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +64,6 @@ public final class RegressionResource {
   private static final int HEX_PER_TILE = 35;
   private static final int TILE_SIZE = 4096;
   private static final int TILE_BUFFER = TILE_SIZE / 4; // a generous buffer for hexagons
-  private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   // Explicitly name BORs of interest to exclude fossils and living specimens
@@ -83,11 +82,11 @@ public final class RegressionResource {
   }
 
   private final TileResource tiles;
-  private final SolrClient solrClient;
+  private final RestHighLevelClient esClient;
 
-  public RegressionResource(TileResource tiles, SolrClient solrClient) {
+  public RegressionResource(TileResource tiles, RestHighLevelClient esClient) {
     this.tiles = tiles;
-    this.solrClient = solrClient;
+    this.esClient = esClient;
   }
 
   /**
@@ -148,18 +147,14 @@ public final class RegressionResource {
     enableCORS(response);
     String higherTaxonKey = Preconditions.checkNotNull(request.getParameter("higherTaxonKey"),
                                                        "A higherTaxonKey must be provided to perform regression");
-    TreeMap<String, Long> speciesCounts = yearFacetFromSolr(request);
-    TreeMap<String, Long> groupCounts = yearFacetFromSolr(request, higherTaxonKey);
+    TreeMap<String, Long> speciesCounts = yearFacet(request);
+    TreeMap<String, Long> groupCounts = yearFacet(request, higherTaxonKey);
     Map<String, Object> meta = regressionToMeta(speciesCounts, groupCounts);
     return MAPPER.writeValueAsString(meta);
   }
 
   /**
    * Performs the regression for the species and groups generating the meta data.
-   * @param speciesCounts
-   * @param groupCounts
-   * @return
-   * @throws JsonProcessingException
    */
   private Map<String, Object> regressionToMeta(TreeMap<String, Long> speciesCounts, TreeMap<String, Long> groupCounts)
     throws JsonProcessingException {
@@ -183,15 +178,15 @@ public final class RegressionResource {
    * Using the HTTP request containing the typical GBIF API parameters creates a SOLR faceted query for the years.
    * If a taxonKey is provided explicitly then all taxon keys in the HTTP request are ignored and replaced with these.
    */
-  private TreeMap<String, Long> yearFacetFromSolr(HttpServletRequest request, String... taxonKey)
-    throws IOException, SolrServerException {
+  private TreeMap<String, Long> yearFacet(HttpServletRequest request, String... taxonKey)
+    throws IOException {
     OccurrenceSearchRequest searchRequest = new OccurrenceSearchRequest(0, 0);
     Params.setSearchParams(searchRequest, request);
+    searchRequest.setFacetLimit(300);
 
     // force our basis of record to be those that are supported
     searchRequest.getParameters().removeAll(OccurrenceSearchParameter.BASIS_OF_RECORD);
     SUITABLE_BASIS_OF_RECORDS.forEach(bor -> searchRequest.addBasisOfRecordFilter(BasisOfRecord.valueOf(bor)));
-
 
     searchRequest.getFacets().clear(); // safeguard against dangerous queries
     searchRequest.addFacets(OccurrenceSearchParameter.YEAR);
@@ -201,23 +196,14 @@ public final class RegressionResource {
       searchRequest.getParameters().get(OccurrenceSearchParameter.TAXON_KEY).addAll(Lists.newArrayList(taxonKey));
     }
 
+    searchRequest.addFacets(OccurrenceSearchParameter.YEAR);
     // Default search request handler, no sort order, 1 record (required) and facet support
-    OccurrenceSearchRequestBuilder builder = new OccurrenceSearchRequestBuilder(null, 1, 1, true);
-    SolrQuery query = builder.build(searchRequest);
+    SearchRequest esSearchRequest = EsSearchRequestBuilder.buildSearchRequest(searchRequest, true, 1,1, "");
+    SearchResponse response = esClient.search(esSearchRequest, RequestOptions.DEFAULT);
 
-    query.setFacetLimit(300); // safeguard with 3 centuries of data (this is designed for modern day analysis)
-    query.setRows(0);
-
-    LOG.debug("SOLR query: {}", query);
-    QueryResponse response = solrClient.query(query);
-    FacetField years = response.getFacetField(OccurrenceSolrField.YEAR.getFieldName());
-    TreeMap<String, Long> yearCounts = Maps.newTreeMap();
-    years.getValues().forEach(c -> yearCounts.put(c.getName(), c.getCount()));
-
-    yearCounts.forEach((y, c) -> LOG.debug("{}:{}", y, c));
-
-    LOG.info("SOLR response: {}", yearCounts);
-    return yearCounts;
+    Terms yearAgg = response.getAggregations().get(OccurrenceEsField.YEAR.getFieldName());
+    return yearAgg.getBuckets().stream()
+            .collect(Collectors.toMap(Terms.Bucket::getKeyAsString, Terms.Bucket::getDocCount, (v1, v2) -> v1, TreeMap::new));
   }
 
   /**
@@ -239,12 +225,12 @@ public final class RegressionResource {
     });
 
     VectorTileEncoder encoder = new VectorTileEncoder(TILE_SIZE, TILE_BUFFER, false);
-    speciesCounts.entrySet().stream().forEach(e -> {
+    speciesCounts.forEach((k,v) -> {
       try {
-        if (groupCounts.containsKey(e.getKey()) && e.getValue().size() >= minYears) {
-          Map<String, Object> meta = regressionToMeta(e.getValue(), groupCounts.get(e.getKey()));
-          meta.put("id", e.getKey());
-          encoder.addFeature("regression", meta, speciesGeometries.get(e.getKey()));
+        if (groupCounts.containsKey(k) && v.size() >= minYears) {
+          Map<String, Object> meta = regressionToMeta(v, groupCounts.get(k));
+          meta.put("id", k);
+          encoder.addFeature("regression", meta, speciesGeometries.get(k));
         }
 
       } catch (JsonProcessingException e1) {
@@ -267,25 +253,14 @@ public final class RegressionResource {
       String hexagonId = getGeometryId((Polygon) f.getGeometry(), offsetXY);
       TreeMap<String, Long> years = f.getAttributes().entrySet().stream()
                                  .filter(filterFeaturesToYears()) // discard attributes that aren't year counts
-                                 .collect(Collectors.toMap(
-                                   e -> e.getKey(),
-                                   e -> (Long) e.getValue(),
-                                   (c1, c2) -> c1 + c2,
-                                   TreeMap::new
-                                 ));
+                                 .collect(Collectors.toMap(Map.Entry::getKey, e -> (Long) e.getValue(), Long::sum, TreeMap::new));
 
       // features can come from different layers in the tile, so we need to merge them in
       if (counts.containsKey(hexagonId)) {
 
         TreeMap<String, Long> merged =
           Stream.concat(counts.get(hexagonId).entrySet().stream(), years.entrySet().stream())
-                .collect(Collectors.toMap(
-                  e -> e.getKey(),
-                  e -> e.getValue(),
-                  (c1, c2) -> c1 + c2,
-                  TreeMap::new
-                ));
-
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, Long::sum, TreeMap::new));
       } else {
         counts.put(hexagonId, years);
       }
@@ -297,10 +272,8 @@ public final class RegressionResource {
    * Filters to only the entries that have a year:count structure.
    * This is of course making very strict assumptions on the schema of data.
    */
-  static Predicate<Map.Entry<String, Object>> filterFeaturesToYears() {
-    return new Predicate<Map.Entry<String, Object>>() {
-      @Override
-      public boolean test(Map.Entry<String, Object> e) {
+  private static Predicate<Map.Entry<String, Object>> filterFeaturesToYears() {
+    return e -> {
         try {
           if (Integer.parseInt(e.getKey()) > 0 && e.getValue() instanceof Long) {
             return true;
@@ -309,7 +282,6 @@ public final class RegressionResource {
           // expected
         }
         return false;
-      }
     };
   }
 
@@ -321,8 +293,7 @@ public final class RegressionResource {
    */
   private static String getGeometryId(Polygon geom, Long2D originXY) {
     Coordinate vertex = geom.getCoordinates()[0];
-    String id = ((int) originXY.getX() + vertex.x) + ":" + ((int) originXY.getY() + vertex.y);
-    return id;
+    return ((int) originXY.getX() + vertex.x) + ":" + ((int) originXY.getY() + vertex.y);
   }
 
   /**
