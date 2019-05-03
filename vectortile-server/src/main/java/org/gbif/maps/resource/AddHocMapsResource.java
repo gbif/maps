@@ -189,10 +189,13 @@ public final class AddHocMapsResource {
     return new Double2D[] {new Double2D(minLng, minLat), new Double2D(maxLng, maxLat)};
   }
 
+
+
   /**
    * if the longitude is expressed from 0..360 it is converted to -180..180.
    */
-  private static double to180Degrees(double longitude) {
+  @VisibleForTesting
+  static double to180Degrees(double longitude) {
     if(longitude > 180) {
       return longitude - 360;
     } else if (longitude < -180){

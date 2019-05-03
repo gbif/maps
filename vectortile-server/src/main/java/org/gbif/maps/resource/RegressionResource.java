@@ -42,7 +42,6 @@ import com.vividsolutions.jts.geom.Polygon;
 import no.ecc.vectortile.VectorTileDecoder;
 import no.ecc.vectortile.VectorTileEncoder;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.gbif.occurrence.search.es.EsSearchRequestBuilder;
 import org.gbif.occurrence.search.es.OccurrenceEsField;
 import org.slf4j.Logger;
@@ -143,7 +142,7 @@ public final class RegressionResource {
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  public String adHocRegression(@Context HttpServletRequest request, @Context HttpServletResponse response) throws IOException, SolrServerException {
+  public String adHocRegression(@Context HttpServletRequest request, @Context HttpServletResponse response) throws IOException {
     enableCORS(response);
     String higherTaxonKey = Preconditions.checkNotNull(request.getParameter("higherTaxonKey"),
                                                        "A higherTaxonKey must be provided to perform regression");

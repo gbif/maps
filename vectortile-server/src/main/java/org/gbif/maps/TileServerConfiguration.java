@@ -9,12 +9,12 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
 import io.dropwizard.logging.LoggingUtil;
-import org.gbif.ws.discovery.conf.ServiceConfiguration;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.util.ContextInitializer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.dropwizard.logging.LoggingFactory;
+import org.gbif.discovery.conf.ServiceConfiguration;
 
 /**
  * Application configuration with sensible defaults if applicable.

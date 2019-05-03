@@ -7,11 +7,11 @@ import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.gbif.discovery.lifecycle.DiscoveryLifeCycle;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.resource.*;
 import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
-import org.gbif.ws.discovery.lifecycle.DiscoveryLifeCycle;
 
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
