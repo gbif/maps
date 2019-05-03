@@ -107,7 +107,7 @@ public final class AddHocMapsResource {
         || BIN_MODE_SQUARE.equalsIgnoreCase(bin), "Unsupported bin mode");
 
     heatmapRequest.setGeometry(ZXY_TO_GEOM.get(new ZXY(z, x, y)));
-    heatmapRequest.setZoom(adjustZoom(z));
+    heatmapRequest.setZoom(z);
 
     LOG.info("Request:{}", heatmapRequest);
 
@@ -202,13 +202,6 @@ public final class AddHocMapsResource {
       return longitude + 360;
     }
     return longitude;
-  }
-
-  /**
-   * Adjusts the zoom level to size acceptable (performance wise) by Elasticsearch.
-   */
-  private static int adjustZoom(int z) {
-    return Math.max(3, Math.min(z , 6));
   }
 
 
