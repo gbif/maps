@@ -130,11 +130,10 @@ public final class AddHocMapsResource {
 
       occurrenceHeatmapResponse.getBuckets().stream().filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
         .forEach(geoGridBucket -> {
-          // convert the lat,lng into pixel coordinates
-          Bbox2D bbox2D = toBbox(geoGridBucket.getCentroid(), z, x, y);
           // for binning, we add the cell center point, otherwise the geometry
-          encoder.addFeature(LAYER_NAME, Collections.singletonMap("total", geoGridBucket.getDocCount()),
-            Objects.nonNull(bin) ? bbox2D.getCenter() : bbox2D.getPolygon());
+          encoder.addFeature(LAYER_NAME,
+                            Collections.singletonMap("total", geoGridBucket.getDocCount()),
+                            toPoint(geoGridBucket.getCentroid(), z,x, y));
         });
     }
 
@@ -156,16 +155,12 @@ public final class AddHocMapsResource {
   }
 
   /**
-    * Translates the coordinate into a Bbox2D.
+    * Translates the coordinate into a Point.
     */
-  private Bbox2D toBbox(EsOccurrenceHeatmapResponse.Coordinate coordinate, int z, long x, long y) {
+  private Point toPoint(EsOccurrenceHeatmapResponse.Coordinate coordinate, int z, long x, long y) {
     Double2D swGlobalXY = projection.toGlobalPixelXY(coordinate.getLat(), coordinate.getLon(), z);
     Long2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
-
-    Double2D neGlobalXY = projection.toGlobalPixelXY(coordinate.getLat(), coordinate.getLon(), z);
-    Long2D neTileXY = Tiles.toTileLocalXY(neGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
-
-    return Bbox2D.of(swTileXY, neTileXY);
+    return GEOMETRY_FACTORY.createPoint(new Coordinate(swTileXY.getX(), swTileXY.getY()));
   }
 
 
