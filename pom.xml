@@ -31,7 +31,7 @@
 
   <properties>
     <jdkLevel>1.8</jdkLevel>
-    <gbif-occurrence.version>0.94-ES-SNAPSHOT</gbif-occurrence.version>
+    <gbif-occurrence.version>0.96-ES-SNAPSHOT</gbif-occurrence.version>
     <gbif-api.version>0.75</gbif-api.version>
     <gbif.service-discovery.version>0.2</gbif.service-discovery.version>
     <slf4j.version>1.7.25</slf4j.version>

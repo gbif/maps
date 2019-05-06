@@ -103,25 +103,40 @@ public final class AddHocMapsResource {
     OccurrenceHeatmapRequest heatmapRequest = OccurrenceHeatmapRequestProvider.buildOccurrenceHeatmapRequest(request);
 
 
-    Preconditions.checkArgument(bin == null || BIN_MODE_HEX.equalsIgnoreCase(bin)
-        || BIN_MODE_SQUARE.equalsIgnoreCase(bin), "Unsupported bin mode");
+    Preconditions.checkArgument(bin == null
+                                || BIN_MODE_HEX.equalsIgnoreCase(bin)
+                                || BIN_MODE_SQUARE.equalsIgnoreCase(bin), "Unsupported bin mode");
 
     heatmapRequest.setGeometry(ZXY_TO_GEOM.get(new ZXY(z, x, y)));
     heatmapRequest.setZoom(z);
 
     LOG.info("Request:{}", heatmapRequest);
 
-    EsOccurrenceHeatmapResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMap(heatmapRequest);
     VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
 
-    occurrenceHeatmapResponse.getBuckets().stream().filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
-      .forEach(geoGridBucket -> {
-        // convert the lat,lng into pixel coordinates
-        Bbox2D bbox2D = toBbox(geoGridBucket.getCell().getBounds(), z, x, y);
-        // for binning, we add the cell center point, otherwise the geometry
-        encoder.addFeature(LAYER_NAME, Collections.singletonMap("total", geoGridBucket.getDocCount()),
-          Objects.nonNull(bin)? bbox2D.getCenter(): bbox2D.getPolygon());
-    });
+    if (OccurrenceHeatmapRequest.Mode.GEO_BOUNDS == heatmapRequest.getMode()) {
+      EsOccurrenceHeatmapResponse.GeoBoundsResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoBounds(heatmapRequest);
+
+      occurrenceHeatmapResponse.getBuckets().stream().filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
+        .forEach(geoGridBucket -> {
+          // convert the lat,lng into pixel coordinates
+          Bbox2D bbox2D = toBbox(geoGridBucket.getCell().getBounds(), z, x, y);
+          // for binning, we add the cell center point, otherwise the geometry
+          encoder.addFeature(LAYER_NAME, Collections.singletonMap("total", geoGridBucket.getDocCount()),
+            Objects.nonNull(bin) ? bbox2D.getCenter() : bbox2D.getPolygon());
+        });
+    } else if(OccurrenceHeatmapRequest.Mode.GEO_CENTROID == heatmapRequest.getMode()) {
+      EsOccurrenceHeatmapResponse.GeoCentroidResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoCentroid(heatmapRequest);
+
+      occurrenceHeatmapResponse.getBuckets().stream().filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
+        .forEach(geoGridBucket -> {
+          // convert the lat,lng into pixel coordinates
+          Bbox2D bbox2D = toBbox(geoGridBucket.getCentroid(), z, x, y);
+          // for binning, we add the cell center point, otherwise the geometry
+          encoder.addFeature(LAYER_NAME, Collections.singletonMap("total", geoGridBucket.getDocCount()),
+            Objects.nonNull(bin) ? bbox2D.getCenter() : bbox2D.getPolygon());
+        });
+    }
 
     return encodeTile(bin, z, x, y, hexPerTile, squareSize, encoder.encode());
   }
@@ -135,6 +150,19 @@ public final class AddHocMapsResource {
     Long2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
 
     Double2D neGlobalXY = projection.toGlobalPixelXY(bounds.getBottomRight().getLat(), bounds.getBottomRight().getLon(), z);
+    Long2D neTileXY = Tiles.toTileLocalXY(neGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
+
+    return Bbox2D.of(swTileXY, neTileXY);
+  }
+
+  /**
+    * Translates the coordinate into a Bbox2D.
+    */
+  private Bbox2D toBbox(EsOccurrenceHeatmapResponse.Coordinate coordinate, int z, long x, long y) {
+    Double2D swGlobalXY = projection.toGlobalPixelXY(coordinate.getLat(), coordinate.getLon(), z);
+    Long2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
+
+    Double2D neGlobalXY = projection.toGlobalPixelXY(coordinate.getLat(), coordinate.getLon(), z);
     Long2D neTileXY = Tiles.toTileLocalXY(neGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
 
     return Bbox2D.of(swTileXY, neTileXY);
