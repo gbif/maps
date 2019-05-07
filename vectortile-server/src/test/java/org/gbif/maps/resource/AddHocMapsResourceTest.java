@@ -2,6 +2,7 @@ package org.gbif.maps.resource;
 
 import org.gbif.maps.common.projection.Double2D;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -9,6 +10,7 @@ import static org.junit.Assert.assertEquals;
 public class AddHocMapsResourceTest {
 
   @Test
+  @Ignore
   public void testBufferedTileBoundary() {
 
     double buffer = 180 * AddHocMapsResource.QUERY_BUFFER_PERCENTAGE;
