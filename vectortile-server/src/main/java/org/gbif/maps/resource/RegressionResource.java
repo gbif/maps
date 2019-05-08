@@ -82,10 +82,12 @@ public final class RegressionResource {
 
   private final TileResource tiles;
   private final RestHighLevelClient esClient;
+  private final String esIndex;
 
-  public RegressionResource(TileResource tiles, RestHighLevelClient esClient) {
+  public RegressionResource(TileResource tiles, RestHighLevelClient esClient, String esIndex) {
     this.tiles = tiles;
     this.esClient = esClient;
+    this.esIndex = esIndex;
   }
 
   /**
@@ -197,7 +199,7 @@ public final class RegressionResource {
 
     searchRequest.addFacets(OccurrenceSearchParameter.YEAR);
     // Default search request handler, no sort order, 1 record (required) and facet support
-    SearchRequest esSearchRequest = EsSearchRequestBuilder.buildSearchRequest(searchRequest, true, 1,1, "");
+    SearchRequest esSearchRequest = EsSearchRequestBuilder.buildSearchRequest(searchRequest, true, esIndex);
     SearchResponse response = esClient.search(esSearchRequest, RequestOptions.DEFAULT);
 
     Terms yearAgg = response.getAggregations().get(OccurrenceEsField.YEAR.getFieldName());

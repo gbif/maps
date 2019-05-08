@@ -84,7 +84,7 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
                                           configuration.getHbase().getBufferSize());
     environment.jersey().register(tiles);
 
-    environment.jersey().register(new RegressionResource(tiles, esClient));
+    environment.jersey().register(new RegressionResource(tiles, esClient, configuration.getEsConfig().getIndex()));
 
     // The resource that queries SOLR directly for HeatMap data
     environment.jersey().register(new AddHocMapsResource(heatmapsService,
