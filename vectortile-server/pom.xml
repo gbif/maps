@@ -8,7 +8,7 @@
     <version>0.9-ES-SNAPSHOT</version>
   </parent>
 
-  <artifactId>vectortile-server</artifactId>
+  <artifactId>es-vectortile-server</artifactId>
   <packaging>jar</packaging>
 
   <build>

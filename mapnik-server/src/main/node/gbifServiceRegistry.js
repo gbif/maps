@@ -6,7 +6,7 @@ const quickLocalIp = require('quick-local-ip')
 
 var gbifServiceRegistry = {};
 
-var serviceName = "mapnik-server";
+var serviceName = "es-mapnik-server";
 
 /**
  * Register the service in ZooKeeper, with data sufficiently close to what
