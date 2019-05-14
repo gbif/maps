@@ -114,9 +114,12 @@ public final class AddHocMapsResource {
 
     VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
 
+
     if (OccurrenceHeatmapRequest.Mode.GEO_BOUNDS == heatmapRequest.getMode()) {
       EsOccurrenceHeatmapResponse.GeoBoundsResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoBounds(heatmapRequest);
-
+      if (occurrenceHeatmapResponse.getBuckets().isEmpty()) {
+        return encoder.encode();
+      }
       occurrenceHeatmapResponse.getBuckets().stream().filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
         .forEach(geoGridBucket -> {
           // convert the lat,lng into pixel coordinates
@@ -127,7 +130,9 @@ public final class AddHocMapsResource {
         });
     } else if(OccurrenceHeatmapRequest.Mode.GEO_CENTROID == heatmapRequest.getMode()) {
       EsOccurrenceHeatmapResponse.GeoCentroidResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoCentroid(heatmapRequest);
-
+      if (occurrenceHeatmapResponse.getBuckets().isEmpty()) {
+        return encoder.encode();
+      }
       occurrenceHeatmapResponse.getBuckets().stream().filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
         .forEach(geoGridBucket -> {
           // for binning, we add the cell center point, otherwise the geometry
