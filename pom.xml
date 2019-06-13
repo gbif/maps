@@ -33,6 +33,7 @@
     <jdkLevel>1.8</jdkLevel>
     <gbif-occurrence.version>0.96-ES-SNAPSHOT</gbif-occurrence.version>
     <gbif-api.version>0.75</gbif-api.version>
+    <dwc-api.version>1.22</dwc-api.version>
     <gbif.service-discovery.version>0.2</gbif.service-discovery.version>
     <slf4j.version>1.7.25</slf4j.version>
     <javax.inject.version>1</javax.inject.version>
@@ -198,10 +199,15 @@
         <version>${gbif-occurrence.version}</version>
         <exclusions>
           <exclusion>
-            <groupId>om.fasterxml.jackson.core</groupId>
+            <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.gbif</groupId>
+        <artifactId>dwc-api</artifactId>
+        <version>${dwc-api.version}</version>
       </dependency>
       <dependency>
         <groupId>org.gbif</groupId>

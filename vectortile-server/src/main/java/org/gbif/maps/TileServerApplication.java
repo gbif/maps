@@ -61,8 +61,6 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
     OccurrenceHeatmapsEsService heatmapsService =
       new OccurrenceHeatmapsEsService(esClient, configuration.getEsConfig().getIndex());
 
-
-
     // Either use Zookeeper or static config to locate tables
     HBaseMaps hbaseMaps = null;
     if (configuration.getMetastore() != null) {

@@ -97,6 +97,10 @@
     </dependency>
     <dependency>
       <groupId>org.gbif</groupId>
+      <artifactId>dwc-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.gbif</groupId>
       <artifactId>service-discovery</artifactId>
     </dependency>
     <dependency>
