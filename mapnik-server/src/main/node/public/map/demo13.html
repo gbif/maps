@@ -60,6 +60,16 @@
     })
   }));
 
+  layers.push(new ol.layer.Tile({
+    source: new ol.source.TileDebug({
+      projection: 'EPSG:4326',
+      tileGrid: tile_grid_16,
+      wrapX: true
+    }),
+    visible: true,
+    opacity: 0.1,
+  }));
+
   var map = new ol.Map({
     layers: layers,
     target: 'map',
