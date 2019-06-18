@@ -33,6 +33,10 @@ var baseLayerGroup = new ol.layer.Group({
   layers: []
 });
 
+var gridLayerGroup = new ol.layer.Group({
+  layers: []
+});
+
 var dataLayerGroup = new ol.layer.Group({
   layers: []
 });
@@ -42,13 +46,14 @@ var render = 'vector';
 var raster_style = 'classic-noborder.poly';
 var basemap_style = 'gbif-classic';
 var basemap_language = '';
+var show_grid = false;
 var binning = {};
 var years = {};
 var bors = {};
 var map_key = {};
 
 map = new ol.Map({
-  layers: [baseLayerGroup, dataLayerGroup],
+  layers: [baseLayerGroup, dataLayerGroup, gridLayerGroup],
   target: 'map',
   loadTilesWhileInteracting: true,
   loadTilesWhileAnimating: true
@@ -63,6 +68,7 @@ function setProjection() {
 
   updateBaseLayer();
   updateDataLayer();
+  updateGridLayer();
   map.setView(views[srs]);
 
   //currentLayers['grid'] = gbif_layers.grid(srs);
@@ -120,6 +126,21 @@ function updateDataLayer() {
   //console.log('layers', map.getLayers());
 }
 
+function updateGridLayer() {
+  if (!initialized) {
+    return;
+  }
+
+  console.log("Updating grid layer");
+
+  gridLayerGroup.getLayers().clear();
+  if (show_grid) {
+    var l = gbif_layers.grid(srs, {});
+    gridLayerGroup.getLayers().extend([l]);
+  }
+  //console.log('layers', map.getLayers());
+}
+
 function setSource() {
   source = document.querySelector('input[name=datasource]:checked').value;
 
@@ -147,6 +168,13 @@ function setBasemapStyle() {
 
   console.log("Setting basemap style to", basemap_style, basemap_language);
   updateBaseLayer();
+}
+
+function setGrid() {
+  show_grid = document.getElementById('tile_grid').checked;
+
+  console.log("Toggling grid to", show_grid);
+  updateGridLayer();
 }
 
 function setBinning() {
@@ -334,6 +362,13 @@ var select_basemap_language = document.getElementById('basemap_language');
 select_basemap_language.onchange = (function(e) {
   setBasemapStyle();
 });
+
+var select_show_grid = document.getElementsByName('tile_grid');
+for (var i = 0; i < select_show_grid.length; i++) {
+  select_show_grid[i].onchange = (function(e) {
+    setGrid();
+  });
+}
 
 var map_key_input = document.getElementById('map_key');
 map_key_input.onchange = (function(e) {

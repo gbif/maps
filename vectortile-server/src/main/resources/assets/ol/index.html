@@ -180,6 +180,13 @@
         <p><em>Set to "Local or none" for maps with no labels.</em></p>
       </fieldset>
 
+      <fieldset id="tile_grid_fieldset">
+        <legend>Tile grid</legend>
+        <label><input type="checkbox" id="tile_grid" name="tile_grid" value="tile_grid"> Tile grid</label><br/>
+        <!--label>opacity</label>
+        <input id="grid_opacity" type="range" min="0" max="1" step="0.01"/-->
+      </fieldset>
+
       <fieldset id="data">
         <legend>Data source</legend>
         <label>
@@ -326,7 +333,7 @@
       <fieldset id="binning">
         <legend>Binning</legend>
         <label>
-          <input type="radio" name="binning" id="binning_points" value="points" /> Points
+          <input type="radio" name="binning" id="binning_points" value="points" /> No binning
         </label><br/>
         <label>
           <input type="radio" name="binning" id="binning_hex" value="hex" checked="checked" /> Hexagons
@@ -368,13 +375,6 @@
           <label><input type="checkbox" name="basis_of_record" value="UNKNOWN"> Unknown</label>
         </div>
       </fieldset>
-
-      <!--fieldset id="grid">
-        <legend>Tile grid</legend>
-        <label><input id="grid_visible" type="checkbox"/>visibility</label><br/>
-        <label>opacity</label>
-        <input id="grid_opacity" type="range" min="0" max="1" step="0.01"/>
-      </fieldset-->
 
       <fieldset id="url">
         <legend>URL templates</legend>
