@@ -64,7 +64,7 @@ public final class AddHocMapsResource {
   private static final LoadingCache<ZXY,String> ZXY_TO_GEOM = CacheBuilder.newBuilder().build(CacheLoader.from(AddHocMapsResource::searchGeom));
 
   @VisibleForTesting
-  static final double QUERY_BUFFER_PERCENTAGE = 0.125;  // 1/8th tile buffer all around, similar to the HBase maps
+  static final String QUERY_BUFFER_PERCENTAGE = "0.125";  // 1/8th tile buffer all around, similar to the HBase maps
   private static final String EPSG_4326 = "EPSG:4326";
 
   private final int tileSize;
@@ -94,6 +94,7 @@ public final class AddHocMapsResource {
     @QueryParam("bin") String bin,
     @DefaultValue(DEFAULT_HEX_PER_TILE) @QueryParam("hexPerTile") int hexPerTile,
     @DefaultValue(DEFAULT_SQUARE_SIZE) @QueryParam("squareSize") int squareSize,
+    @DefaultValue(QUERY_BUFFER_PERCENTAGE) @QueryParam("tileBuffer") double tileBuffer,
     @Context HttpServletResponse response,
     @Context HttpServletRequest request
     ) throws Exception {
@@ -107,7 +108,7 @@ public final class AddHocMapsResource {
                                 || BIN_MODE_HEX.equalsIgnoreCase(bin)
                                 || BIN_MODE_SQUARE.equalsIgnoreCase(bin), "Unsupported bin mode");
 
-    heatmapRequest.setGeometry(ZXY_TO_GEOM.get(new ZXY(z, x, y)));
+    heatmapRequest.setGeometry(ZXY_TO_GEOM.get(new ZXY(z, x, y, tileBuffer)));
     heatmapRequest.setZoom(z);
 
     LOG.info("Request:{}", heatmapRequest);
@@ -138,7 +139,7 @@ public final class AddHocMapsResource {
           // for binning, we add the cell center point, otherwise the geometry
           encoder.addFeature(LAYER_NAME,
                             Collections.singletonMap("total", geoGridBucket.getDocCount()),
-                            toPoint(geoGridBucket.getCentroid(), z,x, y));
+                            toPoint(geoGridBucket.getCentroid(), z, x, y));
         });
     }
 
@@ -189,7 +190,7 @@ public final class AddHocMapsResource {
    * Returns a BBox search string for the geometry in WGS84 CRS for the tile with a buffer.
    */
   private static String searchGeom(ZXY zxy) {
-    Double2D[] boundary = bufferedTileBoundary(zxy.z, zxy.x, zxy.y);
+    Double2D[] boundary = bufferedTileBoundary(zxy.z, zxy.x, zxy.y, zxy.tileBuffer);
     return boundary[0].getX() + "," + boundary[0].getY() + "," + boundary[1].getX() + "," + boundary[1].getY();
   }
 
@@ -201,10 +202,10 @@ public final class AddHocMapsResource {
    * @return an envelope for the tile, with the appropriate buffer
    */
   @VisibleForTesting
-  static Double2D[] bufferedTileBoundary(int z, long x, long y) {
+  static Double2D[] bufferedTileBoundary(int z, long x, long y, double tileBuffer) {
     int tilesPerZoom = 1 << z;
     double degreesPerTile = 180d/tilesPerZoom;
-    double bufferDegrees = QUERY_BUFFER_PERCENTAGE * degreesPerTile;
+    double bufferDegrees = tileBuffer * degreesPerTile;
 
     // the edges of the tile after buffering
     double minLng = to180Degrees((degreesPerTile * x) - 180 - bufferDegrees);
@@ -325,10 +326,13 @@ public final class AddHocMapsResource {
 
     private final long y;
 
-    ZXY(int z, long x, long y) {
+    private final double tileBuffer;
+
+    ZXY(int z, long x, long y, double tileBuffer) {
       this.z = z;
       this.x = x;
       this.y = y;
+      this.tileBuffer = tileBuffer;
     }
 
     @Override
@@ -341,7 +345,7 @@ public final class AddHocMapsResource {
         return false;
       }
       ZXY zxy = (ZXY) o;
-      return z == zxy.z && x == zxy.x && y == zxy.y;
+      return z == zxy.z && x == zxy.x && y == zxy.y && tileBuffer == zxy.tileBuffer;
     }
 
     @Override
