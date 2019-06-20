@@ -32,7 +32,7 @@ function renderTile(parameters, vectorTile, callback) {
 
   //console.time("Render");
   vt.render(map, new mapnik.Image(size, size), {
-    "buffer_size": 8, // important to include a buffer, to catch the overlaps
+    "buffer_size": 32, // important to include a buffer, to catch the overlaps
     "scale": scale
   }, function (err, image) {
     //console.timeEnd("Render");
