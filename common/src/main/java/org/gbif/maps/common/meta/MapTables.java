@@ -35,7 +35,7 @@ public class MapTables implements Serializable {
       if (matcher.find()) {
         // It's possible to be off-by-one if tiles are generated during the DST switch.
         ZonedDateTime time = ZonedDateTime.parse(matcher.group(1),
-                                                 DateTimeFormatter.ofPattern("yyyyMMdd_HHmm").withZone(ZoneId.of("Europe/Copenhagen")));
+                                                 DateTimeFormatter.ofPattern("yyyyMMdd_HHmm").withZone(ZoneId.of("UTC")));
         return time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mmX").withZone(ZoneId.of("UTC")));
       }
     }
