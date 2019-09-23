@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.gbif</groupId>
     <artifactId>motherpom</artifactId>
-    <version>37</version>
+    <version>38</version>
   </parent>
 
   <groupId>org.gbif.maps</groupId>
