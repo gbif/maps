@@ -3,7 +3,7 @@
   <parent>
     <artifactId>maps-motherpom</artifactId>
     <groupId>org.gbif.maps</groupId>
-    <version>0.11-ES</version>
+    <version>0.12-ES-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>common</artifactId>
