@@ -35,6 +35,10 @@ namedStyles["outline.poly"] = compileStylesheetSync("./cartocss/outline-poly.mss
 namedStyles["blue.marker"] = compileStylesheetSync("./cartocss/blue-marker.mss");
 namedStyles["orange.marker"] = compileStylesheetSync("./cartocss/orange-marker.mss");
 
+// Adhoc map style for ES portal (mode=GEO_CENTROID)
+namedStyles["scaled.circles"] = compileStylesheetSync("./cartocss/scaled-circles.mss");
+
+
 // Miscellaneous styles
 namedStyles["green.poly"] = compileStylesheetSync("./cartocss/green-poly.mss");
 namedStyles["green2.poly"] = compileStylesheetSync("./cartocss/green2-poly.mss");

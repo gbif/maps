@@ -131,7 +131,7 @@ public class FinaliseBackfill {
         Arrays.sort(tables, new Comparator<TableName>() {  // TableName does not order lexigraphically by default
           @Override
           public int compare(TableName o1, TableName o2) {
-            return o1.getNameAsString().compareTo(o2.getNamespaceAsString());
+            return o1.getNameAsString().compareTo(o2.getNameAsString());
           }
         });
 
@@ -143,9 +143,9 @@ public class FinaliseBackfill {
           meta = metastore.read();
 
           // Defensive coding: don't delete anything that is the intended target, or currently in use
-          if (!params.getTargetTable().equalsIgnoreCase(tables[i].getNamespaceAsString()) &&
-              !meta.getPointTable().equalsIgnoreCase(tables[i].getNamespaceAsString()) &&
-              !meta.getTileTable().equalsIgnoreCase(tables[i].getNamespaceAsString())
+          if (!params.getTargetTable().equalsIgnoreCase(tables[i].getNameAsString()) &&
+              !meta.getPointTable().equalsIgnoreCase(tables[i].getNameAsString()) &&
+              !meta.getTileTable().equalsIgnoreCase(tables[i].getNameAsString())
             ) {
 
             System.out.println("Disabling HBase table[" + tables[i].getNameAsString() + "]");
