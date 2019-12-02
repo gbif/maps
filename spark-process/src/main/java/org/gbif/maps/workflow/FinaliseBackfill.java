@@ -120,10 +120,6 @@ public class FinaliseBackfill {
         MapMetastore metastore = Metastores.newZookeeperMapsMeta(params.getZkQuorum(), 1000, params.getZkMetaDataPath());
       ) {
 
-        // remove the snapshot created in this workflow only
-        System.out.println("Deleting HBase snapshot[" + params.getSnapshotTable()+ "]");
-        admin.deleteSnapshot(params.getSnapshotTable());
-
         // remove all but the last 2 tables
         // table names are suffixed with a timestamp e.g. prod_d_maps_points_20180616_1320
         String tablesPattern = params.getTargetTablePrefix() + "_" + params.getMode() + "_\\d{8}_\\d{4}";

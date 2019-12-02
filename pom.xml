@@ -78,7 +78,6 @@
     <maven-core.version>3.3.9</maven-core.version>
     <maven-model.version>3.1.1</maven-model.version>
     <zookeeper.version>3.4.5-cdh5.12.0</zookeeper.version>
-    <hbase-hadoop-compat.version>1.2.0-cdh5.16.2</hbase-hadoop-compat.version>
 
     <!-- es versions -->
     <elasticsearch.version>6.5.4</elasticsearch.version>
@@ -445,11 +444,6 @@
         <groupId>org.apache.hbase</groupId>
         <artifactId>hbase-server</artifactId>
         <version>${hbase.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.hbase</groupId>
-        <artifactId>hbase-hadoop-compat</artifactId>
-        <version>${hbase-hadoop-compat.version}</version>
       </dependency>
       <dependency>
         <groupId>org.scala-lang</groupId>

@@ -37,7 +37,7 @@ object Backfill {
       logger.warn("Overwriting config with Oozie supplied configuration")
       var overrideParams = WorkflowParams.buildFromOozie(args(2))
       config.hbase.zkQuorum = overrideParams.getZkQuorum
-      config.source = overrideParams.getSnapshotTable
+      config.source = overrideParams.getSourceTablePath
       config.pointFeatures.tableName = overrideParams.getTargetTable
       config.tilePyramid.tableName = overrideParams.getTargetTable
       config.targetDirectory = overrideParams.getTargetDirectory
@@ -51,17 +51,10 @@ object Backfill {
 
     import spark.implicits._
 
-    val df =
-      if (config.source.startsWith("/")) {
-        logger.info("Reading Parquet file {}", config.source)
-        val sqlContext = spark.sqlContext
+    logger.info("Reading Orc Hive Table {}", config.source)
+    val sqlContext = spark.sqlContext
 
-        sqlContext.read.parquet(config.source)
-      }
-      else {
-        logger.info("Reading from HBase snapshot table {}", config.source)
-        HBaseInput.readFromHBase(config, spark)
-      }
+    val df = sqlContext.read.orc(config.source)
 
     logger.info("DataFrame columns are {}", df.columns)
 
@@ -73,7 +66,7 @@ object Backfill {
       val mapKeys = counts.filter(r => {r._2<config.tilesThreshold})
       println("MapKeys suitable for storing as point maps: " + mapKeys.size)
 
-      BackfillPoints.build(spark, df,mapKeys.keySet,config)
+      BackfillPoints.build(spark, df, mapKeys.keySet, config)
     }
 
     if (Set("all","tiles").contains(args(0))) {
@@ -91,7 +84,7 @@ object Backfill {
         //jobs += new Callable[Unit] {
         //  override def call() = BackfillTiles.build(sc,df,mapKeys.keySet,config, proj)
         //}
-        BackfillTiles.build(spark, df,mapKeys.keySet,config, proj)
+        BackfillTiles.build(spark, df, mapKeys.keySet, config, proj)
       })
 
       //pool.invokeAll(jobs.toList.asJava)

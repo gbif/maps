@@ -161,14 +161,6 @@
       </exclusions>
     </dependency>
 
-    <!--
-      Needed when running in oozie for the SnapshotInputFormat to function (NoClassDefs thrown otherwise).
-    -->
-    <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-hadoop-compat</artifactId>
-    </dependency>
-
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
