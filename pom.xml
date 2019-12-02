@@ -475,6 +475,11 @@
           </exclusion>
         </exclusions>
       </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-hive_${scala.tools.version}</artifactId>
+        <version>${spark.version}</version>
+      </dependency>
 
       <!-- For Lifecycle and discovery-->
       <dependency>

@@ -177,6 +177,11 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-hive_${scala.tools.version}</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>no.ecc.vectortile</groupId>
       <artifactId>java-vector-tile</artifactId>
     </dependency>

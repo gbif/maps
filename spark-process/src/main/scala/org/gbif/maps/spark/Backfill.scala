@@ -47,6 +47,8 @@ object Backfill {
     val spark = SparkSession
       .builder()
       .appName(config.appName)
+      .config("spark.sql.warehouse.dir", "/user/hive/warehouse/")
+      .enableHiveSupport()
       .getOrCreate()
 
     import spark.implicits._
@@ -54,7 +56,7 @@ object Backfill {
     logger.info("Reading Orc Hive Table {}", config.source)
     val sqlContext = spark.sqlContext
 
-    val df = sqlContext.read.orc(config.source)
+    val df = sqlContext.read.table(config.source)
 
     logger.info("DataFrame columns are {}", df.columns)
 
