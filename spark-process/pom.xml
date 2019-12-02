@@ -79,6 +79,14 @@
             <goals>
               <goal>shade</goal>
             </goals>
+            <configuration>
+              <relocations>
+                <relocation>
+                  <pattern>org.hsqldb</pattern>
+                  <shadedPattern>shared.org.hsqldb</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -117,6 +125,13 @@
           <groupId>org.apache.hadoop</groupId>
           <artifactId>*</artifactId>
         </exclusion>
+        <!--
+          Breaks spark2
+        -->
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
 
@@ -135,6 +150,14 @@
           <groupId>org.mortbay.jetty</groupId>
           <artifactId>*</artifactId>
         </exclusion>
+        <!--
+          Breaks spark2
+        -->
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+
       </exclusions>
     </dependency>
 
@@ -144,9 +167,7 @@
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-hadoop-compat</artifactId>
-      <version>1.2.0-cdh5.12.0</version>
     </dependency>
-
 
     <dependency>
       <groupId>org.scala-lang</groupId>
@@ -185,10 +206,15 @@
       <!-- Important: Dropwizard conflicts with this, so be explicit -->
       <version>${jackson.spark.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.hsqldb</groupId>
+      <artifactId>hsqldb</artifactId>
+      <version>${hsqldb.version}</version>
+    </dependency>
     <!-- Tests -->
     <dependency>
       <groupId>org.scalatest</groupId>
-      <artifactId>scalatest-funsuite_2.10</artifactId>
+      <artifactId>scalatest-funsuite_2.11</artifactId>
     </dependency>
   </dependencies>
   <profiles>
@@ -230,6 +256,10 @@
               <groupId>javax.servlet</groupId>
               <artifactId>*</artifactId>
             </exclusion>
+            <exclusion>
+              <groupId>io.netty</groupId>
+              <artifactId>*</artifactId>
+            </exclusion>
           </exclusions>
         </dependency>
         <dependency>
@@ -242,6 +272,10 @@
             </exclusion>
             <exclusion>
               <groupId>javax.servlet</groupId>
+              <artifactId>*</artifactId>
+            </exclusion>
+            <exclusion>
+              <groupId>io.netty</groupId>
               <artifactId>*</artifactId>
             </exclusion>
           </exclusions>

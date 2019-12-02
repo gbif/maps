@@ -9,8 +9,10 @@ package object tile {
   case class Pixel (x: Short, y: Short)
 
   // A tile address container
-  case class ZXY (z: Int, x: Long, y: Long) extends Ordered[ZXY] {
+  case class ZXY (z: Int, x: Long, y: Long) {
     override def toString : String = z + ":" + x + ":" + y
+    // https://github.com/scala/bug/issues/8541#issuecomment-292431216
+    implicit def ZXYOrdering: Ordering[ZXY] = Ordering.by(_.toString)
     def compare(that: ZXY): Int =  this.toString compare that.toString
   }
 

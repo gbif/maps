@@ -56,14 +56,18 @@
     <spark.version>1.6.1</spark.version>
     <geotools.version>15.0</geotools.version>
 
+    <hsqldb.version>2.4.1</hsqldb.version>
     <!-- fixed to the version coming with Spark -->
-    <jackson.spark.version>2.4.4</jackson.spark.version>
+    <jackson.spark.version>2.6.7</jackson.spark.version>
     <!-- fixed to the version coming with Dropwizard -->
     <jackson.dropwizard.version>2.6.3</jackson.dropwizard.version>
     <scala.tools.version>2.10</scala.tools.version>
     <scala.version>2.10.4</scala.version>
     <spark.version>1.6.1</spark.version>
     <rs-api.version>2.0.1</rs-api.version>
+    <scala.tools.version>2.11</scala.tools.version>
+    <scala.version>2.11.8</scala.version>
+    <spark.version>2.3.0</spark.version>
     <!-- laziness: rely on transient dependencies from DW -->
     <dropwizard.version>0.9.2</dropwizard.version>
     <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
@@ -74,6 +78,7 @@
     <maven-core.version>3.3.9</maven-core.version>
     <maven-model.version>3.1.1</maven-model.version>
     <zookeeper.version>3.4.5-cdh5.12.0</zookeeper.version>
+    <hbase-hadoop-compat.version>1.2.0-cdh5.16.2</hbase-hadoop-compat.version>
 
     <!-- es versions -->
     <elasticsearch.version>6.5.4</elasticsearch.version>
@@ -442,6 +447,11 @@
         <version>${hbase.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-hadoop-compat</artifactId>
+        <version>${hbase-hadoop-compat.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.scala-lang</groupId>
         <artifactId>scala-library</artifactId>
         <version>${scala.version}</version>
@@ -590,7 +600,7 @@
       <!--Test-->
       <dependency>
         <groupId>org.scalatest</groupId>
-        <artifactId>scalatest-funsuite_2.10</artifactId>
+        <artifactId>scalatest-funsuite_2.11</artifactId>
         <version>${scalatest.version}</version>
         <scope>test</scope>
       </dependency>

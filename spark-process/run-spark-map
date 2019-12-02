@@ -10,7 +10,7 @@ clear; echo -en "\e[3J"
 
 env=$1
 
-spark_submit=spark-submit
+spark_submit=spark2-submit
 
 if [[ $env = 'dev' ]]; then
     num_executors=10

@@ -6,9 +6,9 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.google.common.base.Preconditions
 import com.google.common.io.Resources
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.client.HTable
 import org.apache.hadoop.hbase.HBaseConfiguration
-import org.apache.hadoop.hbase.mapreduce.{HFileOutputFormat, PatchedHFileOutputFormat2}
+import org.apache.hadoop.hbase.client.HTable
+import org.apache.hadoop.hbase.mapreduce.PatchedHFileOutputFormat2
 import org.apache.hadoop.mapreduce.Job
 import org.gbif.maps.common.projection.TileSchema
 

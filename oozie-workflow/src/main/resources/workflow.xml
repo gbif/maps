@@ -9,6 +9,10 @@
         <name>oozie.launcher.mapred.job.queue.name</name>
         <value>${wf:conf("hadoop.queuename")}</value>
       </property>
+      <property>
+        <name>oozie.action.sharelib.for.spark</name>
+        <value>spark2</value>
+      </property>
     </configuration>
   </global>
 
