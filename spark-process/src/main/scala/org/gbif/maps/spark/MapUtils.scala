@@ -62,7 +62,7 @@ object MapUtils {
     val publisherKey = row.getString(row.fieldIndex("publishingorgkey"))
     val country = row.getString(row.fieldIndex("countrycode"))
     val publishingCountry = row.getString(row.fieldIndex("publishingcountry"))
-    val networkKey = row.getSeq(row.fieldIndex("networkkey"))
+    val networkKey = row.getSeq[String](row.fieldIndex("networkkey"))
 
     var taxonIDs = Set[Int]()
     if (!row.isNullAt(row.fieldIndex("kingdomkey"))) taxonIDs+=row.getInt(row.fieldIndex("kingdomkey"))
