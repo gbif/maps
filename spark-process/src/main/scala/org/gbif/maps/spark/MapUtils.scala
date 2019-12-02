@@ -62,7 +62,7 @@ object MapUtils {
     val publisherKey = row.getString(row.fieldIndex("publishingorgkey"))
     val country = row.getString(row.fieldIndex("countrycode"))
     val publishingCountry = row.getString(row.fieldIndex("publishingcountry"))
-    val networkKey = row.getString(row.fieldIndex("networkkey"))
+    val networkKey = row.getSeq(row.fieldIndex("networkkey"))
 
     var taxonIDs = Set[Int]()
     if (!row.isNullAt(row.fieldIndex("kingdomkey"))) taxonIDs+=row.getInt(row.fieldIndex("kingdomkey"))
@@ -79,9 +79,12 @@ object MapUtils {
       toMapKey(MAPS_TYPES("DATASET"), datasetKey),
       toMapKey(MAPS_TYPES("PUBLISHER"), publisherKey),
       toMapKey(MAPS_TYPES("COUNTRY"), country),
-      toMapKey(MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry),
-      toMapKey(MAPS_TYPES("NETWORK"), networkKey)
+      toMapKey(MAPS_TYPES("PUBLISHING_COUNTRY"), publishingCountry)
+
     )
+    networkKey.foreach(key => {
+      res += toMapKey(MAPS_TYPES("NETWORK"), key)
+    })
     taxonIDs.foreach(id => {
       res += toMapKey(MAPS_TYPES("TAXON"), id)
     })
