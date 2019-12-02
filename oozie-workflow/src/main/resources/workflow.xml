@@ -27,7 +27,7 @@
     <java>
       <main-class>org.gbif.maps.workflow.PrepareBackfill</main-class>
       <arg>${wf:conf("gbif.map.zk.quorum")}</arg>
-      <arg>${wf:conf("gbif.map.sourceTable")}</arg>
+      <arg>${wf:conf("gbif.map.sourceTablePath")}</arg>
       <arg>${wf:conf("gbif.map.targetTablePrefix")}</arg>
       <arg>${wf:conf("gbif.map.mode")}</arg>
       <arg>${wf:conf("gbif.map.keySaltModulus")}</arg>
