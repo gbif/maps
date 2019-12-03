@@ -60,7 +60,7 @@ object BackfillTiles {
     import spark.implicits._
 
     val tiles = df.rdd
-      .filter(row => !row.isNullAt(row.fieldIndex("decimallatitude")) && !row.isNullAt(row.fieldIndex("decimallongitude")))
+      .filter(row => !row.isNullAt(row.fieldIndex("decimallatitude")) && !row.isNullAt(row.fieldIndex("decimallongitude"))) //has coordinates
       .flatMap(row => {
 
       val res = mutable.ArrayBuffer[((String, ZXY, EncodedPixel, String, Year), Int)]()

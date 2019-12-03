@@ -37,7 +37,7 @@ object Backfill {
       logger.warn("Overwriting config with Oozie supplied configuration")
       var overrideParams = WorkflowParams.buildFromOozie(args(2))
       config.hbase.zkQuorum = overrideParams.getZkQuorum
-      config.source = overrideParams.getSourceTablePath
+      config.source = overrideParams.getSourceTable
       config.pointFeatures.tableName = overrideParams.getTargetTable
       config.tilePyramid.tableName = overrideParams.getTargetTable
       config.targetDirectory = overrideParams.getTargetDirectory
@@ -101,7 +101,7 @@ object Backfill {
     * Sanitizes application arguments.
     */
   private def checkArgs(args: Array[String]) = {
-    assert(args !=null && (args.length==2 || args.length==3), usage)
+    assert(args != null && (args.length==2 || args.length==3), usage)
     assert(args(0).equals("all") || args(0).equals("tiles") || args(0).equals("points"), usage)
   }
 }
