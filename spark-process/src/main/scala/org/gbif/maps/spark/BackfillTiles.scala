@@ -4,16 +4,14 @@ import com.vividsolutions.jts.geom.{Coordinate, GeometryFactory}
 import no.ecc.vectortile.VectorTileEncoder
 import org.apache.hadoop.hbase.KeyValue
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
-import org.apache.hadoop.hbase.mapreduce.{HFileOutputFormat, PatchedHFileOutputFormat2}
+import org.apache.hadoop.hbase.mapreduce.PatchedHFileOutputFormat2
 import org.apache.hadoop.hbase.util.Bytes
-import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.{Partitioner, SparkContext}
+import org.apache.spark.sql.{SparkSession, DataFrame}
+import org.apache.spark.Partitioner
 import org.gbif.maps.common.projection.Tiles
 import org.gbif.maps.common.hbase.ModulusSalt
-import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord
-import org.gbif.maps.spark.BackfillPoints.logger
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.{Map => MMap}
@@ -80,7 +78,7 @@ object BackfillTiles {
           config.tilePyramid.tileBufferSize) // pixels on the tile
         val pixel = Pixel(tileLocalXY.getX.asInstanceOf[Short], tileLocalXY.getY.asInstanceOf[Short]) // note: rounds here
         val encPixel = encodePixel(pixel)
-        val zxy = new ZXY(zoom, x, y)
+        val zxy = ZXY(zoom, x, y)
 
         // read the fields of interest
         val bor: String = try {
@@ -90,9 +88,9 @@ object BackfillTiles {
             "UNKNOWN"
         }
 
-        val year =
+        val year: Short =
           if (row.isNullAt(row.fieldIndex("year"))) null.asInstanceOf[Short]
-          else row.getInt((row.fieldIndex("year"))).asInstanceOf[Short]
+          else row.getInt(row.fieldIndex("year")).asInstanceOf[Short]
 
         // extract the keys for the record and filter to only those that are meant to be put in a tile pyramid
         val mapKeys = MapUtils.mapKeysForRecord(row).intersect(keys)
@@ -156,7 +154,7 @@ object BackfillTiles {
 
       tiles3 = tiles3.flatMap(t => {
         val result = mutable.ArrayBuffer[((String, String), OccurrenceDensityTile)]()
-        val mapKey = t._1._1
+        val mapKey: String = t._1._1
         val tiles = t._2.flatMapToBuffers(projectionConfig.tileSchema, downscale)
         for (tile <- tiles) {
           result += (((mapKey, tile.getZXY().toString), tile.asInstanceOf[OccurrenceDensityTile]))
@@ -179,7 +177,7 @@ object BackfillTiles {
 
           for ((pixel, yearCount) <- features.iterator()) {
             if (pixels.contains(pixel)) {
-              val pixelMeta = pixels.get(pixel).get
+              val pixelMeta = pixels(pixel)
               pixelMeta.update(yearCount.year, pixelMeta.getOrElse(yearCount.year, 0) + yearCount.count)
             } else {
               val pixelMeta = MMap[Short,Int]()
@@ -197,7 +195,7 @@ object BackfillTiles {
             for ((year, count) <- meta) {
               metaAsString.put(String.valueOf(year), count)
             }
-            encoder.addFeature(basisOfRecord.toString(), metaAsString, point);
+            encoder.addFeature(basisOfRecord.toString, metaAsString, point);
           }
         }
         encoder.encode()

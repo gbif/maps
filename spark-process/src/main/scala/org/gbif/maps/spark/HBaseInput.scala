@@ -16,7 +16,8 @@ import org.slf4j.LoggerFactory
   * Reads occurrence data from an HBase snapshot producing a DataFrame.
   */
 object HBaseInput {
-  val logger = LoggerFactory.getLogger("org.gbif.maps.spark.HBaseInput")
+
+  private val logger = LoggerFactory.getLogger("org.gbif.maps.spark.HBaseInput")
 
   def readFromHBase(config: MapConfiguration, spark: SparkSession) : DataFrame = {
     val hbaseConf = HBaseConfiguration.create()
@@ -59,7 +60,7 @@ object HBaseInput {
 
     // Set up the scan to only be concerned about the columns of interest
     val scan = new Scan
-    scan.setCaching(10000);
+    scan.setCaching(10000)
     val cf = Bytes.toBytes("o")
     fieldNamesAndTypes.foreach(ft => {
       scan.addColumn(cf, Bytes.toBytes(ft._1))
@@ -134,7 +135,7 @@ object HBaseInput {
     * Copied from TableMapReduceUtil
     */
   def convertScanToString(scan : Scan) = {
-    val proto = ProtobufUtil.toScan(scan);
-    Base64.encodeBytes(proto.toByteArray());
+    val proto = ProtobufUtil.toScan(scan)
+    Base64.encodeBytes(proto.toByteArray)
   }
 }

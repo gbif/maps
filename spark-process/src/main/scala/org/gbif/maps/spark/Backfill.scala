@@ -35,7 +35,7 @@ object Backfill {
     // possible in Oozie.
     if (args.length == 3) {
       logger.warn("Overwriting config with Oozie supplied configuration")
-      var overrideParams = WorkflowParams.buildFromOozie(args(2))
+      val overrideParams = WorkflowParams.buildFromOozie(args(2))
       config.hbase.zkQuorum = overrideParams.getZkQuorum
       config.source = overrideParams.getSourceTable
       config.pointFeatures.tableName = overrideParams.getTargetTable

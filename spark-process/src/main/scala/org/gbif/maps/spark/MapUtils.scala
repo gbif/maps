@@ -37,12 +37,12 @@ object MapUtils {
 
   // Encodes the type and value into the HBase table key
   def toMapKey(mapType: Int, key: Any) : String = {
-    mapType + ":" + key;
+    mapType + ":" + key
   }
 
   // Encodes the XYZ into a string
   def toZXY(z: Byte, x: Long, y: Long) : String = {
-    z + ":" + x + ":" + y;
+    z + ":" + x + ":" + y
   }
 
   // Encodes the XYZ into a string
