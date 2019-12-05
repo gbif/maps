@@ -66,6 +66,7 @@
     <scala.tools.version>2.11</scala.tools.version>
     <scala.version>2.11.8</scala.version>
     <spark.version>2.3.0</spark.version>
+    <databricks.spark.avro.version>4.0.0</databricks.spark.avro.version>
     <!-- laziness: rely on transient dependencies from DW -->
     <dropwizard.version>0.9.2</dropwizard.version>
     <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
@@ -477,6 +478,11 @@
         <groupId>org.apache.spark</groupId>
         <artifactId>spark-hive_${scala.tools.version}</artifactId>
         <version>${spark.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.databricks</groupId>
+        <artifactId>spark-avro_${scala.tools.version}</artifactId>
+        <version>${databricks.spark.avro.version}</version>
       </dependency>
 
       <!-- For Lifecycle and discovery-->

@@ -182,6 +182,10 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>com.databricks</groupId>
+      <artifactId>spark-avro_${scala.tools.version}</artifactId>
+    </dependency>
+    <dependency>
       <groupId>no.ecc.vectortile</groupId>
       <artifactId>java-vector-tile</artifactId>
     </dependency>

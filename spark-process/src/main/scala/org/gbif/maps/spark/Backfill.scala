@@ -1,7 +1,11 @@
 package org.gbif.maps.spark
 
+import java.util.UUID
+
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
+import com.databricks.spark.avro._
 import org.gbif.maps.workflow.WorkflowParams
 import org.slf4j.LoggerFactory
 
@@ -44,19 +48,19 @@ object Backfill {
     }
 
     // setup and read the source
-    val spark = SparkSession
-      .builder()
-      .appName(config.appName)
-      .config("spark.sql.warehouse.dir", "/user/hive/warehouse/")
-      .enableHiveSupport()
-      .getOrCreate()
+    val spark = SparkSession.builder().appName(config.appName).getOrCreate()
 
     import spark.implicits._
 
-    logger.info("Reading Orc Hive Table {}", config.source)
-    val sqlContext = spark.sqlContext
+    val fs =  FileSystem.get(spark.sparkContext.hadoopConfiguration)
+    val snapshotName = UUID.randomUUID().toString
 
-    val df = sqlContext.read.table(config.source)
+    val sourcePath = new Path(config.source)
+    val snapshotPath = fs.createSnapshot(sourcePath, snapshotName)
+    logger.info("Reading Directory {}", config.source)
+
+
+    val df = spark.read.avro(snapshotPath.toString)
 
     logger.info("DataFrame columns are {}", df.columns)
 
@@ -93,7 +97,8 @@ object Backfill {
 
 
     }
-
+    fs.deleteSnapshot(sourcePath, snapshotName)
+    fs.close()
     spark.stop()
   }
 
