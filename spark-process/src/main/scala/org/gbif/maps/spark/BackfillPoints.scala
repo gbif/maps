@@ -30,7 +30,6 @@ object BackfillPoints {
 
     val keySalter = new ModulusSalt(config.hbase.keySaltModulus); // salted HBase keys
     val pointSource = df
-      .filter(row => !row.isNullAt(row.fieldIndex("decimallatitude")) && !row.isNullAt(row.fieldIndex("decimallongitude"))) //has coordinates
       .flatMap(row => {
       // extract the keys for the record and filter to only those that have been determined as suitable
       val mapKeys = MapUtils.mapKeysForRecord(row).intersect(keys)
