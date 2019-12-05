@@ -61,9 +61,7 @@
     <jackson.spark.version>2.6.7</jackson.spark.version>
     <!-- fixed to the version coming with Dropwizard -->
     <jackson.dropwizard.version>2.6.3</jackson.dropwizard.version>
-    <scala.tools.version>2.10</scala.tools.version>
-    <scala.version>2.10.4</scala.version>
-    <spark.version>1.6.1</spark.version>
+    <scala.tools.version>2.11</scala.tools.version>
     <rs-api.version>2.0.1</rs-api.version>
     <scala.tools.version>2.11</scala.tools.version>
     <scala.version>2.11.8</scala.version>
