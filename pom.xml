@@ -67,6 +67,7 @@
     <scala.version>2.11.8</scala.version>
     <spark.version>2.3.0</spark.version>
     <databricks.spark.avro.version>4.0.0</databricks.spark.avro.version>
+    <simple.arm.version>2.3.1</simple.arm.version>
     <!-- laziness: rely on transient dependencies from DW -->
     <dropwizard.version>0.9.2</dropwizard.version>
     <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
@@ -483,6 +484,12 @@
         <groupId>com.databricks</groupId>
         <artifactId>spark-avro_${scala.tools.version}</artifactId>
         <version>${databricks.spark.avro.version}</version>
+      </dependency>
+      <!-- Library for automatic resource management (Closeables) -->
+      <dependency>
+        <groupId>com.rojoma</groupId>
+        <artifactId>simple-arm-v2_${scala.tools.version}</artifactId>
+        <version>${simple.arm.version}</version>
       </dependency>
 
       <!-- For Lifecycle and discovery-->

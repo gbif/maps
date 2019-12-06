@@ -186,6 +186,15 @@
       <artifactId>spark-avro_${scala.tools.version}</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.rojoma</groupId>
+      <artifactId>simple-arm-v2_${scala.tools.version}</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>no.ecc.vectortile</groupId>
       <artifactId>java-vector-tile</artifactId>
     </dependency>

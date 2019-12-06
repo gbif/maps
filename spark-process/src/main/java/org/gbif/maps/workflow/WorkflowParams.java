@@ -18,7 +18,7 @@ import com.google.common.base.Throwables;
 public class WorkflowParams {
   public static String OOZIE_ZK_QUORUM = "gbif.map.zk.quorum";
   public static String OOZIE_TIMESTAMP = "gbif.map.timestamp";
-  public static String OOZIE_SOURCE_TABLE = "gbif.map.sourceTable";
+  public static String OOZIE_SOURCE_DIRECTORY = "gbif.map.sourceDirectory";
   public static String OOZIE_TARGET_TABLE_PREFIX = "gbif.map.targetTablePrefix";
   public static String OOZIE_TARGET_TABLE = "gbif.map.targetTable";
   public static String OOZIE_TARGET_DIRECTORY = "gbif.map.targetDirectory";
@@ -28,7 +28,7 @@ public class WorkflowParams {
 
   private String zkQuorum;
   private String timestamp;
-  private String sourceTable;
+  private String sourceDirectory;
   private String targetTablePrefix;
   private String targetTable;
   private String targetDirectory;
@@ -45,7 +45,7 @@ public class WorkflowParams {
     try {
       WorkflowParams params = new WorkflowParams();
       params.zkQuorum = args[0];
-      params.sourceTable = args[1];  // e.g. /user/hive/warehouse/dev.db/occurrence_pipeline_hdfs/*
+      params.sourceDirectory = args[1];  // e.g. /user/hive/warehouse/dev.db/occurrence_pipeline_hdfs/*
       params.targetTablePrefix = args[2];  // e.g. prod_a_maps (will receive a suffix such as _tiles_20170101_1343)
       params.mode = args[3];  // tiles | points
       String keySaltModulusAsString = args[4];  // the number of partitions for the HBase table
@@ -73,7 +73,7 @@ public class WorkflowParams {
       Properties props = new Properties();
       props.load(sr);
       params.zkQuorum = props.getProperty(OOZIE_ZK_QUORUM);
-      params.sourceTable = props.getProperty(OOZIE_SOURCE_TABLE);
+      params.sourceDirectory = props.getProperty(OOZIE_SOURCE_DIRECTORY);
       params.targetTablePrefix = props.getProperty(OOZIE_TARGET_TABLE_PREFIX);
       params.mode = props.getProperty(OOZIE_MODE);
       String keySaltModulusAsString = props.getProperty(OOZIE_KEY_SALT_MODULUS);
@@ -99,8 +99,8 @@ public class WorkflowParams {
     return timestamp;
   }
 
-  public String getSourceTable() {
-    return sourceTable;
+  public String getSourceDirectory() {
+    return sourceDirectory;
   }
 
   public String getTargetTablePrefix() {
@@ -132,7 +132,7 @@ public class WorkflowParams {
     return "WorkflowParams{" +
            "zkQuorum='" + zkQuorum + '\'' +
            ", timestamp='" + timestamp + '\'' +
-           ", sourceTablePath='" + sourceTable + '\'' +
+           ", sourceDirectory='" + sourceDirectory + '\'' +
            ", targetTablePrefix='" + targetTablePrefix + '\'' +
            ", targetTable='" + targetTable + '\'' +
            ", targetDirectory='" + targetDirectory + '\'' +
@@ -151,7 +151,7 @@ public class WorkflowParams {
 
         props.setProperty(OOZIE_ZK_QUORUM, getZkQuorum());
         props.setProperty(OOZIE_TIMESTAMP, getTimestamp());
-        props.setProperty(OOZIE_SOURCE_TABLE, getSourceTable());
+        props.setProperty(OOZIE_SOURCE_DIRECTORY, getSourceDirectory());
         props.setProperty(OOZIE_TARGET_TABLE_PREFIX, getTargetTablePrefix());
         props.setProperty(OOZIE_TARGET_TABLE, getTargetTable());
         props.setProperty(OOZIE_TARGET_DIRECTORY, getTargetDirectory());

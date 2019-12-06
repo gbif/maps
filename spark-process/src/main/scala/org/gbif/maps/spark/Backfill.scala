@@ -4,8 +4,9 @@ import java.util.UUID
 
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.{SparkConf, SparkContext}
 import com.databricks.spark.avro._
+import com.rojoma.simplearm.v2.using
+import org.apache.hadoop.conf.Configuration
 import org.gbif.maps.workflow.WorkflowParams
 import org.slf4j.LoggerFactory
 
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory
   * </pre>
   */
 object Backfill {
+
   val logger = LoggerFactory.getLogger("org.gbif.maps.spark.Backfill")
 
   val usage = "Usage: all|tiles|points configFile [optionalSource]"
@@ -41,78 +43,87 @@ object Backfill {
       logger.warn("Overwriting config with Oozie supplied configuration")
       val overrideParams = WorkflowParams.buildFromOozie(args(2))
       config.hbase.zkQuorum = overrideParams.getZkQuorum
-      config.source = overrideParams.getSourceTable
+      config.source = overrideParams.getSourceDirectory
       config.pointFeatures.tableName = overrideParams.getTargetTable
       config.tilePyramid.tableName = overrideParams.getTargetTable
       config.targetDirectory = overrideParams.getTargetDirectory
     }
 
     // setup and read the source
-    val spark = SparkSession.builder().appName(config.appName).getOrCreate()
+    using(SparkSession.builder().appName(config.appName).getOrCreate()) { spark =>
+      import spark.implicits._
 
-    import spark.implicits._
+      val snapshotName = UUID.randomUUID().toString
+      val snapshotPath = createHdfsSnapshot(spark.sparkContext.hadoopConfiguration, config.source, snapshotName)
 
-    val fs =  FileSystem.get(spark.sparkContext.hadoopConfiguration)
-    val snapshotName = UUID.randomUUID().toString
+      try {
+        logger.info("Reading Directory {}", config.source)
 
-    val sourcePath = new Path(config.source)
-    val snapshotPath = fs.createSnapshot(sourcePath, snapshotName)
-    logger.info("Reading Directory {}", config.source)
+        val df = spark.read.avro(snapshotPath.toString) // Select only the required columns
+          .select($"datasetkey", $"publishingorgkey", $"publishingcountry", $"networkkey", $"countrycode",
+                  $"basisofrecord", $"decimallatitude", $"decimallongitude", $"kingdomkey", $"phylumkey", $"classkey",
+                  $"orderkey", $"familykey", $"genuskey", $"specieskey", $"taxonkey", $"year", $"v_occurrencestatus",
+                  $"hasgeospatialissues") // Filter out records without coordinates, records with issues and absences
+          .filter($"decimallatitude".isNotNull && $"decimallongitude".isNotNull && !$"hasgeospatialissues" &&
+                  ($"v_occurrencestatus".isNull || !$"v_occurrencestatus".rlike("(?i)absent")))
 
-    val df = spark.read.avro(snapshotPath.toString)
-      // Select only the required columns
-      .select(
-        $"datasetkey", $"publishingorgkey", $"publishingcountry", $"networkkey",
-        $"countrycode", $"basisofrecord",
-        $"decimallatitude", $"decimallongitude",
-        $"kingdomkey", $"phylumkey", $"classkey", $"orderkey", $"familykey", $"genuskey", $"specieskey", $"taxonkey",
-        $"year",
-        $"v_occurrencestatus", $"hasgeospatialissues")
-      // Filter out records without coordinates, records with issues and absences
-      .filter(
-        $"decimallatitude".isNotNull && $"decimallongitude".isNotNull &&
-        !$"hasgeospatialissues" &&
-        ($"v_occurrencestatus".isNull || !$"v_occurrencestatus".rlike("(?i)absent"))
-      )
+        logger.info("DataFrame columns are {}", df.columns)
 
-    logger.info("DataFrame columns are {}", df.columns)
+        // get a count of records per mapKey
+        val counts = df.flatMap(MapUtils.mapKeysForRecord(_)).rdd.countByValue()
 
-    // get a count of records per mapKey
-    val counts = df.flatMap(MapUtils.mapKeysForRecord(_)).rdd.countByValue()
+        if (Set("all", "points").contains(args(0))) {
+          // upto the threshold we can store points
+          val mapKeys = counts.filter(r => {
+            r._2 < config.tilesThreshold
+          })
+          println("MapKeys suitable for storing as point maps: " + mapKeys.size)
 
-    if (Set("all","points").contains(args(0))) {
-      // upto the threshold we can store points
-      val mapKeys = counts.filter(r => {r._2<config.tilesThreshold})
-      println("MapKeys suitable for storing as point maps: " + mapKeys.size)
+          BackfillPoints.build(spark, df, mapKeys.keySet, config)
+        }
 
-      BackfillPoints.build(spark, df, mapKeys.keySet, config)
+        if (Set("all", "tiles").contains(args(0))) {
+          // above the threshold we build a pyramid
+          val mapKeys = counts.filter(r => {
+            r._2 >= config.tilesThreshold
+          })
+          println("MapKeys suitable for creating tile pyramid maps: " + mapKeys.size)
+
+          //val pool = Executors.newFixedThreadPool(config.tilePyramid.projections.length)
+          //val jobs : ListBuffer[Callable[Unit]] = new ListBuffer[Callable[Unit]]()
+          config.tilePyramid.projections.foreach(proj => {
+            println("Building tiles for projection" + proj.srs)
+
+            //jobs += new Callable[Unit] {
+            //  override def call() = BackfillTiles.build(sc,df,mapKeys.keySet,config, proj)
+            //}
+            BackfillTiles.build(spark, df, mapKeys.keySet, config, proj)
+          })
+
+          //pool.invokeAll(jobs.toList.asJava)
+        }
+      } finally {
+        deleteHdfsSnapshot(spark.sparkContext.hadoopConfiguration, config.source, snapshotName)
+      }
     }
+  }
 
-    if (Set("all","tiles").contains(args(0))) {
-
-      // above the threshold we build a pyramid
-      val mapKeys = counts.filter(r => {r._2>=config.tilesThreshold})
-      println("MapKeys suitable for creating tile pyramid maps: " + mapKeys.size)
-
-      //val pool = Executors.newFixedThreadPool(config.tilePyramid.projections.length)
-      //val jobs : ListBuffer[Callable[Unit]] = new ListBuffer[Callable[Unit]]()
-
-      config.tilePyramid.projections.foreach(proj => {
-        println("Building tiles for projection" + proj.srs)
-
-        //jobs += new Callable[Unit] {
-        //  override def call() = BackfillTiles.build(sc,df,mapKeys.keySet,config, proj)
-        //}
-        BackfillTiles.build(spark, df, mapKeys.keySet, config, proj)
-      })
-
-      //pool.invokeAll(jobs.toList.asJava)
-
-
+  /**
+    * Create a HDFS Snapshot to the input directory.
+    */
+  private def createHdfsSnapshot(hadoopConfiguration: Configuration, directory: String, snapshotName: String ) : Path = {
+    using(FileSystem.get(hadoopConfiguration)){ fs =>
+      return fs.createSnapshot(new Path(directory), snapshotName)
     }
-    fs.deleteSnapshot(sourcePath, snapshotName)
-    fs.close()
-    spark.stop()
+  }
+
+  /**
+    * Deletes a HDFS Snapshot to the input directory.
+    */
+  private def deleteHdfsSnapshot(hadoopConfiguration: Configuration, directory: String, snapshotName: String ) = {
+    using(FileSystem.get(hadoopConfiguration)){ fs =>
+      fs.deleteSnapshot(new Path(directory), snapshotName)
+    }
   }
 
   /**
