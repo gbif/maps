@@ -60,7 +60,7 @@ tilePyramid:
        tileSize: 512
        srs: EPSG:3031
 
-#Hdfs Lock to snapshot the avro hdfsview directory
+# Hdfs Lock to snapshot the avro hdfsview directory
 hdfsLockConfig:
   zkConnectionString: PROVIDED_AT_RUNTIME,
   namespace: prod_index_lock,
