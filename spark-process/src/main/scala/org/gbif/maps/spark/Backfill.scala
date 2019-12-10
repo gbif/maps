@@ -1,11 +1,14 @@
 package org.gbif.maps.spark
 
-import java.util.UUID
+import java.util.{Properties, UUID}
 
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
 import com.databricks.spark.avro._
 import com.rojoma.simplearm.v2.using
+import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
+import org.apache.curator.framework.recipes.barriers.DistributedBarrier
+import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.hadoop.conf.Configuration
 import org.gbif.maps.workflow.WorkflowParams
 import org.slf4j.LoggerFactory
@@ -47,6 +50,7 @@ object Backfill {
       config.pointFeatures.tableName = overrideParams.getTargetTable
       config.tilePyramid.tableName = overrideParams.getTargetTable
       config.targetDirectory = overrideParams.getTargetDirectory
+      config.hdfsLockConfig.zkConnectionString = overrideParams.getHdfsLockZkConnectionString
     }
 
     // setup and read the source
@@ -54,7 +58,7 @@ object Backfill {
       import spark.implicits._
 
       val snapshotName = UUID.randomUUID().toString
-      val snapshotPath = createHdfsSnapshot(spark.sparkContext.hadoopConfiguration, config.source, snapshotName)
+      val snapshotPath = createHdfsSnapshot(spark.sparkContext.hadoopConfiguration, config.source, snapshotName, config.hdfsLockConfig)
 
       try {
         logger.info("Reading Directory {}", config.source)
@@ -108,12 +112,40 @@ object Backfill {
     }
   }
 
+
+  /**
+    * Performs an action in barrier/lock.
+    */
+  private def doInBarrier[T](config: HdfsLockConfig, action: () => T): T = {
+     using(buildCurator(config)) { curator =>
+       curator.start()
+       val lockPath = config.lockingPath + config.lockName
+       val barrier = new DistributedBarrier(curator, lockPath)
+       logger.info("Acquiring barrier {}", lockPath)
+       barrier.waitOnBarrier()
+       logger.info("Setting barrier {}", lockPath)
+       barrier.setBarrier()
+       val result = action()
+       logger.info("Removing barrier {}", lockPath)
+       barrier.removeBarrier()
+       return result
+     }
+  }
+
+  /**
+    * Creates an non-started instance of {@link CuratorFramework}.
+    */
+  private def buildCurator(config: HdfsLockConfig): CuratorFramework = CuratorFrameworkFactory.builder.namespace(config.namespace)
+    .retryPolicy(new ExponentialBackoffRetry(config.sleepTimeMs, config.maxRetries))
+    .connectString(config.zkConnectionString).build
+
+
   /**
     * Create a HDFS Snapshot to the input directory.
     */
-  private def createHdfsSnapshot(hadoopConfiguration: Configuration, directory: String, snapshotName: String ) : Path = {
+  private def createHdfsSnapshot(hadoopConfiguration: Configuration, directory: String, snapshotName: String, hdfsLockConfig: HdfsLockConfig ) : Path = {
     using(FileSystem.get(hadoopConfiguration)){ fs =>
-      return fs.createSnapshot(new Path(directory), snapshotName)
+      doInBarrier[Path](hdfsLockConfig, () => fs.createSnapshot(new Path(directory), snapshotName))
     }
   }
 

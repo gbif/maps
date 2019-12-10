@@ -59,7 +59,9 @@ class MapConfiguration (
   @JsonProperty("tilesThreshold") _tilesThreshold: Int,
   @JsonProperty("hbase") _hbase: HBaseConfiguration,
   @JsonProperty("pointFeatures") _pointFeatures: PointFeaturesConfiguration,
-  @JsonProperty("tilePyramid") _tilePyramid: TilePyramidConfiguration
+  @JsonProperty("tilePyramid") _tilePyramid: TilePyramidConfiguration,
+  @JsonProperty("hdfsLockConfig") _hdfsLockConfig: HdfsLockConfig
+
 ) extends Serializable {
   val appName = Preconditions.checkNotNull(_appName, "appName cannot be null" : Object)
   var source:String = Preconditions.checkNotNull(_source, "source cannot be null" : Object)
@@ -68,6 +70,7 @@ class MapConfiguration (
   val hbase = Preconditions.checkNotNull(_hbase, "hbase cannot be null" : Object)
   val pointFeatures = Preconditions.checkNotNull(_pointFeatures, "pointFeatures cannot be null" : Object)
   val tilePyramid = Preconditions.checkNotNull(_tilePyramid, "tilePyramid cannot be null" : Object)
+  val hdfsLockConfig = Preconditions.checkNotNull(_hdfsLockConfig, "hdfsLockConfig cannot be null" : Object)
 }
 
 /**
@@ -127,4 +130,24 @@ class HBaseConfiguration (
   val rootDir = Preconditions.checkNotNull(_rootDir, "rootDir cannot be null" : Object)
   var zkQuorum = Preconditions.checkNotNull(_zkQuorum, "zkQuorum cannot be null" : Object)
   val keySaltModulus = Preconditions.checkNotNull(_keySaltModulus, "keySaltModulus cannot be null" : Object)
+}
+
+
+/**
+  * Configuration for HDFS Build Barrier/Lock.
+  */
+class HdfsLockConfig (
+  @JsonProperty("zkConnectionString") _zkConnectionString: String,
+  @JsonProperty("namespace") _namespace: String,
+  @JsonProperty("lockingPath") _lockingPath: String,
+  @JsonProperty("lockName") _lockName: String,
+  @JsonProperty("sleepTimeMs") _sleepTimeMs: Int,
+  @JsonProperty("maxRetries") _maxRetries: Int
+) extends Serializable {
+  var zkConnectionString = Preconditions.checkNotNull(_zkConnectionString, "zkConnectionString cannot be null" : Object)
+  val namespace = Preconditions.checkNotNull(_namespace, "namespace cannot be null" : Object)
+  val lockingPath = Preconditions.checkNotNull(_lockingPath, "lockingPath cannot be null" : Object)
+  val lockName = Preconditions.checkNotNull(_lockName, "lockName cannot be null" : Object)
+  val sleepTimeMs = Preconditions.checkNotNull(_sleepTimeMs, "sleepTimeMs cannot be null" : Object)
+  val maxRetries = Preconditions.checkNotNull(_maxRetries, "maxRetries cannot be null" : Object)
 }
