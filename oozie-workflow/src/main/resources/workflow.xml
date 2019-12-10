@@ -33,6 +33,7 @@
       <arg>${wf:conf("gbif.map.keySaltModulus")}</arg>
       <arg>${wf:conf("gbif.map.targetDirectory")}</arg>
       <arg>${wf:conf("gbif.map.zk.metadataPath")}</arg>
+      <arg>${wf:conf("gbif.map.hdfslock.zkConnectionString")}</arg>
       <capture-output />
     </java>
     <ok to="generateHFiles" />
