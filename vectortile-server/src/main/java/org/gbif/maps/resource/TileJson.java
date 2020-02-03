@@ -2,6 +2,7 @@ package org.gbif.maps.resource;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.gbif.maps.common.projection.SphericalMercator;
 
 /**
  * A container object to produce JSON in TileJson format.
@@ -189,7 +190,7 @@ public class TileJson {
   public static final class TileJsonBuilder {
 
     private String attribution;
-    private double[] bounds = new double[]{-180, -85.0511, 180, 85.0511};
+    private double[] bounds = new double[]{-180, -SphericalMercator.MAX_LATITUDE, 180, SphericalMercator.MAX_LATITUDE};
     private int[] center = new int[]{0,0,0};
     private String description;
     private String filesize;

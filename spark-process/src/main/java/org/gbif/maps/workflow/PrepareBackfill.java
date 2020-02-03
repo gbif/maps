@@ -30,10 +30,8 @@ public class PrepareBackfill {
       conf.set(HConstants.ZOOKEEPER_QUORUM, params.getZkQuorum());
       try (
         Connection connection = ConnectionFactory.createConnection(conf);
-        Admin admin = connection.getAdmin();
+        Admin admin = connection.getAdmin()
       ) {
-        System.out.format("Snapshotting %s to %s", params.getSourceTable(), params.getSnapshotTable());
-        admin.snapshot(params.getSnapshotTable(), TableName.valueOf(params.getSourceTable()));
 
         HTableDescriptor target = new HTableDescriptor(TableName.valueOf(params.getTargetTable()));
         appendColumnFamily(target, "EPSG_4326"); // points and tiles both have this CF

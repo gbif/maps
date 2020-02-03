@@ -35,7 +35,7 @@ class Params {
   // Maps the HTTP parameter for the type to the HBase row key prefix for that map.
   // This aligns with the Spark processing that populates HBase of course, but maps the internal key to the
   // HTTP parameter.
-  static final Map<String, String> MAP_TYPES = new ImmutableMap.Builder()
+  static final Map<String, String> MAP_TYPES = new ImmutableMap.Builder<String,String>()
     .put("taxonKey","1")
     .put("datasetKey","2")
     .put("publishingOrg", "3")

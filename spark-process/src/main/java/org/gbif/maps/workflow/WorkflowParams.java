@@ -18,25 +18,25 @@ import com.google.common.base.Throwables;
 public class WorkflowParams {
   public static String OOZIE_ZK_QUORUM = "gbif.map.zk.quorum";
   public static String OOZIE_TIMESTAMP = "gbif.map.timestamp";
-  public static String OOZIE_SOURCE_TABLE = "gbif.map.sourceTable";
-  public static String OOZIE_SNAPSHOT_TABLE = "gbif.map.snapshotTable";
+  public static String OOZIE_SOURCE_DIRECTORY = "gbif.map.sourceDirectory";
   public static String OOZIE_TARGET_TABLE_PREFIX = "gbif.map.targetTablePrefix";
   public static String OOZIE_TARGET_TABLE = "gbif.map.targetTable";
   public static String OOZIE_TARGET_DIRECTORY = "gbif.map.targetDirectory";
   public static String OOZIE_MODE = "gbif.map.mode";
   public static String OOZIE_KEY_SALT_MODULUS = "gbif.map.keySaltModulus";
   public static String OOZIE_ZK_MAP_METADATA_PATH = "gbif.map.zk.metadataPath";
+  public static String OOZIE_ZK_HDFS_LOCK_ZK_PATH = "gbif.map.hdfslock.zkConnectionString";
 
   private String zkQuorum;
   private String timestamp;
-  private String sourceTable;
-  private String snapshotTable;
+  private String sourceDirectory;
   private String targetTablePrefix;
   private String targetTable;
   private String targetDirectory;
   private String mode;
   private int keySaltModulus;
   private String zkMetaDataPath;
+  private String hdfsLockZkConnectionString;
 
   private WorkflowParams() {}
 
@@ -47,16 +47,16 @@ public class WorkflowParams {
     try {
       WorkflowParams params = new WorkflowParams();
       params.zkQuorum = args[0];
-      params.sourceTable = args[1];  // e.g. prod_a_occurrence
+      params.sourceDirectory = args[1];  // e.g. /user/hive/warehouse/dev.db/occurrence_pipeline_hdfs/*
       params.targetTablePrefix = args[2];  // e.g. prod_a_maps (will receive a suffix such as _tiles_20170101_1343)
       params.mode = args[3];  // tiles | points
       String keySaltModulusAsString = args[4];  // the number of partitions for the HBase table
       params.keySaltModulus = Integer.parseInt(keySaltModulusAsString);
       params.timestamp = new SimpleDateFormat("yyyyMMdd_HHmm").format(new Date());
-      params.snapshotTable = params.sourceTable + "_" + params.timestamp;
       params.targetTable = params.targetTablePrefix + "_" + params.mode + "_" + params.timestamp;
       params.targetDirectory = args[5] + "_" + params.timestamp; // location where HFiles will be placed
       params.zkMetaDataPath = args[6];
+      params.hdfsLockZkConnectionString = args[7];
 
       return params;
 
@@ -76,16 +76,16 @@ public class WorkflowParams {
       Properties props = new Properties();
       props.load(sr);
       params.zkQuorum = props.getProperty(OOZIE_ZK_QUORUM);
-      params.sourceTable = props.getProperty(OOZIE_SOURCE_TABLE);
+      params.sourceDirectory = props.getProperty(OOZIE_SOURCE_DIRECTORY);
       params.targetTablePrefix = props.getProperty(OOZIE_TARGET_TABLE_PREFIX);
       params.mode = props.getProperty(OOZIE_MODE);
       String keySaltModulusAsString = props.getProperty(OOZIE_KEY_SALT_MODULUS);
       params.keySaltModulus = Integer.parseInt(keySaltModulusAsString);
       params.timestamp = props.getProperty(OOZIE_TIMESTAMP);
-      params.snapshotTable = props.getProperty(OOZIE_SNAPSHOT_TABLE);
       params.targetTable = props.getProperty(OOZIE_TARGET_TABLE);
       params.targetDirectory = props.getProperty(OOZIE_TARGET_DIRECTORY);
       params.zkMetaDataPath = props.getProperty(OOZIE_ZK_MAP_METADATA_PATH);
+      params.hdfsLockZkConnectionString = props.getProperty(OOZIE_ZK_HDFS_LOCK_ZK_PATH);
 
       return params;
 
@@ -103,12 +103,8 @@ public class WorkflowParams {
     return timestamp;
   }
 
-  public String getSourceTable() {
-    return sourceTable;
-  }
-
-  public String getSnapshotTable() {
-    return snapshotTable;
+  public String getSourceDirectory() {
+    return sourceDirectory;
   }
 
   public String getTargetTablePrefix() {
@@ -135,19 +131,23 @@ public class WorkflowParams {
     return zkMetaDataPath;
   }
 
+  public String getHdfsLockZkConnectionString() {
+    return hdfsLockZkConnectionString;
+  }
+
   @Override
   public String toString() {
     return "WorkflowParams{" +
            "zkQuorum='" + zkQuorum + '\'' +
            ", timestamp='" + timestamp + '\'' +
-           ", sourceTable='" + sourceTable + '\'' +
-           ", snapshotTable='" + snapshotTable + '\'' +
+           ", sourceDirectory='" + sourceDirectory + '\'' +
            ", targetTablePrefix='" + targetTablePrefix + '\'' +
            ", targetTable='" + targetTable + '\'' +
            ", targetDirectory='" + targetDirectory + '\'' +
            ", mode='" + mode + '\'' +
            ", keySaltModulus=" + keySaltModulus +
            ", zkMetaDataPath=" + zkMetaDataPath +
+           ", hdfsLockZkConnectionString=" + hdfsLockZkConnectionString +
            '}';
   }
 
@@ -160,14 +160,14 @@ public class WorkflowParams {
 
         props.setProperty(OOZIE_ZK_QUORUM, getZkQuorum());
         props.setProperty(OOZIE_TIMESTAMP, getTimestamp());
-        props.setProperty(OOZIE_SOURCE_TABLE, getSourceTable());
-        props.setProperty(OOZIE_SNAPSHOT_TABLE, getSnapshotTable());
+        props.setProperty(OOZIE_SOURCE_DIRECTORY, getSourceDirectory());
         props.setProperty(OOZIE_TARGET_TABLE_PREFIX, getTargetTablePrefix());
         props.setProperty(OOZIE_TARGET_TABLE, getTargetTable());
         props.setProperty(OOZIE_TARGET_DIRECTORY, getTargetDirectory());
         props.setProperty(OOZIE_MODE, getMode());
         props.setProperty(OOZIE_KEY_SALT_MODULUS, String.valueOf(getKeySaltModulus()));
         props.setProperty(OOZIE_ZK_MAP_METADATA_PATH, getZkMetaDataPath());
+        props.setProperty(OOZIE_ZK_HDFS_LOCK_ZK_PATH, getHdfsLockZkConnectionString());
         props.store(os, ""); // persist
 
       } catch (FileNotFoundException e) {

@@ -75,7 +75,7 @@ public class FinaliseBackfill {
 
     try (
       Connection connection = ConnectionFactory.createConnection(conf);
-      HTable hTable = new HTable(conf, params.getTargetTable());
+      HTable hTable = new HTable(conf, params.getTargetTable())
     ) {
       LoadIncrementalHFiles loader = new LoadIncrementalHFiles(conf);
 
@@ -119,10 +119,6 @@ public class FinaliseBackfill {
         // 1 sec retries
         MapMetastore metastore = Metastores.newZookeeperMapsMeta(params.getZkQuorum(), 1000, params.getZkMetaDataPath());
       ) {
-
-        // remove the snapshot created in this workflow only
-        System.out.println("Deleting HBase snapshot[" + params.getSnapshotTable()+ "]");
-        admin.deleteSnapshot(params.getSnapshotTable());
 
         // remove all but the last 2 tables
         // table names are suffixed with a timestamp e.g. prod_d_maps_points_20180616_1320

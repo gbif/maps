@@ -11,6 +11,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import org.gbif.maps.common.projection.SphericalMercator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,8 +102,8 @@ public class BackwardCompatibility {
 
     V1TileJson(Capabilities c) {
       this.count = c.getTotal();
-      this.minimumLatitude = Math.max(-85.0511, c.getMinLat());
-      this.maximumLatitude = Math.min( 85.0511, c.getMaxLat());
+      this.minimumLatitude = Math.max(-SphericalMercator.MAX_LATITUDE, c.getMinLat());
+      this.maximumLatitude = Math.min( SphericalMercator.MAX_LATITUDE, c.getMaxLat());
       this.minimumLongitude = c.getMinLng();
       this.maximumLongitude = c.getMaxLng();
     }

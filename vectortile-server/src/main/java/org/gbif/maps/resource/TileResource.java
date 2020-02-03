@@ -13,6 +13,7 @@ import org.gbif.maps.io.PointFeature;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.inject.Singleton;
@@ -29,7 +30,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import no.ecc.vectortile.VectorTileDecoder;
@@ -238,7 +238,7 @@ public final class TileResource {
     String date;
 
     if (encoded.isPresent()) {
-      date = hbaseMaps.getTileDate().orNull();
+      date = hbaseMaps.getTileDate().orElse(null);
       LOG.info("Found tile {} {}/{}/{} for key {} with encoded length of {} and date {}", srs, z, x, y, mapKey, encoded.get().length, date);
 
       VectorTileFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, encoded.get(),
@@ -246,7 +246,7 @@ public final class TileResource {
       return new DatedVectorTile(encoder.encode(), date);
     } else {
       // The tile size is chosen to match the size of preprepared tiles.
-      date = hbaseMaps.getPointsDate().orNull();
+      date = hbaseMaps.getPointsDate().orElse(null);
       Optional<PointFeature.PointFeatures> optionalFeatures = hbaseMaps.getPoints(mapKey);
       if (optionalFeatures.isPresent()) {
         TileProjection projection = Tiles.fromEPSG(srs, tileSize);

@@ -4,7 +4,7 @@ import org.apache.hadoop.hbase.KeyValue
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat
 import org.apache.hadoop.hbase.util.Bytes
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{SparkSession, DataFrame}
 import org.gbif.maps.common.hbase.ModulusSalt
 import org.gbif.maps.io.PointFeature
 import org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord
@@ -22,19 +22,21 @@ import scala.collection.Set
   * collection of objects, each representing the count of records at a single location+year+basisOfRecord combination.
   */
 object BackfillPoints {
-  val logger = LoggerFactory.getLogger("org.gbif.maps.spark.BackfillPoints")
+
+  private val logger = LoggerFactory.getLogger("org.gbif.maps.spark.BackfillPoints")
 
   def build(spark: SparkSession, df : DataFrame, keys: Set[String], config: MapConfiguration): Unit = {
     import spark.implicits._
 
     val keySalter = new ModulusSalt(config.hbase.keySaltModulus); // salted HBase keys
-    val pointSource = df.flatMap(row => {
+    val pointSource = df
+      .flatMap(row => {
       // extract the keys for the record and filter to only those that have been determined as suitable
       val mapKeys = MapUtils.mapKeysForRecord(row).intersect(keys)
 
       // extract the dimensions of interest from the record
-      val lat = row.getDouble(row.fieldIndex("decimallatitude"))
-      val lng = row.getDouble(row.fieldIndex("decimallongitude"))
+      val lat: Double = row.getDouble(row.fieldIndex("decimallatitude"))
+      val lng: Double = row.getDouble(row.fieldIndex("decimallongitude"))
       val bor: String = try {
         row.getString(row.fieldIndex("basisofrecord"))
       } catch {
@@ -42,8 +44,8 @@ object BackfillPoints {
           "UNKNOWN"
       }
 
-      val year = if (row.isNullAt(row.fieldIndex("year"))) null.asInstanceOf[Short]
-      else row.getInt((row.fieldIndex("year"))).asInstanceOf[Short]
+      val year: Short = if (row.isNullAt(row.fieldIndex("year"))) null.asInstanceOf[Short]
+      else row.getInt(row.fieldIndex("year")).asInstanceOf[Short]
 
       // Stuctured as: mapKey, latitude, longitude, basisOfRecord, year -> count
       val res = mutable.ArrayBuffer[((String, Double, Double, String, Short), Long)]()
@@ -75,7 +77,7 @@ object BackfillPoints {
             PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN
         }
 
-        val fb = PointFeature.PointFeatures.Feature.newBuilder();
+        val fb = PointFeature.PointFeatures.Feature.newBuilder()
         fb.setLatitude(f._1)
         fb.setLongitude(f._2)
         fb.setBasisOfRecord(bor)

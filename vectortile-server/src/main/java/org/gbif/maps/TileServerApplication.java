@@ -2,12 +2,16 @@ package org.gbif.maps;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.util.ContextInitializer;
-import org.gbif.common.search.solr.builders.CloudSolrServerBuilder;
+import com.google.common.base.Preconditions;
+import org.apache.http.HttpHost;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.gbif.discovery.lifecycle.DiscoveryLifeCycle;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.resource.*;
-import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapsService;
-import org.gbif.ws.discovery.lifecycle.DiscoveryLifeCycle;
+import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
 
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
@@ -15,8 +19,10 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.solr.client.solrj.SolrClient;
 import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * The main entry point for running the member node.
@@ -51,11 +57,9 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
     Configuration conf = HBaseConfiguration.create();
     conf.set("hbase.zookeeper.quorum", configuration.getHbase().getZookeeperQuorum());
 
-    SolrClient client = new CloudSolrServerBuilder()
-      .withZkHost(configuration.getSolr().getZookeeperQuorum())
-      .withDefaultCollection(configuration.getSolr().getDefaultCollection()).build();
-    OccurrenceHeatmapsService solrService = new OccurrenceHeatmapsService(client);
-
+    RestHighLevelClient esClient = createEsClient(configuration.getEsConfig());
+    OccurrenceHeatmapsEsService heatmapsService =
+      new OccurrenceHeatmapsEsService(esClient, configuration.getEsConfig().getIndex());
 
     // Either use Zookeeper or static config to locate tables
     HBaseMaps hbaseMaps = null;
@@ -78,12 +82,12 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
                                           configuration.getHbase().getBufferSize());
     environment.jersey().register(tiles);
 
-    environment.jersey().register(new RegressionResource(tiles, client));
+    environment.jersey().register(new RegressionResource(tiles, esClient, configuration.getEsConfig().getIndex()));
 
     // The resource that queries SOLR directly for HeatMap data
-    environment.jersey().register(new SolrResource(solrService,
-                                                   configuration.getSolr().getTileSize(),
-                                                   configuration.getSolr().getBufferSize()));
+    environment.jersey().register(new AddHocMapsResource(heatmapsService,
+                                                   configuration.getEsConfig().getTileSize(),
+                                                   configuration.getEsConfig().getBufferSize()));
 
     environment.jersey().register(new BackwardCompatibility(tiles));
 
@@ -92,5 +96,21 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
     if (configuration.getService().isDiscoverable()) {
       environment.lifecycle().manage(new DiscoveryLifeCycle(configuration.getService()));
     }
+  }
+
+  /**
+   * Builds an Elasticsearch client using the {@link org.gbif.maps.TileServerConfiguration.EsConfiguration}.
+   */
+  private static RestHighLevelClient createEsClient(TileServerConfiguration.EsConfiguration esConfig) {
+    Objects.requireNonNull(esConfig);
+    Objects.requireNonNull(esConfig.getHosts());
+    Preconditions.checkArgument(esConfig.getHosts().length > 0);
+
+    HttpHost[] hosts = Arrays.stream(esConfig.getHosts()).map(HttpHost::create).toArray(HttpHost[]::new);
+    RestClientBuilder builder =
+      RestClient.builder(hosts)
+        .setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder.setConnectTimeout(esConfig.getConnectTimeout()).setSocketTimeout(esConfig.getSocketTimeout()))
+        .setMaxRetryTimeoutMillis(esConfig.getMaxRetryTimeoutMillis());
+    return new RestHighLevelClient(builder);
   }
 }

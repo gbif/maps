@@ -39,6 +39,7 @@ mvn -Dpoints.frequency="$P_FREQUENCY" -Dpoints.start="$P_START" -Dtiles.frequenc
 echo "Copy to Hadoop"
 sudo -u hdfs hdfs dfs -rm -r /maps-backfill-workflow/
 sudo -u hdfs hdfs dfs -copyFromLocal target/maps-backfill-workflow /
+sudo -u hdfs hdfs dfs -copyFromLocal /etc/hive/conf/hive-site.xml /maps-backfill-workflow/lib/
 
 echo "Start Oozie points job"
 sudo -u hdfs oozie job --oozie $P_OOZIE -config points.properties -run

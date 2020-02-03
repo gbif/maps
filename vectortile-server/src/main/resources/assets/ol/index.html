@@ -180,6 +180,13 @@
         <p><em>Set to "Local or none" for maps with no labels.</em></p>
       </fieldset>
 
+      <fieldset id="tile_grid_fieldset">
+        <legend>Tile grid</legend>
+        <label><input type="checkbox" id="tile_grid" name="tile_grid" value="tile_grid"> Tile grid</label><br/>
+        <!--label>opacity</label>
+        <input id="grid_opacity" type="range" min="0" max="1" step="0.01"/-->
+      </fieldset>
+
       <fieldset id="data">
         <legend>Data source</legend>
         <label>
@@ -284,6 +291,11 @@
             <input type="radio" name="raster_style" value="outline.poly" />
             <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&hexPerTile=20&style=outline.poly&srs=EPSG:4326&taxonKey=797" title="outline.poly"/>
           </label>
+
+          <label>
+            <input type="radio" name="raster_style" value="scaled.circles" />
+            <img src="https://api-es.gbif-uat.org/v2/map/occurrence/adhoc/0/0/0@Hx.png?style=scaled.circles&srs=EPSG:4326&taxonKey=797" title="scaled.circles"/>
+          </label>
         </div>
       </fieldset>
 
@@ -321,7 +333,7 @@
       <fieldset id="binning">
         <legend>Binning</legend>
         <label>
-          <input type="radio" name="binning" id="binning_points" value="points" /> Points
+          <input type="radio" name="binning" id="binning_points" value="points" /> No binning
         </label><br/>
         <label>
           <input type="radio" name="binning" id="binning_hex" value="hex" checked="checked" /> Hexagons
@@ -363,13 +375,6 @@
           <label><input type="checkbox" name="basis_of_record" value="UNKNOWN"> Unknown</label>
         </div>
       </fieldset>
-
-      <!--fieldset id="grid">
-        <legend>Tile grid</legend>
-        <label><input id="grid_visible" type="checkbox"/>visibility</label><br/>
-        <label>opacity</label>
-        <input id="grid_opacity" type="range" min="0" max="1" step="0.01"/>
-      </fieldset-->
 
       <fieldset id="url">
         <legend>URL templates</legend>

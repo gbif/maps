@@ -9,7 +9,7 @@
 
   <groupId>org.gbif.maps</groupId>
   <artifactId>maps-motherpom</artifactId>
-  <version>0.11-SNAPSHOT</version>
+  <version>0.15-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <description>GBIF Map services</description>
@@ -31,8 +31,17 @@
 
   <properties>
     <jdkLevel>1.8</jdkLevel>
-    <gbif-occurrence.version>0.94</gbif-occurrence.version>
+    <gbif-occurrence.version>0.100-ES</gbif-occurrence.version>
+    <gbif-api.version>0.89</gbif-api.version>
+    <dwc-api.version>1.22</dwc-api.version>
+    <gbif.service-discovery.version>0.2</gbif.service-discovery.version>
     <slf4j.version>1.7.25</slf4j.version>
+    <javax.inject.version>1</javax.inject.version>
+    <javax.validation.api.version>1.1.0.Final</javax.validation.api.version>
+    <javax.mail.version>1.4.1</javax.mail.version>
+    <javax.activation.version>1.1.1</javax.activation.version>
+    <jts.version>1.13</jts.version>
+    <servlet-api.version>3.1.0</servlet-api.version>
     <!-- Important: same version as the PBF library installed -->
     <protoc.version>2.5.0</protoc.version>
     <logback.version>1.2.3</logback.version>
@@ -46,16 +55,22 @@
     <hbase.version>1.2.0-cdh5.12.0</hbase.version>
     <spark.version>1.6.1</spark.version>
     <geotools.version>15.0</geotools.version>
+
     <hsqldb.version>2.4.1</hsqldb.version>
     <!-- fixed to the version coming with Spark -->
     <jackson.spark.version>2.6.7</jackson.spark.version>
     <!-- fixed to the version coming with Dropwizard -->
     <jackson.dropwizard.version>2.6.3</jackson.dropwizard.version>
     <scala.tools.version>2.11</scala.tools.version>
+    <rs-api.version>2.0.1</rs-api.version>
+    <scala.tools.version>2.11</scala.tools.version>
     <scala.version>2.11.8</scala.version>
     <spark.version>2.3.0</spark.version>
+    <databricks.spark.avro.version>4.0.0</databricks.spark.avro.version>
+    <simple.arm.version>2.3.1</simple.arm.version>
     <!-- laziness: rely on transient dependencies from DW -->
     <dropwizard.version>0.9.2</dropwizard.version>
+    <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
     <scalatest.version>3.0.0-SNAP13</scalatest.version>
     <junit.version>4.12</junit.version>
     <curator.version>4.0.1</curator.version>
@@ -63,7 +78,12 @@
     <maven-core.version>3.3.9</maven-core.version>
     <maven-model.version>3.1.1</maven-model.version>
     <zookeeper.version>3.4.5-cdh5.12.0</zookeeper.version>
-    <hbase-hadoop-compat.version>1.2.0-cdh5.16.2</hbase-hadoop-compat.version>
+
+    <!-- es versions -->
+    <elasticsearch.version>6.5.4</elasticsearch.version>
+    <httpclient.version>4.5.2</httpclient.version>
+    <httpcore.version>4.4.5</httpcore.version>
+    <log4j-to-slf4j.version>2.8.2</log4j-to-slf4j.version>
 
     <!-- Plugins -->
     <maven-protoc-plugin.version>0.3.5</maven-protoc-plugin.version>
@@ -162,9 +182,74 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.gbif.occurrence</groupId>
+        <artifactId>occurrence-heatmaps</artifactId>
+        <version>${gbif-occurrence.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-smile</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.gbif.occurrence</groupId>
+        <artifactId>occurrence-search</artifactId>
+        <version>${gbif-occurrence.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.gbif</groupId>
+        <artifactId>dwc-api</artifactId>
+        <version>${dwc-api.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.gbif</groupId>
+        <artifactId>gbif-api</artifactId>
+        <version>${gbif-api.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.gbif</groupId>
+        <artifactId>service-discovery</artifactId>
+        <version>${gbif.service-discovery.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
         <version>${protoc.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>javax.servlet-api</artifactId>
+        <version>${servlet-api.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.validation</groupId>
+        <artifactId>validation-api</artifactId>
+        <version>${javax.validation.api.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.activation</groupId>
+        <artifactId>activation</artifactId>
+        <version>${javax.activation.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.mail</groupId>
+        <artifactId>mail</artifactId>
+        <version>${javax.mail.version}</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
@@ -175,6 +260,7 @@
         <groupId>org.slf4j</groupId>
         <artifactId>jcl-over-slf4j</artifactId>
         <version>${slf4j.version}</version>
+        <scope>runtime</scope>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
@@ -185,6 +271,17 @@
         <groupId>org.slf4j</groupId>
         <artifactId>log4j-over-slf4j</artifactId>
         <version>${slf4j.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-to-slf4j</artifactId>
+        <version>${log4j-to-slf4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.vividsolutions</groupId>
+        <artifactId>jts</artifactId>
+        <version>${jts.version}</version>
       </dependency>
       <dependency>
         <groupId>ch.qos.logback</groupId>
@@ -259,9 +356,34 @@
       </dependency>
       <dependency>
         <groupId>io.dropwizard</groupId>
+        <artifactId>dropwizard-lifecycle</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard</groupId>
+        <artifactId>dropwizard-logging</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-core</artifactId>
+        <version>${dropwizard.metrics.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-annotation</artifactId>
+        <version>${dropwizard.metrics.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard</groupId>
         <artifactId>dropwizard-testing</artifactId>
         <version>${dropwizard.version}</version>
         <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>javax.ws.rs</groupId>
+        <artifactId>javax.ws.rs-api</artifactId>
+        <version>${rs-api.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hive</groupId>
@@ -269,9 +391,28 @@
         <version>${hive.version}</version>
       </dependency>
       <dependency>
+        <groupId>javax.inject</groupId>
+        <artifactId>javax.inject</artifactId>
+        <version>${javax.inject.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-common</artifactId>
         <version>${hadoop.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-json</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-server</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
@@ -296,13 +437,13 @@
       </dependency>
       <dependency>
         <groupId>org.apache.hbase</groupId>
-        <artifactId>hbase-server</artifactId>
+        <artifactId>hbase-common</artifactId>
         <version>${hbase.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hbase</groupId>
-        <artifactId>hbase-hadoop-compat</artifactId>
-        <version>${hbase-hadoop-compat.version}</version>
+        <artifactId>hbase-server</artifactId>
+        <version>${hbase.version}</version>
       </dependency>
       <dependency>
         <groupId>org.scala-lang</groupId>
@@ -335,20 +476,117 @@
         </exclusions>
       </dependency>
       <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-hive_${scala.tools.version}</artifactId>
+        <version>${spark.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.databricks</groupId>
+        <artifactId>spark-avro_${scala.tools.version}</artifactId>
+        <version>${databricks.spark.avro.version}</version>
+      </dependency>
+      <!-- Library for automatic resource management (Closeables) -->
+      <dependency>
+        <groupId>com.rojoma</groupId>
+        <artifactId>simple-arm-v2_${scala.tools.version}</artifactId>
+        <version>${simple.arm.version}</version>
+      </dependency>
+
+      <!-- For Lifecycle and discovery-->
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-core</artifactId>
+        <version>${maven-core.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-model</artifactId>
+        <version>${maven-model.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.curator</groupId>
+        <artifactId>curator-client</artifactId>
+        <version>${curator.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
         <groupId>org.apache.curator</groupId>
         <artifactId>curator-framework</artifactId>
         <version>${curator.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.curator</groupId>
         <artifactId>curator-recipes</artifactId>
         <version>${curator.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.curator</groupId>
+        <artifactId>curator-x-discovery</artifactId>
+        <version>${curator.version}</version>
         <exclusions>
           <exclusion>
-            <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper</artifactId>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+      <!-- ES -->
+      <dependency>
+        <groupId>org.elasticsearch.client</groupId>
+        <artifactId>elasticsearch-rest-high-level-client</artifactId>
+        <version>${elasticsearch.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.elasticsearch.client</groupId>
+        <artifactId>elasticsearch-rest-client</artifactId>
+        <version>${elasticsearch.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.elasticsearch</groupId>
+        <artifactId>elasticsearch</artifactId>
+        <version>${elasticsearch.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-smile</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-cbor</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>${httpclient.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.curator</groupId>
@@ -362,6 +600,14 @@
         </exclusions>
         <scope>test</scope>
       </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpcore</artifactId>
+        <version>${httpcore.version}</version>
+      </dependency>
+
+
+      <!--Test-->
       <dependency>
         <groupId>org.scalatest</groupId>
         <artifactId>scalatest-funsuite_2.11</artifactId>
