@@ -1,8 +1,5 @@
 package org.gbif.maps.resource;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.bin.SquareBin;
 import org.gbif.maps.common.projection.Double2D;
@@ -60,9 +57,6 @@ public final class AdHocMapsResource {
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final String LAYER_NAME = "occurrence";
 
-  //Experimental: keeps a cache of all the calculated geometries from z,x and y.
-  private static final LoadingCache<ZXY,String> ZXY_TO_GEOM = CacheBuilder.newBuilder().build(CacheLoader.from(AdHocMapsResource::searchGeom));
-
   @VisibleForTesting
   static final String QUERY_BUFFER_PERCENTAGE = "0.125";  // 1/8th tile buffer all around, similar to the HBase maps
   private static final String EPSG_4326 = "EPSG:4326";
@@ -108,7 +102,7 @@ public final class AdHocMapsResource {
                                 || BIN_MODE_HEX.equalsIgnoreCase(bin)
                                 || BIN_MODE_SQUARE.equalsIgnoreCase(bin), "Unsupported bin mode");
 
-    heatmapRequest.setGeometry(ZXY_TO_GEOM.get(new ZXY(z, x, y, tileBuffer)));
+    heatmapRequest.setGeometry(searchGeom(new ZXY(z, x, y, tileBuffer)));
     heatmapRequest.setZoom(z);
 
     LOG.info("Request:{}", heatmapRequest);
