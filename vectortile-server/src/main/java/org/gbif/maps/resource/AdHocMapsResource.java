@@ -49,19 +49,19 @@ import static org.gbif.maps.resource.Params.SQUARE_TILE_SIZE;
 import static org.gbif.maps.resource.Params.enableCORS;
 
 /**
- * SOLR search as a vector tile service.
+ * ElasticSearch as a vector tile service.
  * Note to developers: This class could benefit from some significant refactoring and cleanup.
  */
 @Path("/occurrence/adhoc")
 @Singleton
-public final class AddHocMapsResource {
+public final class AdHocMapsResource {
 
-  private static final Logger LOG = LoggerFactory.getLogger(AddHocMapsResource.class);
+  private static final Logger LOG = LoggerFactory.getLogger(AdHocMapsResource.class);
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final String LAYER_NAME = "occurrence";
 
   //Experimental: keeps a cache of all the calculated geometries from z,x and y.
-  private static final LoadingCache<ZXY,String> ZXY_TO_GEOM = CacheBuilder.newBuilder().build(CacheLoader.from(AddHocMapsResource::searchGeom));
+  private static final LoadingCache<ZXY,String> ZXY_TO_GEOM = CacheBuilder.newBuilder().build(CacheLoader.from(AdHocMapsResource::searchGeom));
 
   @VisibleForTesting
   static final String QUERY_BUFFER_PERCENTAGE = "0.125";  // 1/8th tile buffer all around, similar to the HBase maps
@@ -73,7 +73,7 @@ public final class AddHocMapsResource {
   private final OccurrenceHeatmapsEsService searchHeatmapsService;
 
 
-  public AddHocMapsResource(OccurrenceHeatmapsEsService searchHeatmapsService, int tileSize, int bufferSize) {
+  public AdHocMapsResource(OccurrenceHeatmapsEsService searchHeatmapsService, int tileSize, int bufferSize) {
     this.tileSize = tileSize;
     this.bufferSize = bufferSize;
     this.searchHeatmapsService = searchHeatmapsService;
