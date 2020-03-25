@@ -186,7 +186,7 @@ public final class RegressionResource {
     searchRequest.setFacetLimit(300);
 
     // force our basis of record to be those that are supported
-    searchRequest.getParameters().removeAll(OccurrenceSearchParameter.BASIS_OF_RECORD);
+    searchRequest.getParameters().remove(OccurrenceSearchParameter.BASIS_OF_RECORD);
     SUITABLE_BASIS_OF_RECORDS.forEach(bor -> searchRequest.addBasisOfRecordFilter(BasisOfRecord.valueOf(bor)));
 
     searchRequest.getFacets().clear(); // safeguard against dangerous queries
