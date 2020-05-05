@@ -5,10 +5,10 @@
   <parent>
     <artifactId>maps-motherpom</artifactId>
     <groupId>org.gbif.maps</groupId>
-    <version>0.17-ES-SNAPSHOT</version>
+    <version>0.17-SNAPSHOT</version>
   </parent>
 
-  <artifactId>es-vectortile-server</artifactId>
+  <artifactId>vectortile-server</artifactId>
   <packaging>jar</packaging>
 
   <build>

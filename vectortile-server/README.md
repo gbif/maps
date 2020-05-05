@@ -10,7 +10,7 @@ Or:
 
 ```
 mvn clean package
-java -jar target/es-vectortile-server-[0-9]*[0-9]-SNAPSHOT.jar server server.conf
+java -jar target/vectortile-server-[0-9]*[0-9]-SNAPSHOT.jar server server.conf
 ```
 
 ### URL structure
