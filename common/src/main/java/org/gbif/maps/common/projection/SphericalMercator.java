@@ -4,7 +4,13 @@ import static java.lang.Math.PI;
 import static java.lang.Math.atan;
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.Math.pow;
 import static java.lang.Math.sin;
+import static java.lang.Math.sinh;
+import static java.lang.Math.toDegrees;
+import static org.gbif.maps.common.projection.WGS84.to180Degrees;
 
 /**
  * Spherical Mercator projection utilities which work at a given tile size.
@@ -31,5 +37,29 @@ public class SphericalMercator extends AbstractTileProjection {
   @Override
   public boolean isPlottable(double latitude, double longitude) {
     return latitude >= -MAX_LATITUDE && latitude <= MAX_LATITUDE && longitude>=-180 && longitude<=180;
+  }
+
+  @Override
+  public Double2D[] tileBoundary(int z, long x, long y, double tileBuffer) {
+    // At zoom zero, we just request the world.
+    if (z == 0) {
+      tileBuffer = 0;
+    }
+
+    double north = min(MAX_LATITUDE, (max(-MAX_LATITUDE, tileLatitude(z, y-tileBuffer))));
+    double south = min(MAX_LATITUDE, (max(-MAX_LATITUDE, tileLatitude(z, y+tileBuffer + 1))));
+    double  west = to180Degrees(tileLongitude(z,  x  - tileBuffer));
+    double  east = to180Degrees(tileLongitude(z, x+1 + tileBuffer));
+
+    return new Double2D[] {new Double2D(west, south), new Double2D(east, north)};
+  }
+
+  private static double tileLongitude(int z, double x) {
+    return (x / pow(2.0, z) * 360.0 - 180);
+  }
+
+  private static double tileLatitude(int z, double y) {
+    double n = PI - (2.0 * PI * y) / pow(2.0, z);
+    return toDegrees(atan(sinh(n))) % 90;
   }
 }

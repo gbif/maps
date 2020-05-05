@@ -19,7 +19,7 @@ import org.gbif.discovery.conf.ServiceConfiguration;
 /**
  * Application configuration with sensible defaults if applicable.
  */
-public class  TileServerConfiguration extends Configuration {
+public class TileServerConfiguration extends Configuration {
   private static final LogbackAutoConfigLoggingFactory LOGGING_FACTORY = new LogbackAutoConfigLoggingFactory();
 
   @Valid

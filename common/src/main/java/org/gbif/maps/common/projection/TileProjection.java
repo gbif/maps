@@ -16,4 +16,13 @@ public interface TileProjection {
   Double2D toGlobalPixelXY(double latitude, double longitude, int zoom);
 
   boolean isPlottable(double latitude, double longitude);
+
+  /**
+   * Returns a bounding box enveloping the given tile, with the given buffer.
+   * @param zoom The zoom level
+   * @param x The tile column
+   * @param y The tile row
+   * @param tileBuffer The buffer, in units of tiles.
+   */
+  Double2D[] tileBoundary(int zoom, long x, long y, double tileBuffer);
 }

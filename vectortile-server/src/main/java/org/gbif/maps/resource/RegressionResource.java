@@ -139,7 +139,7 @@ public final class RegressionResource {
   }
 
   /**
-   * Uses the parameters to perform a search on SOLR and returns the regression.  This should use the standard
+   * Uses the parameters to perform a search on ES and returns the regression.  This should use the standard
    * GBIF occurrence API parameters with the addition of higherTaxonKey.
    */
   @GET
@@ -176,7 +176,7 @@ public final class RegressionResource {
   }
 
   /**
-   * Using the HTTP request containing the typical GBIF API parameters creates a SOLR faceted query for the years.
+   * Using the HTTP request containing the typical GBIF API parameters creates an ES faceted query for the years.
    * If a taxonKey is provided explicitly then all taxon keys in the HTTP request are ignored and replaced with these.
    */
   private TreeMap<String, Long> yearFacet(HttpServletRequest request, String... taxonKey)

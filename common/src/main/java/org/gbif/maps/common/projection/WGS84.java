@@ -1,5 +1,7 @@
 package org.gbif.maps.common.projection;
 
+import com.google.common.annotations.VisibleForTesting;
+
 /**
  * This simply plots the coordinates in world space performing no further projection.
  * Notes:
@@ -31,5 +33,43 @@ class WGS84 extends AbstractTileProjection {
   @Override
   public boolean isPlottable(double latitude, double longitude) {
     return latitude >= -90 && latitude <= 90 && longitude>=-180 && longitude<=180;
+  }
+
+  /**
+   * For the given tile, returns the envelope for the tile, with a buffer.
+   * @param z zoom
+   * @param x tile X address
+   * @param y tile Y address
+   * @return an envelope for the tile, with the appropriate buffer
+   */
+  @VisibleForTesting
+  @Override
+  public Double2D[] tileBoundary(int z, long x, long y, double tileBuffer) {
+    int tilesPerZoom = 1 << z;
+    double degreesPerTile = 180d / tilesPerZoom;
+    double bufferDegrees = tileBuffer * degreesPerTile;
+
+    // the edges of the tile after buffering
+    double minLng = to180Degrees((degreesPerTile * x) - 180 - bufferDegrees);
+    double maxLng = to180Degrees(minLng + degreesPerTile + (bufferDegrees * 2));
+
+    // clip the extent (ES barfs otherwise)
+    double maxLat = Math.min(90 - (degreesPerTile * y) + bufferDegrees, 90);
+    double minLat = Math.max(maxLat - degreesPerTile - 2 * bufferDegrees, -90);
+
+    return new Double2D[]{new Double2D(minLng, minLat), new Double2D(maxLng, maxLat)};
+  }
+
+  /**
+   * If the longitude is expressed from 0..360 it is converted to -180..180.
+   */
+  @VisibleForTesting
+  static double to180Degrees(double longitude) {
+    if (longitude > 180) {
+      return longitude - 360;
+    } else if (longitude < -180){
+      return longitude + 360;
+    }
+    return longitude;
   }
 }

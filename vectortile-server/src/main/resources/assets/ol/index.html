@@ -193,9 +193,9 @@
           <input type="radio" name="datasource" id="datasource_hbase" value="density" checked="checked" /> Simple (HBase)
         </label>
         <label>
-          <input type="radio" name="datasource" id="datasource_solr"  value="adhoc" /> Ad-hoc search (SOLR)
+          <input type="radio" name="datasource" id="datasource_es"  value="adhoc" /> Ad-hoc search (ES)
         </label>
-        <p><em>If choosing Ad-hoc search, first choose either WGS84 or raster tiles (or both).</em></p>
+        <p><em>If choosing Ad-hoc search, first choose either WGS84/WebM, or raster tiles (or both).</em></p>
       </fieldset>
 
       <fieldset id="render">
@@ -294,7 +294,7 @@
 
           <label>
             <input type="radio" name="raster_style" value="scaled.circles" />
-            <img src="https://api-es.gbif-uat.org/v2/map/occurrence/adhoc/0/0/0@Hx.png?style=scaled.circles&srs=EPSG:4326&taxonKey=797" title="scaled.circles"/>
+            <img src="https://api.gbif.org/v2/map/occurrence/adhoc/0/0/0@Hx.png?style=scaled.circles&srs=EPSG:4326&taxonKey=797" title="scaled.circles"/>
           </label>
         </div>
       </fieldset>

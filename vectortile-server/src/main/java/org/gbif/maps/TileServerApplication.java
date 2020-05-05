@@ -84,7 +84,7 @@ public class TileServerApplication extends Application<TileServerConfiguration> 
 
     environment.jersey().register(new RegressionResource(tiles, esClient, configuration.getEsConfig().getIndex()));
 
-    // The resource that queries SOLR directly for HeatMap data
+    // The resource that queries ElasticSearch directly for HeatMap data
     environment.jersey().register(new AdHocMapsResource(heatmapsService,
                                                    configuration.getEsConfig().getTileSize(),
                                                    configuration.getEsConfig().getBufferSize()));
