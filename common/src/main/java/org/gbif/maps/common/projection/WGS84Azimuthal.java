@@ -66,4 +66,9 @@ abstract class WGS84Azimuthal extends AbstractTileProjection {
     world2pixel.concatenate(getOffsetTransform());
     return world2pixel;
   }
+
+  @Override
+  public Double2D[] tileBoundary(int zoom, long x, long y, double tileBuffer) {
+    return new Double2D[0];
+  }
 }

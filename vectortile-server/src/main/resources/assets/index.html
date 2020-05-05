@@ -42,7 +42,7 @@
         <input type="radio" name="_type" id="typeSimple" value="simple" checked> Simple (HBase)
       </label>
       <label class="radio-inline">
-        <input type="radio" name="_type" id="typeAdhoc" value="adhoc"> Ad hoc search (SOLR)
+        <input type="radio" name="_type" id="typeAdhoc" value="adhoc"> Ad hoc search (ES)
       </label>
     </div>
 
@@ -436,9 +436,9 @@ noUiSlider.create(slider, {
 $("#config :input").change(function() {
   var backend = $('input[name="_type"]:checked').val();
   if ("adhoc" == backend) {
-    // SOLR only supports WGS84
+    // ES only supports WGS84 and WebM
     $('#srsWGS84').prop('checked', true);
-    $('#srs3857').prop('disabled', true);
+    $('#srs3857').prop('disabled', false);
     $('#srs3575').prop('disabled', true);
     $('#srs3031').prop('disabled', true);
 

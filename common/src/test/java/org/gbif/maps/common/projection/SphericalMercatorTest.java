@@ -2,6 +2,7 @@ package org.gbif.maps.common.projection;
 
 import org.junit.Test;
 
+import static org.gbif.maps.common.projection.SphericalMercator.MAX_LATITUDE;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.AssertOnDouble2D.assertEquals;
@@ -42,5 +43,54 @@ public class SphericalMercatorTest {
     assertEquals(new Double2D( 2048,  1024), sm.toGlobalPixelXY(   0,  180, 2), ε); // Right edge centre
     assertEquals(new Double2D( 1024,     0), sm.toGlobalPixelXY( L85,    0, 2), ε); // Top edge centre
     assertEquals(new Double2D( 1024,  2048), sm.toGlobalPixelXY(-L85,    0, 2), ε); // Bottom edge centre
+
+    // Check these figures.
+    assertEquals(new Double2D( 291.46666,148.19743), sm.toGlobalPixelXY(60.170833, 24.9375, 0), ε); // Helsinki
+    assertEquals(new Double2D( 582.93333,296.39486), sm.toGlobalPixelXY(60.170833, 24.9375, 1), ε); // Helsinki
+    assertEquals(new Double2D(1165.86666,592.78972), sm.toGlobalPixelXY(60.170833, 24.9375, 2), ε); // Helsinki
+  }
+
+  @Test
+  public void testTileBoundary() {
+    SphericalMercator sm = new SphericalMercator(512);
+
+    // Tile 0/0/0
+    // ■
+    Double2D[] expected = new Double2D[]{new Double2D(-180, -MAX_LATITUDE), new Double2D(180, MAX_LATITUDE)};
+    Double2D[] result = sm.tileBoundary(0, 0, 0, 0);
+    assertEquals("0/0/0 failed", expected[0], result[0], ε);
+    assertEquals("0/0/0 failed", expected[1], result[1], ε);
+
+    // zoom 1
+
+    // ■□
+    // □□
+    Double2D[] expectedNW = new Double2D[]{new Double2D(-180, 0), new Double2D(0, MAX_LATITUDE)};
+    Double2D[] resultNW = sm.tileBoundary(1, 0, 0, 0);
+    assertEquals("1/0/0 failed", expectedNW[0], resultNW[0], ε);
+    assertEquals("1/0/0 failed", expectedNW[1], resultNW[1], ε);
+
+    // □□
+    // □■
+    Double2D[] expectedSE = new Double2D[]{new Double2D(0, -MAX_LATITUDE), new Double2D(180, 0)};
+    Double2D[] resultSE = sm.tileBoundary(1, 1, 1, 0);
+    assertEquals("1/1/1 failed", expectedSE[0], resultSE[0], ε);
+    assertEquals("1/1/1 failed", expectedSE[1], resultSE[1], ε);
+
+    double bufferInTiles = 0.25;
+
+    // Tile 0/0/0
+    // ■
+    Double2D[] expectedBuf = new Double2D[]{new Double2D(90, -MAX_LATITUDE), new Double2D(-90, MAX_LATITUDE)};
+    Double2D[] resultBuf = sm.tileBoundary(0, 0, 0, bufferInTiles);
+    assertEquals("0/0/0 with dateline failed", expectedBuf[0], resultBuf[0], ε);
+    assertEquals("0/0/0 with dateline failed", expectedBuf[1], resultBuf[1], ε);
+
+    // □□
+    // □■
+    Double2D[] expectedSEBuf = new Double2D[]{new Double2D( -45, -MAX_LATITUDE), new Double2D(-135,40.97990)};
+    Double2D[] resultSEBuf = sm.tileBoundary(1, 1, 1, bufferInTiles);
+    assertEquals("1/1/1 with dateline failed", expectedSEBuf[0], resultSEBuf[0], ε);
+    assertEquals("1/1/1 with dateline failed", expectedSEBuf[1], resultSEBuf[1], ε);
   }
 }

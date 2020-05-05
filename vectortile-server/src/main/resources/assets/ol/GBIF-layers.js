@@ -53,48 +53,48 @@ gbifOccurrenceLayerBase = "../../..";
 var gbifOccurrenceVectorLayerBase = gbifOccurrenceLayerBase;
 var gbifOccurrenceRasterLayerBase = gbifOccurrenceLayerBase;
 
-var densityColours = ["#FFFF00", "#FFCC00", "#FF9900", "#FF6600", "#FF3300", "#FF0000"];
+var densityColours = ["#FFFF00FF", "#FFCC00BB", "#FF9900AA", "#FF660099", "#FF330099", "#FF000099"];
 
 var densityPoints = [
 	new ol.style.Style({
 		image: new ol.style.Circle({
 			fill: new ol.style.Fill({color: densityColours[0]}),
-			radius: 1
+			radius: 6
 		}),
 		fill: new ol.style.Fill({color: densityColours[0]})
 	}),
 	new ol.style.Style({
 		image: new ol.style.Circle({
 			fill: new ol.style.Fill({color: densityColours[1]}),
-			radius: 1
+			radius: 7
 		}),
 		fill: new ol.style.Fill({color: densityColours[1]})
 	}),
 	new ol.style.Style({
 		image: new ol.style.Circle({
 			fill: new ol.style.Fill({color: densityColours[2]}),
-			radius: 1
+			radius: 10
 		}),
 		fill: new ol.style.Fill({color: densityColours[2]})
 	}),
 	new ol.style.Style({
 		image: new ol.style.Circle({
 			fill: new ol.style.Fill({color: densityColours[3]}),
-			radius: 1
+			radius: 16
 		}),
 		fill: new ol.style.Fill({color: densityColours[3]})
 	}),
 	new ol.style.Style({
 		image: new ol.style.Circle({
 			fill: new ol.style.Fill({color: densityColours[4]}),
-			radius: 1
+			radius: 30
 		}),
 		fill: new ol.style.Fill({color: densityColours[4]})
 	}),
 	new ol.style.Style({
 		image: new ol.style.Circle({
 			fill: new ol.style.Fill({color: densityColours[5]}),
-			radius: 1
+			radius: 30
 		}),
 		fill: new ol.style.Fill({color: densityColours[5]})
 	}),

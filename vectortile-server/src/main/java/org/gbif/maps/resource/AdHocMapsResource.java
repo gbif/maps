@@ -59,19 +59,17 @@ public final class AdHocMapsResource {
 
   @VisibleForTesting
   static final String QUERY_BUFFER_PERCENTAGE = "0.125";  // 1/8th tile buffer all around, similar to the HBase maps
+  private static final String EPSG_3857 = "EPSG:3857";
   private static final String EPSG_4326 = "EPSG:4326";
 
   private final int tileSize;
   private final int bufferSize;
-  private final TileProjection projection;
   private final OccurrenceHeatmapsEsService searchHeatmapsService;
-
 
   public AdHocMapsResource(OccurrenceHeatmapsEsService searchHeatmapsService, int tileSize, int bufferSize) {
     this.tileSize = tileSize;
     this.bufferSize = bufferSize;
     this.searchHeatmapsService = searchHeatmapsService;
-    projection = Tiles.fromEPSG(EPSG_4326, tileSize);
   }
 
   @GET
@@ -79,8 +77,6 @@ public final class AdHocMapsResource {
   @Timed
   @Produces("application/x-protobuf")
   public byte[] all(
-    @PathParam("type") String type,
-    @PathParam("key") String key,
     @PathParam("z") int z,
     @PathParam("x") long x,
     @PathParam("y") long y,
@@ -93,22 +89,23 @@ public final class AdHocMapsResource {
     @Context HttpServletRequest request
     ) throws Exception {
     enableCORS(response);
-    Preconditions.checkArgument(EPSG_4326.equalsIgnoreCase(srs),
-                                "Adhoc search maps are currently only available in EPSG:4326");
+    Preconditions.checkArgument(EPSG_4326.equalsIgnoreCase(srs) || EPSG_3857.equalsIgnoreCase(srs),
+                                "Adhoc search maps are currently only available in EPSG:4326 and EPSG:3857");
     OccurrenceHeatmapRequest heatmapRequest = OccurrenceHeatmapRequestProvider.buildOccurrenceHeatmapRequest(request);
-
 
     Preconditions.checkArgument(bin == null
                                 || BIN_MODE_HEX.equalsIgnoreCase(bin)
                                 || BIN_MODE_SQUARE.equalsIgnoreCase(bin), "Unsupported bin mode");
 
-    heatmapRequest.setGeometry(searchGeom(new ZXY(z, x, y, tileBuffer)));
+    TileProjection projection = Tiles.fromEPSG(srs, tileSize);
+    TileSchema schema = TileSchema.fromSRS(srs);
+
+    heatmapRequest.setGeometry(searchGeom(projection, new ZXY(z, x, y, tileBuffer)));
     heatmapRequest.setZoom(z);
 
     LOG.info("Request:{}", heatmapRequest);
 
     VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
-
 
     if (OccurrenceHeatmapRequest.Mode.GEO_BOUNDS == heatmapRequest.getMode()) {
       EsOccurrenceHeatmapResponse.GeoBoundsResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoBounds(heatmapRequest);
@@ -118,12 +115,14 @@ public final class AdHocMapsResource {
       occurrenceHeatmapResponse.getBuckets().stream().filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
         .forEach(geoGridBucket -> {
           // convert the lat,lng into pixel coordinates
-          Bbox2D bbox2D = toBbox(geoGridBucket.getCell().getBounds(), z, x, y);
+          Bbox2D bbox2D = toBbox(geoGridBucket.getCell().getBounds(), projection, schema, z, x, y);
           // for binning, we add the cell center point, otherwise the geometry
-          encoder.addFeature(LAYER_NAME, Collections.singletonMap("total", geoGridBucket.getDocCount()),
+          encoder.addFeature(LAYER_NAME,
+            Collections.singletonMap("total", geoGridBucket.getDocCount()),
             Objects.nonNull(bin) ? bbox2D.getCenter() : bbox2D.getPolygon());
         });
-    } else if(OccurrenceHeatmapRequest.Mode.GEO_CENTROID == heatmapRequest.getMode()) {
+
+    } else if (OccurrenceHeatmapRequest.Mode.GEO_CENTROID == heatmapRequest.getMode()) {
       EsOccurrenceHeatmapResponse.GeoCentroidResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoCentroid(heatmapRequest);
       if (occurrenceHeatmapResponse.getBuckets().isEmpty()) {
         return encoder.encode();
@@ -132,8 +131,8 @@ public final class AdHocMapsResource {
         .forEach(geoGridBucket -> {
           // for binning, we add the cell center point, otherwise the geometry
           encoder.addFeature(LAYER_NAME,
-                            Collections.singletonMap("total", geoGridBucket.getDocCount()),
-                            toPoint(geoGridBucket.getCentroid(), z, x, y));
+            Collections.singletonMap("total", geoGridBucket.getDocCount()),
+            toPoint(geoGridBucket.getCentroid(), projection, schema, z, x, y));
         });
     }
 
@@ -144,12 +143,12 @@ public final class AdHocMapsResource {
   /**
    * Translates the bounds into a Bbox2D.
    */
-  private Bbox2D toBbox(EsOccurrenceHeatmapResponse.Bounds bounds, int z, long x, long y) {
+  private Bbox2D toBbox(EsOccurrenceHeatmapResponse.Bounds bounds, TileProjection projection, TileSchema schema, int z, long x, long y) {
     Double2D swGlobalXY = projection.toGlobalPixelXY(bounds.getTopLeft().getLat(), bounds.getTopLeft().getLon(), z);
-    Long2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
+    Long2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, schema, z, x, y, tileSize, bufferSize);
 
     Double2D neGlobalXY = projection.toGlobalPixelXY(bounds.getBottomRight().getLat(), bounds.getBottomRight().getLon(), z);
-    Long2D neTileXY = Tiles.toTileLocalXY(neGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
+    Long2D neTileXY = Tiles.toTileLocalXY(neGlobalXY, schema, z, x, y, tileSize, bufferSize);
 
     return Bbox2D.of(swTileXY, neTileXY);
   }
@@ -157,12 +156,12 @@ public final class AdHocMapsResource {
   /**
     * Translates the coordinate into a Point.
     */
-  private Point toPoint(EsOccurrenceHeatmapResponse.Coordinate coordinate, int z, long x, long y) {
-    Double2D swGlobalXY = projection.toGlobalPixelXY(coordinate.getLat(), coordinate.getLon(), z);
-    Long2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, TileSchema.WGS84_PLATE_CAREÉ, z, x, y, tileSize, bufferSize);
-    return GEOMETRY_FACTORY.createPoint(new Coordinate(swTileXY.getX(), swTileXY.getY()));
-  }
+  private Point toPoint(EsOccurrenceHeatmapResponse.Coordinate coordinate, TileProjection projection, TileSchema schema, int z, long x, long y) {
+    Double2D globalXY = projection.toGlobalPixelXY(coordinate.getLat(), coordinate.getLon(), z);
+    Long2D tileXY = Tiles.toTileLocalXY(globalXY, schema, z, x, y, tileSize, bufferSize);
 
+    return GEOMETRY_FACTORY.createPoint(new Coordinate(tileXY.getX(), tileXY.getY()));
+  }
 
   /**
    * Performs the tile encoding.
@@ -183,53 +182,14 @@ public final class AdHocMapsResource {
   /**
    * Returns a BBox search string for the geometry in WGS84 CRS for the tile with a buffer.
    */
-  private static String searchGeom(ZXY zxy) {
-    Double2D[] boundary = bufferedTileBoundary(zxy.z, zxy.x, zxy.y, zxy.tileBuffer);
+  @VisibleForTesting
+  static String searchGeom(TileProjection projection, ZXY zxy) {
+    Double2D[] boundary = projection.tileBoundary(zxy.z, zxy.x, zxy.y, zxy.tileBuffer);
     return boundary[0].getX() + "," + boundary[0].getY() + "," + boundary[1].getX() + "," + boundary[1].getY();
   }
 
   /**
-   * For the given tile, returns the envelope for the tile, with a buffer.
-   * @param z zoom
-   * @param x tile X address
-   * @param y tile Y address
-   * @return an envelope for the tile, with the appropriate buffer
-   */
-  @VisibleForTesting
-  static Double2D[] bufferedTileBoundary(int z, long x, long y, double tileBuffer) {
-    int tilesPerZoom = 1 << z;
-    double degreesPerTile = 180d/tilesPerZoom;
-    double bufferDegrees = tileBuffer * degreesPerTile;
-
-    // the edges of the tile after buffering
-    double minLng = to180Degrees((degreesPerTile * x) - 180 - bufferDegrees);
-    double maxLng = to180Degrees(minLng + degreesPerTile + (bufferDegrees * 2));
-
-    // clip the extent (ES barfs otherwise)
-    double maxLat = Math.min(90 - (degreesPerTile * y) + bufferDegrees, 90);
-    double minLat = Math.max(maxLat - degreesPerTile - 2 * bufferDegrees, -90);
-
-    return new Double2D[] {new Double2D(minLng, minLat), new Double2D(maxLng, maxLat)};
-  }
-
-
-
-  /**
-   * if the longitude is expressed from 0..360 it is converted to -180..180.
-   */
-  @VisibleForTesting
-  static double to180Degrees(double longitude) {
-    if(longitude > 180) {
-      return longitude - 360;
-    } else if (longitude < -180){
-      return longitude + 360;
-    }
-    return longitude;
-  }
-
-
-  /**
-   * Utility class used to cache bboxes made for Solr heatmap responses.
+   * Utility class for bounding boxes made for heatmap responses.
    */
   private static class Bbox2D {
 
@@ -310,9 +270,10 @@ public final class AdHocMapsResource {
   }
 
   /**
-   * Utility class used to cache z,x,y values constantly used to calculate tile/bboxes.
+   * Utility class used for z,x,y used to calculate tile/bboxes.
    */
-  private static final class ZXY {
+  @VisibleForTesting
+  static final class ZXY {
 
     private final int z;
 
