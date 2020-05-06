@@ -81,7 +81,7 @@ public class SphericalMercatorTest {
 
     // Tile 0/0/0
     // ■
-    Double2D[] expectedBuf = new Double2D[]{new Double2D(90, -MAX_LATITUDE), new Double2D(-90, MAX_LATITUDE)};
+    Double2D[] expectedBuf = new Double2D[]{new Double2D(-180, -MAX_LATITUDE), new Double2D(180, MAX_LATITUDE)};
     Double2D[] resultBuf = sm.tileBoundary(0, 0, 0, bufferInTiles);
     assertEquals("0/0/0 with dateline failed", expectedBuf[0], resultBuf[0], ε);
     assertEquals("0/0/0 with dateline failed", expectedBuf[1], resultBuf[1], ε);
