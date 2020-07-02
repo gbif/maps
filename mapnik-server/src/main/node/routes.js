@@ -62,7 +62,7 @@ function parseUrl(parsedRequest) {
     var density = (sDensity == 'H') ? 0.5 : parseInt(sDensity);
 
     if (density > 4) density = 4;
-    if (density < 1) density = 1;
+    if (density < 0.5) density = 1;
 
     if (!(isNaN(z) || isNaN(x) || isNaN(y) || isNaN(density))) {
       return {
