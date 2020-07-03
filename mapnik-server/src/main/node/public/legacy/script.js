@@ -4705,7 +4705,7 @@ module.exports = {
         },
         'ocean': {
             "name": "Terrain",
-            "url": "http://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{Z}/{Y}/{X}.png",
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{Z}/{Y}/{X}.png",
             "attribution": "Esri, DeLorme, FAO, USGS, NOAA, GEBCO, IHO-IOC GEBCO, NGS, NIWA",
             "png-render-style": "palette=yellows_reds",
             "subdomains": [],
@@ -4713,7 +4713,7 @@ module.exports = {
         },
         'satellite': {
             "name": "Satellite",
-            "url": "http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{Z}/{Y}/{X}.png",
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{Z}/{Y}/{X}.png",
             "attribution": "Esri, DeLorme, FAO, NOAA, DigitalGlobe, GeoEye, i-cubed, USDA, USGS, AEX, Getmapping, Aerogrid, IGN, IGP, swisstopo, and the GIS User Community",
             "png-render-style": "palette=yellows_reds",
             "subdomains": [],
@@ -4741,7 +4741,7 @@ module.exports = {
 },{}],6:[function(require,module,exports){
 module.exports = {
     start: 0,
-    end: 12,
+    end: 13,
     undated: {
         active: true,
         text: 'No date',
