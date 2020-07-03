@@ -4826,6 +4826,12 @@ module.exports = {
             text: '2010s',
             abbr: '2010_2020',
             filterAbbr: {start: 2010, end: 2020}
+        },
+        {
+            active: false,
+            text: '2020s',
+            abbr: '2020_2030',
+            filterAbbr: {start: 2020, end: 2030}
         }
     ]
 };
