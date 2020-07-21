@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
  * Note: This is a rather hastily prepared implementation for a last minute pre-go-live requirement.
  */
 public class SquareBin implements Binnable {
-  private static final Logger LOG = LoggerFactory.getLogger(SquareBin.class);
+
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final VectorTileDecoder DECODER = new VectorTileDecoder();
 

@@ -1,116 +1,167 @@
 package org.gbif.maps;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.util.ContextInitializer;
-import com.google.common.base.Preconditions;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpHost;
+import org.elasticsearch.client.NodeSelector;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.gbif.discovery.lifecycle.DiscoveryLifeCycle;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.resource.*;
+import org.gbif.occurrence.search.es.EsConfig;
 import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
+import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
 
-import io.dropwizard.Application;
-import io.dropwizard.assets.AssetsBundle;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.slf4j.LoggerFactory;
+import org.elasticsearch.client.sniff.SniffOnFailureListener;
+import org.elasticsearch.client.sniff.Sniffer;
+import org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchAutoConfiguration;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Primary;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.util.Arrays;
-import java.util.Objects;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * The main entry point for running the member node.
  */
-public class TileServerApplication extends Application<TileServerConfiguration> {
+@SpringBootApplication(
+  exclude = {
+    ElasticsearchAutoConfiguration.class,
+    RabbitAutoConfiguration.class,
+    MybatisAutoConfiguration.class
+  })
+@EnableConfigurationProperties
+@ComponentScan(
+  basePackages = {
+    "org.gbif.maps"
+  })
+public class TileServerApplication  {
 
-  private static final String APPLICATION_NAME = "GBIF Tile Server";
-
-  public static void main(String[] args) throws Exception {
-    LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-    context.reset();
-    ContextInitializer initializer = new ContextInitializer(context);
-    initializer.autoConfig();
-
-    new TileServerApplication().run(args);
-  }
-
-  @Override
-  public String getName() {
-    return APPLICATION_NAME;
-  }
-
-  @Override
-  public final void initialize(Bootstrap<TileServerConfiguration> bootstrap) {
-    // We expect the assets bundle to be mounted on / in the config (applicationContextPath: "/")
-    // Here we intercept the /map/debug/* URLs and serve up the content from /assets folder instead
-    bootstrap.addBundle(new AssetsBundle("/assets", "/map/debug", "index.html", "assets"));
-  }
-
-  @Override
-  public final void run(TileServerConfiguration configuration, Environment environment) throws Exception {
-    Configuration conf = HBaseConfiguration.create();
-    conf.set("hbase.zookeeper.quorum", configuration.getHbase().getZookeeperQuorum());
-
-    RestHighLevelClient esClient = createEsClient(configuration.getEsConfig());
-    OccurrenceHeatmapsEsService heatmapsService =
-      new OccurrenceHeatmapsEsService(esClient, configuration.getEsConfig().getIndex());
-
-    // Either use Zookeeper or static config to locate tables
-    HBaseMaps hbaseMaps = null;
-    if (configuration.getMetastore() != null) {
-      MapMetastore meta = Metastores.newZookeeperMapsMeta(configuration.getMetastore().getZookeeperQuorum(), 1000,
-                                                  configuration.getMetastore().getPath());
-      hbaseMaps = new HBaseMaps(conf, meta, configuration.getHbase().getSaltModulus());
-
-    } else {
-      //
-      MapMetastore meta = Metastores.newStaticMapsMeta(configuration.getHbase().getTilesTableName(),
-                                                       configuration.getHbase().getPointsTableName());
-      hbaseMaps = new HBaseMaps(conf, meta, configuration.getHbase().getSaltModulus());
-    }
-
-
-    TileResource tiles = new TileResource(conf,
-                                          hbaseMaps,
-                                          configuration.getHbase().getTileSize(),
-                                          configuration.getHbase().getBufferSize());
-    environment.jersey().register(tiles);
-
-    environment.jersey().register(new RegressionResource(tiles, esClient, configuration.getEsConfig().getIndex()));
-
-    // The resource that queries ElasticSearch directly for HeatMap data
-    environment.jersey().register(new AdHocMapsResource(heatmapsService,
-                                                   configuration.getEsConfig().getTileSize(),
-                                                   configuration.getEsConfig().getBufferSize()));
-
-    environment.jersey().register(new BackwardCompatibility(tiles));
-
-    environment.jersey().register(NoContentResponseFilter.class);
-
-    if (configuration.getService().isDiscoverable()) {
-      environment.lifecycle().manage(new DiscoveryLifeCycle(configuration.getService()));
-    }
+  public static void main(String[] args) {
+    SpringApplication.run(TileServerApplication.class, args);
   }
 
   /**
-   * Builds an Elasticsearch client using the {@link org.gbif.maps.TileServerConfiguration.EsConfiguration}.
+   * This class is required to redirect the "debug" sub context to the default home page.
    */
-  private static RestHighLevelClient createEsClient(TileServerConfiguration.EsConfiguration esConfig) {
-    Objects.requireNonNull(esConfig);
-    Objects.requireNonNull(esConfig.getHosts());
-    Preconditions.checkArgument(esConfig.getHosts().length > 0);
+  @org.springframework.context.annotation.Configuration
+  public static class WebServerStaticResourceConfiguration implements WebMvcConfigurer {
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+      registry.addViewController("/debug/").setViewName("forward:/debug/index.html");
+    }
+  }
 
-    HttpHost[] hosts = Arrays.stream(esConfig.getHosts()).map(HttpHost::create).toArray(HttpHost[]::new);
-    RestClientBuilder builder =
-      RestClient.builder(hosts)
-        .setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder.setConnectTimeout(esConfig.getConnectTimeout()).setSocketTimeout(esConfig.getSocketTimeout()))
-        .setMaxRetryTimeoutMillis(esConfig.getMaxRetryTimeoutMillis());
-    return new RestHighLevelClient(builder);
+
+  @org.springframework.context.annotation.Configuration
+  public static class TileServerSpringConfiguration {
+
+    @ConfigurationProperties
+    @Bean
+    TileServerConfiguration tileServerConfiguration() {
+      return new TileServerConfiguration();
+    }
+
+    @Bean
+    public RestHighLevelClient provideEsClient(TileServerConfiguration tileServerConfiguration) {
+      EsConfig esConfig = tileServerConfiguration.getEsConfiguration().getElasticsearch();
+
+      HttpHost[] hosts = new HttpHost[esConfig.getHosts().length];
+      int i = 0;
+      for (String host : esConfig.getHosts()) {
+        try {
+          URL url = new URL(host);
+          hosts[i] = new HttpHost(url.getHost(), url.getPort(), url.getProtocol());
+          i++;
+        } catch (MalformedURLException e) {
+          throw new IllegalArgumentException(e.getMessage(), e);
+        }
+      }
+
+      SniffOnFailureListener sniffOnFailureListener =
+        new SniffOnFailureListener();
+
+      RestClientBuilder builder =
+        RestClient.builder(hosts)
+          .setRequestConfigCallback(
+            requestConfigBuilder ->
+              requestConfigBuilder
+                .setConnectTimeout(esConfig.getConnectTimeout())
+                .setSocketTimeout(esConfig.getSocketTimeout()))
+          .setMaxRetryTimeoutMillis(esConfig.getSocketTimeout())
+          .setNodeSelector(NodeSelector.SKIP_DEDICATED_MASTERS);
+
+
+      if (esConfig.getSniffInterval() > 0) {
+        builder.setFailureListener(sniffOnFailureListener);
+      }
+
+      RestHighLevelClient highLevelClient = new RestHighLevelClient(builder);
+
+      if (esConfig.getSniffInterval() > 0) {
+        Sniffer sniffer = Sniffer.builder(highLevelClient.getLowLevelClient())
+          .setSniffIntervalMillis(esConfig.getSniffInterval())
+          .setSniffAfterFailureDelayMillis(esConfig.getSniffAfterFailureDelay())
+          .build();
+        sniffOnFailureListener.setSniffer(sniffer);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+          sniffer.close();
+          try {
+            highLevelClient.close();
+          } catch (IOException e) {
+            throw new IllegalStateException("Couldn't close ES client", e);
+          }
+        }));
+      }
+
+      return highLevelClient;
+    }
+
+    @Bean
+    OccurrenceHeatmapsEsService occurrenceHeatmapsEsService(RestHighLevelClient esClient, TileServerConfiguration tileServerConfiguration) {
+      return new OccurrenceHeatmapsEsService(esClient, tileServerConfiguration.getEsConfiguration().getElasticsearch().getIndex());
+    }
+
+
+    @Bean
+    HBaseMaps hBaseMaps(TileServerConfiguration tileServerConfiguration) throws Exception {
+      // Either use Zookeeper or static config to locate tables
+      Configuration conf = HBaseConfiguration.create();
+      conf.set("hbase.zookeeper.quorum", tileServerConfiguration.getHbase().getZookeeperQuorum());
+
+      if (tileServerConfiguration.getMetastore() != null) {
+        MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
+                                                            tileServerConfiguration.getMetastore().getPath());
+        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus());
+
+      } else {
+        //
+        MapMetastore meta = Metastores.newStaticMapsMeta(tileServerConfiguration.getHbase().getTilesTableName(),
+                                                         tileServerConfiguration.getHbase().getPointsTableName());
+        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus());
+      }
+    }
+
+    @Primary
+    @Bean
+    public ObjectMapper registryObjectMapper() {
+      return JacksonJsonObjectMapperProvider.getObjectMapper();
+    }
+
   }
 }

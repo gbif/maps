@@ -27,6 +27,7 @@ abstract class WGS84LambertAzimuthalEqualArea extends WGS84Azimuthal {
   // An affine transform to move world coordinates into positive space addressing, so the lowest is 0,0
   static final AffineTransform OFFSET_TRANSFORM = AffineTransform.getTranslateInstance(LAEA_EXTENT, LAEA_EXTENT);
 
+  @Override
   abstract MathTransform getTransform();
 
   WGS84LambertAzimuthalEqualArea(int tileSize) {

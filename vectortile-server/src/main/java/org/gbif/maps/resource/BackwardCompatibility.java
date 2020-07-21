@@ -1,19 +1,18 @@
 package org.gbif.maps.resource;
 
 import java.util.List;
-import javax.inject.Singleton;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import org.gbif.maps.common.projection.SphericalMercator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import static org.gbif.maps.resource.Params.*;
 import static org.gbif.maps.resource.TileResource.*;
@@ -24,8 +23,10 @@ import static org.gbif.maps.resource.TileResource.*;
  * Ignore layer and year handling, the logs suggest this isn't used, although the V1 tile-server does support it.
  * (Code possibly implementing it anyway was removed on 2017-08-22.)
  */
-@Path("density")
-@Singleton
+@RestController
+@RequestMapping(
+  value = "density"
+)
 public class BackwardCompatibility {
 
   private static final Logger LOG = LoggerFactory.getLogger(BackwardCompatibility.class);
@@ -35,6 +36,7 @@ public class BackwardCompatibility {
   /**
    * Construct the resource
    */
+  @Autowired
   public BackwardCompatibility(TileResource tileResource) throws Exception {
     this.tileResource = tileResource;
   }
@@ -43,15 +45,17 @@ public class BackwardCompatibility {
    * Returns a capabilities response with the extent and year range built by inspecting the zoom 0 tiles of the
    * EPSG:4326 projection.
    */
-  @GET
-  @Path("/tile.json")
+  @RequestMapping(
+    method = RequestMethod.GET,
+    value = "/tile.json",
+    produces = MediaType.APPLICATION_JSON_VALUE
+  )
   @Timed
-  @Produces(MediaType.APPLICATION_JSON)
   public V1TileJson tileJson(
-      @QueryParam("type") String type,
-      @QueryParam("key") String key,
-      @QueryParam("layers") List<String> layers,
-      @Context HttpServletResponse response)
+      @RequestParam("type") String type,
+      @RequestParam("key") String key,
+      @RequestParam("layers") List<String> layers,
+      HttpServletResponse response)
       throws Exception {
 
     enableCORS(response);

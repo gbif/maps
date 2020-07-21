@@ -8,6 +8,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
 import org.gbif.api.model.occurrence.search.OccurrenceSearchRequest;
 import org.gbif.api.vocabulary.BasisOfRecord;
+import org.gbif.maps.TileServerConfiguration;
 import org.gbif.maps.common.projection.Long2D;
 
 import java.io.IOException;
@@ -17,17 +18,8 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -46,6 +38,13 @@ import org.gbif.occurrence.search.es.EsSearchRequestBuilder;
 import org.gbif.occurrence.search.es.OccurrenceEsField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import static org.gbif.maps.resource.Params.enableCORS;
 import static org.gbif.maps.resource.Params.mapKeys;
@@ -55,8 +54,10 @@ import static org.gbif.maps.resource.Params.mapKeys;
  * This is the service developed to support the species population trends application and as such is fairly tailored
  * to that need.  Should this become a more generic requirement in the future then this should be refactored.
  */
-@Path("/occurrence/regression")
-@Singleton
+@RestController
+@RequestMapping(
+  value = "/occurrence/regression"
+)
 public final class RegressionResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(RegressionResource.class);
@@ -84,10 +85,11 @@ public final class RegressionResource {
   private final RestHighLevelClient esClient;
   private final String esIndex;
 
-  public RegressionResource(TileResource tiles, RestHighLevelClient esClient, String esIndex) {
+  @Autowired
+  public RegressionResource(TileResource tiles, RestHighLevelClient esClient, TileServerConfiguration configuration) {
     this.tiles = tiles;
     this.esClient = esClient;
-    this.esIndex = esIndex;
+    this.esIndex = configuration.getEsConfiguration().getElasticsearch().getIndex();
   }
 
   /**
@@ -105,20 +107,22 @@ public final class RegressionResource {
    *
    * @return The vector tile showing the result of the linear regression
    */
-  @GET
-  @Path("/{z}/{x}/{y}.mvt")
+  @RequestMapping(
+    method = RequestMethod.GET,
+    value = "/{z}/{x}/{y}.mvt",
+    produces = "application/x-protobuf"
+  )
   @Timed
-  @Produces("application/x-protobuf")
   public byte[] hexagonSurface(
-    @PathParam("z") int z,
-    @PathParam("x") long x,
-    @PathParam("y") long y,
-    @DefaultValue("EPSG:3857") @QueryParam("srs") String srs,  // default as SphericalMercator
-    @QueryParam("year") String year,
-    @QueryParam("higherTaxonKey") String higherTaxonKey,
-    @DefaultValue("2") @QueryParam("minYears") int minYears,  // 2 years are required for a regression
-    @Context HttpServletResponse response,
-    @Context HttpServletRequest request
+    @PathVariable("z") int z,
+    @PathVariable("x") long x,
+    @PathVariable("y") long y,
+    @RequestParam(value = "srs", defaultValue = "EPSG:3857") String srs,  // default as SphericalMercator
+    @RequestParam(value = "year", required = false) String year,
+    @RequestParam(value = "higherTaxonKey", required = false) String higherTaxonKey,
+    @RequestParam(value = "minYears", defaultValue = "2") int minYears,  // 2 years are required for a regression
+    HttpServletResponse response,
+    HttpServletRequest request
   ) throws Exception {
     enableCORS(response);
     String[] mapKeys = mapKeys(request);
@@ -142,9 +146,11 @@ public final class RegressionResource {
    * Uses the parameters to perform a search on ES and returns the regression.  This should use the standard
    * GBIF occurrence API parameters with the addition of higherTaxonKey.
    */
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  public String adHocRegression(@Context HttpServletRequest request, @Context HttpServletResponse response) throws IOException {
+  @RequestMapping(
+    method = RequestMethod.GET,
+    produces = MediaType.APPLICATION_JSON_VALUE
+  )
+  public String adHocRegression(HttpServletRequest request,  HttpServletResponse response) throws IOException {
     enableCORS(response);
     String higherTaxonKey = Preconditions.checkNotNull(request.getParameter("higherTaxonKey"),
                                                        "A higherTaxonKey must be provided to perform regression");
@@ -199,7 +205,7 @@ public final class RegressionResource {
 
     searchRequest.addFacets(OccurrenceSearchParameter.YEAR);
     // Default search request handler, no sort order, 1 record (required) and facet support
-    SearchRequest esSearchRequest = EsSearchRequestBuilder.buildSearchRequest(searchRequest, true, esIndex);
+    SearchRequest esSearchRequest = EsSearchRequestBuilder.buildSearchRequest(searchRequest, esIndex);
     SearchResponse response = esClient.search(esSearchRequest, RequestOptions.DEFAULT);
 
     Terms yearAgg = response.getAggregations().get(OccurrenceEsField.YEAR.getFieldName());

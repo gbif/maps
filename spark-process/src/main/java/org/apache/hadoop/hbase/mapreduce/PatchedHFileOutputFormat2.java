@@ -91,6 +91,7 @@ public class PatchedHFileOutputFormat2 extends FileOutputFormat<ImmutableBytesWr
   public PatchedHFileOutputFormat2() {
   }
 
+  @Override
   public RecordWriter<ImmutableBytesWritable, Cell> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
     return createRecordWriter(context);
   }
@@ -269,6 +270,7 @@ public class PatchedHFileOutputFormat2 extends FileOutputFormat<ImmutableBytesWr
 
       }
 
+      @Override
       public void close(TaskAttemptContext c) throws IOException, InterruptedException {
         Iterator i$ = this.writers.values().iterator();
 

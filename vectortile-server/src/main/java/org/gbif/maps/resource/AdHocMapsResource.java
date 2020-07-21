@@ -1,5 +1,6 @@
 package org.gbif.maps.resource;
 
+import org.gbif.maps.TileServerConfiguration;
 import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.bin.SquareBin;
 import org.gbif.maps.common.projection.Double2D;
@@ -13,16 +14,8 @@ import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapRequestProvider;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Objects;
-import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.VisibleForTesting;
@@ -36,6 +29,12 @@ import org.gbif.occurrence.search.heatmap.es.EsOccurrenceHeatmapResponse;
 import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import static org.gbif.maps.resource.Params.BIN_MODE_HEX;
 import static org.gbif.maps.resource.Params.BIN_MODE_SQUARE;
@@ -49,8 +48,10 @@ import static org.gbif.maps.resource.Params.enableCORS;
  * ElasticSearch as a vector tile service.
  * Note to developers: This class could benefit from some significant refactoring and cleanup.
  */
-@Path("/occurrence/adhoc")
-@Singleton
+@RestController
+@RequestMapping(
+  value = "/occurrence/adhoc"
+)
 public final class AdHocMapsResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(AdHocMapsResource.class);
@@ -66,27 +67,30 @@ public final class AdHocMapsResource {
   private final int bufferSize;
   private final OccurrenceHeatmapsEsService searchHeatmapsService;
 
-  public AdHocMapsResource(OccurrenceHeatmapsEsService searchHeatmapsService, int tileSize, int bufferSize) {
-    this.tileSize = tileSize;
-    this.bufferSize = bufferSize;
+  @Autowired
+  public AdHocMapsResource(OccurrenceHeatmapsEsService searchHeatmapsService, TileServerConfiguration configuration) {
+    this.tileSize = configuration.getEsConfiguration().getTileSize();
+    this.bufferSize = configuration.getEsConfiguration().getBufferSize();
     this.searchHeatmapsService = searchHeatmapsService;
   }
 
-  @GET
-  @Path("/{z}/{x}/{y}.mvt")
+  @RequestMapping(
+    method = RequestMethod.GET,
+    value = "/{z}/{x}/{y}.mvt",
+    produces = "application/x-protobuf"
+  )
   @Timed
-  @Produces("application/x-protobuf")
   public byte[] all(
-    @PathParam("z") int z,
-    @PathParam("x") long x,
-    @PathParam("y") long y,
-    @DefaultValue(EPSG_4326) @QueryParam("srs") String srs,
-    @QueryParam("bin") String bin,
-    @DefaultValue(DEFAULT_HEX_PER_TILE) @QueryParam("hexPerTile") int hexPerTile,
-    @DefaultValue(DEFAULT_SQUARE_SIZE) @QueryParam("squareSize") int squareSize,
-    @DefaultValue(QUERY_BUFFER_PERCENTAGE) @QueryParam("tileBuffer") double tileBuffer,
-    @Context HttpServletResponse response,
-    @Context HttpServletRequest request
+    @PathVariable("z") int z,
+    @PathVariable("x") long x,
+    @PathVariable("y") long y,
+    @RequestParam(value = "srs", defaultValue = EPSG_4326) String srs,
+    @RequestParam(value = "bin", required = false) String bin,
+    @RequestParam(value = "hexPerTile", defaultValue = DEFAULT_HEX_PER_TILE) int hexPerTile,
+    @RequestParam(value = "squareSize", defaultValue = DEFAULT_SQUARE_SIZE) int squareSize,
+    @RequestParam(value = "tileBuffer", defaultValue = QUERY_BUFFER_PERCENTAGE) double tileBuffer,
+    HttpServletResponse response,
+    HttpServletRequest request
     ) throws Exception {
     enableCORS(response);
     Preconditions.checkArgument(EPSG_4326.equalsIgnoreCase(srs) || EPSG_3857.equalsIgnoreCase(srs),

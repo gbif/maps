@@ -3,7 +3,7 @@
 Build and run:
 
 ```
-mvn clean compile exec:java
+mvn clean package -U
 ```
 
 Or:

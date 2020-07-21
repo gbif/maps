@@ -1,5 +1,6 @@
 package org.gbif.maps.resource;
 
+import org.gbif.maps.TileServerConfiguration;
 import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.bin.SquareBin;
 import org.gbif.maps.common.filter.PointFeatureFilters;
@@ -16,18 +17,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
-import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Preconditions;
@@ -37,6 +29,13 @@ import no.ecc.vectortile.VectorTileEncoder;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import static org.gbif.maps.resource.Params.BIN_MODE_SQUARE;
 import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
@@ -51,8 +50,11 @@ import static org.gbif.maps.resource.Params.HEX_TILE_SIZE;
 /**
  * The tile resource for the simple GBIF data layers (i.e. HBase sourced, preprocessed).
  */
-@Path("/occurrence/density")
-@Singleton
+
+@RestController
+@RequestMapping(
+  value = "/occurrence/density"
+)
 public final class TileResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(TileResource.class);
@@ -79,35 +81,35 @@ public final class TileResource {
 
   /**
    * Construct the resource
-   * @param conf The application configuration
    * @param hbaseMaps The data layer to the maps
-   * @param bufferSize The buffer size for preprocessed tiles
-   * @throws IOException If HBase cannot be reached
+   * @param configuration service configuration
    */
-  public TileResource(Configuration conf, HBaseMaps hbaseMaps, int tileSize, int bufferSize)
-    throws Exception {
+  @Autowired
+  public TileResource(HBaseMaps hbaseMaps, TileServerConfiguration configuration) {
     this.hbaseMaps = hbaseMaps;
-    this.tileSize = tileSize;
-    this.bufferSize = bufferSize;
+    this.tileSize = configuration.getHbase().getTileSize();
+    this.bufferSize = configuration.getHbase().getBufferSize();
   }
 
-  @GET
-  @Path("/{z}/{x}/{y}.mvt")
+  @RequestMapping(
+    method = RequestMethod.GET,
+    value = "/{z}/{x}/{y}.mvt",
+    produces = "application/x-protobuf"
+  )
   @Timed
-  @Produces("application/x-protobuf")
   public byte[] all(
-    @PathParam("z") int z,
-    @PathParam("x") long x,
-    @PathParam("y") long y,
-    @DefaultValue("EPSG:3857") @QueryParam("srs") String srs,  // default as SphericalMercator
-    @QueryParam("basisOfRecord") List<String> basisOfRecord,
-    @QueryParam("year") String year,
-    @DefaultValue("false") @QueryParam("verbose") boolean verbose,
-    @QueryParam("bin") String bin,
-    @DefaultValue(DEFAULT_HEX_PER_TILE) @QueryParam("hexPerTile") int hexPerTile,
-    @DefaultValue(DEFAULT_SQUARE_SIZE) @QueryParam("squareSize") int squareSize,
-    @Context HttpServletResponse response,
-    @Context HttpServletRequest request
+    @PathVariable("z") int z,
+    @PathVariable("x") long x,
+    @PathVariable("y") long y,
+    @RequestParam(value = "srs",defaultValue = "EPSG:3857") String srs,  // default as SphericalMercator
+    @RequestParam(value = "basisOfRecord", required = false) List<String> basisOfRecord,
+    @RequestParam(value ="year", required = false) String year,
+    @RequestParam(value = "verbose", defaultValue = "false") boolean verbose,
+    @RequestParam(value ="bin", required = false) String bin,
+    @RequestParam(value = "hexPerTile", defaultValue = DEFAULT_HEX_PER_TILE) int hexPerTile,
+    @RequestParam(value = "squareSize", defaultValue = DEFAULT_SQUARE_SIZE) int squareSize,
+    HttpServletResponse response,
+    HttpServletRequest request
     ) throws Exception {
 
     enableCORS(response);
@@ -125,11 +127,13 @@ public final class TileResource {
    * Returns a capabilities response with the extent and year range built by inspecting the zoom 0 tiles of the
    * EPSG:4326 projection.
    */
-  @GET
-  @Path("capabilities.json")
+  @RequestMapping(
+    method = RequestMethod.GET,
+    value = "capabilities.json",
+    produces = MediaType.APPLICATION_JSON_VALUE
+  )
   @Timed
-  @Produces(MediaType.APPLICATION_JSON)
-  public Capabilities capabilities(@Context HttpServletResponse response, @Context HttpServletRequest request)
+  public Capabilities capabilities(HttpServletResponse response, HttpServletRequest request)
     throws Exception {
 
     enableCORS(response);
