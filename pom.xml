@@ -36,7 +36,7 @@
     <gbif-api.version>0.114</gbif-api.version>
     <gbif-common.ws.version>1.4</gbif-common.ws.version>
     <dwc-api.version>1.27</dwc-api.version>
-    <slf4j.version>1.7.25</slf4j.version>
+    <slf4j.version>1.7.30</slf4j.version>
     <javax.inject.version>1</javax.inject.version>
     <javax.mail.version>1.4.1</javax.mail.version>
     <javax.activation.version>1.1.1</javax.activation.version>
@@ -45,6 +45,7 @@
     <protoc.version>2.5.0</protoc.version>
     <logback.version>1.2.3</logback.version>
     <logstash-encoder.version>4.11</logstash-encoder.version>
+    <janino-logback.version>2.5.10</janino-logback.version>
     <java-vector-tile.version>1.1.2</java-vector-tile.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <hexameter.version>3.0.0</hexameter.version>
@@ -397,6 +398,12 @@
         <groupId>net.logstash.logback</groupId>
         <artifactId>logstash-logback-encoder</artifactId>
         <version>${logstash-encoder.version}</version>
+        <scope>runtime</scope>
+      </dependency>
+      <dependency>
+        <groupId>janino</groupId>
+        <artifactId>janino</artifactId>
+        <version>${janino-logback.version}</version>
         <scope>runtime</scope>
       </dependency>
       <dependency>

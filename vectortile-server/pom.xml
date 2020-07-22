@@ -118,6 +118,12 @@
     <dependency>
       <groupId>org.gbif.maps</groupId>
       <artifactId>common</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>log4j-over-slf4j</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.gbif.occurrence</groupId>
@@ -198,6 +204,11 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>janino</groupId>
+      <artifactId>janino</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
       <groupId>com.vividsolutions</groupId>
       <artifactId>jts</artifactId>
     </dependency>
@@ -250,6 +261,12 @@
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
