@@ -64,8 +64,8 @@ public class TileServerApplication  {
       registry.addViewController("/debug/").setViewName("forward:/debug/index.html");
       registry.addViewController("/debug/ol/").setViewName("forward:/debug/ol/index.html");
     }
-  }
 
+  }
 
   @org.springframework.context.annotation.Configuration
   public static class TileServerSpringConfiguration {
@@ -136,7 +136,6 @@ public class TileServerApplication  {
     OccurrenceHeatmapsEsService occurrenceHeatmapsEsService(RestHighLevelClient esClient, TileServerConfiguration tileServerConfiguration) {
       return new OccurrenceHeatmapsEsService(esClient, tileServerConfiguration.getEsConfiguration().getElasticsearch().getIndex());
     }
-
 
     @Bean
     HBaseMaps hBaseMaps(TileServerConfiguration tileServerConfiguration) throws Exception {

@@ -28,8 +28,9 @@ server:
     context-path: /map/
   compression:
     enabled: true
-    min-response-size: 1B
-    mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript,text/css,image/jpeg,application/x-protobuf
+    min-response-size: 1
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript,text/css,image/jpeg,application/x-protobuf,application/gzip
+    excluded-user-agents:
 spring:
   resources:
     static-locations: classpath:/static/
@@ -37,7 +38,4 @@ spring:
     enabled: false
   mvc:
     static-path-pattern: /debug/**
-  http:
-    gzip:
-      buffer-size: 8KiB
 
