@@ -1,0 +1,43 @@
+# The HBase data services configuration
+# The buffer and tile sizes must match those that the data were prepared to using Spark
+hbase:
+  zookeeperQuorum: @hbase.zookeeperQuorum@
+  tilesTableName: @hbase.tilesTableName@
+  pointsTableName: @hbase.pointsTableName@
+  tileSize: @hbase.tileSize@
+  bufferSize: @hbase.bufferSize@
+  saltModulus: @hbase.saltModulus@ # must match what is used in the spark build
+
+# Optional, but if supplied will overwrite the hbase table name by those located by the metastore
+metastore:
+  zookeeperQuorum: @metastore.zookeeperQuorum@
+  path: @metastore.path@
+
+
+esConfiguration:
+  elasticsearch:
+    hosts: @esConfiguration.elasticsearch.hosts@
+    index: @esConfiguration.elasticsearch.index@
+  tileSize: @esConfiguration.tileSize@
+  bufferSize: @esConfiguration.bufferSize@
+
+# The server configuration
+# Ports 1 and 2 are placeholders, replaced with command line arguments.
+server:
+  servlet:
+    context-path: /map/
+  compression:
+    enabled: true
+    min-response-size: 1B
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript,text/css,image/jpeg,application/x-protobuf
+spring:
+  resources:
+    static-locations: classpath:/static/
+  liquibase:
+    enabled: false
+  mvc:
+    static-path-pattern: /debug/**
+  http:
+    gzip:
+      buffer-size: 8KiB
+

@@ -2,15 +2,34 @@
 
 Build and run:
 
+To build this a Maven profile with the following settings is required:
 ```
-mvn clean package -U
+ <profile>
+      <id>vectortile</id>
+      <properties>
+        <hbase.zookeeperQuorum>HBaseZookeeper</hbase.zookeeperQuorum>
+        <hbase.tilesTableName>maps_tiles_table</hbase.tilesTableName>
+        <hbase.pointsTableName>maps_points_table</hbase.pointsTableName>
+        <!-- Following are default  values-->
+        <hbase.tileSize>512</hbase.tileSize>
+        <hbase.bufferSize>64</hbase.bufferSize>
+        <hbase.saltModulus>100</hbase.saltModulus>
+
+        <metastore.zookeeperQuorum>metaStoreZookeper</metastore.zookeeperQuorum>
+        <metastore.path>metaStorePath</metastore.path>
+
+        <esConfiguration.elasticsearch.hosts>elasticsearch_hosts</esConfiguration.elasticsearch.hosts>
+        <esConfiguration.elasticsearch.index>occurrence_index_name</esConfiguration.elasticsearch.index>
+        <!-- Following are default  values-->
+        <esConfiguration.tileSize>512</esConfiguration.tileSize>
+        <esConfiguration.bufferSize>64</esConfiguration.bufferSize>
+      </properties>
+    </profile>
 ```
 
-Or:
-
 ```
-mvn clean package
-java -jar target/vectortile-server-[0-9]*[0-9]-SNAPSHOT.jar server server.conf
+mvn clean package -U -Pvectortile
+java -jar target/vectortile-server-[0-9]*[0-9]-SNAPSHOT.jar
 ```
 
 ### URL structure
