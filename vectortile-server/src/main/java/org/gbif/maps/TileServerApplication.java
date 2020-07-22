@@ -26,7 +26,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Primary;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -63,6 +62,7 @@ public class TileServerApplication  {
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
       registry.addViewController("/debug/").setViewName("forward:/debug/index.html");
+      registry.addViewController("/debug/ol/").setViewName("forward:/debug/ol/index.html");
     }
   }
 
