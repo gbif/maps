@@ -66,10 +66,10 @@ object Backfill {
         val df = spark.read.avro(snapshotPath.toString) // Select only the required columns
           .select($"datasetkey", $"publishingorgkey", $"publishingcountry", $"networkkey", $"countrycode",
                   $"basisofrecord", $"decimallatitude", $"decimallongitude", $"kingdomkey", $"phylumkey", $"classkey",
-                  $"orderkey", $"familykey", $"genuskey", $"specieskey", $"taxonkey", $"year", $"v_occurrencestatus",
+                  $"orderkey", $"familykey", $"genuskey", $"specieskey", $"taxonkey", $"year", $"occurrencestatus",
                   $"hasgeospatialissues") // Filter out records without coordinates, records with issues and absences
           .filter($"decimallatitude".isNotNull && $"decimallongitude".isNotNull && !$"hasgeospatialissues" &&
-                  ($"v_occurrencestatus".isNull || !$"v_occurrencestatus".rlike("(?i)absent")))
+                  ($"occurrencestatus".isNull || $"occurrencestatus".equals("PRESENT")))
 
         logger.info("DataFrame columns are {}", df.columns)
 
