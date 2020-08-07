@@ -62,7 +62,6 @@
     <!-- fixed to the version coming with Dropwizard -->
     <jackson.version>2.10.3</jackson.version>
     <scala.tools.version>2.11</scala.tools.version>
-    <scala.tools.version>2.11</scala.tools.version>
     <scala.version>2.11.8</scala.version>
     <spark.version>2.3.0</spark.version>
     <databricks.spark.avro.version>4.0.0</databricks.spark.avro.version>
