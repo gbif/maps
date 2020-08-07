@@ -32,9 +32,9 @@
 
   <properties>
     <jdkLevel>1.8</jdkLevel>
-    <gbif-occurrence.version>0.138</gbif-occurrence.version>
-    <gbif-api.version>0.114</gbif-api.version>
-    <gbif-common.ws.version>1.4</gbif-common.ws.version>
+    <gbif-occurrence.version>0.140</gbif-occurrence.version>
+    <gbif-api.version>0.116</gbif-api.version>
+    <gbif-common.ws.version>1.5</gbif-common.ws.version>
     <dwc-api.version>1.27</dwc-api.version>
     <slf4j.version>1.7.30</slf4j.version>
     <javax.inject.version>1</javax.inject.version>
