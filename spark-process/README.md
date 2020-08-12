@@ -14,8 +14,23 @@ WHERE
   AND occurrenceStatus = "PRESENT";
 
 CREATE TABLE tim.occurrence_map_source_sample STORED AS parquet AS
-SELECT * FROM tim.occurrence_map_source 
-TABLESAMPLE (BUCKET 1 OUT OF 1000 ON rand()) s;    
+SELECT * FROM tim.occurrence_map_source
+TABLESAMPLE (BUCKET 1 OUT OF 1000 ON rand()) s;
+```
+
+Or, to test the Spark data frame using the shell:
+```
+spark2-shell --packages com.databricks:spark-avro_2.11:4.0.0
+
+import com.databricks.spark.avro._
+val df = spark.read.avro("hdfs://ha-nn/data/hdfsview/occurrence")
+
+df.select($"datasetkey", $"publishingorgkey", $"publishingcountry", $"networkkey", $"countrycode",
+          $"basisofrecord", $"decimallatitude", $"decimallongitude", $"kingdomkey", $"phylumkey", $"classkey",
+          $"orderkey", $"familykey", $"genuskey", $"specieskey", $"taxonkey", $"year", $"occurrencestatus",
+          $"hasgeospatialissues").
+   filter($"decimallatitude".isNotNull && $"decimallongitude".isNotNull && !$"hasgeospatialissues" &&
+          $"occurrencestatus" === "PRESENT").count()
 ```
 
 To create the HBase table use the following.
