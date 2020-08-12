@@ -11,8 +11,8 @@ FROM
 WHERE
   decimalLatitude IS NOT NULL AND decimalLongitude IS NOT NULL
   AND hasGeospatialIssues = false
-  AND occurrenceStatus != "absent";
-  
+  AND occurrenceStatus = "PRESENT";
+
 CREATE TABLE tim.occurrence_map_source_sample STORED AS parquet AS
 SELECT * FROM tim.occurrence_map_source 
 TABLESAMPLE (BUCKET 1 OUT OF 1000 ON rand()) s;    

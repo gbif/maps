@@ -13,11 +13,7 @@ import org.gbif.maps.common.hbase.ModulusSalt;
 import java.io.IOException;
 
 /**
- * An Oozie step to prepare for a backfill, which involves the following:
- * <ol>
- *   <li>Snapshot the source table</li>
- *   <li>Create the target table in HBase</li>
- * </ol>
+ * An Oozie step to prepare for a backfill, which creates the target table in HBase.
  */
 public class PrepareBackfill {
 

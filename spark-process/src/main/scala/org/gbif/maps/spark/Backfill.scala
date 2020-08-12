@@ -69,7 +69,7 @@ object Backfill {
                   $"orderkey", $"familykey", $"genuskey", $"specieskey", $"taxonkey", $"year", $"occurrencestatus",
                   $"hasgeospatialissues") // Filter out records without coordinates, records with issues and absences
           .filter($"decimallatitude".isNotNull && $"decimallongitude".isNotNull && !$"hasgeospatialissues" &&
-                  ($"occurrencestatus".isNull || $"occurrencestatus".equals("PRESENT")))
+                  $"occurrencestatus" === "PRESENT")
 
         logger.info("DataFrame columns are {}", df.columns)
 
@@ -81,7 +81,7 @@ object Backfill {
           val mapKeys = counts.filter(r => {
             r._2 < config.tilesThreshold
           })
-          println("MapKeys suitable for storing as point maps: " + mapKeys.size)
+          logger.info("MapKeys suitable for storing as point maps: {}", mapKeys.size)
 
           BackfillPoints.build(spark, df, mapKeys.keySet, config)
         }
@@ -91,12 +91,12 @@ object Backfill {
           val mapKeys = counts.filter(r => {
             r._2 >= config.tilesThreshold
           })
-          println("MapKeys suitable for creating tile pyramid maps: " + mapKeys.size)
+          logger.info("MapKeys suitable for creating tile pyramid maps: {}", mapKeys.size)
 
           //val pool = Executors.newFixedThreadPool(config.tilePyramid.projections.length)
           //val jobs : ListBuffer[Callable[Unit]] = new ListBuffer[Callable[Unit]]()
           config.tilePyramid.projections.foreach(proj => {
-            println("Building tiles for projection" + proj.srs)
+            logger.info("Building tiles for projection {}", proj.srs)
 
             //jobs += new Callable[Unit] {
             //  override def call() = BackfillTiles.build(sc,df,mapKeys.keySet,config, proj)
