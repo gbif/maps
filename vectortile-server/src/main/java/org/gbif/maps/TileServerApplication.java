@@ -63,6 +63,7 @@ public class TileServerApplication  {
     public void addViewControllers(ViewControllerRegistry registry) {
       registry.addViewController("/debug/").setViewName("forward:/debug/index.html");
       registry.addViewController("/debug/ol/").setViewName("forward:/debug/ol/index.html");
+      registry.addViewController("/debug/comparison/").setViewName("forward:/debug/comparison/index.html");
     }
 
   }

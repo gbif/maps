@@ -135,7 +135,6 @@ public final class RegressionResource {
     // determine the global pixel origin address at the top left of the tile, used for uniquely identifying the hexagons
     Long2D originXY = new Long2D(x * TILE_SIZE, y * TILE_SIZE);
 
-    response.setStatus(204);
     if (speciesLayer.date != null) {
       response.setHeader("ETag", String.format("W/\"%s\"", speciesLayer.date));
     }
