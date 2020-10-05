@@ -32,7 +32,7 @@
   <properties>
     <jdkLevel>1.8</jdkLevel>
     <gbif-occurrence.version>0.146-SNAPSHOT</gbif-occurrence.version>
-    <gbif-api.version>0.121-SNAPSHOT</gbif-api.version>
+    <gbif-api.version>0.119</gbif-api.version>
     <gbif-common.ws.version>1.7</gbif-common.ws.version>
     <dwc-api.version>1.28</dwc-api.version>
     <slf4j.version>1.7.30</slf4j.version>
