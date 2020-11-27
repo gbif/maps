@@ -34,7 +34,7 @@
     <gbif-occurrence.version>0.149-SNAPSHOT</gbif-occurrence.version>
     <gbif-api.version>0.129</gbif-api.version>
     <gbif-common.ws.version>1.7</gbif-common.ws.version>
-    <dwc-api.version>1.28</dwc-api.version>
+    <dwc-api.version>1.29</dwc-api.version>
     <slf4j.version>1.7.30</slf4j.version>
     <javax.inject.version>1</javax.inject.version>
     <javax.mail.version>1.4.1</javax.mail.version>
