@@ -9,7 +9,7 @@
 
   <groupId>org.gbif.maps</groupId>
   <artifactId>maps-motherpom</artifactId>
-  <version>0.21-SNAPSHOT</version>
+  <version>0.22-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <description>GBIF Map services</description>
