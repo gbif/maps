@@ -81,7 +81,6 @@
             <exclude>META-INF/*.RSA</exclude>
             <exclude>hbase-site.xml</exclude>
             <exclude>logback.xml</exclude>
-            <exclude>hbase-site.xml</exclude>
           </excludes>
           <archive>
             <manifest>

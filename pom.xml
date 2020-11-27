@@ -31,8 +31,8 @@
 
   <properties>
     <jdkLevel>1.8</jdkLevel>
-    <gbif-occurrence.version>0.146</gbif-occurrence.version>
-    <gbif-api.version>0.119</gbif-api.version>
+    <gbif-occurrence.version>0.149-SNAPSHOT</gbif-occurrence.version>
+    <gbif-api.version>0.129</gbif-api.version>
     <gbif-common.ws.version>1.7</gbif-common.ws.version>
     <dwc-api.version>1.28</dwc-api.version>
     <slf4j.version>1.7.30</slf4j.version>
@@ -76,11 +76,10 @@
     <zookeeper.version>3.4.5-cdh5.12.0</zookeeper.version>
 
     <!-- es versions -->
-    <elasticsearch.version>6.5.4</elasticsearch.version>
+    <elasticsearch.version>7.10.0</elasticsearch.version>
     <httpclient.version>4.5.2</httpclient.version>
-    <httpcore.version>4.4.5</httpcore.version>
-    <log4j-to-slf4j.version>2.8.2</log4j-to-slf4j.version>
-
+    <httpcore.version>4.4.13</httpcore.version>
+    <log4j.version>2.11.1</log4j.version>
     <!-- Spring versions -->
     <spring-boot.version>2.2.6.RELEASE</spring-boot.version>
     <spring-cloud-zookeeper.version>2.2.0.RELEASE</spring-cloud-zookeeper.version>
@@ -375,7 +374,7 @@
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-to-slf4j</artifactId>
-        <version>${log4j-to-slf4j.version}</version>
+        <version>${log4j.version}</version>
       </dependency>
       <dependency>
         <groupId>com.vividsolutions</groupId>
@@ -616,6 +615,19 @@
           </exclusion>
         </exclusions>
       </dependency>
+      <dependency>
+        <groupId>org.apache.curator</groupId>
+        <artifactId>curator-test</artifactId>
+        <version>${curator-test.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
+          </exclusion>
+        </exclusions>
+        <scope>test</scope>
+      </dependency>
+
       <!-- ES -->
       <dependency>
         <groupId>org.elasticsearch.client</groupId>
@@ -636,43 +648,36 @@
         <groupId>org.elasticsearch</groupId>
         <artifactId>elasticsearch</artifactId>
         <version>${elasticsearch.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-smile</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-cbor</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.elasticsearch.client</groupId>
         <artifactId>elasticsearch-rest-client-sniffer</artifactId>
         <version>${elasticsearch.version}</version>
       </dependency>
+      <!-- added to avoid conflicts with es client -->
+      <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-api</artifactId>
+        <version>${log4j.version}</version>
+      </dependency>
+      <!-- Version used by the ElasticSearch client -->
       <dependency>
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpclient</artifactId>
         <version>${httpclient.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.curator</groupId>
-        <artifactId>curator-test</artifactId>
-        <version>${curator-test.version}</version>
+        <type>jar</type>
         <exclusions>
           <exclusion>
-            <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper</artifactId>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
           </exclusion>
         </exclusions>
-        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpcore</artifactId>
         <version>${httpcore.version}</version>
+        <type>jar</type>
       </dependency>
 
       <!-- Spring dependencies -->

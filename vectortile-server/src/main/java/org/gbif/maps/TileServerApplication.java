@@ -103,9 +103,7 @@ public class TileServerApplication  {
               requestConfigBuilder
                 .setConnectTimeout(esConfig.getConnectTimeout())
                 .setSocketTimeout(esConfig.getSocketTimeout()))
-          .setMaxRetryTimeoutMillis(esConfig.getSocketTimeout())
           .setNodeSelector(NodeSelector.SKIP_DEDICATED_MASTERS);
-
 
       if (esConfig.getSniffInterval() > 0) {
         builder.setFailureListener(sniffOnFailureListener);
