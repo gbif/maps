@@ -21,11 +21,9 @@ import org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Primary;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -38,16 +36,12 @@ import java.net.URL;
  * The main entry point for running the member node.
  */
 @SpringBootApplication(
+  scanBasePackages = "org.gbif.maps",
   exclude = {
-    ElasticsearchAutoConfiguration.class,
     RabbitAutoConfiguration.class,
     MybatisAutoConfiguration.class
   })
 @EnableConfigurationProperties
-@ComponentScan(
-  basePackages = {
-    "org.gbif.maps"
-  })
 public class TileServerApplication  {
 
   public static void main(String[] args) {
