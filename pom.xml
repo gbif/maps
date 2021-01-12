@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.gbif</groupId>
     <artifactId>motherpom</artifactId>
-    <version>46</version>
+    <version>49</version>
   </parent>
 
   <groupId>org.gbif.maps</groupId>
@@ -33,10 +33,9 @@
     <jdkLevel>1.8</jdkLevel>
     <gbif-occurrence.version>0.149</gbif-occurrence.version>
     <gbif-api.version>0.129</gbif-api.version>
-    <gbif-common.ws.version>1.7</gbif-common.ws.version>
+    <gbif-common.ws.version>1.12</gbif-common.ws.version>
     <dwc-api.version>1.29</dwc-api.version>
     <slf4j.version>1.7.30</slf4j.version>
-    <javax.inject.version>1</javax.inject.version>
     <javax.mail.version>1.4.1</javax.mail.version>
     <javax.activation.version>1.1.1</javax.activation.version>
     <jts.version>1.13</jts.version>
@@ -81,8 +80,8 @@
     <httpcore.version>4.4.13</httpcore.version>
     <log4j.version>2.11.1</log4j.version>
     <!-- Spring versions -->
-    <spring-boot.version>2.2.6.RELEASE</spring-boot.version>
-    <spring-cloud-zookeeper.version>2.2.0.RELEASE</spring-cloud-zookeeper.version>
+    <spring-boot.version>2.3.7.RELEASE</spring-boot.version>
+    <spring-cloud-zookeeper.version>2.2.4.RELEASE</spring-cloud-zookeeper.version>
 
     <!-- Plugins -->
     <spring-boot-maven-plugin.version>${spring-boot.version}</spring-boot-maven-plugin.version>
@@ -447,11 +446,6 @@
         <groupId>org.apache.hive</groupId>
         <artifactId>hive-hbase-handler</artifactId>
         <version>${hive.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>javax.inject</groupId>
-        <artifactId>javax.inject</artifactId>
-        <version>${javax.inject.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
