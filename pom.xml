@@ -9,7 +9,7 @@
 
   <groupId>org.gbif.maps</groupId>
   <artifactId>maps-motherpom</artifactId>
-  <version>0.26-SNAPSHOT</version>
+  <version>0.26</version>
   <packaging>pom</packaging>
 
   <description>GBIF Map services</description>
@@ -19,7 +19,7 @@
     <connection>scm:git:git@github.com:gbif/maps.git</connection>
     <url>https://github.com/gbif/maps</url>
     <developerConnection>scm:git:git@github.com:gbif/maps.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>maps-motherpom-0.26</tag>
   </scm>
 
   <distributionManagement>
