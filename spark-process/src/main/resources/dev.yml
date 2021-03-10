@@ -59,7 +59,7 @@ tilePyramid:
 # Hdfs Lock to snapshot the avro hdfsview directory
 hdfsLockConfig:
   zkConnectionString: PROVIDED_AT_RUNTIME
-  namespace: prod_index_lock
+  namespace: dev_index_lock
   lockingPath: /hive/
   lockName: hdfsview
   sleepTimeMs: 100
