@@ -46,7 +46,8 @@ object Backfill {
       logger.warn("Overwriting config with Oozie supplied configuration")
       val overrideParams = WorkflowParams.buildFromOozie(args(2))
       config.hbase.zkQuorum = overrideParams.getZkQuorum
-      config.source = overrideParams.getSourceDirectory
+      config.snapshotDirectory = overrideParams.getSnapshotDirectory
+      config.sourceSubdirectory = overrideParams.getSourceSubdirectory
       config.pointFeatures.tableName = overrideParams.getTargetTable
       config.tilePyramid.tableName = overrideParams.getTargetTable
       config.targetDirectory = overrideParams.getTargetDirectory
@@ -58,12 +59,15 @@ object Backfill {
       import spark.implicits._
 
       val snapshotName = UUID.randomUUID().toString
-      val snapshotPath = createHdfsSnapshot(spark.sparkContext.hadoopConfiguration, config.source, snapshotName, config.hdfsLockConfig)
+      logger.info("Creating snapshot {} {}", config.snapshotDirectory, snapshotName : Any)
+      val snapshotPath = createHdfsSnapshot(spark.sparkContext.hadoopConfiguration, config.snapshotDirectory, snapshotName, config.hdfsLockConfig)
+      val snapshotSource = snapshotPath + "/" + config.sourceSubdirectory
+      logger.info("Created snapshot, {}", snapshotPath)
 
       try {
-        logger.info("Reading Directory {}", config.source)
+        logger.info("Reading Directory {}", snapshotSource)
 
-        val df = spark.read.avro(snapshotPath.toString) // Select only the required columns
+        val df = spark.read.avro(snapshotSource) // Select only the required columns
           .select($"datasetkey", $"publishingorgkey", $"publishingcountry", $"networkkey", $"countrycode",
                   $"basisofrecord", $"decimallatitude", $"decimallongitude", $"kingdomkey", $"phylumkey", $"classkey",
                   $"orderkey", $"familykey", $"genuskey", $"specieskey", $"taxonkey", $"year", $"occurrencestatus",
@@ -107,7 +111,8 @@ object Backfill {
           //pool.invokeAll(jobs.toList.asJava)
         }
       } finally {
-        deleteHdfsSnapshot(spark.sparkContext.hadoopConfiguration, config.source, snapshotName)
+        logger.info("Deleting snapshot {} {}", config.snapshotDirectory, snapshotName : Any)
+        deleteHdfsSnapshot(spark.sparkContext.hadoopConfiguration, config.snapshotDirectory, snapshotName)
       }
     }
   }

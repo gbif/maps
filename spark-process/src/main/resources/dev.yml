@@ -1,12 +1,9 @@
 # Used only for the spark application name
 appName: Map build (development)
 
-# An HBase snapshot table name, or a parquet file of occurrence records
-# Hint: Consider using a Hive CTAS query "STORED AS PARQUET" from occurrence_hdfs
-#source: /user/hive/warehouse/tim.db/occurrence_map_source_tenth
-
-# hbase shell> snapshot 'dev_occurrence', 'dev_occurrence_20171115_1419'
-source: dev_occurrence_20171115_1419
+# An HDFS path to read Avro from
+snapshotDirectory: hdfs://ha-nn/data/hdfsview/
+sourceSubdirectory: occurrence/
 
 # The base directory into which HFiles will be stored
 targetDirectory: hdfs://ha-nn/tmp/matt_test

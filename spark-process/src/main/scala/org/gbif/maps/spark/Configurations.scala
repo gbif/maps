@@ -18,7 +18,7 @@ import org.gbif.maps.common.projection.TileSchema
 object Configurations {
 
   /**
-    * Returns the application cofiguration for the given file.
+    * Returns the application configuration for the given file.
     * @param file The YAML config file on the classpath
     * @return The application configuration
     */
@@ -54,7 +54,8 @@ object Configurations {
   */
 class MapConfiguration (
   @JsonProperty("appName") _appName: String,
-  @JsonProperty("source") _source: String,
+  @JsonProperty("snapshotDirectory") _snapshotDirectory: String,
+  @JsonProperty("sourceSubdirectory") _sourceSubdirectory: String,
   @JsonProperty("targetDirectory") _targetDirectory: String,
   @JsonProperty("tilesThreshold") _tilesThreshold: Int,
   @JsonProperty("hbase") _hbase: HBaseConfiguration,
@@ -64,7 +65,8 @@ class MapConfiguration (
 
 ) extends Serializable {
   val appName = Preconditions.checkNotNull(_appName, "appName cannot be null" : Object)
-  var source:String = Preconditions.checkNotNull(_source, "source cannot be null" : Object)
+  var snapshotDirectory = Preconditions.checkNotNull(_snapshotDirectory, "snapshotDirectory cannot be null" : Object)
+  var sourceSubdirectory = Preconditions.checkNotNull(_sourceSubdirectory, "sourceSubdirectory cannot be null" : Object)
   var targetDirectory = Preconditions.checkNotNull(_targetDirectory, "targetDirectory cannot be null" : Object)
   val tilesThreshold = Preconditions.checkNotNull(_tilesThreshold, "tilesThreshold cannot be null" : Object)
   val hbase = Preconditions.checkNotNull(_hbase, "hbase cannot be null" : Object)

@@ -9,7 +9,8 @@
 # Used only for the spark application name
 appName: Map build (prod)
 
-source: PROVIDED_AT_RUNTIME
+snapshotDirectory: PROVIDED_AT_RUNTIME
+sourceSubdirectory: PROVIDED_AT_RUNTIME
 
 # The base directory into which HFiles will be stored
 targetDirectory: PROVIDED_AT_RUNTIME
@@ -22,7 +23,6 @@ hbase:
   zkQuorum: PROVIDED_AT_RUNTIME
   rootDir: /hbase
   keySaltModulus: 100
-
 
 # Applies only to those map views that have few enough records to be stored as features
 pointFeatures:

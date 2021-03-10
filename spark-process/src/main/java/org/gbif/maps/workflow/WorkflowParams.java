@@ -18,7 +18,8 @@ import com.google.common.base.Throwables;
 public class WorkflowParams {
   public static String OOZIE_ZK_QUORUM = "gbif.map.zk.quorum";
   public static String OOZIE_TIMESTAMP = "gbif.map.timestamp";
-  public static String OOZIE_SOURCE_DIRECTORY = "gbif.map.sourceDirectory";
+  public static String OOZIE_SNAPSHOT_DIRECTORY = "gbif.map.snapshotDirectory";
+  public static String OOZIE_SOURCE_SUBDIRECTORY = "gbif.map.sourceSubdirectory";
   public static String OOZIE_TARGET_TABLE_PREFIX = "gbif.map.targetTablePrefix";
   public static String OOZIE_TARGET_TABLE = "gbif.map.targetTable";
   public static String OOZIE_TARGET_DIRECTORY = "gbif.map.targetDirectory";
@@ -29,7 +30,8 @@ public class WorkflowParams {
 
   private String zkQuorum;
   private String timestamp;
-  private String sourceDirectory;
+  private String snapshotDirectory;
+  private String sourceSubdirectory;
   private String targetTablePrefix;
   private String targetTable;
   private String targetDirectory;
@@ -47,16 +49,17 @@ public class WorkflowParams {
     try {
       WorkflowParams params = new WorkflowParams();
       params.zkQuorum = args[0];
-      params.sourceDirectory = args[1];  // e.g. /user/hive/warehouse/dev.db/occurrence_pipeline_hdfs/*
-      params.targetTablePrefix = args[2];  // e.g. prod_a_maps (will receive a suffix such as _tiles_20170101_1343)
-      params.mode = args[3];  // tiles | points
-      String keySaltModulusAsString = args[4];  // the number of partitions for the HBase table
+      params.snapshotDirectory = args[1];  // e.g. hdfs://ha-nn/data/hdfsview/
+      params.sourceSubdirectory = args[2];  // e.g. occurrence/
+      params.targetTablePrefix = args[3];  // e.g. prod_a_maps (will receive a suffix such as _tiles_20170101_1343)
+      params.mode = args[4];  // tiles | points
+      String keySaltModulusAsString = args[5];  // the number of partitions for the HBase table
       params.keySaltModulus = Integer.parseInt(keySaltModulusAsString);
       params.timestamp = new SimpleDateFormat("yyyyMMdd_HHmm").format(new Date());
       params.targetTable = params.targetTablePrefix + "_" + params.mode + "_" + params.timestamp;
-      params.targetDirectory = args[5] + "_" + params.timestamp; // location where HFiles will be placed
-      params.zkMetaDataPath = args[6];
-      params.hdfsLockZkConnectionString = args[7];
+      params.targetDirectory = args[6] + "_" + params.timestamp; // location where HFiles will be placed
+      params.zkMetaDataPath = args[7];
+      params.hdfsLockZkConnectionString = args[8];
 
       return params;
 
@@ -76,7 +79,8 @@ public class WorkflowParams {
       Properties props = new Properties();
       props.load(sr);
       params.zkQuorum = props.getProperty(OOZIE_ZK_QUORUM);
-      params.sourceDirectory = props.getProperty(OOZIE_SOURCE_DIRECTORY);
+      params.snapshotDirectory = props.getProperty(OOZIE_SNAPSHOT_DIRECTORY);
+      params.sourceSubdirectory = props.getProperty(OOZIE_SOURCE_SUBDIRECTORY);
       params.targetTablePrefix = props.getProperty(OOZIE_TARGET_TABLE_PREFIX);
       params.mode = props.getProperty(OOZIE_MODE);
       String keySaltModulusAsString = props.getProperty(OOZIE_KEY_SALT_MODULUS);
@@ -103,8 +107,12 @@ public class WorkflowParams {
     return timestamp;
   }
 
-  public String getSourceDirectory() {
-    return sourceDirectory;
+  public String getSnapshotDirectory() {
+    return snapshotDirectory;
+  }
+
+  public String getSourceSubdirectory() {
+    return sourceSubdirectory;
   }
 
   public String getTargetTablePrefix() {
@@ -140,7 +148,8 @@ public class WorkflowParams {
     return "WorkflowParams{" +
            "zkQuorum='" + zkQuorum + '\'' +
            ", timestamp='" + timestamp + '\'' +
-           ", sourceDirectory='" + sourceDirectory + '\'' +
+           ", snapshotDirectory='" + snapshotDirectory + '\'' +
+           ", sourceSubdirectory='" + sourceSubdirectory + '\'' +
            ", targetTablePrefix='" + targetTablePrefix + '\'' +
            ", targetTable='" + targetTable + '\'' +
            ", targetDirectory='" + targetDirectory + '\'' +
@@ -160,7 +169,8 @@ public class WorkflowParams {
 
         props.setProperty(OOZIE_ZK_QUORUM, getZkQuorum());
         props.setProperty(OOZIE_TIMESTAMP, getTimestamp());
-        props.setProperty(OOZIE_SOURCE_DIRECTORY, getSourceDirectory());
+        props.setProperty(OOZIE_SNAPSHOT_DIRECTORY, getSnapshotDirectory());
+        props.setProperty(OOZIE_SOURCE_SUBDIRECTORY, getSourceSubdirectory());
         props.setProperty(OOZIE_TARGET_TABLE_PREFIX, getTargetTablePrefix());
         props.setProperty(OOZIE_TARGET_TABLE, getTargetTable());
         props.setProperty(OOZIE_TARGET_DIRECTORY, getTargetDirectory());
