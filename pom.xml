@@ -82,6 +82,7 @@
     <!-- Spring versions -->
     <spring-boot.version>2.3.7.RELEASE</spring-boot.version>
     <spring-cloud-zookeeper.version>2.2.4.RELEASE</spring-cloud-zookeeper.version>
+    <spring-boot-admin.version>2.2.4</spring-boot-admin.version>
 
     <!-- Plugins -->
     <spring-boot-maven-plugin.version>${spring-boot.version}</spring-boot-maven-plugin.version>
@@ -714,7 +715,11 @@
         <artifactId>spring-cloud-starter-zookeeper-config</artifactId>
         <version>${spring-cloud-zookeeper.version}</version>
       </dependency>
-
+      <dependency>
+        <groupId>de.codecentric</groupId>
+        <artifactId>spring-boot-admin-starter-client</artifactId>
+        <version>${spring-boot-admin.version}</version>
+      </dependency>
 
       <!--Test-->
       <dependency>
