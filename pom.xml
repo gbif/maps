@@ -31,10 +31,10 @@
 
   <properties>
     <jdkLevel>1.8</jdkLevel>
-    <gbif-occurrence.version>0.157</gbif-occurrence.version>
-    <gbif-api.version>0.141</gbif-api.version>
+    <gbif-occurrence.version>0.167</gbif-occurrence.version>
+    <gbif-api.version>0.154</gbif-api.version>
     <gbif-common.ws.version>1.15</gbif-common.ws.version>
-    <dwc-api.version>1.32</dwc-api.version>
+    <dwc-api.version>1.33</dwc-api.version>
     <slf4j.version>1.7.30</slf4j.version>
     <javax.mail.version>1.4.1</javax.mail.version>
     <javax.activation.version>1.1.1</javax.activation.version>
@@ -80,8 +80,8 @@
     <httpcore.version>4.4.13</httpcore.version>
     <log4j.version>2.11.1</log4j.version>
     <!-- Spring versions -->
-    <spring-boot.version>2.3.7.RELEASE</spring-boot.version>
-    <spring-cloud-zookeeper.version>2.2.4.RELEASE</spring-cloud-zookeeper.version>
+    <spring-boot.version>2.3.12.RELEASE</spring-boot.version>
+    <spring-cloud-zookeeper.version>2.2.5.RELEASE</spring-cloud-zookeeper.version>
     <spring-boot-admin.version>2.2.4</spring-boot-admin.version>
 
     <!-- Plugins -->
