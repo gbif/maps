@@ -1,11 +1,13 @@
 package org.gbif.maps.resource;
 
+import org.apache.commons.io.FileUtils;
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.Long2D;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
 
+import java.io.File;
 import java.io.IOException;
 
 import com.google.common.collect.ImmutableMap;
@@ -46,11 +48,23 @@ public class CapabilitiesTest {
     assertEquals("Western tile failed minLat", -68, capabilities.getMinLat());
     assertEquals("Western tile failed minLng", -125, capabilities.getMinLng());
     assertEquals("Western tile failed maxLat", 14, capabilities.getMaxLat());
-    assertEquals("Western tile failed maxLng", -35, capabilities.getMaxLng());
+    assertEquals("Western tile failed maxLng", -34, capabilities.getMaxLng());
     assertEquals("Western tile failed total", 50, capabilities.getTotal());
     assertEquals("Western tile failed minYear", Integer.valueOf(1900), capabilities.getMinYear());
     assertEquals("Western tile failed maxYear", Integer.valueOf(1930), capabilities.getMaxYear());
     assertEquals("Western tile failed generated", "2017-08-15T16:28Z", capabilities.getGenerated());
+
+    // Eastern tile containing only a point in the buffer region
+    encoder = new VectorTileEncoder(TILE_SIZE, TILE_SIZE/4, false);
+    encoder.addFeature("Layer1", ImmutableMap.of("1900", 10, "total", 10), point(-0d, 181.0d));
+    builder.collect(encoder.encode(), ZOOM_0_EAST_NW, ZOOM_0_EAST_SE, "2017-08-15T16:28Z");
+
+    // Should be the same as with just the western tile
+    capabilities = builder.build();
+    assertEquals("Western + empty eastern tile failed minLat", -68, capabilities.getMinLat());
+    assertEquals("Western + empty eastern tile failed minLng", -125, capabilities.getMinLng());
+    assertEquals("Western + empty eastern tile failed maxLat", 14, capabilities.getMaxLat());
+    assertEquals("Western + empty eastern tile failed maxLng", -34, capabilities.getMaxLng());
 
     // Eastern tile
     encoder = new VectorTileEncoder(TILE_SIZE, TILE_SIZE/4, false);
@@ -81,6 +95,78 @@ public class CapabilitiesTest {
     assertEquals("Failed total", 0, capabilities.getTotal());
     assertTrue("Failed minYear", capabilities.getMinYear() == null);
     assertTrue("Failed maxYear", capabilities.getMaxYear() == null);
+  }
+
+  /**
+   * The eastern tile only has buffer points.
+   */
+  @Test
+  public void testRealTileBufferPoints() throws IOException {
+    Capabilities.CapabilitiesBuilder builder = Capabilities.CapabilitiesBuilder.newBuilder();
+
+    // Western tile
+    byte[] west = FileUtils.readFileToByteArray(org.gbif.utils.file.FileUtils.getClasspathFile("tiles/taxon-2480528-0-0-0.mvt"));
+    builder.collect(west, ZOOM_0_WEST_NW, ZOOM_0_WEST_SE, "2021-09-08T08:00Z");
+
+    Capabilities capabilities = builder.build();
+    assertEquals("Western tile failed minLat", 18, capabilities.getMinLat());
+    assertEquals("Western tile failed minLng", -160, capabilities.getMinLng());
+    assertEquals("Western tile failed maxLat", 23, capabilities.getMaxLat());
+    assertEquals("Western tile failed maxLng", -154, capabilities.getMaxLng());
+    assertEquals("Western tile failed total", 5884, capabilities.getTotal());
+    assertEquals("Western tile failed minYear", Integer.valueOf(1891), capabilities.getMinYear());
+    assertEquals("Western tile failed maxYear", Integer.valueOf(2021), capabilities.getMaxYear());
+    assertEquals("Western tile failed generated", "2021-09-08T08:00Z", capabilities.getGenerated());
+
+    // Eastern tile
+    byte[] east = FileUtils.readFileToByteArray(org.gbif.utils.file.FileUtils.getClasspathFile("tiles/taxon-2480528-0-1-0.mvt"));
+    builder.collect(east, ZOOM_0_EAST_NW, ZOOM_0_EAST_SE, "2021-09-08T08:00Z");
+
+    // now both tiles in the capabilities
+    capabilities = builder.build();
+    assertEquals("Failed minLat", 18, capabilities.getMinLat());
+    assertEquals("Failed minLng", -160, capabilities.getMinLng());
+    assertEquals("Failed maxLat", 23, capabilities.getMaxLat());
+    assertEquals("Failed maxLng", -154, capabilities.getMaxLng());
+    assertEquals("Failed total", 5884, capabilities.getTotal());
+    assertEquals("Failed minYear", Integer.valueOf(1891), capabilities.getMinYear());
+    assertEquals("Failed maxYear", Integer.valueOf(2021), capabilities.getMaxYear());
+  }
+
+  /**
+   * These occurrences cover an area of less than 1×1°.
+   */
+  @Test
+  public void testRealTile1x1() throws IOException {
+    Capabilities.CapabilitiesBuilder builder = Capabilities.CapabilitiesBuilder.newBuilder();
+
+    // Western tile
+    byte[] west = FileUtils.readFileToByteArray(org.gbif.utils.file.FileUtils.getClasspathFile("tiles/taxon-5228134-0-0-0.mvt"));
+    builder.collect(west, ZOOM_0_WEST_NW, ZOOM_0_WEST_SE, "2021-09-08T08:00Z");
+
+    Capabilities capabilities = builder.build();
+    assertEquals("Western tile failed minLat", -38, capabilities.getMinLat());
+    assertEquals("Western tile failed minLng", -13, capabilities.getMinLng());
+    assertEquals("Western tile failed maxLat", -37, capabilities.getMaxLat());
+    assertEquals("Western tile failed maxLng", -12, capabilities.getMaxLng());
+    assertEquals("Western tile failed total", 43, capabilities.getTotal());
+    assertEquals("Western tile failed minYear", Integer.valueOf(1929), capabilities.getMinYear());
+    assertEquals("Western tile failed maxYear", Integer.valueOf(2012), capabilities.getMaxYear());
+    assertEquals("Western tile failed generated", "2021-09-08T08:00Z", capabilities.getGenerated());
+
+    // Eastern tile
+    byte[] east = FileUtils.readFileToByteArray(org.gbif.utils.file.FileUtils.getClasspathFile("tiles/taxon-5228134-0-1-0.mvt"));
+    builder.collect(east, ZOOM_0_EAST_NW, ZOOM_0_EAST_SE, "2021-09-08T08:00Z");
+
+    // now both tiles in the capabilities
+    capabilities = builder.build();
+    assertEquals("Failed minLat", -38, capabilities.getMinLat());
+    assertEquals("Failed minLng", -13, capabilities.getMinLng());
+    assertEquals("Failed maxLat", -37, capabilities.getMaxLat());
+    assertEquals("Failed maxLng", -12, capabilities.getMaxLng());
+    assertEquals("Failed total", 43, capabilities.getTotal());
+    assertEquals("Failed minYear", Integer.valueOf(1929), capabilities.getMinYear());
+    assertEquals("Failed maxYear", Integer.valueOf(2012), capabilities.getMaxYear());
   }
 
   private static Point point(double lat, double lng) {

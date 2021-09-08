@@ -42,19 +42,19 @@ public class Capabilities {
   }
 
   public int getMinLat() {
-    return floorOrCeil(minLat, -90);
+    return floor(minLat, -90);
   }
 
   public int getMinLng() {
-    return floorOrCeil(minLng, -180);
+    return floor(minLng, -180);
   }
 
   public int getMaxLat() {
-    return floorOrCeil(maxLat, 90);
+    return ceil(maxLat, 90);
   }
 
   public int getMaxLng() {
-    return floorOrCeil(maxLng, 180);
+    return ceil(maxLng, 180);
   }
 
   public Integer getMinYear() {
@@ -73,12 +73,15 @@ public class Capabilities {
     return generated;
   }
 
-  private static int floorOrCeil(Double d, int defaultValue) {
+  private static int floor(Double d, int defaultValue) {
     if (d == null) return defaultValue;
-    else if (d<0) return (int) Math.floor(d);
-    else return (int) Math.ceil(d);
+    else return (int) Math.floor(d);
   }
 
+  private static int ceil(Double d, int defaultValue) {
+    if (d == null) return defaultValue;
+    else return (int) Math.ceil(d);
+  }
 
   @Override
   public String toString() {
@@ -144,7 +147,7 @@ public class Capabilities {
       if (tile != null) { // defensive coding
 
         double minX = Double.MAX_VALUE,  minY = Double.MAX_VALUE;
-        double maxX = Double.MIN_VALUE, maxY = Double.MIN_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
         double extent = -1;
 
         for (VectorTileDecoder.Feature feature : DECODER.decode(tile)) {
