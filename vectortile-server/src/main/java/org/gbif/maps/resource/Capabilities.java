@@ -124,7 +124,7 @@ public class Capabilities {
     private String generated;
 
     private IntHashSet longitudes = new IntHashSet();
-    private int spreadMultiplier = 100; // Calculate spread after rounding to 0.01°.
+    private int spreadMultiplier = 512; // Calculate spread after undoing division by tile extent, to avoid rounding issues.
 
     static {
       DECODER.setAutoScale(false); // important to avoid auto scaling to 256 tiles
@@ -287,6 +287,7 @@ public class Capabilities {
         LOG.trace("Spread: left p[{}]={}, right p[{}]={}.  leftDist {}, rightDist {}: Expand {}", left, values[left], right, values[right], leftDist, rightDist, rightDist > leftDist ? "left" : "right");
 
         // Extend the range to envelop the nearest point to the current range
+        // Favour expanding to the right (so only > not ≥ here) so a whole-world tile ends at -180–180°.
         if (rightDist > leftDist) {
           left = (left - 1 + values.length) % values.length;
         } else {

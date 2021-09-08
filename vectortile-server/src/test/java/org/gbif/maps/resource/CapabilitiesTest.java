@@ -212,7 +212,30 @@ public class CapabilitiesTest {
     assertEquals("Failed minLng", 18, capabilities.getMinLng());
     assertEquals("Failed maxLat", 86, capabilities.getMaxLat());
     assertEquals("Failed maxLng", 191, capabilities.getMaxLng());
-    assertEquals("Failed total", 6028743 , capabilities.getTotal());
+    assertEquals("Failed total", 6028743, capabilities.getTotal());
+  }
+
+  /**
+   * Whole world.
+   */
+  @Test
+  public void testRealTileEverything() throws IOException {
+    Capabilities.CapabilitiesBuilder builder = Capabilities.CapabilitiesBuilder.newBuilder();
+
+    // Western tile
+    byte[] west = FileUtils.readFileToByteArray(org.gbif.utils.file.FileUtils.getClasspathFile("tiles/all-0-0-0.mvt"));
+    builder.collect(west, ZOOM_0_WEST_NW, ZOOM_0_WEST_SE, "2021-09-08T08:00Z");
+
+    // Eastern tile
+    byte[] east = FileUtils.readFileToByteArray(org.gbif.utils.file.FileUtils.getClasspathFile("tiles/all-0-1-0.mvt"));
+    builder.collect(east, ZOOM_0_EAST_NW, ZOOM_0_EAST_SE, "2021-09-08T08:00Z");
+
+    Capabilities capabilities = builder.build();
+    assertEquals("Failed minLat", -90, capabilities.getMinLat());
+    assertEquals("Failed minLng", -180, capabilities.getMinLng());
+    assertEquals("Failed maxLat", 90, capabilities.getMaxLat());
+    assertEquals("Failed maxLng", 180, capabilities.getMaxLng());
+    assertEquals("Failed total", 1756544437, capabilities.getTotal());
   }
 
   private static Point point(double lat, double lng) {
