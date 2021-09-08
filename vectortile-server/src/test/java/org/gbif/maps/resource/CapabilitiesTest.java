@@ -1,5 +1,6 @@
 package org.gbif.maps.resource;
 
+import com.carrotsearch.hppc.IntHashSet;
 import org.apache.commons.io.FileUtils;
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.Long2D;
@@ -7,7 +8,6 @@ import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
 
-import java.io.File;
 import java.io.IOException;
 
 import com.google.common.collect.ImmutableMap;
@@ -169,11 +169,91 @@ public class CapabilitiesTest {
     assertEquals("Failed maxYear", Integer.valueOf(2012), capabilities.getMaxYear());
   }
 
+  /**
+   * These occurrences cross the antimeridian (Fiji).
+   */
+  @Test
+  public void testRealTileAntimeridian() throws IOException {
+    Capabilities.CapabilitiesBuilder builder = Capabilities.CapabilitiesBuilder.newBuilder();
+
+    // Western tile
+    byte[] west = FileUtils.readFileToByteArray(org.gbif.utils.file.FileUtils.getClasspathFile("tiles/country-FJ-0-0-0.mvt"));
+    builder.collect(west, ZOOM_0_WEST_NW, ZOOM_0_WEST_SE, "2021-09-08T08:00Z");
+
+    // Eastern tile
+    byte[] east = FileUtils.readFileToByteArray(org.gbif.utils.file.FileUtils.getClasspathFile("tiles/country-FJ-0-1-0.mvt"));
+    builder.collect(east, ZOOM_0_EAST_NW, ZOOM_0_EAST_SE, "2021-09-08T08:00Z");
+
+    Capabilities capabilities = builder.build();
+    assertEquals("Failed minLat", -24, capabilities.getMinLat());
+    assertEquals("Failed minLng", 173, capabilities.getMinLng());
+    assertEquals("Failed maxLat", -9, capabilities.getMaxLat());
+    assertEquals("Failed maxLng", 184, capabilities.getMaxLng());
+    assertEquals("Failed total", 181654, capabilities.getTotal());
+  }
+
+  /**
+   * These occurrences cross the antimeridian, but cover over 180° of longitude (Russia).
+   */
+  @Test
+  public void testRealTileAntimeridianLarge() throws IOException {
+    Capabilities.CapabilitiesBuilder builder = Capabilities.CapabilitiesBuilder.newBuilder();
+
+    // Western tile
+    byte[] west = FileUtils.readFileToByteArray(org.gbif.utils.file.FileUtils.getClasspathFile("tiles/country-RU-0-0-0.mvt"));
+    builder.collect(west, ZOOM_0_WEST_NW, ZOOM_0_WEST_SE, "2021-09-08T08:00Z");
+
+    // Eastern tile
+    byte[] east = FileUtils.readFileToByteArray(org.gbif.utils.file.FileUtils.getClasspathFile("tiles/country-RU-0-1-0.mvt"));
+    builder.collect(east, ZOOM_0_EAST_NW, ZOOM_0_EAST_SE, "2021-09-08T08:00Z");
+
+    Capabilities capabilities = builder.build();
+    assertEquals("Failed minLat", 40, capabilities.getMinLat());
+    assertEquals("Failed minLng", 18, capabilities.getMinLng());
+    assertEquals("Failed maxLat", 86, capabilities.getMaxLat());
+    assertEquals("Failed maxLng", 191, capabilities.getMaxLng());
+    assertEquals("Failed total", 6028743 , capabilities.getTotal());
+  }
+
   private static Point point(double lat, double lng) {
     Double2D globalXY = PROJ.toGlobalPixelXY(lat, lng, 0);
     Long2D tileXY = Tiles.toTileXY(globalXY, TileSchema.WGS84_PLATE_CAREÉ, 0, TILE_SIZE);
     Long2D tileLocalXY = Tiles.toTileLocalXY(globalXY, TileSchema.WGS84_PLATE_CAREÉ, 0,
                                              tileXY.getX(), tileXY.getY(), TILE_SIZE, TILE_SIZE/4);
     return GEOM_FACTORY.createPoint(new Coordinate(tileLocalXY.getX(),tileLocalXY.getY()));
+  }
+
+  @Test
+  public void testGapOnCircle() {
+    assertSpread(new double[]{50d, 88d, 132d, 170d, -178d, -155d, -20d, -2d}, -20, -155);
+    assertSpread(new double[]{50d, 88d, 132d}, 50, 132);
+    assertSpread(new double[]{88d, 132d}, 88, 132);
+    assertSpread(new double[]{-8d, 142d}, -8, 142);
+    assertSpread(new double[]{-158d, 142d}, 142, -158);
+    assertSpread(new double[]{142d}, 142, 142);
+    assertSpread(new double[]{-124, -34.3d}, -124, -34);
+  }
+
+  private void assertSpread(double[] longitudes, int left, int right) {
+    IntHashSet longitudesSet = new IntHashSet();
+    for (int i = 0;  i < longitudes.length; i++) {
+      longitudesSet.add((int) Math.round(longitudes[i]));
+    }
+
+    int[] spread = Capabilities.CapabilitiesBuilder.centredSpread(longitudesSet.toArray(), 360);
+    assertEquals(left, spread[0]);
+    assertEquals(right, spread[1]);
+
+    /*
+     * Print a line showing the spread.
+    for (int i = -180; i < 180; i+=2) {
+      if (right >= left) {
+        System.out.print((i > left && right > i) ? "X" : "-");
+      } else {
+        System.out.print((right > i || i > left) ? "X" : "-");
+      }
+    }
+    System.out.println();
+     */
   }
 }

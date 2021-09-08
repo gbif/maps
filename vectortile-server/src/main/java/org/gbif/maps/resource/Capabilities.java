@@ -1,20 +1,30 @@
 package org.gbif.maps.resource;
 
+import com.carrotsearch.hppc.IntHashSet;
+import com.google.common.annotations.VisibleForTesting;
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.Int2D;
 
 import java.io.IOException;
 import java.time.Year;
+import java.util.Arrays;
 import java.util.Map;
 
 import com.vividsolutions.jts.geom.Point;
 import no.ecc.vectortile.VectorTileDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * The model map capability responses intended to be used for web clients to initialise map widgets for display.
+ * The model map capability responses intended to be used for web clients to initialize map widgets for display.
  * This encapsulates the nuisance of determining the extent.
+ *
+ * Returned values are accurate to the nearest degree, since this process typically uses zoom level 0 tiles, and
+ * that is roughly the limit of the resolution.
  */
 public class Capabilities {
+  private static final Logger LOG = LoggerFactory.getLogger(Capabilities.class);
+
   private static final String META_TOTAL = "total";
   private final Double minLat, minLng, maxLat, maxLng;
   private final Integer minYear, maxYear;
@@ -113,6 +123,9 @@ public class Capabilities {
     private int total;
     private String generated;
 
+    private IntHashSet longitudes = new IntHashSet();
+    private int spreadMultiplier = 100; // Calculate spread after rounding to 0.01°.
+
     static {
       DECODER.setAutoScale(false); // important to avoid auto scaling to 256 tiles
     }
@@ -122,12 +135,15 @@ public class Capabilities {
     }
 
     Capabilities build() {
+      int[] spread = centredSpread(longitudes.toArray(), 360*spreadMultiplier);
+      int offset = Double.isNaN(minLat) ? 0 : (spread[0] > spread[1]) ? 360*spreadMultiplier : 0;
+
       // defensively code for empty tiles
       return new Capabilities(
         Double.isNaN(minLat) ? null : minLat,
-        Double.isNaN(minLng) ? null : minLng,
+        Double.isNaN(minLng) ? null : ((double)spread[0])/spreadMultiplier, // rather than minLng
         Double.isNaN(maxLat) ? null : maxLat,
-        Double.isNaN(maxLng) ? null : maxLng,
+        Double.isNaN(maxLng) ? null : ((double)(spread[1]+offset))/spreadMultiplier, // rather than maxLng
         Integer.MAX_VALUE == minYear ? null : minYear,
         Integer.MIN_VALUE == maxYear ? null : maxYear,
         total,
@@ -162,6 +178,9 @@ public class Capabilities {
             minY = Math.min(p.getY(), minY);
             maxX = Math.max(p.getX(), maxX);
             maxY = Math.max(p.getY(), maxY);
+
+            double lng = tileNW.getX() + (tileSE.getX() - tileNW.getX()) * p.getX() / extent;
+            longitudes.add((int) Math.round(lng * spreadMultiplier));
 
             total += extractInt(feature.getAttributes(), META_TOTAL, 0);
 
@@ -226,6 +245,59 @@ public class Capabilities {
       } else {
         return null;
       }
+    }
+
+    /**
+     * Calculate the longitudinal range, allowing for crossing of the antimeridian.
+     * @param values    set of values, without duplicates
+     * @param maxValue  wrap value
+     */
+    @VisibleForTesting
+    protected static int[] centredSpread(int[] values, int maxValue) {
+      if (values == null || values.length == 0) {
+        return null;
+      }
+
+      // Sort the values
+      Arrays.sort(values);
+
+      // Starting at this value…
+      int left = 0;
+      int right = 0;
+
+      LOG.trace("Spread values {}", values);
+
+      do {
+        // …measure the distance to the next value to the left of the current range,
+        // and the next value to the right
+        double leftDist, rightDist;
+
+        if (right+1 == values.length) {
+          rightDist = (maxValue+values[0]) - values[right];
+        } else {
+          rightDist = values[right+1] - values[right];
+        }
+
+        if (left == 0) {
+          leftDist = values[left] - (values[values.length-1]-maxValue);
+        } else {
+          leftDist = values[left] - values[left-1];
+        }
+
+        LOG.trace("Spread: left p[{}]={}, right p[{}]={}.  leftDist {}, rightDist {}: Expand {}", left, values[left], right, values[right], leftDist, rightDist, rightDist > leftDist ? "left" : "right");
+
+        // Extend the range to envelop the nearest point to the current range
+        if (rightDist > leftDist) {
+          left = (left - 1 + values.length) % values.length;
+        } else {
+          right = (right + 1) % values.length;
+        }
+        LOG.trace("Spread: left p[{}]={}, right p[{}]={}.", left, values[left], right, values[right]);
+
+        // Finish when we are a step away from closing the loop
+      } while ((right+1)%values.length != left);
+
+      return new int[]{values[left], values[right]};
     }
   }
 }
