@@ -31,9 +31,9 @@
 
   <properties>
     <jdkLevel>1.8</jdkLevel>
-    <gbif-occurrence.version>0.167</gbif-occurrence.version>
-    <gbif-api.version>0.154</gbif-api.version>
-    <gbif-common.ws.version>1.15</gbif-common.ws.version>
+    <gbif-occurrence.version>0.169-SNAPSHOT</gbif-occurrence.version>
+    <gbif-api.version>0.157-SNAPSHOT</gbif-api.version>
+    <gbif-common.ws.version>1.16</gbif-common.ws.version>
     <dwc-api.version>1.33</dwc-api.version>
     <slf4j.version>1.7.30</slf4j.version>
     <javax.mail.version>1.4.1</javax.mail.version>
@@ -53,6 +53,7 @@
     <hbase.version>1.2.0-cdh5.12.0</hbase.version>
     <spark.version>1.6.1</spark.version>
     <geotools.version>15.0</geotools.version>
+    <cache2k.version>2.4.1.Final</cache2k.version>
 
     <hsqldb.version>2.4.1</hsqldb.version>
     <!-- fixed to the version coming with Spark -->
@@ -719,6 +720,13 @@
         <groupId>de.codecentric</groupId>
         <artifactId>spring-boot-admin-starter-client</artifactId>
         <version>${spring-boot-admin.version}</version>
+      </dependency>
+
+      <!-- Cache -->
+      <dependency>
+        <groupId>org.cache2k</groupId>
+        <artifactId>cache2k-spring</artifactId>
+        <version>${cache2k.version}</version>
       </dependency>
 
       <!--Test-->

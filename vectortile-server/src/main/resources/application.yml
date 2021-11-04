@@ -13,6 +13,10 @@ metastore:
   zookeeperQuorum: @metastore.zookeeperQuorum@
   path: @metastore.path@
 
+cache:
+  predicates:
+    entryCapacity: 10_0000
+    permitNullValues: true
 
 esConfiguration:
   elasticsearch:

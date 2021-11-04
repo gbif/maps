@@ -2,13 +2,20 @@ package org.gbif.maps;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpHost;
+import org.cache2k.Cache;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.extra.spring.SpringCache2kCacheManager;
 import org.elasticsearch.client.NodeSelector;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+
+import org.gbif.api.model.occurrence.predicate.Predicate;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.resource.*;
+import org.gbif.occurrence.search.cache.DefaultInMemoryPredicateCacheService;
+import org.gbif.occurrence.search.cache.PredicateCacheService;
 import org.gbif.occurrence.search.es.EsConfig;
 import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
 import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
@@ -23,6 +30,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
@@ -36,12 +44,13 @@ import java.net.URL;
  * The main entry point for running the member node.
  */
 @SpringBootApplication(
-  scanBasePackages = "org.gbif.maps",
+  scanBasePackages = { "org.gbif.maps"},
   exclude = {
     RabbitAutoConfiguration.class,
     MybatisAutoConfiguration.class
   })
 @EnableConfigurationProperties
+@EnableCaching
 public class TileServerApplication  {
 
   public static void main(String[] args) {
@@ -152,7 +161,18 @@ public class TileServerApplication  {
     @Primary
     @Bean
     public ObjectMapper registryObjectMapper() {
-      return JacksonJsonObjectMapperProvider.getObjectMapper();
+      return JacksonJsonObjectMapperProvider.getObjectMapperWithBuilderSupport();
+    }
+
+    @ConfigurationProperties(prefix = "cache.predicates")
+    @Bean
+    public Cache2kConfig<Integer,Predicate> predicateCache2kConfig() {
+      return new Cache2kConfig<>();
+    }
+
+    @Bean
+    public PredicateCacheService predicateCacheService(ObjectMapper objectMapper, Cache2kConfig<Integer,Predicate> cache2kConfig) {
+      return new DefaultInMemoryPredicateCacheService(objectMapper, cache2kConfig.builder().build());
     }
 
   }
