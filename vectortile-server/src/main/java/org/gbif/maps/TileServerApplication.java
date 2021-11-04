@@ -1,14 +1,17 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.gbif.maps;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HttpHost;
-import org.cache2k.Cache;
-import org.cache2k.config.Cache2kConfig;
-import org.cache2k.extra.spring.SpringCache2kCacheManager;
-import org.elasticsearch.client.NodeSelector;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
 
 import org.gbif.api.model.occurrence.predicate.Predicate;
 import org.gbif.maps.common.meta.MapMetastore;
@@ -20,11 +23,20 @@ import org.gbif.occurrence.search.es.EsConfig;
 import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
 import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.http.HttpHost;
+import org.cache2k.config.Cache2kConfig;
+import org.elasticsearch.client.NodeSelector;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.sniff.SniffOnFailureListener;
 import org.elasticsearch.client.sniff.Sniffer;
-import org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
@@ -36,9 +48,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * The main entry point for running the member node.
@@ -46,8 +56,7 @@ import java.net.URL;
 @SpringBootApplication(
   scanBasePackages = { "org.gbif.maps"},
   exclude = {
-    RabbitAutoConfiguration.class,
-    MybatisAutoConfiguration.class
+    RabbitAutoConfiguration.class
   })
 @EnableConfigurationProperties
 @EnableCaching
