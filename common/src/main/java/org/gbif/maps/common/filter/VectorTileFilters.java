@@ -94,9 +94,12 @@ public class VectorTileFilters {
           toTileLocalPixelXY(schema, z, x, y, sourceX, sourceY, tileSize, bufferSize),
           attributesPrunedToYears(years),
           (m1,m2) -> {
-            // accumulate because the same pixel can be present in different layers (basisOfRecords) in the
-            // source tile
-            m2.forEach((k, v) -> m1.merge(k, v, Long::sum));
+            m2.forEach((k, v) -> m1.merge(k, v, (v1, v2) -> {
+              // accumulate because the same pixel can be present in different layers (basisOfRecords) in the
+              // source tile
+              Long.valueOf(v1).longValue();
+              return v1.longValue() + v2.longValue();
+            }));
             return m1;
           }
         ));
@@ -183,9 +186,12 @@ public class VectorTileFilters {
           extractGeometry(),
           attributesPrunedToYears(years),
           (m1,m2) -> {
-            // accumulate because the same pixel can be present in different layers (basisOfRecords) in the
-            // source tile
-            m2.forEach((k, v) -> m1.merge(k, v, Long::sum));
+            m2.forEach((k, v) -> m1.merge(k, v, (v1, v2) -> {
+              // accumulate because the same pixel can be present in different layers (basisOfRecords) in the
+              // source tile
+              Long.valueOf(v1).longValue();
+              return v1.longValue() + v2.longValue();
+            }));
             return m1;
           }
         ));

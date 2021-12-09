@@ -1,6 +1,5 @@
 package org.gbif.maps.resource;
 
-import org.gbif.api.model.occurrence.predicate.Predicate;
 import org.gbif.maps.TileServerConfiguration;
 import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.bin.SquareBin;
@@ -9,17 +8,14 @@ import org.gbif.maps.common.projection.Long2D;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
-import org.gbif.occurrence.search.cache.PredicateCacheService;
 import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapRequest;
 import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapRequestProvider;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Objects;
-import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.VisibleForTesting;
@@ -34,12 +30,7 @@ import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -75,32 +66,12 @@ public final class AdHocMapsResource {
   private final int tileSize;
   private final int bufferSize;
   private final OccurrenceHeatmapsEsService searchHeatmapsService;
-  private final PredicateCacheService predicateCacheService;
-  private final OccurrenceHeatmapRequestProvider provider;
 
   @Autowired
-  public AdHocMapsResource(OccurrenceHeatmapsEsService searchHeatmapsService, TileServerConfiguration configuration,
-                           PredicateCacheService predicateCacheService) {
+  public AdHocMapsResource(OccurrenceHeatmapsEsService searchHeatmapsService, TileServerConfiguration configuration) {
     this.tileSize = configuration.getEsConfiguration().getTileSize();
     this.bufferSize = configuration.getEsConfiguration().getBufferSize();
     this.searchHeatmapsService = searchHeatmapsService;
-    this.predicateCacheService = predicateCacheService;
-    provider = new OccurrenceHeatmapRequestProvider(predicateCacheService);
-  }
-
-  @PostMapping(value = "/predicate",
-               consumes =  {MediaType.APPLICATION_JSON_VALUE},
-               produces = {MediaType.APPLICATION_JSON_VALUE, "application/x-javascript"})
-  public Integer hashPredicate(@Valid @RequestBody Predicate predicate) {
-    return predicateCacheService.put(predicate);
-  }
-
-  @GetMapping(value = "/predicate/{predicateHash}",
-    produces = {MediaType.APPLICATION_JSON_VALUE, "application/x-javascript"})
-  public ResponseEntity<Predicate> getPredicate(@Valid @PathVariable("predicateHash") Integer predicateHash) {
-    return Optional.ofNullable(predicateCacheService.get(predicateHash))
-      .map(ResponseEntity::ok)
-      .orElse(ResponseEntity.notFound().build());
   }
 
   @RequestMapping(
@@ -124,7 +95,7 @@ public final class AdHocMapsResource {
     enableCORS(response);
     Preconditions.checkArgument(EPSG_4326.equalsIgnoreCase(srs) || EPSG_3857.equalsIgnoreCase(srs),
                                 "Adhoc search maps are currently only available in EPSG:4326 and EPSG:3857");
-    OccurrenceHeatmapRequest heatmapRequest = provider.buildOccurrenceHeatmapRequest(request);
+    OccurrenceHeatmapRequest heatmapRequest = OccurrenceHeatmapRequestProvider.buildOccurrenceHeatmapRequest(request);
 
     Preconditions.checkArgument(bin == null
                                 || BIN_MODE_HEX.equalsIgnoreCase(bin)
