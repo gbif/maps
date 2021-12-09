@@ -132,7 +132,7 @@ public class HBaseMaps {
   /**
    * Returns a tile from HBase if one exists.
    */
-  Optional<byte[]> getTile(String mapKey, String srs, int z, long x, long y) {
+  public Optional<byte[]> getTile(String mapKey, String srs, int z, long x, long y) {
     try {
       return tileCache.get(new TileKey(mapKey, srs, z, x, y));
     } catch (ExecutionException e) {

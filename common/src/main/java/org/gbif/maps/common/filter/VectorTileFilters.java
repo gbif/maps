@@ -298,17 +298,10 @@ public class VectorTileFilters {
    */
   public static Predicate<VectorTileDecoder.Feature> filterFeatureByYear(final Range years) {
     return (f -> {
-
-      // determine the extent of the year range within the tile
-      int minFeatureYear = Integer.MAX_VALUE;
-      int maxFeatureYear = Integer.MIN_VALUE;
       for (String yearAsStream : f.getAttributes().keySet()) {
         try {
           int y = Integer.parseInt(yearAsStream);
-          minFeatureYear = minFeatureYear > y ? y : minFeatureYear;
-          maxFeatureYear = maxFeatureYear < y ? y : maxFeatureYear;
-
-          if (years.isContained(minFeatureYear) || years.isContained(maxFeatureYear)) {
+          if (years.isContained(y)) {
             return true; // short circuit
           }
 
@@ -317,8 +310,7 @@ public class VectorTileFilters {
         }
       }
 
-      // some of the years must overlap the filter range
-      return years.isContained(minFeatureYear) || years.isContained(maxFeatureYear);
+      return false;
     });
   }
 

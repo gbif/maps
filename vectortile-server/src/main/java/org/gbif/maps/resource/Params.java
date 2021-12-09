@@ -19,7 +19,7 @@ import com.google.common.collect.Lists;
 /**
  * Utilities for dealing with the parameters and mappings.
  */
-class Params {
+public class Params {
   // Patterns used in splitting strings
   static final Pattern COMMA = Pattern.compile(",");
   static final Pattern PIPE = Pattern.compile("[|]");
@@ -64,12 +64,19 @@ class Params {
    * @return The main map key, and an optional country mask key
    */
   static String[] mapKeys(HttpServletRequest request) {
-    Map<String, String[]> queryParams = request.getParameterMap();
+    return mapKeys(request.getParameterMap());
+  }
+
+  /**
+   * Extracts the mapType:Key identifier from the params.
+   * @return The main map key, and an optional country mask key
+   */
+  public static String[] mapKeys(Map<String, String[]> params) {
 
     String mapKey = null,
       countryMaskKey = null;
 
-    for (Map.Entry<String, String[]> param : queryParams.entrySet()) {
+    for (Map.Entry<String, String[]> param : params.entrySet()) {
       if (MAP_TYPES.containsKey(param.getKey())) {
         if (param.getValue().length!=1) {
           throw new IllegalArgumentException("Invalid request: Only one map may be requested. Perhaps you need to use ad-hoc mapping?");
