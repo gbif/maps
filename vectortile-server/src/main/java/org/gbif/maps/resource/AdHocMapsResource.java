@@ -24,6 +24,7 @@ import javax.validation.Valid;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
@@ -170,6 +171,13 @@ public final class AdHocMapsResource {
     }
 
     return encodeTile(bin, z, x, y, hexPerTile, squareSize, encoder.encode());
+  }
+
+  private void checkPredicateHashParam(HttpServletRequest httpServletRequest) {
+    String predicateHashParam = httpServletRequest.getParameter(OccurrenceHeatmapRequestProvider.PARAM_PREDICATE_HASH);
+    if (!Strings.isNullOrEmpty(predicateHashParam)) {
+      Predicate predicate = predicateCacheService.get(Integer.parseInt(predicateHashParam));
+    }
   }
 
 
