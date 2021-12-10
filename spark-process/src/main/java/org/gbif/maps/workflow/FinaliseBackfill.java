@@ -1,4 +1,25 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.gbif.maps.workflow;
+
+import org.gbif.maps.common.meta.MapMetastore;
+import org.gbif.maps.common.meta.MapTables;
+import org.gbif.maps.common.meta.Metastores;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Comparator;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FsShell;
@@ -11,13 +32,6 @@ import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
-import org.gbif.maps.common.meta.MapMetastore;
-import org.gbif.maps.common.meta.MapTables;
-import org.gbif.maps.common.meta.Metastores;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Comparator;
 
 /**
  * Finalising the backfill involves the following:

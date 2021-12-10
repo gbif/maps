@@ -1,3 +1,16 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.gbif.maps.resource;
 
 import org.gbif.maps.TileServerConfiguration;
@@ -16,16 +29,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
 
-import com.codahale.metrics.annotation.Timed;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
-import no.ecc.vectortile.VectorTileDecoder;
-import no.ecc.vectortile.VectorTileEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,15 +45,22 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.codahale.metrics.annotation.Timed;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
+
+import no.ecc.vectortile.VectorTileDecoder;
+import no.ecc.vectortile.VectorTileEncoder;
+
+import static org.gbif.maps.resource.Params.BIN_MODE_HEX;
 import static org.gbif.maps.resource.Params.BIN_MODE_SQUARE;
+import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
 import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
+import static org.gbif.maps.resource.Params.HEX_TILE_SIZE;
 import static org.gbif.maps.resource.Params.SQUARE_TILE_SIZE;
 import static org.gbif.maps.resource.Params.enableCORS;
 import static org.gbif.maps.resource.Params.mapKeys;
 import static org.gbif.maps.resource.Params.toMinMaxYear;
-import static org.gbif.maps.resource.Params.BIN_MODE_HEX;
-import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
-import static org.gbif.maps.resource.Params.HEX_TILE_SIZE;
 
 /**
  * The tile resource for the simple GBIF data layers (i.e. HBase sourced, preprocessed).

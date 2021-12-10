@@ -10,5 +10,3 @@
  * Implementation details are contained in this package and a builder exists to allow construction.
  */
 package org.gbif.maps.common.meta;
-
-
