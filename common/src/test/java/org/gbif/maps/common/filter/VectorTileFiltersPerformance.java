@@ -39,7 +39,7 @@ public class VectorTileFiltersPerformance {
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final int TILE_SIZE = 512;
 
-  private static final Set<String> BASIS_OF_RECORDS =
+  private static final ImmutableSet<String> BASIS_OF_RECORDS =
     ImmutableSet.of("observation", "specimen", "livingspecimen"); // do not need to be real
 
   /**

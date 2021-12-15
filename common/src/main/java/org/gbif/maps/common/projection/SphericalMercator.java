@@ -59,8 +59,8 @@ public class SphericalMercator extends AbstractTileProjection {
       tileBuffer = 0;
     }
 
-    double north = min(MAX_LATITUDE, (max(-MAX_LATITUDE, tileLatitude(z, y-tileBuffer))));
-    double south = min(MAX_LATITUDE, (max(-MAX_LATITUDE, tileLatitude(z, y+tileBuffer + 1))));
+    double north = min(MAX_LATITUDE, max(-MAX_LATITUDE, tileLatitude(z, y-tileBuffer)));
+    double south = min(MAX_LATITUDE, max(-MAX_LATITUDE, tileLatitude(z, y+tileBuffer + 1)));
     double  west = to180Degrees(tileLongitude(z,  x  - tileBuffer));
     double  east = to180Degrees(tileLongitude(z, x+1 + tileBuffer));
 

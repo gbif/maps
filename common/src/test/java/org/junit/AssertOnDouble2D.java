@@ -15,10 +15,13 @@ package org.junit;
 
 import org.gbif.maps.common.projection.Double2D;
 
-public class AssertOnDouble2D extends org.junit.Assert {
+import static org.junit.Assert.fail;
+import static org.junit.Assert.format;
+
+public class AssertOnDouble2D {
 
   private static boolean doubleIsDifferent(double d1, double d2, double delta) {
-    return Double.compare(d1, d2) == 0?false:Math.abs(d1 - d2) > delta;
+    return Double.compare(d1, d2) != 0 && Math.abs(d1 - d2) > delta;
   }
 
   public static void assertEquals(String message, Double2D expected, Double2D actual, double delta) {

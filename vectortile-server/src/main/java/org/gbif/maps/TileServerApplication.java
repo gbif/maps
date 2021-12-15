@@ -42,7 +42,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
@@ -54,12 +53,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * The main entry point for running the member node.
  */
 @SpringBootApplication(
-  scanBasePackages = { "org.gbif.maps"},
+  scanBasePackages = "org.gbif.maps",
   exclude = {
     RabbitAutoConfiguration.class
   })
 @EnableConfigurationProperties
-@EnableCaching
 public class TileServerApplication  {
 
   public static void main(String[] args) {

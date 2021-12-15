@@ -18,6 +18,7 @@ import org.gbif.maps.TileServerConfiguration;
 import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.bin.SquareBin;
 import org.gbif.maps.common.projection.Double2D;
+import org.gbif.maps.common.projection.Int2D;
 import org.gbif.maps.common.projection.Long2D;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.TileSchema;
@@ -317,7 +318,7 @@ public final class AdHocMapsResource {
       if (this == o) {
         return true;
       }
-      if (o == null || getClass() != o.getClass())  {
+      if (!(o instanceof Bbox2D)) {
         return false;
       }
       Bbox2D bbox2D = (Bbox2D) o;

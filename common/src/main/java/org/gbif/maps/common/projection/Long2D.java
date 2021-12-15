@@ -13,6 +13,8 @@
  */
 package org.gbif.maps.common.projection;
 
+import org.gbif.maps.common.meta.MapTables;
+
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -40,8 +42,12 @@ public class Long2D implements Serializable {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Long2D)) {
+      return false;
+    }
     Long2D long2D = (Long2D) o;
     return x == long2D.x &&
            y == long2D.y;

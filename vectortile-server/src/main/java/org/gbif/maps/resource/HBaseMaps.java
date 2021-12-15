@@ -17,6 +17,7 @@ import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.MapTables;
 import org.gbif.maps.common.meta.Metastores;
+import org.gbif.maps.common.projection.Int2D;
 import org.gbif.maps.io.PointFeature;
 
 import java.util.Optional;
@@ -242,8 +243,12 @@ public class HBaseMaps {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof TileKey)) {
+        return false;
+      }
       TileKey that = (TileKey) o;
       return Objects.equal(this.rowKey, that.rowKey) &&
              Objects.equal(this.srs, that.srs) &&

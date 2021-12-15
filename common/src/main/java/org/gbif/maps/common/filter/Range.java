@@ -30,7 +30,7 @@ public class Range {
    * @param upper the upper bounds where null indicates unbounded
    */
   public Range(Integer lower, Integer upper) {
-    if (lower!=null & upper!=null && lower>upper) {
+    if ((lower!=null & upper!=null) && lower > upper) {
       throw new IllegalArgumentException("Lower cannot be a greater value than upper in a Range.");
     }
     this.lower = lower;
@@ -41,7 +41,7 @@ public class Range {
 
   /**
    * If the range is unbounded on both sides, then returns true.  Otherwise ensures that the year given is not null and
-   * is contained in the the range.  Containment is inclusive on both sides - i.e. if the value is equal to the bound
+   * is contained in the range.  Containment is inclusive on both sides - i.e. if the value is equal to the bound
    * on either side, then it returns true.
    *
    * @param value to test

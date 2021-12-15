@@ -62,7 +62,7 @@ public class Tiles {
     if (schema.isWrapX()) {
       if (schema.getZzTilesHorizontal() > 1 || z > 0) { // Don't wrap when the single tile is the global tile
         if (x == 0 && globalPixelXY.getX() >= maxGlobalPixelAddress - bufferSize) {
-          localX = globalPixelXY.getX() - maxGlobalPixelAddress - x * tileSize;
+          localX = globalPixelXY.getX() - maxGlobalPixelAddress;
         } else if (x == numTilesAtZoom - 1 && globalPixelXY.getX() < bufferSize) {
           localX = globalPixelXY.getX() + maxGlobalPixelAddress - x * tileSize;
         }

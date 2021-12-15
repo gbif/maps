@@ -41,8 +41,12 @@ public class Int2D implements Serializable {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Int2D)) {
+      return false;
+    }
     Int2D int2D = (Int2D) o;
     return x == int2D.x &&
            y == int2D.y;

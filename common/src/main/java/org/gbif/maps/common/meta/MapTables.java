@@ -14,6 +14,7 @@
 package org.gbif.maps.common.meta;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
@@ -81,8 +82,12 @@ public class MapTables implements Serializable {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof MapTables)) {
+      return false;
+    }
     MapTables mapTables = (MapTables) o;
     return Objects.equals(tileTable, mapTables.tileTable) &&
            Objects.equals(pointTable, mapTables.pointTable);
@@ -97,7 +102,7 @@ public class MapTables implements Serializable {
    * @return a human readable string (as bytes) for serialization
    */
   public byte[] serialize() {
-    return (tileTable + "|" + pointTable).getBytes();
+    return (tileTable + "|" + pointTable).getBytes(StandardCharsets.UTF_8);
   }
 
   /**
@@ -107,7 +112,7 @@ public class MapTables implements Serializable {
     if (encoded == null || encoded.length == 0) {
       throw new IllegalArgumentException("Unable to decode into MapTables - no data supplied");
     }
-    String s = new String(encoded);
+    String s = new String(encoded, StandardCharsets.UTF_8);
     String[] fields = PIPE.split(s);
     if (fields.length == 2) {
       return new MapTables(fields[0], fields[1]);
