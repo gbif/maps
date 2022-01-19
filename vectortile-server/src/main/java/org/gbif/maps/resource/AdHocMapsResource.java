@@ -31,6 +31,7 @@ import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -182,11 +183,9 @@ public final class AdHocMapsResource {
         .forEach(geoGridBucket -> {
 
           // for binning, we add the cell center point, and the geohash to allow for webgl clicking
-          encoder.addFeature(LAYER_NAME,
-            Collections.singletonMap("total", geoGridBucket.getDocCount()),
-            toPoint(geoGridBucket.getCentroid(), projection, schema, z, x, y));
-          encoder.addFeature(LAYER_NAME,
-            Collections.singletonMap("geohash", geoGridBucket.getKey()),
+          Map<String, Object> attributes = Collections.singletonMap("total", geoGridBucket.getDocCount());
+          attributes.put("geohash", geoGridBucket.getKey());
+          encoder.addFeature(LAYER_NAME, attributes,
             toPoint(geoGridBucket.getCentroid(), projection, schema, z, x, y));
         });
     }
