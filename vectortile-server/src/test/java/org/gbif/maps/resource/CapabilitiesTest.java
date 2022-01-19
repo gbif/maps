@@ -60,7 +60,7 @@ public class CapabilitiesTest {
     builder.collect(encoder.encode(), ZOOM_0_WEST_NW, ZOOM_0_WEST_SE, "2017-08-15T16:28Z");
 
     Capabilities capabilities = builder.build();
-    assertEquals("Western tile failed minLat", -68, capabilities.getMinLat());
+    assertEquals("Western tile failed minLat", -67, capabilities.getMinLat());
     assertEquals("Western tile failed minLng", -125, capabilities.getMinLng());
     assertEquals("Western tile failed maxLat", 14, capabilities.getMaxLat());
     assertEquals("Western tile failed maxLng", -34, capabilities.getMaxLng());
