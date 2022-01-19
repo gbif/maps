@@ -180,9 +180,13 @@ public final class AdHocMapsResource {
       }
       occurrenceHeatmapResponse.getBuckets().stream().filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
         .forEach(geoGridBucket -> {
-          // for binning, we add the cell center point, otherwise the geometry
+
+          // for binning, we add the cell center point, and the geohash to allow for webgl clicking
           encoder.addFeature(LAYER_NAME,
             Collections.singletonMap("total", geoGridBucket.getDocCount()),
+            toPoint(geoGridBucket.getCentroid(), projection, schema, z, x, y));
+          encoder.addFeature(LAYER_NAME,
+            Collections.singletonMap("geohash", geoGridBucket.getKey()),
             toPoint(geoGridBucket.getCentroid(), projection, schema, z, x, y));
         });
     }
