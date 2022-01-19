@@ -76,7 +76,7 @@ public class CapabilitiesTest {
 
     // Should be the same as with just the western tile
     capabilities = builder.build();
-    assertEquals("Western + empty eastern tile failed minLat", -68, capabilities.getMinLat());
+    assertEquals("Western + empty eastern tile failed minLat", -67, capabilities.getMinLat());
     assertEquals("Western + empty eastern tile failed minLng", -125, capabilities.getMinLng());
     assertEquals("Western + empty eastern tile failed maxLat", 14, capabilities.getMaxLat());
     assertEquals("Western + empty eastern tile failed maxLng", -34, capabilities.getMaxLng());
@@ -92,7 +92,7 @@ public class CapabilitiesTest {
     assertEquals("Failed minLat", -78, capabilities.getMinLat());
     assertEquals("Failed minLng", -125, capabilities.getMinLng());
     assertEquals("Failed maxLat", 18, capabilities.getMaxLat());
-    assertEquals("Failed maxLng", 14, capabilities.getMaxLng());
+    assertEquals("Failed maxLng", 13, capabilities.getMaxLng());
     assertEquals("Failed total", 100, capabilities.getTotal());
     assertEquals("Failed minYear", Integer.valueOf(1900), capabilities.getMinYear());
     assertEquals("Failed maxYear", Integer.valueOf(1950), capabilities.getMaxYear());
