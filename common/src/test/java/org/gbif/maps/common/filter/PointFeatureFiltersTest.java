@@ -124,14 +124,14 @@ public class PointFeatureFiltersTest {
     assertEquals("Pixel 1 meta invalid - 2011", 2l, meta1.get("2011"));
 
     // pixel 2
-    assertTrue("lat[0], lng[-0.1] should result in pixel[-2,4096]", result.containsKey(new Double2D(-2,4096)));
-    Map<String, Object> meta2 = result.get(new Double2D(-2,4096));
+    assertTrue("lat[0], lng[-0.1] should result in pixel[-3,4096]", result.containsKey(new Double2D(-3,4096)));
+    Map<String, Object> meta2 = result.get(new Double2D(-3,4096));
     assertEquals("Pixel 2 meta invalid - total", 1l, meta2.get("total"));
     assertEquals("Pixel 2 meta invalid - 2011", 1l, meta2.get("2011"));
 
     // pixel 3
-    assertTrue("lat[10], lng[10] should result in pixel[228,3867]", result.containsKey(new Double2D(228,3867)));
-    Map<String, Object> meta3 = result.get(new Double2D(228,3867));
+    assertTrue("lat[10], lng[10] should result in pixel[227,3867]", result.containsKey(new Double2D(227,3867)));
+    Map<String, Object> meta3 = result.get(new Double2D(227,3867));
     assertEquals("Pixel 3 meta invalid - total", 1l, meta3.get("total"));
     assertEquals("Pixel 3 meta invalid - 2011", 1l, meta3.get("2011"));
   }
@@ -188,7 +188,7 @@ public class PointFeatureFiltersTest {
     assertTrue("SW missing", coordinates.contains(new Double2D(0,4096)));
     assertTrue("SE missing", coordinates.contains(new Double2D(4096,4096)));
 
-    // 4096.0/90.0° * -1° = -45.511, which is rounded to -46.
+    // 4096.0/90.0° * -1° = -45.511, which is floored to -46.
     assertTrue("W buffer missing", coordinates.contains(new Double2D(-46,2048)));
     assertTrue("N buffer missing", coordinates.contains(new Double2D(2048,-46)));
   }
