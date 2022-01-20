@@ -369,6 +369,10 @@ public final class TileFeature {
           implements com.google.protobuf.Internal.EnumLite {
         /**
          * <code>UNKNOWN = 0;</code>
+         *
+         * <pre>
+         * Deprecated
+         * </pre>
          */
         UNKNOWN(0, 0),
         /**
@@ -401,12 +405,28 @@ public final class TileFeature {
         MATERIAL_SAMPLE(7, 7),
         /**
          * <code>LITERATURE = 8;</code>
+         *
+         * <pre>
+         * Deprecated
+         * </pre>
          */
         LITERATURE(8, 8),
+        /**
+         * <code>OCCURRENCE = 9;</code>
+         */
+        OCCURRENCE(9, 9),
+        /**
+         * <code>MATERIAL_CITATION = 10;</code>
+         */
+        MATERIAL_CITATION(10, 10),
         ;
 
         /**
          * <code>UNKNOWN = 0;</code>
+         *
+         * <pre>
+         * Deprecated
+         * </pre>
          */
         public static final int UNKNOWN_VALUE = 0;
         /**
@@ -439,8 +459,20 @@ public final class TileFeature {
         public static final int MATERIAL_SAMPLE_VALUE = 7;
         /**
          * <code>LITERATURE = 8;</code>
+         *
+         * <pre>
+         * Deprecated
+         * </pre>
          */
         public static final int LITERATURE_VALUE = 8;
+        /**
+         * <code>OCCURRENCE = 9;</code>
+         */
+        public static final int OCCURRENCE_VALUE = 9;
+        /**
+         * <code>MATERIAL_CITATION = 10;</code>
+         */
+        public static final int MATERIAL_CITATION_VALUE = 10;
 
 
         public final int getNumber() { return value; }
@@ -456,6 +488,8 @@ public final class TileFeature {
             case 6: return MACHINE_OBSERVATION;
             case 7: return MATERIAL_SAMPLE;
             case 8: return LITERATURE;
+            case 9: return OCCURRENCE;
+            case 10: return MATERIAL_CITATION;
             default: return null;
           }
         }

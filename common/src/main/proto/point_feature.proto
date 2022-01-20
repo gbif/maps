@@ -10,7 +10,7 @@ message PointFeatures {
   message Feature {
     // this should hold the same values that the GBIF API support for consistency
     enum BasisOfRecord {
-      UNKNOWN = 0;
+      UNKNOWN = 0; // Deprecated
       PRESERVED_SPECIMEN = 1;
       FOSSIL_SPECIMEN = 2;
       LIVING_SPECIMEN = 3;
@@ -18,7 +18,9 @@ message PointFeatures {
       HUMAN_OBSERVATION = 5;
       MACHINE_OBSERVATION = 6;
       MATERIAL_SAMPLE = 7;
-      LITERATURE = 8;
+      LITERATURE = 8; // Deprecated
+      OCCURRENCE = 9;
+      MATERIAL_CITATION = 10;
     }
 
     required double latitude = 1;
