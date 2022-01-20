@@ -25,7 +25,7 @@ object MapUtils {
 
   // Dictionary mapping the GBIF API BasisOfRecord enumeration to the Protobuf versions
   val BASIS_OF_RECORD = Map(
-    "UNKNOWN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN,
+    "UNKNOWN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN, // Deprecated
     "PRESERVED_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.PRESERVED_SPECIMEN,
     "FOSSIL_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.FOSSIL_SPECIMEN,
     "LIVING_SPECIMEN" -> PointFeature.PointFeatures.Feature.BasisOfRecord.LIVING_SPECIMEN,
@@ -33,7 +33,9 @@ object MapUtils {
     "HUMAN_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.HUMAN_OBSERVATION,
     "MACHINE_OBSERVATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MACHINE_OBSERVATION,
     "MATERIAL_SAMPLE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MATERIAL_SAMPLE,
-    "LITERATURE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.LITERATURE)
+    "LITERATURE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.LITERATURE, // Deprecated
+    "MATERIAL_CITATION" -> PointFeature.PointFeatures.Feature.BasisOfRecord.MATERIAL_CITATION,
+    "OCCURRENCE" -> PointFeature.PointFeatures.Feature.BasisOfRecord.OCCURRENCE)
 
   // Encodes the type and value into the HBase table key
   def toMapKey(mapType: Int, key: Any) : String = {

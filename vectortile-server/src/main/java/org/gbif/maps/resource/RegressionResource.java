@@ -68,13 +68,15 @@ public final class RegressionResource {
 
   // Explicitly name BORs of interest to exclude fossils and living specimens
   private static final List<String> SUITABLE_BASIS_OF_RECORDS = ImmutableList.of(
-    "UNKNOWN", // assume unlikely to be fossils or living
+    "UNKNOWN", // Deprecated
     "PRESERVED_SPECIMEN",
     "OBSERVATION",
     "HUMAN_OBSERVATION",
     "MACHINE_OBSERVATION",
     "MATERIAL_SAMPLE",
-    "LITERATURE"
+    "LITERATURE", // Deprecated
+    "MATERIAL_CITATION",
+    "OCCURRENCE" // assume unlikely to be fossils or living
   );
   private static final VectorTileDecoder decoder = new VectorTileDecoder();
   static {
