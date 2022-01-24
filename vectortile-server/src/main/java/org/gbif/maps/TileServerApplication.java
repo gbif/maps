@@ -53,7 +53,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * The main entry point for running the member node.
  */
 @SpringBootApplication(
-  scanBasePackages = "org.gbif.maps",
+  scanBasePackages = {
+    "org.gbif.maps",
+    "org.gbif.ws.server.mapper"
+  },
   exclude = {
     RabbitAutoConfiguration.class
   })
