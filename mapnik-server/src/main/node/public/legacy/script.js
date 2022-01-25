@@ -4856,7 +4856,7 @@ module.exports = {
         oth: {
             text: 'Other',
             abbr: 'OTH',
-            filterAbbr: ['UNKNOWN', 'MATERIAL_SAMPLE', 'LITERATURE'],
+            filterAbbr: ['MATERIAL_SAMPLE', 'MATERIAL_CITATION', 'OCCURRENCE'],
             dated: true
         },
         fossil: {
