@@ -100,12 +100,12 @@
   <repositories>
     <repository>
       <id>gbif-all</id>
-      <url>http://repository.gbif.org/content/groups/gbif</url>
+      <url>https://repository.gbif.org/content/groups/gbif</url>
     </repository>
     <repository>
       <!-- For Hadoop artifacts -->
       <id>cloudera-release</id>
-      <url>http://repository.cloudera.com/artifactory/cloudera-repos/</url>
+      <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
     </repository>
     <repository>
       <!-- For the vector tile library -->
