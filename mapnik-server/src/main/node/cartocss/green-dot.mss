@@ -1,6 +1,6 @@
 #occurrence {
   dot-width: 2;
-  [total <=     5] { polygon-fill: #509E2F;  }
+  [total <=     5] { dot-fill: #509E2F;  }
   [total >     5][total <=    10] { dot-fill: #63A946;  }
   [total >    10][total <=    50] { dot-fill: #76B35D;  }
   [total >    50][total <=   100] { dot-fill: #8ABE74;  }
