@@ -40,6 +40,7 @@ namedStyles["scaled.circles"] = compileStylesheetSync("./cartocss/scaled-circles
 
 
 // Miscellaneous styles
+namedStyles["green.point"] = compileStylesheetSync("./cartocss/green-dot.mss");
 namedStyles["green.poly"] = compileStylesheetSync("./cartocss/green-poly.mss");
 namedStyles["green2.poly"] = compileStylesheetSync("./cartocss/green2-poly.mss");
 namedStyles["fire.point"] = compileStylesheetSync("./cartocss/fire-dot.mss");
