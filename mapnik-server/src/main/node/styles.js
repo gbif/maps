@@ -30,6 +30,10 @@ hardPointStyles.push("purpleYellow.point");
 namedStyles["purpleYellow.poly"] = compileStylesheetSync("./cartocss/purple-yellow-poly.mss");
 namedStyles["purpleYellow-noborder.poly"] = compileStylesheetSync("./cartocss/purple-yellow-noborder-poly.mss");
 
+// Green colour ramp
+namedStyles["green.point"] = compileStylesheetSync("./cartocss/green-dot.mss");
+hardPointStyles.push("green.point");
+
 // Cluster styles (used in gbif.org)
 namedStyles["outline.poly"] = compileStylesheetSync("./cartocss/outline-poly.mss");
 namedStyles["blue.marker"] = compileStylesheetSync("./cartocss/blue-marker.mss");
@@ -40,7 +44,6 @@ namedStyles["scaled.circles"] = compileStylesheetSync("./cartocss/scaled-circles
 
 
 // Miscellaneous styles
-namedStyles["green.point"] = compileStylesheetSync("./cartocss/green-dot.mss");
 namedStyles["green.poly"] = compileStylesheetSync("./cartocss/green-poly.mss");
 namedStyles["green2.poly"] = compileStylesheetSync("./cartocss/green2-poly.mss");
 namedStyles["fire.point"] = compileStylesheetSync("./cartocss/fire-dot.mss");
