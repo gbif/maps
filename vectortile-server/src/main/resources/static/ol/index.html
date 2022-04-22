@@ -238,6 +238,10 @@
             <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=purpleYellow.point&srs=EPSG:4326&taxonKey=797" title="purpleYellow.point"/>
           </label>
           <label>
+            <input type="radio" name="raster_style" value="green.point" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=green.point&srs=EPSG:4326&taxonKey=797" title="green.point"/>
+          </label>
+          <label>
             <input type="radio" name="raster_style" value="fire.point" />
             <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=fire.point&srs=EPSG:4326&taxonKey=797" title="fire.point"/>
           </label>
@@ -265,6 +269,10 @@
           <label>
             <input type="radio" name="raster_style" value="green.poly" />
             <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&hexPerTile=20&style=green.poly&srs=EPSG:4326&taxonKey=797" title="green.poly"/>
+          </label>
+          <label>
+            <input type="radio" name="raster_style" value="green-noborder.poly" />
+            <img src="https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&hexPerTile=20&style=green-noborder.poly&srs=EPSG:4326&taxonKey=797" title="green-noborder.poly"/>
           </label>
           <label>
             <input type="radio" name="raster_style" value="green2.poly" />
@@ -375,8 +383,10 @@
           <label><input type="checkbox" name="basis_of_record" value="PRESERVED_SPECIMEN"> Preserved Specimen</label><br/>
           <label><input type="checkbox" name="basis_of_record" value="FOSSIL_SPECIMEN"> Fossil Specimen</label><br/>
           <label><input type="checkbox" name="basis_of_record" value="LIVING_SPECIMEN"> Living Specimen</label><br/>
-          <label><input type="checkbox" name="basis_of_record" value="LITERATURE"> Literature</label><br/>
-          <label><input type="checkbox" name="basis_of_record" value="UNKNOWN"> Unknown</label>
+          <label><input type="checkbox" name="basis_of_record" value="MATERIAL_CITATION"> Material Citation</label><br/>
+          <label><input type="checkbox" name="basis_of_record" value="OCCURRENCE"> Occurrence</label><br/>
+          <label><input type="checkbox" name="basis_of_record" value="LITERATURE"> <del>Literature</del></label><br/>
+          <label><input type="checkbox" name="basis_of_record" value="UNKNOWN"> <del>Unknown</del></label>
         </div>
       </fieldset>
 

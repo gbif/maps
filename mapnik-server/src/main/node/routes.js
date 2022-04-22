@@ -186,9 +186,11 @@ function v1ParseUrl(parsedRequest) {
            sp = true;
            break;
          case "OTH":
+           basisOfRecord.add("MATERIAL_CITATION");
            basisOfRecord.add("MATERIAL_SAMPLE");
-           basisOfRecord.add("LITERATURE");
-           basisOfRecord.add("UNKNOWN");
+           basisOfRecord.add("OCCURRENCE");
+           basisOfRecord.add("LITERATURE"); // Deprecated
+           basisOfRecord.add("UNKNOWN"); // Deprecated
            if (startYear != "NO") {
              othStart = Math.min(othStart, startYear);
              othEnd = Math.max(othEnd, endYear);

@@ -28,6 +28,9 @@ public class TilesTest {
     assertEquals(new Long2D( -1, 10), Tiles.toTileLocalXY(new Double2D(  -1, 10), WEB_MERCATOR, 1, 0, 0, 512, 32)); // buffer
 
     assertEquals(new Long2D(100, 50), Tiles.toTileLocalXY(new Double2D( 612, 50), WEB_MERCATOR, 0, 1, 0, 512, 32));
+
+    assertEquals(new Long2D( 0, 0), Tiles.toTileLocalXY(new Double2D(  0.99, 0.00), WEB_MERCATOR, 0, 0, 0, 512, 32)); // buffer
+    assertEquals(new Long2D( -1, -1), Tiles.toTileLocalXY(new Double2D(  255.9, 255.9), WEB_MERCATOR, 1, 1, 1, 256, 32)); // buffer
   }
 
   @Test

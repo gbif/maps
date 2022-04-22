@@ -69,7 +69,8 @@ public class Tiles {
       }
     }
 
-    return new Long2D(Math.round(localX), Math.round(localY));
+    // floor the values to snap into the correct grid on the cell raster (rounding would displace)
+    return new Long2D((long) Math.floor(localX), (long) Math.floor(localY));
   }
 
   /**

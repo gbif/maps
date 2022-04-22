@@ -9,7 +9,7 @@
 
   <groupId>org.gbif.maps</groupId>
   <artifactId>maps-motherpom</artifactId>
-  <version>0.30-SNAPSHOT</version>
+  <version>0.31-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <description>GBIF Map services</description>
@@ -68,7 +68,7 @@
     <!-- laziness: rely on transient dependencies from DW -->
     <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
     <scalatest.version>3.0.0-SNAP13</scalatest.version>
-    <junit.version>4.12</junit.version>
+    <junit.version>4.13.1</junit.version>
     <curator.version>4.0.1</curator.version>
     <curator-test.version>2.12.0</curator-test.version>
     <maven-core.version>3.3.9</maven-core.version>
@@ -79,7 +79,7 @@
     <elasticsearch.version>7.10.0</elasticsearch.version>
     <httpclient.version>4.5.2</httpclient.version>
     <httpcore.version>4.4.13</httpcore.version>
-    <log4j.version>2.11.1</log4j.version>
+    <log4j.version>2.16.0</log4j.version>
     <!-- Spring versions -->
     <spring-boot.version>2.3.12.RELEASE</spring-boot.version>
     <spring-cloud-zookeeper.version>2.2.5.RELEASE</spring-cloud-zookeeper.version>
@@ -100,12 +100,12 @@
   <repositories>
     <repository>
       <id>gbif-all</id>
-      <url>http://repository.gbif.org/content/groups/gbif</url>
+      <url>https://repository.gbif.org/content/groups/gbif</url>
     </repository>
     <repository>
       <!-- For Hadoop artifacts -->
       <id>cloudera-release</id>
-      <url>http://repository.cloudera.com/artifactory/cloudera-repos/</url>
+      <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
     </repository>
     <repository>
       <!-- For the vector tile library -->
