@@ -58,7 +58,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
     "org.gbif.ws.server.mapper"
   },
   exclude = {
-    RabbitAutoConfiguration.class,
+    RabbitAutoConfiguration.class
   })
 @EnableConfigurationProperties
 public class TileServerApplication {
@@ -152,7 +152,7 @@ public class TileServerApplication {
     HBaseMaps hBaseMaps(TileServerConfiguration tileServerConfiguration) throws Exception {
       if (tileServerConfiguration.getHbase()==null) {
         System.out.println("No HBase configuration is provided (Hint: if errors occur, perhaps you miss setting the 'es-only' profile in Spring?)");
-        return null; // skip HBase when no config is required
+        return null; // skip HBase when no config is available
 
       } else {
         // Either use Zookeeper or static config to locate tables
