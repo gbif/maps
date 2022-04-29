@@ -58,10 +58,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
     "org.gbif.ws.server.mapper"
   },
   exclude = {
-    RabbitAutoConfiguration.class
+    RabbitAutoConfiguration.class,
   })
 @EnableConfigurationProperties
-public class TileServerApplication  {
+public class TileServerApplication {
 
   public static void main(String[] args) {
     SpringApplication.run(TileServerApplication.class, args);
@@ -78,7 +78,6 @@ public class TileServerApplication  {
       registry.addViewController("/debug/ol/").setViewName("forward:/debug/ol/index.html");
       registry.addViewController("/debug/comparison/").setViewName("forward:/debug/comparison/index.html");
     }
-
   }
 
   @org.springframework.context.annotation.Configuration
@@ -151,20 +150,26 @@ public class TileServerApplication  {
 
     @Bean
     HBaseMaps hBaseMaps(TileServerConfiguration tileServerConfiguration) throws Exception {
-      // Either use Zookeeper or static config to locate tables
-      Configuration conf = HBaseConfiguration.create();
-      conf.set("hbase.zookeeper.quorum", tileServerConfiguration.getHbase().getZookeeperQuorum());
-
-      if (tileServerConfiguration.getMetastore() != null) {
-        MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
-                                                            tileServerConfiguration.getMetastore().getPath());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus());
+      if (tileServerConfiguration.getHbase()==null) {
+        System.out.println("No HBase configuration is provided (Hint: if errors occur, perhaps you miss setting the 'es-only' profile in Spring?)");
+        return null; // skip HBase when no config is required
 
       } else {
-        //
-        MapMetastore meta = Metastores.newStaticMapsMeta(tileServerConfiguration.getHbase().getTilesTableName(),
-                                                         tileServerConfiguration.getHbase().getPointsTableName());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus());
+        // Either use Zookeeper or static config to locate tables
+        Configuration conf = HBaseConfiguration.create();
+        conf.set("hbase.zookeeper.quorum", tileServerConfiguration.getHbase().getZookeeperQuorum());
+
+        if (tileServerConfiguration.getMetastore() != null) {
+          MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
+            tileServerConfiguration.getMetastore().getPath());
+          return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus());
+
+        } else {
+          //
+          MapMetastore meta = Metastores.newStaticMapsMeta(tileServerConfiguration.getHbase().getTilesTableName(),
+            tileServerConfiguration.getHbase().getPointsTableName());
+          return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus());
+        }
       }
     }
 

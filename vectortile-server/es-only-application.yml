@@ -1,0 +1,42 @@
+#
+# Sample configuration for running the server to only expose the ES-backed maps
+# The ES hosts are likely all that needs to be changed
+#
+
+esConfiguration:
+  elasticsearch:
+    # The sniffer requires >1 nodes to be configured
+    hosts: http://es1.myserver.com:9200,http://es2.myserver.com:9200
+    index: occurrence
+  sniffInterval: 100
+  tileSize: 1024
+  bufferSize: 64
+
+# The server configuration
+server:
+  servlet:
+    context-path: /map/
+  compression:
+    enabled: true
+    min-response-size: 1
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript,text/css,image/jpeg,application/x-protobuf,application/gzip
+    excluded-user-agents:
+spring:
+  application.name: vectortile-server
+  resources:
+    static-locations: classpath:/static/
+  liquibase:
+    enabled: false
+  mvc:
+    static-path-pattern: /debug/**
+  # This disables the zookeeper service registration
+  cloud:
+    zookeeper:
+      enabled: false
+      discovery:
+        enabled: false
+  # Important! This profile disables the resources that bring in the HBase dependencies
+  profiles.include: es-only
+
+management:
+  endpoints.web.exposure.include: "*"
