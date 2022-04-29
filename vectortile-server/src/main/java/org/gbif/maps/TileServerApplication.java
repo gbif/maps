@@ -44,6 +44,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -149,27 +150,22 @@ public class TileServerApplication {
     }
 
     @Bean
+    @Profile("!es-only")
     HBaseMaps hBaseMaps(TileServerConfiguration tileServerConfiguration) throws Exception {
-      if (tileServerConfiguration.getHbase()==null) {
-        System.out.println("No HBase configuration is provided (Hint: if errors occur, perhaps you miss setting the 'es-only' profile in Spring?)");
-        return null; // skip HBase when no config is available
+      // Either use Zookeeper or static config to locate tables
+      Configuration conf = HBaseConfiguration.create();
+      conf.set("hbase.zookeeper.quorum", tileServerConfiguration.getHbase().getZookeeperQuorum());
+
+      if (tileServerConfiguration.getMetastore() != null) {
+        MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
+          tileServerConfiguration.getMetastore().getPath());
+        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus());
 
       } else {
-        // Either use Zookeeper or static config to locate tables
-        Configuration conf = HBaseConfiguration.create();
-        conf.set("hbase.zookeeper.quorum", tileServerConfiguration.getHbase().getZookeeperQuorum());
-
-        if (tileServerConfiguration.getMetastore() != null) {
-          MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
-            tileServerConfiguration.getMetastore().getPath());
-          return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus());
-
-        } else {
-          //
-          MapMetastore meta = Metastores.newStaticMapsMeta(tileServerConfiguration.getHbase().getTilesTableName(),
-            tileServerConfiguration.getHbase().getPointsTableName());
-          return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus());
-        }
+        //
+        MapMetastore meta = Metastores.newStaticMapsMeta(tileServerConfiguration.getHbase().getTilesTableName(),
+          tileServerConfiguration.getHbase().getPointsTableName());
+        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus());
       }
     }
 
