@@ -41,7 +41,7 @@
     <jts.version>1.13</jts.version>
     <!-- Important: same version as the PBF library installed -->
     <protoc.version>2.5.0</protoc.version>
-    <logback.version>1.2.3</logback.version>
+    <logback.version>1.2.9</logback.version>
     <logstash-encoder.version>4.11</logstash-encoder.version>
     <janino-logback.version>2.5.10</janino-logback.version>
     <java-vector-tile.version>1.1.2</java-vector-tile.version>
