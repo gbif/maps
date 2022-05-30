@@ -113,10 +113,10 @@ function updateDataLayer() {
 
   if (render == 'vector') {
     console.log("Search terms are", search);
-    l = gbif_layers.occurrenceVector((source == 'adhoc' && (srs == 3031 || srs == 3575)) ? 4326 : srs, source, search);
+    l = gbif_layers.occurrenceVector(srs, source, search);
   } else {
     console.log("Search terms (raster) are", raster_search);
-    l = gbif_layers.occurrenceRaster((source == 'adhoc' && (srs == 3031 || srs == 3575)) ? 4326 : srs, source, raster_search);
+    l = gbif_layers.occurrenceRaster(srs, source, raster_search);
   }
 
   data_url_template.value = l.getSource().getUrls()[0];

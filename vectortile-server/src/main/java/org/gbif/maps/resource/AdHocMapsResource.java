@@ -18,7 +18,6 @@ import org.gbif.maps.TileServerConfiguration;
 import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.bin.SquareBin;
 import org.gbif.maps.common.projection.Double2D;
-import org.gbif.maps.common.projection.Int2D;
 import org.gbif.maps.common.projection.Long2D;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.TileSchema;
@@ -85,8 +84,8 @@ public final class AdHocMapsResource {
 
   @VisibleForTesting
   static final String QUERY_BUFFER_PERCENTAGE = "0.125";  // 1/8th tile buffer all around, similar to the HBase maps
-  private static final String EPSG_3857 = "EPSG:3857";
-  private static final String EPSG_4326 = "EPSG:4326";
+  @VisibleForTesting
+  static final String EPSG_4326 = "EPSG:4326";
 
   private final int tileSize;
   private final int bufferSize;
@@ -138,8 +137,6 @@ public final class AdHocMapsResource {
     HttpServletRequest request
     ) throws Exception {
     enableCORS(response);
-    Preconditions.checkArgument(EPSG_4326.equalsIgnoreCase(srs) || EPSG_3857.equalsIgnoreCase(srs),
-                                "Adhoc search maps are currently only available in EPSG:4326 and EPSG:3857");
     OccurrenceHeatmapRequest heatmapRequest = provider.buildOccurrenceHeatmapRequest(request);
 
     Preconditions.checkArgument(bin == null
@@ -334,13 +331,13 @@ public final class AdHocMapsResource {
   @VisibleForTesting
   static final class ZXY {
 
-    private final int z;
+    final int z;
 
-    private final long x;
+    final long x;
 
-    private final long y;
+    final long y;
 
-    private final double tileBuffer;
+    final double tileBuffer;
 
     ZXY(int z, long x, long y, double tileBuffer) {
       this.z = z;

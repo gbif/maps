@@ -49,13 +49,28 @@ abstract class WGS84Azimuthal extends AbstractTileProjection {
       Point orig = GEOMETRY_FACTORY.createPoint(new Coordinate(latitude, longitude));
       Point p = (Point) JTS.transform(orig, getTransform()); // reproject
 
-      // transform p which is in meters space into world pixel space
+      // transform p which is in metres space into world pixel space
       Point2D.Double p2 = new Point2D.Double(p.getX(), p.getY());
 
       transformToWorldPixels(zoom).transform(p2,p2); // overwrites the source
 
       return new Double2D(p2.getX(), p2.getY());
 
+    } catch (Exception e) {
+      throw new IllegalStateException("Unable to reproject coordinates", e);
+    }
+  }
+
+  public Double2D fromGlobalPixelXY(double globalX, double globalY, int zoom) {
+    try {
+      Point2D.Double gXY = new Point2D.Double(globalX, globalY);
+      Point2D.Double aziXY = new Point2D.Double();
+      transformToWorldPixels(zoom).inverseTransform(gXY, aziXY);
+
+      Point azi = GEOMETRY_FACTORY.createPoint(new Coordinate(aziXY.x, aziXY.y));
+      Point p = (Point) JTS.transform(azi, getTransform().inverse()); // reproject
+
+      return new Double2D(p.getX(), p.getY());
     } catch (Exception e) {
       throw new IllegalStateException("Unable to reproject coordinates", e);
     }
