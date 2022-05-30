@@ -10,10 +10,6 @@
   [total >  10000][total <= 100000] { polygon-fill: #DFDAB2;  }
   [total > 100000]                  { polygon-fill: #F4E7C5;  }
 
-  // The offset and gamma avoid the appearance of misalignment with squares.
-  line-color: "#7b7b7b";
-  line-width: 0.25;
-  line-gamma: 0.5;
-  line-opacity: 1.0;
-  line-offset: -0.1;
+  // Avoid uncoloured slivers between hexagons
+  polygon-gamma: 0.2;
 }

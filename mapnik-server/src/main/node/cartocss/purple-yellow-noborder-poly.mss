@@ -8,4 +8,7 @@
   [total >  1000][total <=  5000] { polygon-fill: #eeab79; }
   [total >  5000][total <= 10000] { polygon-fill: #f7cb8e; }
   [total > 10000]                 { polygon-fill: #ffebaa; }
+
+  // Avoid uncoloured slivers between hexagons
+  polygon-gamma: 0.2;
 }

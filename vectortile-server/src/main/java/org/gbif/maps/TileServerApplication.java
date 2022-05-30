@@ -44,6 +44,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -61,7 +62,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
     RabbitAutoConfiguration.class
   })
 @EnableConfigurationProperties
-public class TileServerApplication  {
+public class TileServerApplication {
 
   public static void main(String[] args) {
     SpringApplication.run(TileServerApplication.class, args);
@@ -78,7 +79,6 @@ public class TileServerApplication  {
       registry.addViewController("/debug/ol/").setViewName("forward:/debug/ol/index.html");
       registry.addViewController("/debug/comparison/").setViewName("forward:/debug/comparison/index.html");
     }
-
   }
 
   @org.springframework.context.annotation.Configuration
@@ -150,6 +150,7 @@ public class TileServerApplication  {
     }
 
     @Bean
+    @Profile("!es-only")
     HBaseMaps hBaseMaps(TileServerConfiguration tileServerConfiguration) throws Exception {
       // Either use Zookeeper or static config to locate tables
       Configuration conf = HBaseConfiguration.create();
@@ -157,13 +158,13 @@ public class TileServerApplication  {
 
       if (tileServerConfiguration.getMetastore() != null) {
         MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
-                                                            tileServerConfiguration.getMetastore().getPath());
+          tileServerConfiguration.getMetastore().getPath());
         return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus());
 
       } else {
         //
         MapMetastore meta = Metastores.newStaticMapsMeta(tileServerConfiguration.getHbase().getTilesTableName(),
-                                                         tileServerConfiguration.getHbase().getPointsTableName());
+          tileServerConfiguration.getHbase().getPointsTableName());
         return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus());
       }
     }

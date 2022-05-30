@@ -31,10 +31,10 @@
 
   <properties>
     <jdkLevel>1.8</jdkLevel>
-    <gbif-occurrence.version>0.176-SNAPSHOT</gbif-occurrence.version>
-    <gbif-api.version>0.162</gbif-api.version>
-    <gbif-common.ws.version>1.19</gbif-common.ws.version>
-    <dwc-api.version>1.35</dwc-api.version>
+    <gbif-occurrence.version>0.178</gbif-occurrence.version>
+    <gbif-api.version>0.166</gbif-api.version>
+    <gbif-common.ws.version>1.21</gbif-common.ws.version>
+    <dwc-api.version>1.36</dwc-api.version>
     <slf4j.version>1.7.30</slf4j.version>
     <javax.mail.version>1.4.1</javax.mail.version>
     <javax.activation.version>1.1.1</javax.activation.version>

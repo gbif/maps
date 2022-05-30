@@ -41,6 +41,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -74,6 +75,7 @@ import static org.gbif.maps.resource.Params.mapKeys;
 @RequestMapping(
   value = "/occurrence/regression"
 )
+@Profile("!es-only")
 public final class RegressionResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(RegressionResource.class);
