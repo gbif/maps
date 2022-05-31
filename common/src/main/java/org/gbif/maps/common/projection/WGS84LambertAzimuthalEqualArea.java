@@ -17,7 +17,6 @@ import java.awt.geom.AffineTransform;
 
 import org.opengis.referencing.operation.MathTransform;
 
-import com.vividsolutions.jts.geom.GeometryFactory;
 
 /**
  * Base class handling the transformations for a Lambert azimuthal equal-area projection.
@@ -30,11 +29,9 @@ import com.vividsolutions.jts.geom.GeometryFactory;
  *     <li>EPSG:3575 — WGS 84 / North Pole LAEA Europe (10°E)</li>
  *     <li>EPSG:3576 — WGS 84 / North Pole LAEA Russia (90°E)</li>
  * </ul>
- * @see https://en.wikipedia.org/wiki/Lambert_azimuthal_equal-area_projection
+ * See https://en.wikipedia.org/wiki/Lambert_azimuthal_equal-area_projection
  */
 abstract class WGS84LambertAzimuthalEqualArea extends WGS84Azimuthal {
-  static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
-
   // See http://gis.stackexchange.com/questions/149440/epsg3575-projected-bounds/149466#149466
   static final double LAEA_EXTENT = Math.sqrt(2.0) * AbstractTileProjection.EARTH_RADIUS;
 

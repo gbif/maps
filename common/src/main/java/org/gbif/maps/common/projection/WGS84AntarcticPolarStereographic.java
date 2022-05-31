@@ -184,7 +184,7 @@ class WGS84AntarcticPolarStereographic extends WGS84Azimuthal {
           Double2D pForLngAM = pB;
           // Over the antimeridian
           pForLng2 = new Double2D(pForLngAM.getX(), pForLngAM.getY()-360);
-        } else if (x + 1 == seamCoordinate) { // left of top right quadrant
+        } else if (x == seamCoordinate) { // left of top right quadrant
           pForLng1 = pC;
         }
       }

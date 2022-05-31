@@ -146,6 +146,7 @@ public final class AdHocMapsResource {
     TileSchema schema = TileSchema.fromSRS(srs);
 
     List<OccurrenceHeatmapRequest> heatmapRequests = new ArrayList<>();
+    VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
 
     if (projection.isPoleTile(z, x, y)) {
       // If the current request touches the pole, make four requests instead of using a buffer across the whole width of the world.
@@ -154,7 +155,9 @@ public final class AdHocMapsResource {
       for (long xx = leftX; xx <= leftX+1; xx++) {
         for (long yy = topY; yy <= topY+1; yy++) {
           OccurrenceHeatmapRequest heatmapRequest = provider.buildOccurrenceHeatmapRequest(request);
-          heatmapRequest.setGeometry(searchGeom(projection, new ZXY(z, xx, yy, tileBuffer)));
+          ZXY zxy = new ZXY(z, xx, yy, tileBuffer);
+          Double2D[] boundary = projection.tileBoundary(zxy.z, zxy.x, zxy.y, zxy.tileBuffer);
+          heatmapRequest.setGeometry(searchGeom(boundary));
           heatmapRequest.setZoom(z);
           heatmapRequests.add(heatmapRequest);
           LOG.info("Pole request: {} {}/{}/{}→{}/{} {}", srs, z, x, y, xx, yy, heatmapRequest);
@@ -162,13 +165,17 @@ public final class AdHocMapsResource {
       }
     } else {
       OccurrenceHeatmapRequest heatmapRequest = provider.buildOccurrenceHeatmapRequest(request);
-      heatmapRequest.setGeometry(searchGeom(projection, new ZXY(z, x, y, tileBuffer)));
+      ZXY zxy = new ZXY(z, x, y, tileBuffer);
+      Double2D[] boundary = projection.tileBoundary(zxy.z, zxy.x, zxy.y, zxy.tileBuffer);
+      if (boundary[0].getX() == boundary[1].getX() || boundary[0].getY() == boundary[1].getY()) {
+        LOG.info("Empty tile request: {} {}/{}/{}", srs, z, x, y);
+        return encoder.encode();
+      }
+      heatmapRequest.setGeometry(searchGeom(boundary));
       heatmapRequest.setZoom(z);
       heatmapRequests.add(heatmapRequest);
       LOG.info("Request: {} {}/{}/{} {}", srs, z, x, y, heatmapRequest);
     }
-
-    VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
 
     int totalFeatures = 0;
     if (OccurrenceHeatmapRequest.Mode.GEO_BOUNDS == heatmapRequests.get(0).getMode()) {
@@ -272,8 +279,7 @@ public final class AdHocMapsResource {
    * Returns a BBox search string for the geometry in WGS84 CRS for the tile with a buffer.
    */
   @VisibleForTesting
-  static String searchGeom(TileProjection projection, ZXY zxy) {
-    Double2D[] boundary = projection.tileBoundary(zxy.z, zxy.x, zxy.y, zxy.tileBuffer);
+  static String searchGeom(Double2D[] boundary) {
     return boundary[0].getX() + "," + boundary[0].getY() + "," + boundary[1].getX() + "," + boundary[1].getY();
   }
 

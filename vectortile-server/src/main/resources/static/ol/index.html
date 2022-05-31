@@ -199,7 +199,6 @@
         <label>
           <input type="radio" name="datasource" id="datasource_es"  value="adhoc" /> Ad-hoc search (ES)
         </label>
-        <p><em>If choosing Ad-hoc search, first choose either WGS84/WebM, or raster tiles (or both).</em></p>
       </fieldset>
 
       <fieldset id="render">
@@ -331,14 +330,18 @@
       </fieldset>
 
       <fieldset id="mask">
-        <label for="mask_key">Mask key</label>
-        <input type="text" id="mask_key" placeholder="No mask" value="">
+        <label for="mask_key">Additional</label>
+        <input type="text" id="mask_key" placeholder="None" value="">
+        <p><em>Use <code>&amp;</code> to add multiple parameters.</em></p>
 
         <ul>
-          <li><a href="#" onclick="setMaskKey('');">No mask</a></li>
-          <li><a href="#" onclick="setMaskKey('country=JE');">Jersey</a></li>
-          <li><a href="#" onclick="setMaskKey('country=RU');">Russia</a></li>
-          <li><a href="#" onclick="setMaskKey('country=SN');">Senegal</a></li>
+          <li><a href="#" onclick="setMaskKey('');">Clear</a></li>
+          <li><a href="#" onclick="setMaskKey('tileBuffer=0');">No tile buffer (ES)</a></li>
+          <li><a href="#" onclick="setMaskKey('mode=GEO_CENTROID');">Geo-Centroid mode (ES)</a></li>
+          <li><a href="#" onclick="setMaskKey('hasCoordinateIssue=false');">No coordinate issues (ES)</a></li>
+          <li><a href="#" onclick="setMaskKey('country=JE');">Jersey mask</a></li>
+          <li><a href="#" onclick="setMaskKey('country=RU');">Russia mask</a></li>
+          <li><a href="#" onclick="setMaskKey('country=SN');">Senegal mask</a></li>
         </ul>
       </fieldset>
 
