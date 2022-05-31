@@ -159,13 +159,10 @@ public class AntarcticPolarStereographicTest {
       assertEquals("0/0/0 with buffer failed", expectedBuf[1], resultBuf[1], ε);
     }
 
-    // If the pole is present and the buffer > 0, then for the buffer part of the opposite tile we end up requesting
-    // the whole longitudinal extent.
-
     {
       // □□
       // □■
-      Double2D[] expected_1_1_1 = new Double2D[]{new Double2D(-180, -90), new Double2D(180, 0)};
+      Double2D[] expected_1_1_1 = new Double2D[]{new Double2D(90, -90), new Double2D(180, 0)};
       aps.tileBoundary(1, 1, 1, 0);
       Double2D[] result_1_1_1 = aps.tileBoundary(1, 1, 1, bufferInTiles);
       assertEquals("1/1/1 with buffer failed", expected_1_1_1[0], result_1_1_1[0], ε);
@@ -189,7 +186,7 @@ public class AntarcticPolarStereographicTest {
       // □□□□
       // □■□□
       // □□□□
-      Double2D[] expected_2_1_2 = new Double2D[]{new Double2D(-180, -90), new Double2D(180, -7.101188115321475)};
+      Double2D[] expected_2_1_2 = new Double2D[]{new Double2D(-180, -90), new Double2D(-90, -7.101188115321475)};
       aps.tileBoundary(2, 1, 2, 0);
       Double2D[] result_2_1_2 = aps.tileBoundary(2, 1, 2, bufferInTiles);
       assertEquals("2/1/2 with buffer failed", expected_2_1_2[0], result_2_1_2[0], ε);

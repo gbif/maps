@@ -38,4 +38,15 @@ public interface TileProjection {
    * @param tileBuffer The buffer, in units of tiles.
    */
   Double2D[] tileBoundary(int zoom, long x, long y, double tileBuffer);
+
+  /**
+   * True if the projection is polar (includes the North or South Pole within its limit, rather than at the edge
+   * or not at all).
+   */
+  boolean isPolar();
+
+  /**
+   * Returns true if the tile's corner touches a pole in a polar projection.
+   */
+  boolean isPoleTile(int zoom, long x, long y);
 }

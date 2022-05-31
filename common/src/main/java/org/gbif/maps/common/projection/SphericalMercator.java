@@ -75,4 +75,14 @@ public class SphericalMercator extends AbstractTileProjection {
     double n = PI - (2.0 * PI * y) / pow(2.0, z);
     return toDegrees(atan(sinh(n))) % 90;
   }
+
+  @Override
+  public boolean isPolar() {
+    return false;
+  }
+
+  @Override
+  public boolean isPoleTile(int zoom, long x, long y) {
+    return false;
+  }
 }

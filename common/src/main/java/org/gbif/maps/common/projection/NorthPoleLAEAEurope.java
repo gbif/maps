@@ -49,4 +49,18 @@ class NorthPoleLAEAEurope extends WGS84LambertAzimuthalEqualArea {
     // clipped to Equator and above by deliberate choice, even though the projection would support more
     return latitude >= 0 && longitude>=-180 && longitude<=180;
   }
+
+  @Override
+  public boolean isPolar() {
+    return true;
+  }
+
+  @Override
+  public boolean isPoleTile(int zoom, long x, long y) {
+    int tilesPerZoom = 1 << zoom;
+    long quarter = tilesPerZoom/2;
+    boolean vSeam = (x == quarter || x+1 == quarter);
+    boolean hSeam = (y == quarter || y+1 == quarter);
+    return zoom > 0 && (vSeam && hSeam);
+  }
 }

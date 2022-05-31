@@ -85,4 +85,14 @@ class WGS84 extends AbstractTileProjection {
     }
     return longitude;
   }
+
+  @Override
+  public boolean isPolar() {
+    return false;
+  }
+
+  @Override
+  public boolean isPoleTile(int zoom, long x, long y) {
+    return false;
+  }
 }

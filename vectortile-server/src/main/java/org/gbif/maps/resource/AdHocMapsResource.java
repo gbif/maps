@@ -137,7 +137,6 @@ public final class AdHocMapsResource {
     HttpServletRequest request
     ) throws Exception {
     enableCORS(response);
-    OccurrenceHeatmapRequest heatmapRequest = provider.buildOccurrenceHeatmapRequest(request);
 
     Preconditions.checkArgument(bin == null
                                 || BIN_MODE_HEX.equalsIgnoreCase(bin)
@@ -146,46 +145,80 @@ public final class AdHocMapsResource {
     TileProjection projection = Tiles.fromEPSG(srs, tileSize);
     TileSchema schema = TileSchema.fromSRS(srs);
 
-    heatmapRequest.setGeometry(searchGeom(projection, new ZXY(z, x, y, tileBuffer)));
-    heatmapRequest.setZoom(z);
+    List<OccurrenceHeatmapRequest> heatmapRequests = new ArrayList<>();
 
-    LOG.info("Request:{}", heatmapRequest);
+    if (projection.isPoleTile(z, x, y)) {
+      // If the current request touches the pole, make four requests instead of using a buffer across the whole width of the world.
+      long leftX = (z==1) ? 0 : ((x+1)/2)*2-1;
+      long topY  = (z==1) ? 0 : ((y+1)/2)*2-1;
+      for (long xx = leftX; xx <= leftX+1; xx++) {
+        for (long yy = topY; yy <= topY+1; yy++) {
+          OccurrenceHeatmapRequest heatmapRequest = provider.buildOccurrenceHeatmapRequest(request);
+          heatmapRequest.setGeometry(searchGeom(projection, new ZXY(z, xx, yy, tileBuffer)));
+          heatmapRequest.setZoom(z);
+          heatmapRequests.add(heatmapRequest);
+          LOG.info("Pole request: {} {}/{}/{}→{}/{} {}", srs, z, x, y, xx, yy, heatmapRequest);
+        }
+      }
+    } else {
+      OccurrenceHeatmapRequest heatmapRequest = provider.buildOccurrenceHeatmapRequest(request);
+      heatmapRequest.setGeometry(searchGeom(projection, new ZXY(z, x, y, tileBuffer)));
+      heatmapRequest.setZoom(z);
+      heatmapRequests.add(heatmapRequest);
+      LOG.info("Request: {} {}/{}/{} {}", srs, z, x, y, heatmapRequest);
+    }
 
     VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
 
-    if (OccurrenceHeatmapRequest.Mode.GEO_BOUNDS == heatmapRequest.getMode()) {
-      EsOccurrenceHeatmapResponse.GeoBoundsResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoBounds(heatmapRequest);
-      if (occurrenceHeatmapResponse.getBuckets().isEmpty()) {
-        return encoder.encode();
+    int totalFeatures = 0;
+    if (OccurrenceHeatmapRequest.Mode.GEO_BOUNDS == heatmapRequests.get(0).getMode()) {
+      for (OccurrenceHeatmapRequest heatmapRequest : heatmapRequests) {
+        EsOccurrenceHeatmapResponse.GeoBoundsResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoBounds(heatmapRequest);
+        int[] featureCount = {0};
+        occurrenceHeatmapResponse.getBuckets().stream().filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
+          .forEach(geoGridBucket -> {
+            // convert the lat,lng into pixel coordinates
+            Bbox2D bbox2D = toBbox(geoGridBucket.getCell().getBounds(), projection, schema, z, x, y);
+            // for binning, we add the cell centre point, otherwise the geometry
+            encoder.addFeature(LAYER_NAME,
+              Collections.singletonMap("total", geoGridBucket.getDocCount()),
+              Objects.nonNull(bin) ? bbox2D.getCenter() : bbox2D.getPolygon());
+            featureCount[0]++;
+          });
+        totalFeatures += featureCount[0];
+        if (featureCount[0] == OccurrenceHeatmapRequestProvider.DEFAULT_BUCKET_LIMIT) {
+          LOG.warn("Maximum geohash feature limit ({}) reached for tile {} {}/{}/{} {}",
+            OccurrenceHeatmapRequestProvider.DEFAULT_BUCKET_LIMIT, srs, z, x, y, heatmapRequest);
+        }
       }
-      occurrenceHeatmapResponse.getBuckets().stream().filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
-        .forEach(geoGridBucket -> {
-          // convert the lat,lng into pixel coordinates
-          Bbox2D bbox2D = toBbox(geoGridBucket.getCell().getBounds(), projection, schema, z, x, y);
-          // for binning, we add the cell center point, otherwise the geometry
-          encoder.addFeature(LAYER_NAME,
-            Collections.singletonMap("total", geoGridBucket.getDocCount()),
-            Objects.nonNull(bin) ? bbox2D.getCenter() : bbox2D.getPolygon());
-        });
 
-    } else if (OccurrenceHeatmapRequest.Mode.GEO_CENTROID == heatmapRequest.getMode()) {
-      EsOccurrenceHeatmapResponse.GeoCentroidResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoCentroid(heatmapRequest);
-      if (occurrenceHeatmapResponse.getBuckets().isEmpty()) {
-        return encoder.encode();
+    } else if (OccurrenceHeatmapRequest.Mode.GEO_CENTROID == heatmapRequests.get(0).getMode()) {
+      for (OccurrenceHeatmapRequest heatmapRequest : heatmapRequests) {
+        EsOccurrenceHeatmapResponse.GeoCentroidResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoCentroid(heatmapRequest);
+        int[] featureCount = {0};
+        occurrenceHeatmapResponse.getBuckets().stream().filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
+          .forEach(geoGridBucket -> {
+            // for binning, we add the cell centre point, and the geohash to allow for webgl clicking
+            Map<String, Object> attributes = new HashMap();
+            attributes.put("total", geoGridBucket.getDocCount());
+            attributes.put("geohash", geoGridBucket.getKey());
+            encoder.addFeature(LAYER_NAME, attributes,
+              toPoint(geoGridBucket.getCentroid(), projection, schema, z, x, y));
+            featureCount[0]++;
+          });
+        totalFeatures += featureCount[0];
+        if (featureCount[0] == OccurrenceHeatmapRequestProvider.DEFAULT_BUCKET_LIMIT) {
+          LOG.warn("Maximum geohash feature limit ({}) reached for tile {} {}/{}/{} {}",
+            OccurrenceHeatmapRequestProvider.DEFAULT_BUCKET_LIMIT, srs, z, x, y, heatmapRequest);
+        }
       }
-      occurrenceHeatmapResponse.getBuckets().stream().filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
-        .forEach(geoGridBucket -> {
-
-          // for binning, we add the cell center point, and the geohash to allow for webgl clicking
-          Map<String, Object> attributes = new HashMap();
-          attributes.put("total", geoGridBucket.getDocCount());
-          attributes.put("geohash", geoGridBucket.getKey());
-          encoder.addFeature(LAYER_NAME, attributes,
-            toPoint(geoGridBucket.getCentroid(), projection, schema, z, x, y));
-        });
     }
 
-    return encodeTile(bin, z, x, y, hexPerTile, squareSize, encoder.encode());
+    if (totalFeatures == 0) {
+      return encoder.encode();
+    } else {
+      return encodeTile(bin, z, x, y, hexPerTile, squareSize, encoder.encode());
+    }
   }
 
   private void checkPredicateHashParam(HttpServletRequest httpServletRequest) {
