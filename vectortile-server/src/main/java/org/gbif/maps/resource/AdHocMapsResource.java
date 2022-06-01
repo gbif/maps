@@ -186,10 +186,14 @@ public final class AdHocMapsResource {
           .forEach(geoGridBucket -> {
             // convert the lat,lng into pixel coordinates
             Bbox2D bbox2D = toBbox(geoGridBucket.getCell().getBounds(), projection, schema, z, x, y);
-            // for binning, we add the cell centre point, otherwise the geometry
+            // When binning, we add the cell centre point
+            // Otherwise we use the geometry, unless it's zero area as these would be skipped by the encoder
             encoder.addFeature(LAYER_NAME,
               Collections.singletonMap("total", geoGridBucket.getDocCount()),
-              Objects.nonNull(bin) ? bbox2D.getCenter() : bbox2D.getPolygon());
+              Objects.nonNull(bin) || bbox2D.getPolygon().getArea() == 0
+                ? bbox2D.getCenter()
+                : bbox2D.getPolygon()
+            );
             featureCount[0]++;
           });
         totalFeatures += featureCount[0];

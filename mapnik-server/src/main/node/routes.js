@@ -23,6 +23,7 @@ var assetsHTML = [
   '/legacy/point.html',
   '/legacy/script.js',
   '/legacy/script.min-52480f0428c66051f608e79159f5357a.js',
+  '/map/adhoc-debugging.html',
   '/map/binning-debugging.html',
   '/map/demo.html',
   '/map/demo1.html',
