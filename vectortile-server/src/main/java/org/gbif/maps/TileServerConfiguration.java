@@ -14,67 +14,34 @@
 package org.gbif.maps;
 
 import org.gbif.occurrence.search.es.EsConfig;
+import org.gbif.occurrence.search.es.EsFieldMapper;
 
-import javax.annotation.Nullable;
+import lombok.Data;
 
 /**
  * Application configuration with sensible defaults if applicable.
  */
+@Data
 public class TileServerConfiguration {
 
   private HBaseConfiguration hbase;
 
-  private EsTileConfiguration esConfiguration;
+  private EsTileConfiguration esOccurrenceConfiguration;
+
+  private EsTileConfiguration esEventConfiguration;
 
   private Metastore metastore;
 
-  public HBaseConfiguration getHbase() {
-    return hbase;
-  }
-
-  public void setHbase(HBaseConfiguration hbase) {
-    this.hbase = hbase;
-  }
-
-  public EsTileConfiguration getEsConfiguration() {
-    return esConfiguration;
-  }
-
-  public void setEsConfiguration(EsTileConfiguration esConfiguration) {
-    this.esConfiguration = esConfiguration;
-  }
-
-  public Metastore getMetastore() {
-    return metastore;
-  }
-
-  public void setMetastore(@Nullable Metastore metastore) {
-    this.metastore = metastore;
-  }
-
+  @Data
   public static class Metastore {
 
     private String zookeeperQuorum;
 
     private String path;
 
-    public String getZookeeperQuorum() {
-      return zookeeperQuorum;
-    }
-
-    public String getPath() {
-      return path;
-    }
-
-    public void setPath(String path) {
-      this.path = path;
-    }
-
-    public void setZookeeperQuorum(String zookeeperQuorum) {
-      this.zookeeperQuorum = zookeeperQuorum;
-    }
   }
 
+  @Data
   public static class HBaseConfiguration  {
 
     private String zookeeperQuorum;
@@ -89,55 +56,9 @@ public class TileServerConfiguration {
 
     private Integer saltModulus;
 
-    public String getZookeeperQuorum() {
-      return zookeeperQuorum;
-    }
-
-    public void setZookeeperQuorum(String zookeeperQuorum) {
-      this.zookeeperQuorum = zookeeperQuorum;
-    }
-
-    public String getTilesTableName() {
-      return tilesTableName;
-    }
-
-    public void setTilesTableName(String tilesTableName) {
-      this.tilesTableName = tilesTableName;
-    }
-
-    public String getPointsTableName() {
-      return pointsTableName;
-    }
-
-    public void setPointsTableName(String pointsTableName) {
-      this.pointsTableName = pointsTableName;
-    }
-
-    public Integer getTileSize() {
-      return tileSize;
-    }
-
-    public void setTileSize(Integer tileSize) {
-      this.tileSize = tileSize;
-    }
-
-    public Integer getBufferSize() {
-      return bufferSize;
-    }
-
-    public void setBufferSize(Integer bufferSize) {
-      this.bufferSize = bufferSize;
-    }
-
-    public Integer getSaltModulus() {
-      return saltModulus;
-    }
-
-    public void setSaltModulus(Integer saltModulus) {
-      this.saltModulus = saltModulus;
-    }
   }
 
+  @Data
   public static class EsTileConfiguration {
 
     private EsConfig elasticsearch;
@@ -146,29 +67,11 @@ public class TileServerConfiguration {
 
     private Integer bufferSize;
 
-    public EsConfig getElasticsearch() {
-      return elasticsearch;
-    }
+    private EsFieldMapper.SearchType searchType;
 
-    public void setElasticsearch(EsConfig elasticsearch) {
-      this.elasticsearch = elasticsearch;
-    }
+    private boolean nestedIndex;
 
-    public Integer getTileSize() {
-      return tileSize;
-    }
-
-    public void setTileSize(Integer tileSize) {
-      this.tileSize = tileSize;
-    }
-
-    public Integer getBufferSize() {
-      return bufferSize;
-    }
-
-    public void setBufferSize(Integer bufferSize) {
-      this.bufferSize = bufferSize;
-    }
+    private boolean enabled;
 
   }
 

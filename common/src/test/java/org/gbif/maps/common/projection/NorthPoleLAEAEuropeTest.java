@@ -16,7 +16,6 @@ package org.gbif.maps.common.projection;
 import org.geotools.referencing.operation.projection.MapProjection;
 import org.junit.Test;
 
-import static org.junit.Assert.fail;
 import static org.junit.AssertOnDouble2D.assertEquals;
 
 public class NorthPoleLAEAEuropeTest {

@@ -13,8 +13,7 @@
  */
 package org.gbif.maps.resource;
 
-import org.gbif.api.model.occurrence.predicate.Predicate;
-import org.gbif.maps.TileServerConfiguration;
+import org.gbif.api.model.predicate.Predicate;
 import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.bin.SquareBin;
 import org.gbif.maps.common.projection.Double2D;
@@ -37,7 +36,6 @@ import javax.validation.Valid;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,7 +45,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.VisibleForTesting;
@@ -72,11 +69,7 @@ import static org.gbif.maps.resource.Params.enableCORS;
  * ElasticSearch as a vector tile service.
  * Note to developers: This class could benefit from some significant refactoring and cleanup.
  */
-@RestController
-@RequestMapping(
-  value = "/occurrence/adhoc"
-)
-public final class AdHocMapsResource {
+public class AdHocMapsResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(AdHocMapsResource.class);
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
@@ -93,11 +86,12 @@ public final class AdHocMapsResource {
   private final PredicateCacheService predicateCacheService;
   private final OccurrenceHeatmapRequestProvider provider;
 
-  @Autowired
-  public AdHocMapsResource(OccurrenceHeatmapsEsService searchHeatmapsService, TileServerConfiguration configuration,
-                           PredicateCacheService predicateCacheService) {
-    this.tileSize = configuration.getEsConfiguration().getTileSize();
-    this.bufferSize = configuration.getEsConfiguration().getBufferSize();
+  public AdHocMapsResource(OccurrenceHeatmapsEsService searchHeatmapsService,
+                           PredicateCacheService predicateCacheService,
+                           int tileSize,
+                           int bufferSize) {
+    this.tileSize = tileSize;
+    this.bufferSize = bufferSize;
     this.searchHeatmapsService = searchHeatmapsService;
     this.predicateCacheService = predicateCacheService;
     provider = new OccurrenceHeatmapRequestProvider(predicateCacheService);

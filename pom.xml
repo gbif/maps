@@ -9,7 +9,7 @@
 
   <groupId>org.gbif.maps</groupId>
   <artifactId>maps-motherpom</artifactId>
-  <version>0.33-SNAPSHOT</version>
+  <version>0.33-event-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <description>GBIF Map services</description>
@@ -31,10 +31,12 @@
 
   <properties>
     <jdkLevel>1.8</jdkLevel>
-    <gbif-occurrence.version>0.185</gbif-occurrence.version>
-    <gbif-api.version>0.166</gbif-api.version>
+    <gbif-occurrence.version>0.186-event-SNAPSHOT</gbif-occurrence.version>
+    <gbif-api.version>0.169</gbif-api.version>
     <gbif-common.ws.version>1.21</gbif-common.ws.version>
-    <dwc-api.version>1.36</dwc-api.version>
+    <dwc-api.version>1.37</dwc-api.version>
+    <gbif-predicates.version>0.1-SNAPSHOT</gbif-predicates.version>
+
     <slf4j.version>1.7.30</slf4j.version>
     <javax.mail.version>1.4.1</javax.mail.version>
     <javax.activation.version>1.1.1</javax.activation.version>
@@ -84,6 +86,9 @@
     <spring-boot.version>2.3.12.RELEASE</spring-boot.version>
     <spring-cloud-zookeeper.version>2.2.5.RELEASE</spring-cloud-zookeeper.version>
     <spring-boot-admin.version>2.2.4</spring-boot-admin.version>
+
+    <!-- Tools-->
+    <lombok.version>1.18.20</lombok.version>
 
     <!-- Plugins -->
     <spring-boot-maven-plugin.version>${spring-boot.version}</spring-boot-maven-plugin.version>
@@ -271,6 +276,12 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>${lombok.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
         <groupId>org.gbif.maps</groupId>
         <artifactId>common</artifactId>
         <version>${project.version}</version>
@@ -319,6 +330,11 @@
         <groupId>org.gbif</groupId>
         <artifactId>gbif-common-ws</artifactId>
         <version>${gbif-common.ws.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.gbif.predicates</groupId>
+        <artifactId>predicates-api</artifactId>
+        <version>${gbif-predicates.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.protobuf</groupId>

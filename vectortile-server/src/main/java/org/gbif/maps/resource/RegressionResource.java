@@ -18,6 +18,7 @@ import org.gbif.api.model.occurrence.search.OccurrenceSearchRequest;
 import org.gbif.api.vocabulary.BasisOfRecord;
 import org.gbif.maps.TileServerConfiguration;
 import org.gbif.maps.common.projection.Long2D;
+import org.gbif.occurrence.search.es.EsFieldMapper;
 import org.gbif.occurrence.search.es.EsSearchRequestBuilder;
 import org.gbif.occurrence.search.es.OccurrenceEsField;
 
@@ -41,6 +42,8 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -72,6 +75,7 @@ import static org.gbif.maps.resource.Params.mapKeys;
  * to that need.  Should this become a more generic requirement in the future then this should be refactored.
  */
 @RestController
+@ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
 @RequestMapping(
   value = "/occurrence/regression"
 )
@@ -104,12 +108,20 @@ public final class RegressionResource {
   private final TileResource tiles;
   private final RestHighLevelClient esClient;
   private final String esIndex;
+  private final EsSearchRequestBuilder esSearchRequestBuilder;
 
   @Autowired
-  public RegressionResource(TileResource tiles, RestHighLevelClient esClient, TileServerConfiguration configuration) {
+  public RegressionResource(TileResource tiles,
+                            @Qualifier("esOccurrenceClient") RestHighLevelClient esClient,
+                            TileServerConfiguration configuration) {
     this.tiles = tiles;
     this.esClient = esClient;
-    this.esIndex = configuration.getEsConfiguration().getElasticsearch().getIndex();
+    this.esIndex = configuration.getEsOccurrenceConfiguration().getElasticsearch().getIndex();
+    EsFieldMapper esFieldMapper = EsFieldMapper.builder()
+                                    .nestedIndex(configuration.getEsOccurrenceConfiguration().isNestedIndex())
+                                    .searchType(configuration.getEsOccurrenceConfiguration().getSearchType())
+                                    .build();
+    this.esSearchRequestBuilder = new EsSearchRequestBuilder(esFieldMapper);
   }
 
   /**
@@ -224,7 +236,7 @@ public final class RegressionResource {
 
     searchRequest.addFacets(OccurrenceSearchParameter.YEAR);
     // Default search request handler, no sort order, 1 record (required) and facet support
-    SearchRequest esSearchRequest = EsSearchRequestBuilder.buildSearchRequest(searchRequest, esIndex);
+    SearchRequest esSearchRequest = esSearchRequestBuilder.buildSearchRequest(searchRequest, esIndex);
     SearchResponse response = esClient.search(esSearchRequest, RequestOptions.DEFAULT);
 
     Terms yearAgg = response.getAggregations().get(OccurrenceEsField.YEAR.getSearchFieldName());

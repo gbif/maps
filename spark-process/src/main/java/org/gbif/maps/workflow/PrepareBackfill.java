@@ -33,7 +33,7 @@ public class PrepareBackfill {
 
   public static void main(String[] args) throws IOException {
     WorkflowParams params = WorkflowParams.buildForPrepare(args);
-    System.out.println(params.toString());
+    System.out.println(params);
     try {
       System.out.println("Connecting to HBase");
       Configuration conf = HBaseConfiguration.create();

@@ -17,7 +17,6 @@ import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.MapTables;
 import org.gbif.maps.common.meta.Metastores;
-import org.gbif.maps.common.projection.Int2D;
 import org.gbif.maps.io.PointFeature;
 
 import java.util.Optional;

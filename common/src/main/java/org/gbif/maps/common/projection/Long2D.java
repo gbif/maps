@@ -13,7 +13,6 @@
  */
 package org.gbif.maps.common.projection;
 
-import org.gbif.maps.common.meta.MapTables;
 
 import java.io.Serializable;
 import java.util.Objects;

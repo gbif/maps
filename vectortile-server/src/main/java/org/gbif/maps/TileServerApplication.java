@@ -13,13 +13,14 @@
  */
 package org.gbif.maps;
 
-import org.gbif.api.model.occurrence.predicate.Predicate;
+import org.gbif.api.model.predicate.Predicate;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.resource.*;
 import org.gbif.occurrence.search.cache.DefaultInMemoryPredicateCacheService;
 import org.gbif.occurrence.search.cache.PredicateCacheService;
 import org.gbif.occurrence.search.es.EsConfig;
+import org.gbif.occurrence.search.es.EsFieldMapper;
 import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
 import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
 
@@ -37,9 +38,11 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.sniff.SniffOnFailureListener;
 import org.elasticsearch.client.sniff.Sniffer;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -90,10 +93,19 @@ public class TileServerApplication {
       return new TileServerConfiguration();
     }
 
-    @Bean
-    public RestHighLevelClient provideEsClient(TileServerConfiguration tileServerConfiguration) {
-      EsConfig esConfig = tileServerConfiguration.getEsConfiguration().getElasticsearch();
+    @Bean("esOccurrenceClient")
+    @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
+    public RestHighLevelClient provideOccurrenceEsClient(TileServerConfiguration tileServerConfiguration) {
+      return provideEsClient(tileServerConfiguration.getEsOccurrenceConfiguration().getElasticsearch());
+    }
 
+    @Bean("esEventClient")
+    @ConditionalOnExpression("${esEventConfiguration.enabled}")
+    public RestHighLevelClient provideEventEsClient(TileServerConfiguration tileServerConfiguration) {
+      return provideEsClient(tileServerConfiguration.getEsEventConfiguration().getElasticsearch());
+    }
+
+    private RestHighLevelClient provideEsClient(EsConfig esConfig) {
       HttpHost[] hosts = new HttpHost[esConfig.getHosts().length];
       int i = 0;
       for (String host : esConfig.getHosts()) {
@@ -144,9 +156,25 @@ public class TileServerApplication {
       return highLevelClient;
     }
 
-    @Bean
-    OccurrenceHeatmapsEsService occurrenceHeatmapsEsService(RestHighLevelClient esClient, TileServerConfiguration tileServerConfiguration) {
-      return new OccurrenceHeatmapsEsService(esClient, tileServerConfiguration.getEsConfiguration().getElasticsearch().getIndex());
+    OccurrenceHeatmapsEsService heatmapsEsService(RestHighLevelClient esClient, TileServerConfiguration.EsTileConfiguration esTileConfiguration) {
+      return new OccurrenceHeatmapsEsService(esClient,
+                                             esTileConfiguration.getElasticsearch().getIndex(),
+                                             EsFieldMapper.builder()
+                                                .nestedIndex(esTileConfiguration.isNestedIndex())
+                                                .searchType(esTileConfiguration.getSearchType())
+                                                .build());
+    }
+
+    @Bean("occurrenceHeatmapsEsService")
+    @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
+    OccurrenceHeatmapsEsService occurrenceHeatmapsEsService(@Qualifier("esOccurrenceClient") RestHighLevelClient esClient, TileServerConfiguration tileServerConfiguration) {
+      return heatmapsEsService(esClient, tileServerConfiguration.getEsOccurrenceConfiguration());
+    }
+
+    @Bean("eventHeatmapsEsService")
+    @ConditionalOnExpression("${esEventConfiguration.enabled}")
+    OccurrenceHeatmapsEsService eventHeatmapsEsService(@Qualifier("esEventClient") RestHighLevelClient esClient, TileServerConfiguration tileServerConfiguration) {
+      return heatmapsEsService(esClient, tileServerConfiguration.getEsEventConfiguration());
     }
 
     @Bean
@@ -181,9 +209,16 @@ public class TileServerApplication {
       return new Cache2kConfig<>();
     }
 
-    @Bean
-    public PredicateCacheService predicateCacheService(ObjectMapper objectMapper, Cache2kConfig<Integer,Predicate> cache2kConfig) {
-      return new DefaultInMemoryPredicateCacheService(objectMapper, cache2kConfig.builder().build());
+    @Bean("occurrencePredicateCache")
+    @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
+    public PredicateCacheService occurrencePredicateCacheService(ObjectMapper objectMapper, Cache2kConfig<Integer, Predicate> cache2kConfig) {
+      return new DefaultInMemoryPredicateCacheService(objectMapper, cache2kConfig.builder().name("occurrencePredicateCache").build());
+    }
+
+    @Bean("eventPredicateCache")
+    @ConditionalOnExpression("${esEventConfiguration.enabled}")
+    public PredicateCacheService eventPredicateCacheService(ObjectMapper objectMapper, Cache2kConfig<Integer, Predicate> cache2kConfig) {
+      return new DefaultInMemoryPredicateCacheService(objectMapper, cache2kConfig.builder().name("eventPredicateCache").build());
     }
 
   }
