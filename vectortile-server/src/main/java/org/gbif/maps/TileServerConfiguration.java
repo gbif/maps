@@ -67,7 +67,7 @@ public class TileServerConfiguration {
 
     private Integer bufferSize;
 
-    private EsFieldMapper.SearchType searchType;
+    private EsFieldMapper.SearchType type;
 
     private boolean nestedIndex;
 

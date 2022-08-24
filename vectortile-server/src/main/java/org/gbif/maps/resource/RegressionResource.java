@@ -119,7 +119,7 @@ public final class RegressionResource {
     this.esIndex = configuration.getEsOccurrenceConfiguration().getElasticsearch().getIndex();
     EsFieldMapper esFieldMapper = EsFieldMapper.builder()
                                     .nestedIndex(configuration.getEsOccurrenceConfiguration().isNestedIndex())
-                                    .searchType(configuration.getEsOccurrenceConfiguration().getSearchType())
+                                    .searchType(configuration.getEsOccurrenceConfiguration().getType())
                                     .build();
     this.esSearchRequestBuilder = new EsSearchRequestBuilder(esFieldMapper);
   }

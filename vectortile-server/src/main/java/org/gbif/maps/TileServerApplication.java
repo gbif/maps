@@ -163,7 +163,7 @@ public class TileServerApplication {
                                              esTileConfiguration.getElasticsearch().getIndex(),
                                              EsFieldMapper.builder()
                                                 .nestedIndex(esTileConfiguration.isNestedIndex())
-                                                .searchType(esTileConfiguration.getSearchType())
+                                                .searchType(esTileConfiguration.getType())
                                                 .build());
     }
 
