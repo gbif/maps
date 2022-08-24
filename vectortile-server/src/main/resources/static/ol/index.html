@@ -191,7 +191,17 @@
         <input id="grid_opacity" type="range" min="0" max="1" step="0.01"/-->
       </fieldset>
 
-      <fieldset id="data">
+      <fieldset id="data_layer">
+        <legend>Data layer</legend>
+        <label>
+          <input type="radio" name="datalayer" id="datalayer_occurrence" value="occurrence" checked="checked" /> Occurrences
+        </label>
+        <label>
+          <input type="radio" name="datalayer" id="datalayer_event"  value="event" /> Events
+        </label>
+      </fieldset>
+
+      <fieldset id="data_source">
         <legend>Data source</legend>
         <label>
           <input type="radio" name="datasource" id="datasource_hbase" value="density" checked="checked" /> Simple (HBase)

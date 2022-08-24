@@ -28,9 +28,10 @@ class GBIFLayers {
 	}
 }
 
-var addParams = function(layer, source, urlParams) {
+var addParams = function(layer, dataLayer, source, urlParams) {
   var url = layer.getSource().getUrls()[0] + toParams(urlParams);
   url = url.slice(0, -1);
+  url = url.replace('occurrence', dataLayer);
   url = url.replace('density', source);
   layer.getSource().setUrl(url);
   return layer;

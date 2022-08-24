@@ -41,6 +41,7 @@ var dataLayerGroup = new ol.layer.Group({
   layers: []
 });
 
+var data_layer = 'occurrence';
 var source = 'density';
 var render = 'vector';
 var raster_style = 'classic-noborder.poly';
@@ -113,10 +114,10 @@ function updateDataLayer() {
 
   if (render == 'vector') {
     console.log("Search terms are", search);
-    l = gbif_layers.occurrenceVector(srs, source, search);
+    l = gbif_layers.occurrenceVector(srs, data_layer, source, search);
   } else {
     console.log("Search terms (raster) are", raster_search);
-    l = gbif_layers.occurrenceRaster(srs, source, raster_search);
+    l = gbif_layers.occurrenceRaster(srs, data_layer, source, raster_search);
   }
 
   data_url_template.value = l.getSource().getUrls()[0];
@@ -139,6 +140,13 @@ function updateGridLayer() {
     gridLayerGroup.getLayers().extend([l]);
   }
   //console.log('layers', map.getLayers());
+}
+
+function setDataLayer() {
+  data_layer = document.querySelector('input[name=datalayer]:checked').value;
+
+  console.log("Setting data layer to", data_layer);
+  updateDataLayer();
 }
 
 function setSource() {
@@ -327,6 +335,13 @@ var select_bor = document.getElementsByName('basis_of_record');
 for (var i = 0; i < select_bor.length; i++) {
   select_bor[i].onchange = (function(e) {
     setBors();
+  });
+}
+
+var select_datalayer = document.getElementsByName('datalayer');
+for (var i = 0; i < select_datalayer.length; i++) {
+  select_datalayer[i].onchange = (function(e) {
+    setDataLayer();
   });
 }
 
