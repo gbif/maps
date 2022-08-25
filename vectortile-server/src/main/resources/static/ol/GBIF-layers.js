@@ -13,14 +13,14 @@ class GBIFLayers {
 		return addParams(l, null, urlParams);
 	}
 
-	occurrenceVector(srs, source, urlParams) {
+	occurrenceVector(srs, dataLayer, source, urlParams) {
 		var l = GBIF_Layers[srs+'_OccurrenceDensity_Vector']();
-    return addParams(l, source, urlParams);
+    return addParams(l, dataLayer, source, urlParams);
 	}
 
-	occurrenceRaster(srs, source, urlParams) {
+	occurrenceRaster(srs, dataLayer, source, urlParams) {
 		var l = GBIF_Layers[srs+'_OccurrenceDensity_Raster']();
-    return addParams(l, source, urlParams);
+    return addParams(l, dataLayer, source, urlParams);
 	}
 
 	grid(srs, urlParams) {
