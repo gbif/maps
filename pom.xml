@@ -31,7 +31,7 @@
 
   <properties>
     <jdkLevel>1.8</jdkLevel>
-    <gbif-occurrence.version>0.186-event-SNAPSHOT</gbif-occurrence.version>
+    <gbif-occurrence.version>0.187-event-SNAPSHOT</gbif-occurrence.version>
     <gbif-api.version>0.169</gbif-api.version>
     <gbif-common.ws.version>1.21</gbif-common.ws.version>
     <dwc-api.version>1.37</dwc-api.version>
