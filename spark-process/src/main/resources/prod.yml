@@ -23,7 +23,7 @@ hbase:
 
 # Applies only to those map views that have few enough records to be stored as features
 pointFeatures:
-  numTasks: 200 # controls the parallelism
+  numTasks: 400 # controls the parallelism (matched to the number of vcores)
   tableName: PROVIDED_AT_RUNTIME
   hfileCount: 32
 
