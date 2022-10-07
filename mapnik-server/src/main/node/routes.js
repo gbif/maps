@@ -45,7 +45,8 @@ var assetsHTML = [
   '/map/legacy-style-debugging.html',
   '/map/pixel-style-debugging.html',
   '/map/style-debugging.html',
-  '/map/styles.html'];
+  '/map/styles.html',
+  '/map/thumbnail-styles.html'];
 
 function parseUrl(parsedRequest) {
   if (parsedRequest.pathname.endsWith(".png")) {

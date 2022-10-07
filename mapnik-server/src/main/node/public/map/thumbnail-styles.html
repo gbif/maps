@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GBIF Occurrence Density Map Tile Previews (raster)</title>
+  <title>GBIF Occurrence Thumbnail Styles</title>
   <link rel="icon" href="https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-classic"/>
   <style type="text/css">
     html {
@@ -19,27 +19,9 @@
       box-sizing: border-box;
     }
 
-    h1 {
-      text-align: center;
-    }
-
-    :link, :visited {
-      color: #060;
-      text-decoration: none;
-    }
-
-    :link:hover {
-      text-decoration: underline;
-    }
-
-    .preview {
-      margin-top: 1em;
-      line-height: 0;
-    }
-
     @media (min-width: 512px) {
       .two-wide {
-        padding: 64px 0;
+        padding: 0;
       }
     }
 
@@ -47,8 +29,8 @@
       display: inline-block;
       margin: 0;
       padding: 0;
-      height: 256px;
-      width: 256px;
+      height: 128px;
+      width: 128px;
       background-color: black;
       background-size: contain;
     }
@@ -56,6 +38,11 @@
     .two-wide img {
       height: 128px;
       width: 128px;
+    }
+    
+    .two-wide img.fifty {
+      height: 64px;
+      width: 64px;
     }
 
     ul {
@@ -70,14 +57,10 @@
 
     li {
       flex: 1;
-      min-width: 256px;
-      text-align: center;
+      min-width: 512px;
+      text-align: left;
     }
 
-    p {
-      padding: 0;
-      margin: 0 0 0.25em 0;
-    }
   </style>
 </head>
 <body>
@@ -85,310 +68,188 @@
   <img src="//rs.gbif.org/style/logo.svg" alt="Global Biodiversity Information Facility" style="width: 100%; max-height: 4em; margin: 0 auto 0.5em;"/>
 </header>
 
-<h1>Occurrence Density Map Tiles (raster)</h1>
-<ul>
-  <li>
-    <h2><a href="demo1.html">Demo 1</a></h2>
-    <p>All occurrences</p>
-    <a href="demo1.html">
-      <div class="preview">
-        <img
-                style="background-image: url(https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-dark);"
-                src="./occurrence/density/0/0/0@1x.png?style=green.point"
-        />
-      </div>
-    </a>
-  </li>
-  <li>
-    <h2><a href="demo2.html">Demo 2</a></h2>
-    <p><i>Felidae</i></p>
-    <a href="demo2.html">
-      <div class="preview">
-        <img
-                style="background-image: url(https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-classic);"
-                src="./occurrence/density/0/0/0@1x.png?style=classic.poly&bin=hex&hexPerTile=17&taxonKey=9703"
-        />
-      </div>
-    </a>
-  </li>
-  <li>
-    <h2><a href="demo3.html">Demo 3</a></h2>
-    <p><i>Felidae</i> (adhoc)</p>
-    <a href="demo3.html">
-      <div class="preview two-wide">
-        <img
-                style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-middle);"
-                src="./occurrence/adhoc/0/0/0@1x.png?style=classic.poly&srs=EPSG:4326&taxonKey=9703&bin=square&squareSize=256"
-        /><img
-                style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-middle);"
-                src="./occurrence/adhoc/0/1/0@1x.png?style=classic.poly&srs=EPSG:4326&taxonKey=9703&bin=square&squareSize=256"
-        />
-      </div>
-    </a>
-  </li>
-  <li>
-    <h2><a href="demo4.html">Demo 4</a></h2>
-    <p><i>Aves</i></p>
-    <a href="demo4.html">
-      <div class="preview two-wide">
-        <img
-                style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-dark);"
-                src="./occurrence/density/0/0/0@1x.png?style=green.poly&srs=EPSG:4326&bin=hex&year=2000%2C2017&taxonKey=212"
-        /><img
-                style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-dark);"
-                src="./occurrence/density/0/1/0@1x.png?style=green.poly&srs=EPSG:4326&bin=hex&year=2000%2C2017&taxonKey=212"
-        />
-      </div>
-    </a>
-  </li>
-  <li>
-    <h2><a href="demo5.html">Demo 5</a></h2>
-    <p><i>Aves</i></p>
-    <a href="demo5.html">
-      <div class="preview two-wide">
-        <img
-                style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=osm-bright);"
-                src="./occurrence/density/0/0/0@1x.png?style=green2.poly&srs=EPSG:4326&bin=hex&hexPerTile=10&year=2000%2C2017&taxonKey=212"
-        /><img
-                style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=osm-bright);"
-                src="./occurrence/density/0/1/0@1x.png?style=green2.poly&srs=EPSG:4326&bin=hex&hexPerTile=10&year=2000%2C2017&taxonKey=212"
-        />
-      </div>
-    </a>
-  </li>
-  <li>
-    <h2><a href="demo6.html">Demo 6</a></h2>
-    <p><i>Aves</i></p>
-    <a href="demo6.html">
-      <div class="preview two-wide">
-        <img
-                style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-light);"
-                src="./occurrence/density/0/0/0@1x.png?style=blue.marker&srs=EPSG:4326&bin=hex&hexPerTile=10&year=2000%2C2017&taxonKey=212"
-        /><img
-                style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-light);"
-                src="./occurrence/density/0/1/0@1x.png?style=blue.marker&srs=EPSG:4326&bin=hex&hexPerTile=10&year=2000%2C2017&taxonKey=212"
-        />
-      </div>
-    </a>
-  </li>
-  <li>
-    <h2><a href="#">Demo 7</a></h2>
-    <p><i>Fulmarus glacialis</i></i></p>
-    <a href="demo7.html">
-      <div class="preview">
-        <img
-                style="background-image: url(https://tile.gbif.org/3575/omt/0/0/0@1x.png?style=gbif-classic);"
-                src="./occurrence/density/0/0/0@1x.png?srs=EPSG:3575&style=classic.point&taxonKey=2481433"
-        />
-      </div>
-    </a>
-  </li>
-  <li>
-    <h2><a href="#">Demo 8</a></h2>
-    <p><i>Aptenodytes patagonicus</i></p>
-    <a href="demo8.html">
-      <div class="preview">
-        <img
-                style="background-image: url(https://tile.gbif.org/3031/omt/0/0/0@1x.png?style=osm-bright);"
-                src="./occurrence/density/0/0/0@1x.png?srs=EPSG:3031&style=purpleYellow.point&taxonKey=2481660"
-        />
-      </div>
-    </a>
-  </li>
-  <li>
-    <h2><a href="#">Demo 9</a></h2>
-    <p>All occurrences</p>
-    <a href="demo9.html">
-      <div class="preview two-wide">
-        <img
-          style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-middle);"
-          src="./occurrence/density/0/0/0@1x.png?style=classic.point&srs=EPSG:4326"
-        /><img
-        style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-middle);"
-        src="./occurrence/density/0/1/0@1x.png?style=classic.point&srs=EPSG:4326"
-      />
-      </div>
-    </a>
-  </li>
-  <li>
-    <h2><a href="#">Demo 10</a></h2>
-    <p>INBO</p>
-    <a href="demo10.html">
-      <div class="preview two-wide">
-        <img
-          style="background-image: url(https://tile.gbif.org/4326/omt/1/1/0@1x.png?style=gbif-dark);"
-          src="./occurrence/density/1/1/0@1x.png?style=blueHeat.point&srs=EPSG:4326&publishingOrg=1cd669d0-80ea-11de-a9d0-f1765f95f18b"
-        /><img
-        style="background-image: url(https://tile.gbif.org/4326/omt/1/2/0@1x.png?style=gbif-dark);"
-        src="./occurrence/density/1/2/0@1x.png?style=blueHeat.point&srs=EPSG:4326&publishingOrg=1cd669d0-80ea-11de-a9d0-f1765f95f18b"
-      />
-      </div>
-    </a>
-  </li>
-  <li>
-    <h2><a href="#">Demo 11</a></h2>
-    <p>All data</p>
-    <a href="demo11.html">
-      <div class="preview two-wide">
-        <img
-          style="background-image: url(https://tile.gbif.org/4326/omt/1/1/0@1x.png?style=gbif-dark);"
-          src="./occurrence/density/1/1/0@1x.png?style=fire.point&srs=EPSG:4326"
-        /><img
-        style="background-image: url(https://tile.gbif.org/4326/omt/1/2/0@1x.png?style=gbif-dark);"
-        src="./occurrence/density/1/2/0@1x.png?style=fire.point&srs=EPSG:4326"
-      />
-      </div>
-    </a>
-  </li>
-  <li>
-    <h2><a href="#">Demo 12</a></h2>
-    <p>All data</p>
-    <a href="demo12.html">
-      <div class="preview two-wide">
-        <img
-          style="background-image: url(https://tile.gbif.org/4326/omt/1/1/0@1x.png?style=gbif-dark);"
-          src="./occurrence/density/1/1/0@1x.png?style=glacier.point&srs=EPSG:4326"
-        /><img
-        style="background-image: url(https://tile.gbif.org/4326/omt/1/2/0@1x.png?style=gbif-dark);"
-        src="./occurrence/density/1/2/0@1x.png?style=glacier.point&srs=EPSG:4326"
-      />
-      </div>
-    </a>
-  </li>
-  <li>
-    <h2><a href="#">Demo 13</a></h2>
-    <p><i>Aves</i></p>
-    <a href="demo13.html">
-      <div class="preview two-wide">
-        <img
-          style="background-image: url(https://tile.gbif.org/4326/omt/1/1/0@1x.png?style=gbif-geyser);"
-          src="./occurrence/adhoc/1/1/0@1x.png?style=scaled.circles&srs=EPSG:4326&mode=GEO_CENTROID&taxonKey=212"
-        /><img
-        style="background-image: url(https://tile.gbif.org/4326/omt/1/2/0@1x.png?style=gbif-geyser);"
-        src="./occurrence/adhoc/1/2/0@1x.png?style=scaled.circles&srs=EPSG:4326&mode=GEO_CENTROID&taxonKey=212"
-      />
-      </div>
-    </a>
-  </li>
-  <!--li>
-    <h2><a href="demo-cartodb.html">Demo CartoDB</a></h2>
-    <p>Demo CartoDB</p>
-    <a href="demo-cartodb.html">
-      <div class="preview two-wide">
-        <img
-                style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-classic);"
-                src="./occurrence/adhoc/0/0/0@1x.png?taxonKey=6&basisOfRecord=PRESERVED_SPECIMEN&srs=EPSG:4326&style=classic.poly"
-        /><img
-                style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-classic);"
-                src="./occurrence/adhoc/0/1/0@1x.png?taxonKey=6&basisOfRecord=PRESERVED_SPECIMEN&srs=EPSG:4326&style=classic.poly"
-        />
-      </div>
-    </a>
-  </li-->
-</ul>
+<h1>Occurrence Density Map Thumbnail Styles (raster)</h1>
+<p>
 
-<h2>Overview</h2>
+</p>
+<h2 id="heat-maps">Thumbnail maps</h2>
+<p>Styles suitable for thumbnail images</p>
 <ul>
   <li>
-    <h2><a href="#">Style overview</a></h2>
-    <p>Showing many styles together</p>
-    <a href="styles.html">
-      <div class="preview">
-        <img
-          style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-dark);"
-          src="./occurrence/density/0/0/0@1x.png?style=classic.poly&srs=EPSG:4326&bin=hex&hexPerTile=79&taxonKey=797"
+    <div class="preview two-wide">
+      <img
+        style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@Hx.png?style=gbif-dark);"
+        src="./occurrence/density/0/0/0@Hx.png?mode=GEO_CENTROID&style=scaled.circles.thumbnail&srs=EPSG:4326&taxonKey=4155694"
+      /><img
+      style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-dark);"
+      src="./occurrence/density/0/1/0@1x.png?mode=GEO_CENTROID&style=scaled.circles.thumbnail&srs=EPSG:4326&taxonKey=4155694"
+    />
+      <img
+        style="background-image: url(https://tile.gbif.org/3857/omt/0/0/0@Hx.png?style=gbif-dark);"
+        src="./occurrence/density/0/0/0@Hx.png?mode=GEO_CENTROID&style=scaled.circles.thumbnail&srs=EPSG:3857&taxonKey=4155694"
         />
-      </div>
-    </a>
-  </li>
-  <li>
-    <h2><a href="#">Thumbnail styles</a></h2>
-    <p>Suitable for very small maps</p>
-    <a href="thumbnail-styles.html">
-      <div class="preview">
-        <img
-          style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-dark);"
-          src="./occurrence/density/0/0/0@1x.png?style=scaled.circles.thumbnail&srs=EPSG:4326&bin=hex&hexPerTile=79&taxonKey=797"
-        />
-      </div>
-    </a>
-  </li>
-</ul>
 
-<h2>Technical debugging</h2>
-<ul>
-  <li>
-    <h2><a href="#">Style debugging</a></h2>
-    <p>For testing Mapnik rendering</p>
-    <a href="style-debugging.html">
-      <div class="preview">
-        <img
-          style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-light);"
-          src="./occurrence/density/0/0/0@1x.png?srs=EPSG:4326&style=blue.marker&taxonKey=9703&bin=hex&hexPerTile=17"
+      <img class="fifty"
+        style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@Hx.png?style=gbif-dark);"
+        src="./occurrence/density/0/0/0@Hx.png?mode=GEO_CENTROID&style=scaled.circles.thumbnail&srs=EPSG:4326&taxonKey=4155694"
+      /><img class="fifty"
+      style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-dark);"
+      src="./occurrence/density/0/1/0@1x.png?mode=GEO_CENTROID&style=scaled.circles.thumbnail&srs=EPSG:4326&taxonKey=4155694"
+    />
+      <img class="fifty"
+        style="background-image: url(https://tile.gbif.org/3857/omt/0/0/0@Hx.png?style=gbif-dark);"
+        src="./occurrence/density/0/0/0@Hx.png?mode=GEO_CENTROID&style=scaled.circles.thumbnail&srs=EPSG:3857&taxonKey=4155694"
         />
-      </div>
-    </a>
+    </div>
+    <code>?mode=GEO_CENTROID&style=scaled.circles.thumbnail</code>
   </li>
+
   <li>
-    <h2><a href="#">Pixel style debugging</a></h2>
-    <p>For testing Mapnik rendering</p>
-    <a href="pixel-style-debugging.html">
-      <div class="preview">
-        <img
-          style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-light);"
-          src="./occurrence/density/0/1/0@1x.png?srs=EPSG:4326&style=purpleYellow-noborder.poly&taxonKey=9703&bin=square&squareSize=128"
+    <div class="preview two-wide">
+      <img
+        style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-dark);"
+        src="./occurrence/density/0/0/0@1x.png?style=classic-noborder.poly&srs=EPSG:4326&taxonKey=4155694&bin=square&squareSize=128"
+      /><img
+      style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-dark);"
+      src="./occurrence/density/0/1/0@1x.png?style=classic-noborder.poly&srs=EPSG:4326&taxonKey=4155694&bin=square&squareSize=128"
+    />
+      <img
+        style="background-image: url(https://tile.gbif.org/3857/omt/0/0/0@Hx.png?style=gbif-dark);"
+        src="./occurrence/density/0/0/0@Hx.png?style=classic-noborder.poly&srs=EPSG:3857&taxonKey=4155694&bin=square&squareSize=128"
         />
-      </div>
-    </a>
+
+      <img class="fifty"
+        style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@Hx.png?style=gbif-dark);"
+        src="./occurrence/density/0/0/0@Hx.png?style=classic-noborder.poly&srs=EPSG:4326&taxonKey=4155694&bin=square&squareSize=256"
+      /><img class="fifty"
+      style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-dark);"
+      src="./occurrence/density/0/1/0@1x.png?style=classic-noborder.poly&srs=EPSG:4326&taxonKey=4155694&bin=square&squareSize=256"
+    />
+      <img class="fifty"
+        style="background-image: url(https://tile.gbif.org/3857/omt/0/0/0@Hx.png?style=gbif-dark);"
+        src="./occurrence/density/0/0/0@Hx.png?style=classic-noborder.poly&srs=EPSG:3857&taxonKey=4155694&bin=square&squareSize=256"
+        />
+    </div>
+    <code>?style=classic-noborder.poly&bin=square&squareSize=128 / 256</code>
   </li>
+
   <li>
-    <h2><a href="#">Heatmap debugging</a></h2>
-    <p>For testing heatmap styles</p>
-    <a href="heat-debugging.html">
-      <div class="preview">
-        <img
-          style="background-image: url(https://tile.gbif.org/4326/omt/1/0/0@1x.png?style=gbif-dark);"
-          src="./occurrence/density/0/0/0@1x.png?srs=EPSG:3857&style=greenHeat.point"
+    <div class="preview two-wide">
+      <img
+        style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-dark);"
+        src="./occurrence/density/0/0/0@1x.png?mode=GEO_CENTROID&style=scaled.circles&srs=EPSG:4326&taxonKey=4155694"
+      /><img
+      style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-dark);"
+      src="./occurrence/density/0/1/0@1x.png?mode=GEO_CENTROID&style=scaled.circles&srs=EPSG:4326&taxonKey=4155694"
+    />
+      <img
+        style="background-image: url(https://tile.gbif.org/3857/omt/0/0/0@Hx.png?style=gbif-dark);"
+        src="./occurrence/density/0/0/0@Hx.png?mode=GEO_CENTROID&style=scaled.circles&srs=EPSG:3857&taxonKey=4155694"
         />
-      </div>
-    </a>
+
+      <img class="fifty"
+        style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@Hx.png?style=gbif-dark);"
+        src="./occurrence/density/0/0/0@Hx.png?mode=GEO_CENTROID&style=scaled.circles&srs=EPSG:4326&taxonKey=4155694"
+      /><img class="fifty"
+      style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-dark);"
+      src="./occurrence/density/0/1/0@1x.png?mode=GEO_CENTROID&style=scaled.circles&srs=EPSG:4326&taxonKey=4155694"
+    />
+      <img class="fifty"
+        style="background-image: url(https://tile.gbif.org/3857/omt/0/0/0@Hx.png?style=gbif-dark);"
+        src="./occurrence/density/0/0/0@Hx.png?mode=GEO_CENTROID&style=scaled.circles&srs=EPSG:3857&taxonKey=4155694"
+        />
+    </div>
+    <code>?mode=GEO_CENTROID&style=scaled.circles</code>
   </li>
+
+  <!-- Pale map -->
   <li>
-    <h2><a href="#">Binning alignment</a></h2>
-    <p>For testing alignment of squares and hexagons</p>
-    <a href="binning-debugging.html">
-      <div class="preview">
-        <img
-          style="background-image: url(https://tile.gbif.org/4326/omt/1/0/0@1x.png?style=gbif-light);"
-          src="./occurrence/density/1/0/0@1x.png?srs=EPSG:4326&style=green2.poly&taxonKey=1&bin=hex&hexPerTile=7"
+    <div class="preview two-wide">
+      <img
+        style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@Hx.png?style=gbif-light);"
+        src="./occurrence/density/0/0/0@Hx.png?mode=GEO_CENTROID&style=scaled.circles.thumbnail.black&srs=EPSG:4326&taxonKey=4155694"
+      /><img
+      style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-light);"
+      src="./occurrence/density/0/1/0@1x.png?mode=GEO_CENTROID&style=scaled.circles.thumbnail.black&srs=EPSG:4326&taxonKey=4155694"
+    />
+      <img
+        style="background-image: url(https://tile.gbif.org/3857/omt/0/0/0@Hx.png?style=gbif-light);"
+        src="./occurrence/density/0/0/0@Hx.png?mode=GEO_CENTROID&style=scaled.circles.thumbnail.black&srs=EPSG:3857&taxonKey=4155694"
         />
-      </div>
-    </a>
+
+      <img class="fifty"
+        style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@Hx.png?style=gbif-light);"
+        src="./occurrence/density/0/0/0@Hx.png?mode=GEO_CENTROID&style=scaled.circles.thumbnail.black&srs=EPSG:4326&taxonKey=4155694"
+      /><img class="fifty"
+      style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-light);"
+      src="./occurrence/density/0/1/0@1x.png?mode=GEO_CENTROID&style=scaled.circles.thumbnail.black&srs=EPSG:4326&taxonKey=4155694"
+    />
+      <img class="fifty"
+        style="background-image: url(https://tile.gbif.org/3857/omt/0/0/0@Hx.png?style=gbif-light);"
+        src="./occurrence/density/0/0/0@Hx.png?mode=GEO_CENTROID&style=scaled.circles.thumbnail.black&srs=EPSG:3857&taxonKey=4155694"
+        />
+    </div>
+    <code>?mode=GEO_CENTROID&style=scaled.circles.thumbnail.black</code>
   </li>
+
   <li>
-    <h2><a href="#">Ad-hoc alignment</a></h2>
-    <p>For testing alignment of ad-hoc tiles</p>
-    <a href="adhoc-debugging.html">
-      <div class="preview">
-        <img
-          style="background-image: url(https://tile.gbif.org/4326/omt/1/0/0@1x.png?style=gbif-light);"
-          src="./occurrence/adhoc/9/178/156@1x.png?srs=EPSG:4326&style=green2.poly"
+    <div class="preview two-wide">
+      <img
+        style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-light);"
+        src="./occurrence/density/0/0/0@1x.png?style=purpleYellow-noborder.poly&srs=EPSG:4326&taxonKey=4155694&bin=square&squareSize=128"
+      /><img
+      style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-light);"
+      src="./occurrence/density/0/1/0@1x.png?style=purpleYellow-noborder.poly&srs=EPSG:4326&taxonKey=4155694&bin=square&squareSize=128"
+    />
+      <img
+        style="background-image: url(https://tile.gbif.org/3857/omt/0/0/0@Hx.png?style=gbif-light);"
+        src="./occurrence/density/0/0/0@Hx.png?style=purpleYellow-noborder.poly&srs=EPSG:3857&taxonKey=4155694&bin=square&squareSize=128"
         />
-      </div>
-    </a>
+
+      <img class="fifty"
+        style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@Hx.png?style=gbif-light);"
+        src="./occurrence/density/0/0/0@Hx.png?style=purpleYellow-noborder.poly&srs=EPSG:4326&taxonKey=4155694&bin=square&squareSize=256"
+      /><img class="fifty"
+      style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-light);"
+      src="./occurrence/density/0/1/0@1x.png?style=purpleYellow-noborder.poly&srs=EPSG:4326&taxonKey=4155694&bin=square&squareSize=256"
+    />
+      <img class="fifty"
+        style="background-image: url(https://tile.gbif.org/3857/omt/0/0/0@Hx.png?style=gbif-light);"
+        src="./occurrence/density/0/0/0@Hx.png?style=purpleYellow-noborder.poly&srs=EPSG:3857&taxonKey=4155694&bin=square&squareSize=256"
+        />
+    </div>
+    <code>?style=purpleYellow-noborder.poly&bin=square&squareSize=128 / 256</code>
   </li>
+
   <li>
-    <h2><a href="#">Legacy style debugging</a></h2>
-    <p>For testing compatibility with the V1 API</p>
-    <a href="legacy-style-debugging.html">
-      <div class="preview">
-        <img
-          style="background-image: url(https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-light);"
-          src="../../v1/map/density/tile.png?x=0&y=0&z=0&colors=%2C%2C%23CC0000FF&key=1&layer=SP_PRE_1900&layer=SP_1900_1910&layer=SP_1910_1920&layer=SP_1920_1930&layer=SP_1930_1940&layer=SP_1940_1950&layer=SP_1950_1960&layer=SP_1960_1970&layer=SP_1970_1980&layer=SP_1980_1990&layer=SP_1990_2000&layer=SP_2000_2010&layer=SP_2010_2020&layer=OBS_PRE_1900&layer=OBS_1900_1910&layer=OBS_1910_1920&layer=OBS_1920_1930&layer=OBS_1930_1940&layer=OBS_1940_1950&layer=OBS_1950_1960&layer=OBS_1960_1970&layer=OBS_1970_1980&layer=OBS_1980_1990&layer=OBS_1990_2000&layer=OBS_2000_2010&layer=OBS_2010_2020&layer=OTH_PRE_1900&layer=OTH_1900_1910&layer=OTH_1910_1920&layer=OTH_1920_1930&layer=OTH_1930_1940&layer=OTH_1940_1950&layer=OTH_1950_1960&layer=OTH_1960_1970&layer=OTH_1970_1980&layer=OTH_1980_1990&layer=OTH_1990_2000&layer=OTH_2000_2010&layer=OTH_2010_2020&layer=FOSSIL&layer=LIVING&type=ALL&resolution=1"
+    <div class="preview two-wide">
+      <img
+        style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-light);"
+        src="./occurrence/density/0/0/0@1x.png?mode=GEO_CENTROID&style=scaled.circles&srs=EPSG:4326&taxonKey=4155694"
+      /><img
+      style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-light);"
+      src="./occurrence/density/0/1/0@1x.png?mode=GEO_CENTROID&style=scaled.circles&srs=EPSG:4326&taxonKey=4155694"
+    />
+      <img
+        style="background-image: url(https://tile.gbif.org/3857/omt/0/0/0@Hx.png?style=gbif-light);"
+        src="./occurrence/density/0/0/0@Hx.png?mode=GEO_CENTROID&style=scaled.circles&srs=EPSG:3857&taxonKey=4155694"
         />
-      </div>
-    </a>
+
+      <img class="fifty"
+        style="background-image: url(https://tile.gbif.org/4326/omt/0/0/0@Hx.png?style=gbif-light);"
+        src="./occurrence/density/0/0/0@Hx.png?mode=GEO_CENTROID&style=scaled.circles&srs=EPSG:4326&taxonKey=4155694"
+      /><img class="fifty"
+      style="background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-light);"
+      src="./occurrence/density/0/1/0@1x.png?mode=GEO_CENTROID&style=scaled.circles&srs=EPSG:4326&taxonKey=4155694"
+    />
+      <img class="fifty"
+        style="background-image: url(https://tile.gbif.org/3857/omt/0/0/0@Hx.png?style=gbif-light);"
+        src="./occurrence/density/0/0/0@Hx.png?mode=GEO_CENTROID&style=scaled.circles&srs=EPSG:3857&taxonKey=4155694"
+        />
+    </div>
+    <code>?mode=GEO_CENTROID&style=scaled.circles</code>
   </li>
+
 </ul>
 
 </body>
