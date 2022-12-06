@@ -163,6 +163,10 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>org.gbif.occurrence</groupId>
+      <artifactId>occurrence-es-mapping</artifactId>
+    </dependency>
+    <dependency>
       <groupId>no.ecc.vectortile</groupId>
       <artifactId>java-vector-tile</artifactId>
     </dependency>

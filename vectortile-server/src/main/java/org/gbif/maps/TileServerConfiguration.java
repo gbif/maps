@@ -14,7 +14,6 @@
 package org.gbif.maps;
 
 import org.gbif.occurrence.search.es.EsConfig;
-import org.gbif.occurrence.search.es.EsFieldMapper;
 
 import lombok.Data;
 
@@ -61,13 +60,15 @@ public class TileServerConfiguration {
   @Data
   public static class EsTileConfiguration {
 
+    public enum SearchType { EVENT, OCCURRENCE}
+
     private EsConfig elasticsearch;
 
     private Integer tileSize;
 
     private Integer bufferSize;
 
-    private EsFieldMapper.SearchType type;
+    private SearchType type;
 
     private boolean nestedIndex;
 

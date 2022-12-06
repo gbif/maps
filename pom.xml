@@ -317,6 +317,11 @@
         </exclusions>
       </dependency>
       <dependency>
+        <groupId>org.gbif.occurrence</groupId>
+        <artifactId>occurrence-es-mapping</artifactId>
+        <version>${gbif-occurrence.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.gbif</groupId>
         <artifactId>dwc-api</artifactId>
         <version>${dwc-api.version}</version>

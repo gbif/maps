@@ -20,7 +20,9 @@ import org.gbif.maps.resource.*;
 import org.gbif.occurrence.search.cache.DefaultInMemoryPredicateCacheService;
 import org.gbif.occurrence.search.cache.PredicateCacheService;
 import org.gbif.occurrence.search.es.EsConfig;
-import org.gbif.occurrence.search.es.EsFieldMapper;
+import org.gbif.occurrence.search.es.OccurrenceBaseEsFieldMapper;
+import org.gbif.occurrence.search.es.OccurrenceEsField;
+import org.gbif.event.search.es.EventEsField;
 import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
 import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
 
@@ -161,10 +163,15 @@ public class TileServerApplication {
     OccurrenceHeatmapsEsService heatmapsEsService(RestHighLevelClient esClient, TileServerConfiguration.EsTileConfiguration esTileConfiguration) {
       return new OccurrenceHeatmapsEsService(esClient,
                                              esTileConfiguration.getElasticsearch().getIndex(),
-                                             EsFieldMapper.builder()
-                                                .nestedIndex(esTileConfiguration.isNestedIndex())
-                                                .searchType(esTileConfiguration.getType())
-                                                .build());
+                                             esFieldMapper(esTileConfiguration));
+    }
+
+    @Bean
+    OccurrenceBaseEsFieldMapper esFieldMapper(TileServerConfiguration.EsTileConfiguration esTileConfiguration) {
+      if (TileServerConfiguration.EsTileConfiguration.SearchType.EVENT == esTileConfiguration.getType() ){
+        return EventEsField.buildFieldMapper();
+      }
+      return OccurrenceEsField.buildFieldMapper();
     }
 
     @Bean("occurrenceHeatmapsEsService")

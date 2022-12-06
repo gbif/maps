@@ -18,8 +18,8 @@ import org.gbif.api.model.occurrence.search.OccurrenceSearchRequest;
 import org.gbif.api.vocabulary.BasisOfRecord;
 import org.gbif.maps.TileServerConfiguration;
 import org.gbif.maps.common.projection.Long2D;
-import org.gbif.occurrence.search.es.EsFieldMapper;
 import org.gbif.occurrence.search.es.EsSearchRequestBuilder;
+import org.gbif.occurrence.search.es.OccurrenceBaseEsFieldMapper;
 import org.gbif.occurrence.search.es.OccurrenceEsField;
 
 import java.io.IOException;
@@ -113,14 +113,11 @@ public final class RegressionResource {
   @Autowired
   public RegressionResource(TileResource tiles,
                             @Qualifier("esOccurrenceClient") RestHighLevelClient esClient,
-                            TileServerConfiguration configuration) {
+                            TileServerConfiguration configuration,
+                            OccurrenceBaseEsFieldMapper esFieldMapper) {
     this.tiles = tiles;
     this.esClient = esClient;
     this.esIndex = configuration.getEsOccurrenceConfiguration().getElasticsearch().getIndex();
-    EsFieldMapper esFieldMapper = EsFieldMapper.builder()
-                                    .nestedIndex(configuration.getEsOccurrenceConfiguration().isNestedIndex())
-                                    .searchType(configuration.getEsOccurrenceConfiguration().getType())
-                                    .build();
     this.esSearchRequestBuilder = new EsSearchRequestBuilder(esFieldMapper);
   }
 
