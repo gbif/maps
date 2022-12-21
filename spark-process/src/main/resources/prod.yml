@@ -23,7 +23,7 @@ hbase:
 
 # Applies only to those map views that have few enough records to be stored as features
 pointFeatures:
-  numTasks: 200 # controls the parallelism
+  numTasks: 600 # controls the parallelism (matched to the number of vcores)
   tableName: PROVIDED_AT_RUNTIME
   hfileCount: 32
 
@@ -33,7 +33,7 @@ pointFeatures:
 tilePyramid:
   tableName: PROVIDED_AT_RUNTIME
   hfileCount: 100
-  numPartitions: 400
+  numPartitions: 600 # controls the parallelism (matched to the number of vcores)
   tileBufferSize: 64
   projections:
     # Web Mercator (i.e. like Google maps)
