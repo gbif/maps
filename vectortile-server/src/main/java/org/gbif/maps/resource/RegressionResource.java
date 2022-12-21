@@ -113,12 +113,11 @@ public final class RegressionResource {
   @Autowired
   public RegressionResource(TileResource tiles,
                             @Qualifier("esOccurrenceClient") RestHighLevelClient esClient,
-                            TileServerConfiguration configuration,
-                            OccurrenceBaseEsFieldMapper esFieldMapper) {
+                            TileServerConfiguration configuration) {
     this.tiles = tiles;
     this.esClient = esClient;
     this.esIndex = configuration.getEsOccurrenceConfiguration().getElasticsearch().getIndex();
-    this.esSearchRequestBuilder = new EsSearchRequestBuilder(esFieldMapper);
+    this.esSearchRequestBuilder = new EsSearchRequestBuilder(OccurrenceEsField.buildFieldMapper());
   }
 
   /**

@@ -166,7 +166,6 @@ public class TileServerApplication {
                                              esFieldMapper(esTileConfiguration));
     }
 
-    @Bean
     OccurrenceBaseEsFieldMapper esFieldMapper(TileServerConfiguration.EsTileConfiguration esTileConfiguration) {
       if (TileServerConfiguration.EsTileConfiguration.SearchType.EVENT == esTileConfiguration.getType() ){
         return EventEsField.buildFieldMapper();
