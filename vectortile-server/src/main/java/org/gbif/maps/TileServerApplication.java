@@ -13,6 +13,7 @@
  */
 package org.gbif.maps;
 
+import org.gbif.api.model.common.search.SearchParameter;
 import org.gbif.api.model.predicate.Predicate;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
@@ -24,6 +25,7 @@ import org.gbif.occurrence.search.es.OccurrenceBaseEsFieldMapper;
 import org.gbif.occurrence.search.es.OccurrenceEsField;
 import org.gbif.event.search.es.EventEsField;
 import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
+import org.gbif.occurrence.search.predicate.QueryVisitorFactory;
 import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
 
 import java.io.IOException;
@@ -207,8 +209,8 @@ public class TileServerApplication {
 
     @Primary
     @Bean
-    public ObjectMapper registryObjectMapper() {
-      return JacksonJsonObjectMapperProvider.getObjectMapperWithBuilderSupport();
+    public ObjectMapper objectMapper() {
+      return JacksonJsonObjectMapperProvider.getObjectMapperWithBuilderSupport().addMixIn(SearchParameter.class, QueryVisitorFactory.OccurrenceSearchParameterMixin.class);
     }
 
     @ConfigurationProperties(prefix = "cache.predicates")
