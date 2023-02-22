@@ -13,6 +13,7 @@
  */
 package org.gbif.maps.resource;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.Int2D;
 
@@ -41,9 +42,40 @@ public class Capabilities {
   private static final Logger LOG = LoggerFactory.getLogger(Capabilities.class);
 
   private static final String META_TOTAL = "total";
-  private final Double minLat, minLng, maxLat, maxLng;
-  private final Integer minYear, maxYear;
+
+  @Schema(description = "The lowest latitude of occurrences covered by the query")
+  private final Double minLat;
+
+  @Schema(description = "The highest latitude of occurrences covered by the query")
+  private final Double maxLat;
+
+  @Schema(
+    description = "The lowest longitude of occurrences covered by the query.\n\n" +
+      "For clusters of occurrences centered around the antimeridian (180° longitude) the `minLng` and `maxLng` " +
+      "will have a value just below 180° and above 180°."
+  )
+  private final Double minLng;
+
+  @Schema(
+    description = "The highest longitude of occurrences covered by the query.\n\n" +
+      "For clusters of occurrences centered around the antimeridian (180° longitude) the `minLng` and `maxLng` " +
+      "will have a value just below 180° and above 180°."
+  )
+  private final Double maxLng;
+
+  @Schema(description = "The lowest year of occurrences covered by the query.")
+  private final Integer minYear;
+
+  @Schema(description = "The highest year of occurrences covered by the query.")
+  private final Integer maxYear;
+
+  @Schema(description = "The number of occurrences covered by the whole map.")
   private final int total;
+
+  @Schema(
+    description = "The time the map tile was generated.  Tiles are cached for hours to days, depending on the " +
+      "processing required to produce them."
+  )
   private final String generated;
 
   private Capabilities(
@@ -171,7 +203,7 @@ public class Capabilities {
      *
      * @param tile To inspect which is assumed to be in EPSG:4326 projection and must be Point data only
      * @param tileNW The lat,lng of the tiles North West
-     * @param tileSE The lat,lng of the tiles Souyth East
+     * @param tileSE The lat,lng of the tiles South East
      * @throws IOException On encoding issues only
      */
     void collect(byte[] tile, Double2D tileNW, Double2D tileSE, String date) throws IOException {

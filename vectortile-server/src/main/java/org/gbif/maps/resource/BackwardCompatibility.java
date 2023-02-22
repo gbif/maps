@@ -13,12 +13,9 @@
  */
 package org.gbif.maps.resource;
 
+import com.codahale.metrics.annotation.Timed;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.gbif.maps.common.projection.SphericalMercator;
-
-import java.util.List;
-
-import javax.servlet.http.HttpServletResponse;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,10 +26,16 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.codahale.metrics.annotation.Timed;
+import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 
-import static org.gbif.maps.resource.Params.*;
-import static org.gbif.maps.resource.TileResource.*;
+import static org.gbif.maps.resource.Params.ALL_MAP_KEY;
+import static org.gbif.maps.resource.Params.MAP_TYPES;
+import static org.gbif.maps.resource.Params.enableCORS;
+import static org.gbif.maps.resource.TileResource.ZOOM_0_EAST_NW;
+import static org.gbif.maps.resource.TileResource.ZOOM_0_EAST_SE;
+import static org.gbif.maps.resource.TileResource.ZOOM_0_WEST_NW;
+import static org.gbif.maps.resource.TileResource.ZOOM_0_WEST_SE;
 
 /**
  * Provide backward compatibility for the /v1/map/density/tile.json API call.
@@ -40,6 +43,7 @@ import static org.gbif.maps.resource.TileResource.*;
  * Ignore layer and year handling, the logs suggest this isn't used, although the V1 tile-server does support it.
  * (Code possibly implementing it anyway was removed on 2017-08-22.)
  */
+@Hidden
 @RestController
 @RequestMapping(
   value = "density"

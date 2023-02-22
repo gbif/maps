@@ -13,6 +13,16 @@
  */
 package org.gbif.maps.resource;
 
+import com.codahale.metrics.annotation.Timed;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.geom.Polygon;
+import io.swagger.v3.oas.annotations.Hidden;
+import no.ecc.vectortile.VectorTileEncoder;
 import org.gbif.api.model.predicate.Predicate;
 import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.bin.SquareBin;
@@ -26,14 +36,6 @@ import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapRequest;
 import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapRequestProvider;
 import org.gbif.occurrence.search.heatmap.es.EsOccurrenceHeatmapResponse;
 import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
-
-import java.io.IOException;
-import java.util.*;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -46,16 +48,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.codahale.metrics.annotation.Timed;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.Point;
-import com.vividsolutions.jts.geom.Polygon;
-
-import no.ecc.vectortile.VectorTileEncoder;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 import static org.gbif.maps.resource.Params.BIN_MODE_HEX;
 import static org.gbif.maps.resource.Params.BIN_MODE_SQUARE;
@@ -97,6 +100,7 @@ public class AdHocMapsResource {
     provider = new OccurrenceHeatmapRequestProvider(predicateCacheService);
   }
 
+  @Hidden
   @PostMapping(value = "/predicate",
                consumes =  {MediaType.APPLICATION_JSON_VALUE},
                produces = {MediaType.APPLICATION_JSON_VALUE, "application/x-javascript"})
@@ -104,6 +108,7 @@ public class AdHocMapsResource {
     return predicateCacheService.put(predicate);
   }
 
+  @Hidden
   @GetMapping(value = "/predicate/{predicateHash}",
     produces = {MediaType.APPLICATION_JSON_VALUE, "application/x-javascript"})
   public ResponseEntity<Predicate> getPredicate(@Valid @PathVariable("predicateHash") Integer predicateHash) {

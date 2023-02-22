@@ -86,6 +86,7 @@
     <spring-boot.version>2.3.12.RELEASE</spring-boot.version>
     <spring-cloud-zookeeper.version>2.2.5.RELEASE</spring-cloud-zookeeper.version>
     <spring-boot-admin.version>2.2.4</spring-boot-admin.version>
+    <springdoc-openapi-ui.version>1.5.8</springdoc-openapi-ui.version>
 
     <!-- Tools-->
     <lombok.version>1.18.20</lombok.version>
@@ -741,6 +742,11 @@
         <groupId>de.codecentric</groupId>
         <artifactId>spring-boot-admin-starter-client</artifactId>
         <version>${spring-boot-admin.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springdoc</groupId>
+        <artifactId>springdoc-openapi-ui</artifactId>
+        <version>${springdoc-openapi-ui.version}</version>
       </dependency>
 
       <!-- Cache -->

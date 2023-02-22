@@ -13,16 +13,31 @@
  */
 package org.gbif.maps.resource;
 
+import com.codahale.metrics.annotation.Timed;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.gbif.maps.TileServerConfiguration;
 import org.gbif.occurrence.search.cache.PredicateCacheService;
+import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapRequest;
 import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
+import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
 
 /**
  * ElasticSearch as a vector tile service.
@@ -43,5 +58,59 @@ public final class AdHocOccurrenceMapsResource extends AdHocMapsResource {
           predicateCacheService,
           configuration.getEsOccurrenceConfiguration().getTileSize(),
           configuration.getEsOccurrenceConfiguration().getBufferSize());
+  }
+
+  // Overridden only for the OpenAPI documentation.
+  @Operation(
+    operationId = "getAdHocTile",
+    summary = "Ad-hoc search tile",
+    description = "Retrieves a tile showing occurrence locations in [Mapbox Vector Tile format](https://www.mapbox.com/vector-tiles/)\n" +
+      "\n" +
+      "Tiles contain a single layer `occurrence`. Features in that layer are either points (default) or polygons " +
+      "(if chosen). Each feature has a `total` value; that is the number of occurrences at that point or in the polygon.\n" +
+      "\n" +
+      "Any search parameter allowed by the [occurrence search](/en/openapi/v1/occurrence#tag/Searching-occurrences/operation/searchOccurrence) is supported."
+  )
+  @Tag(name = "Occurrence maps")
+  @Parameters(
+    value = {
+      @Parameter(
+        name = "tileBuffer",
+        in = ParameterIn.QUERY,
+        hidden = true
+      ),
+      @Parameter(
+        name = "mode",
+        in = ParameterIn.QUERY,
+        description = "Sets the search mode.  `GEO_BOUNDS` is the default, and returns rectangles that bound all the " +
+          "occurrences in each bin.  `GEO_CENTROID` instead returns a point at the weighted centroid of the bin.",
+        schema = @Schema(implementation = OccurrenceHeatmapRequest.Mode.class)
+      )
+    }
+  )
+  @CommonOpenAPI.TileProjectionAndStyleParameters
+  @CommonOpenAPI.BinningParameters
+  @CommonOpenAPI.DensitySearchParameters
+  @CommonOpenAPI.TileResponses
+  @RequestMapping(
+    method = RequestMethod.GET,
+    value = "/{z}/{x}/{y}.mvt",
+    produces = "application/x-protobuf"
+  )
+  @Timed
+  @Override
+  public byte[] all(
+    @PathVariable("z") int z,
+    @PathVariable("x") long x,
+    @PathVariable("y") long y,
+    @RequestParam(value = "srs", defaultValue = EPSG_4326) String srs,
+    @RequestParam(value = "bin", required = false) String bin,
+    @RequestParam(value = "hexPerTile", defaultValue = DEFAULT_HEX_PER_TILE) int hexPerTile,
+    @RequestParam(value = "squareSize", defaultValue = DEFAULT_SQUARE_SIZE) int squareSize,
+    @RequestParam(value = "tileBuffer", defaultValue = QUERY_BUFFER_PERCENTAGE) double tileBuffer,
+    HttpServletResponse response,
+    HttpServletRequest request
+  ) throws Exception {
+    return super.all(z, x, y, srs, bin, hexPerTile, squareSize, tileBuffer, response, request);
   }
 }
