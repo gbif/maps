@@ -4705,8 +4705,8 @@ module.exports = {
         },
         'ocean': {
             "name": "Terrain",
-            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{Z}/{Y}/{X}.png",
-            "attribution": "Esri, DeLorme, FAO, USGS, NOAA, GEBCO, IHO-IOC GEBCO, NGS, NIWA",
+            "url": "https://tile.gbif.org/3857/omt/{Z}/{X}/{Y}@1x.png?style=gbif-natural",
+            "attribution": "© <a href='https://openmaptiles.org/'>OpenMapTiles</a> © <a href='http://www.openstreetmap.org/copyright' target='_blank'>OpenStreetMap contributors</a>",
             "png-render-style": "palette=yellows_reds",
             "subdomains": [],
             "enabled": false
