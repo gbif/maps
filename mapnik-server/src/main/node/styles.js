@@ -44,6 +44,10 @@ namedStyles["orange.marker"] = compileStylesheetSync("./cartocss/orange-marker.m
 // Adhoc map style for ES portal (mode=GEO_CENTROID)
 namedStyles["scaled.circles"] = compileStylesheetSync("./cartocss/scaled-circles.mss");
 
+// Adhoc map style for thumbnails (mode=GEO_CENTROID)
+namedStyles["scaled.circles.thumbnail"] = compileStylesheetSync("./cartocss/scaled-circles-thumbnail.mss");
+namedStyles["scaled.circles.thumbnail.black"] = compileStylesheetSync("./cartocss/scaled-circles-thumbnail-black.mss");
+
 
 // Miscellaneous styles
 namedStyles["green2.poly"] = compileStylesheetSync("./cartocss/green2-poly.mss");
