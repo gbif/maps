@@ -70,7 +70,7 @@ public class Capabilities {
   private final Integer maxYear;
 
   @Schema(description = "The number of occurrences covered by the whole map.")
-  private final int total;
+  private final long total;
 
   @Schema(
     description = "The time the map tile was generated.  Tiles are cached for hours to days, depending on the " +
@@ -85,7 +85,7 @@ public class Capabilities {
     Double maxLng,
     Integer minYear,
     Integer maxYear,
-    int total,
+    long total,
     String generated
   ) {
     this.minLat = minLat;
@@ -122,7 +122,7 @@ public class Capabilities {
     return maxYear;
   }
 
-  public int getTotal() {
+  public long getTotal() {
     return total;
   }
 
@@ -167,7 +167,7 @@ public class Capabilities {
     private double minLat = Double.NaN, minLng = Double.NaN;
     private double maxLat = Double.NaN, maxLng = Double.NaN;
     private int minYear = Integer.MAX_VALUE, maxYear = Integer.MIN_VALUE;
-    private int total;
+    private long total;
     private String generated;
 
     private IntHashSet longitudes = new IntHashSet();
@@ -202,8 +202,8 @@ public class Capabilities {
      * Collects a tile mutating the collected metadata accordingly.
      *
      * @param tile To inspect which is assumed to be in EPSG:4326 projection and must be Point data only
-     * @param tileNW The lat,lng of the tiles North West
-     * @param tileSE The lat,lng of the tiles South East
+     * @param tileNW The lat,lng of the tile's North West
+     * @param tileSE The lat,lng of the tile's South East
      * @throws IOException On encoding issues only
      */
     void collect(byte[] tile, Double2D tileNW, Double2D tileSE, String date) throws IOException {
