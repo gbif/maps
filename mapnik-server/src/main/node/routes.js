@@ -107,6 +107,17 @@ function v1ParseUrl(parsedRequest) {
     default  : squareSize =  16;
   }
 
+  // Map v1 styles to v2
+  // The original v1 palettes were as follows:
+  //                 <10      <100    <1000    <10000  <100000
+  // yellows_reds: #FFFF00, #FFCC00, #FF9900, #FF6600, #FF3300, #CC0000
+  // blues:        #EFF3FF, #C6DBEF, #9ECAE1, #6BAED6, #3182BD, #08519C
+  // greens:       #EDF8E9, #C7E9C0, #A1D99B, #74C476, #31A354, #006D2C
+  // greys:        #F7F7F7, #D9D9D9, #BDBDBD, #969696, #636363, #252525
+  // oranges:      #FEEDDE, #FDD0A2, #FDAE6B, #FD8D3C, #E6550D, #A63603
+  // purples:      #F2F0F7, #DADAEB, #BCBDDC, #9E9AC8, #756BB1, #54278F
+  // reds:         #FEE5D9, #FCBBA1, #FC9272, #FB6A4A, #DE2D26, #A50F15
+  // (Not sure if it was < or ≤)
   var style = styles.getStyleName('classic-noborder.poly');
   if (parsedRequest.query.saturation == "true") {
     style = styles.getStyleName('purpleWhite.poly');
@@ -114,6 +125,8 @@ function v1ParseUrl(parsedRequest) {
     style = styles.getStyleName('red.poly');
   } else if (parsedRequest.query.palette == "reds" || parsedRequest.query.colors == ',10,#F7005Ae6|10,100,#D50067e6|100,1000,#B5006Ce6|1000,10000,#94006Ae6|10000,100000,#72005Fe6|100000,,#52034Ee6') {
     style = styles.getStyleName('iNaturalist.poly');
+  } else if (parsedRequest.query.palette == "greens") {
+    style = styles.getStyleName('green2-noborder.poly');
   }
 
   var type = parsedRequest.query.type;
@@ -130,7 +143,7 @@ function v1ParseUrl(parsedRequest) {
   var basisOfRecord = new Set();
 
   // Year ranges.  We assume ranges given are continuous, but don't permit showing no-year records as well as a range —
-  // unless the whole range (pre-1900 to 2020) is selected, then no year filter is requested.
+  // unless the whole range (pre-1900 to 2030) is selected, then no year filter is requested.
   var
     obsStart = 9999,
     obsEnd = -1,
@@ -237,7 +250,7 @@ function v1ParseUrl(parsedRequest) {
     throw Error("Start and end years must be the same for each layer (BasisOfRecord): "+detail);
   }
 
-  if (year == "0,2020" && noYear) {
+  if (year == "0,2030" && noYear) {
     year = null;
   } else if (year && noYear) {
     if (year == "1900,2020") {

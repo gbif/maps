@@ -44,14 +44,14 @@ namedStyles["orange.marker"] = compileStylesheetSync("./cartocss/orange-marker.m
 // Adhoc map style for ES portal (mode=GEO_CENTROID)
 namedStyles["scaled.circles"] = compileStylesheetSync("./cartocss/scaled-circles.mss");
 
-
 // Miscellaneous styles
-namedStyles["green2.poly"] = compileStylesheetSync("./cartocss/green2-poly.mss");
 namedStyles["fire.point"] = compileStylesheetSync("./cartocss/fire-dot.mss");
 namedStyles["glacier.point"] = compileStylesheetSync("./cartocss/glacier-dot.mss");
 heatStyles.push("fire.point", "glacier.point");
 
 // Styles for compatibility with V1 API
+namedStyles["green2.poly"] = compileStylesheetSync("./cartocss/green2-poly.mss");
+namedStyles["green2-noborder.poly"] = compileStylesheetSync("./cartocss/green2-noborder-poly.mss");
 namedStyles["iNaturalist.poly"] = compileStylesheetSync("./cartocss/iNaturalist-poly.mss");
 namedStyles["purpleWhite.poly"] = compileStylesheetSync("./cartocss/purple-white-poly.mss");
 namedStyles["red.poly"] = compileStylesheetSync("./cartocss/red-poly.mss");

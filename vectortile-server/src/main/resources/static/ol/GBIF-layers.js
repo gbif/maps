@@ -10,7 +10,7 @@ class GBIFLayers {
 
   baseRaster(srs, urlParams) {
     var l = GBIF_Layers[srs+'_Base_Raster']();
-		return addParams(l, null, urlParams);
+		return addParams(l, null, null, urlParams);
 	}
 
 	occurrenceVector(srs, dataLayer, source, urlParams) {

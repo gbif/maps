@@ -40,7 +40,7 @@ import static org.gbif.maps.resource.TileResource.ZOOM_0_WEST_SE;
 /**
  * Provide backward compatibility for the /v1/map/density/tile.json API call.
  *
- * Ignore layer and year handling, the logs suggest this isn't used, although the V1 tile-server does support it.
+ * Ignore layer and year handling, it's implemented in the mapnik-server instead.
  * (Code possibly implementing it anyway was removed on 2017-08-22.)
  */
 @Hidden
