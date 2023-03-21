@@ -316,33 +316,40 @@ import static org.gbif.maps.resource.Params.toMinMaxYear;
         "\n" +
         "## Example queries\n" +
         "\n" +
-        "| Description | Sample |\n" +
-        "|-------------|--------|\n" +
+        "| Description | Sample | Live demo |\n" +
+        "|-------------|--------|-----------|\n" +
         "" +
         "| All occurrences — no additional parameters <br/> " +
-        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?style=purpleYellow.point` " +
-        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?style=purpleYellow.point'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?style=purpleYellow.point' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-light); background-size: 64px 64px;'/></a>\n" +
+        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?style=green.point` " +
+        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?style=green.point'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?style=green.point' width='64' height='64' style='max-width: inherit;'/></a> " +
+        "| <a href='https://api.gbif.org/v2/map/demo1.html'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?style=green.point' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-dark); background-size: 64px 64px;'/></a>\n" +
         "" +
-        "| All birds (*Aves*) by small hexagons <br/> " +
-        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?taxonKey=212&bin=hex&hexPerTile=30&style=classic-noborder.poly` " +
-        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?taxonKey=212&bin=hex&hexPerTile=30&style=classic-noborder.poly'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?taxonKey=212&bin=hex&hexPerTile=30&style=classic-noborder.poly' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-light); background-size: 64px 64px;'/></a>\n" +
+        "| All birds (*Aves*) by small hexagons, EPSG:4326 projection <br/> " +
+        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?srs=EPSG:4326&taxonKey=212&bin=hex&hexPerTile=117&style=green-noborder.poly` " +
+        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:4326&taxonKey=212&bin=hex&hexPerTile=117&style=green-noborder.poly'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:4326&taxonKey=212&bin=hex&hexPerTile=117&style=green-noborder.poly' width='64' height='64' style='max-width: inherit;'/></a> " +
+        "| <a href='https://api.gbif.org/v2/map/demo4.html'><img src='https://api.gbif.org/v2/map/occurrence/density/0/1/0@1x.png?srs=EPSG:4326&taxonKey=212&bin=hex&hexPerTile=117&style=green-noborder.poly' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-dark); background-size: 64px 64px;'/></a>\n" +
         "" +
-        "| All birds observed by machine between 2015 and 2017 as squares <br/> " +
-        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?taxonKey=212&basisOfRecord=MACHINE_OBSERVATION&years=2015,2017&bin=square&squareSize=128&style=purpleYellow-noborder.poly` " +
-        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?taxonKey=212&basisOfRecord=MACHINE_OBSERVATION&years=2015,2017&bin=square&squareSize=128&style=purpleYellow-noborder.poly'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?taxonKey=212&basisOfRecord=MACHINE_OBSERVATION&years=2015,2017&bin=square&squareSize=128&style=purpleYellow-noborder.poly' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-light); background-size: 64px 64px;'/></a>\n" +
+        "| All birds observed by machine between 2015 and 2017 as squares, EPSG:4326 projection <br/> " +
+        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?srs=EPSG:4326&taxonKey=212&basisOfRecord=MACHINE_OBSERVATION&years=2015,2017&bin=square&squareSize=128&style=purpleYellow-noborder.poly` " +
+        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:4326&taxonKey=212&basisOfRecord=MACHINE_OBSERVATION&years=2015,2017&bin=square&squareSize=128&style=purpleYellow-noborder.poly'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:4326&taxonKey=212&basisOfRecord=MACHINE_OBSERVATION&years=2015,2017&bin=square&squareSize=128&style=purpleYellow-noborder.poly' width='64' height='64' style='max-width: inherit;'/></a> " +
+        "| <a href='https://api.gbif.org/v2/map/demo5.html'><img src='https://api.gbif.org/v2/map/occurrence/density/0/1/0@1x.png?srs=EPSG:4326&taxonKey=212&basisOfRecord=MACHINE_OBSERVATION&years=2015,2017&bin=square&squareSize=128&style=purpleYellow-noborder.poly' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=osm-bright); background-size: 64px 64px;'/></a>\n" +
         "" +
-        "| All preserved, fossil or living specimens from before 1900 published by Swedish publishers, in Arctic projection <br/> " +
-        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?srs=EPSG:3575&publishingCountry=SE&basisOfRecord=PRESERVED_SPECIMEN&basisOfRecord=FOSSIL_SPECIMEN&basisOfRecord=LIVING_SPECIMEN&year=1600,1899&bin=square&squareSize=128&style=green.poly` " +
-        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:3575&publishingCountry=SE&basisOfRecord=PRESERVED_SPECIMEN&basisOfRecord=FOSSIL_SPECIMEN&basisOfRecord=LIVING_SPECIMEN&year=1600,1899&bin=square&squareSize=128&style=green.poly'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:3575&publishingCountry=SE&basisOfRecord=PRESERVED_SPECIMEN&basisOfRecord=FOSSIL_SPECIMEN&basisOfRecord=LIVING_SPECIMEN&year=1600,1899&bin=square&squareSize=128&style=green.poly' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/3575/omt/0/0/0@1x.png?style=gbif-light); background-size: 64px 64px;'/></a>\n" +
+        "| All occurrences from 2000 onwards published by American publishers <br/> " +
+        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?publishingCountry=US&year=2000,2030&style=fire.point` " +
+        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?publishingCountry=US&year=2000,2030&style=fire.point'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?publishingCountry=US&year=2000,2030&style=fire.point' width='64' height='64' style='max-width: inherit;'/></a> " +
+        "| <a href='https://api.gbif.org/v2/map/demo11.html'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?publishingCountry=US&year=2000,2030&style=fire.point' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-dark); background-size: 64px 64px;'/></a>\n" +
         "" +
-        "| Ad-hoc query for occurrences with images, observed in January <br/> " +
-        "  `https://api.gbif.org/v2/map/occurrence/adhoc/{z}/{x}/{y}@1x.png?srs=EPSG:4326&style=classic.poly&bin=square&squareSize=128&mediaType=StillImage&month=1` " +
-        "| <a href='https://api.gbif.org/v2/map/occurrence/adhoc/0/0/0@1x.png?srs=EPSG:4326&style=classic.poly&bin=square&squareSize=128&mediaType=StillImage&month=1'><img src='https://api.gbif.org/v2/map/occurrence/adhoc/0/0/0@1x.png?srs=EPSG:4326&style=classic.poly&bin=square&squareSize=128&mediaType=StillImage&month=1' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-light); background-size: 64px 64px;'/></a>\n" +
+        "| *Fulmarus glacialis* (northern fulmar) observations, in Arctic projection <br/> " +
+        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?srs=EPSG:3575&taxonKey=2481433&basisOfRecord=HUMAN_OBSERVATION&basisOfRecord=MACHINE_OBSERVATION&style=classic.point` " +
+        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:3575&taxonKey=2481433&basisOfRecord=HUMAN_OBSERVATION&basisOfRecord=MACHINE_OBSERVATION&style=classic.point'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:3575&taxonKey=2481433&basisOfRecord=HUMAN_OBSERVATION&basisOfRecord=MACHINE_OBSERVATION&style=classic.point' width='64' height='64' style='max-width: inherit;'/></a> " +
+        "| <a href='https://api.gbif.org/v2/map/demo7.html'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:3575&taxonKey=2481433&basisOfRecord=HUMAN_OBSERVATION&basisOfRecord=MACHINE_OBSERVATION&style=classic.point' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/3575/omt/0/0/0@1x.png?style=gbif-classic); background-size: 64px 64px;'/></a>\n" +
+        "" +
+        "| Ad-hoc query for fungi with images, and without detected geospatial issues <br/> " +
+        "  `https://api.gbif.org/v2/map/occurrence/adhoc/{z}/{x}/{y}@1x.png?srs=EPSG:4326&mode=GEO_CENTROID&taxonKey=6&hasGeospatialIssue=false&mediaType=StillImage&style=scaled.circles` " +
+        "| <a href='https://api.gbif.org/v2/map/occurrence/adhoc/0/0/0@1x.png?srs=EPSG:4326&mode=GEO_CENTROID&taxonKey=6&hasGeospatialIssue=false&mediaType=StillImage&style=scaled.circles'><img src='https://api.gbif.org/v2/map/occurrence/adhoc/0/0/0@1x.png?srs=EPSG:4326&mode=GEO_CENTROID&taxonKey=6&hasGeospatialIssue=false&mediaType=StillImage&style=scaled.circles' width='64' height='64' style='max-width: inherit;'/></a> " +
+        "| <a href='https://api.gbif.org/v2/map/demo13.html'><img src='https://api.gbif.org/v2/map/occurrence/adhoc/0/1/0@1x.png?srs=EPSG:4326&mode=GEO_CENTROID&taxonKey=6&hasGeospatialIssue=false&mediaType=StillImage&style=scaled.circles' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-geyser); background-size: 64px 64px;'/></a>\n" +
         "\n" +
-        "<iframe height='265' style='width:100%; height:500px' scrolling='no' title='Taxon overlay' src='https://codepen.io/hofft/embed/GRROjmo?height=265&theme-id=0&default-tab=js,result'>\n" +
-        "  See the Pen <a href='https://codepen.io/hofft/pen/GRROjmo'>Taxon overlay</a> by Morten Hofft\n" +
-        "  (<a href='https://codepen.io/hofft'>@hofft</a>) on <a href='https://codepen.io'>CodePen</a>.\n" +
-        "</iframe>\n" +
+        "See also [further examples and demos](https://api.gbif.org/v2/map/demo.html), and an example using [CodePen](https://codepen.io/hofft/pen/GRROjmo)\n" +
         "\n" +
         "## Projections\n" +
         "\n" +

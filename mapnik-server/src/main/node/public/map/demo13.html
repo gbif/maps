@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Note this example is linked from the OpenAPI documentation; avoid changing it. -->
 <html>
 <head>
   <title>Maps Demo 13</title>
@@ -55,7 +56,7 @@
       projection: 'EPSG:4326',
       tileGrid: tile_grid_16,
       tilePixelRatio: pixel_ratio,
-      url: './occurrence/adhoc/{z}/{x}/{y}@'+pixel_ratio+'x.png?srs=EPSG:4326&mode=GEO_CENTROID&style=scaled.circles&taxonKey=212',
+      url: './occurrence/adhoc/{z}/{x}/{y}@'+pixel_ratio+'x.png?srs=EPSG:4326&mode=GEO_CENTROID&taxonKey=6&hasGeospatialIssue=false&mediaType=StillImage&style=scaled.circles',
       wrapX: true
     })
   }));

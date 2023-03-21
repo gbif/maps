@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Note this example is linked from the OpenAPI documentation; avoid changing it. -->
 <html>
 <head>
   <title>Maps Demo 5</title>
@@ -55,7 +56,7 @@
       projection: 'EPSG:4326',
       tileGrid: tile_grid_16,
       tilePixelRatio: pixel_ratio,
-      url: './occurrence/density/{z}/{x}/{y}@'+pixel_ratio+'x.png?srs=EPSG:4326&style=green2.poly&taxonKey=212&bin=hex&hexPerTile=41&year=2000,2017',
+      url: './occurrence/density/{z}/{x}/{y}@'+pixel_ratio+'x.png?srs=EPSG:4326&basisOfRecord=MACHINE_OBSERVATION&year=2015,2017&taxonKey=212&bin=square&squareSize=128&style=purpleYellow-noborder.poly',
       wrapX: true
     }),
     opacity: 0.5

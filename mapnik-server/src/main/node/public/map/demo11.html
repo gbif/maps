@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Note this example is linked from the OpenAPI documentation; avoid changing it. -->
 <html>
 <head>
   <title>Maps Demo 11</title>
@@ -20,56 +21,46 @@
 <body>
 <div id="map"></div>
 <script>
-  proj4.defs('EPSG:4326', "+proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees");
+    var pixel_ratio = parseInt(window.devicePixelRatio) || 1;
 
-  var pixel_ratio = parseInt(window.devicePixelRatio) || 1;
+    var tile_grid_16 = ol.tilegrid.createXYZ({
+      minZoom: 0,
+      maxZoom: 15,
+      tileSize: 512,
+    });
 
-  var extent = 180.0;
-  var tile_size = 512;
-  var max_zoom = 16;
-  var resolutions = Array(max_zoom+1).fill().map((_, i) => ( extent / tile_size / Math.pow(2, i) ));
+    var layers = [];
 
-  var tile_grid_16 = new ol.tilegrid.TileGrid({
-    extent: ol.proj.get('EPSG:4326').getExtent(),
-    minZoom: 0,
-    maxZoom: 15,
-    resolutions: resolutions,
-    tileSize: tile_size,
-  });
+    var base_raster_style = 'gbif-dark';
+    layers.push(new ol.layer.Tile({
+      source: new ol.source.TileImage({
+        projection: 'EPSG:3857',
+        tileGrid: tile_grid_16,
+        tilePixelRatio: pixel_ratio,
+        url: 'https://tile.gbif.org/3857/omt/{z}/{x}/{y}@'+pixel_ratio+'x.png?style='+base_raster_style,
+        wrapX: true
+      })
+    }));
 
-  var layers = [];
+    layers.push(new ol.layer.Tile({
+      source: new ol.source.TileImage({
+        projection: 'EPSG:3857',
+        tileGrid: tile_grid_16,
+        tilePixelRatio: pixel_ratio,
+      url: './occurrence/density/{z}/{x}/{y}@'+pixel_ratio+'x.png?publishingCountry=US&year=2000,2030&style=fire.point',
+        wrapX: true
+      })
+    }));
 
-  var base_raster_style = 'gbif-dark';
-  layers.push(new ol.layer.Tile({
-    source: new ol.source.TileImage({
-      projection: 'EPSG:4326',
-      tileGrid: tile_grid_16,
-      tilePixelRatio: pixel_ratio,
-      url: 'https://tile.gbif.org/4326/omt/{z}/{x}/{y}@'+pixel_ratio+'x.png?style='+base_raster_style,
-      wrapX: true
-    })
-  }));
-
-  layers.push(new ol.layer.Tile({
-    source: new ol.source.TileImage({
-      projection: 'EPSG:4326',
-      tileGrid: tile_grid_16,
-      tilePixelRatio: pixel_ratio,
-      url: './occurrence/density/{z}/{x}/{y}@'+pixel_ratio+'x.png?srs=EPSG:4326&style=fire.point',
-      wrapX: true
-    })
-  }));
-
-  var map = new ol.Map({
-    layers: layers,
-    target: 'map',
-    view: new ol.View({
-      center: [0, 0],
-      projection: 'EPSG:4326',
-      zoom: 3
-    }),
-  });
-</script>
+    var map = new ol.Map({
+      layers: layers,
+      target: 'map',
+      view: new ol.View({
+        center: [0, 0],
+        zoom: 1
+      }),
+    });
+  </script>
 <script src="keepState.js"></script>
 </body>
 </html>
