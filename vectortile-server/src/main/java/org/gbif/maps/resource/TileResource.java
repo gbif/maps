@@ -129,106 +129,190 @@ import static org.gbif.maps.resource.Params.toMinMaxYear;
         "\n" +
         "Vector tiles must by styled by the client.\n" +
         "\n" +
-        "Raster styles are predefined, and chosen with the `style=` parameter.  All available styles are shown here:\n" +
-        "" +
-        "<ul style='display: flex; flex-wrap: wrap; align-items: center; justify-content: center; list-style-type: none'>\n" +
-        // Point styles
-        "  <li style='flex: 1 1 128px; width: 256px; text-align: center;'>\n" +
-        "    <code>classic.point</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=classic.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='classic.point'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>purpleYellow.point</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=purpleYellow.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='purpleYellow.point'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>green.point</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=green.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='green.point'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>purpleHeat.point</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=purpleHeat.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='purpleHeat.point'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>blueHeat.point</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=blueHeat.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='blueHeat.point'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>orangeHeat.point</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=orangeHeat.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='orangeHeat.point'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>greenHeat.point</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=greenHeat.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='greenHeat.point'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>fire.point</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=fire.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='fire.point'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>glacier.point</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=glacier.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='glacier.point'>\n" +
-        "  </li>\n" +
-        // Polygon styles
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>classic.poly</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=classic.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='classic.poly'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>classic-noborder.poly</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=classic-noborder.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='classic-noborder.poly'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>purpleYellow.poly</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=purpleYellow.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='purpleYellow.poly'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>purpleYellow-noborder.poly</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=purpleYellow-noborder.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='purpleYellow-noborder.poly'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>green.poly</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=green.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='green.poly'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>green-noborder.poly</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=green-noborder.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='green-noborder.poly'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>green2.poly</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=green2.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='green2.poly'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>iNaturalist.poly</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=iNaturalist.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='iNaturalist.poly'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>purpleWhite.poly</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=purpleWhite.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='purpleWhite.poly'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>red.poly</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=red.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='red.poly'>\n" +
-        "  </li>\n" +
-        // Marker styles
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>blue.marker</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=blue.marker&amp;srs=EPSG:4326&amp;taxonKey=797' title='blue.marker'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>orange.marker</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=orange.marker&amp;srs=EPSG:4326&amp;taxonKey=797' title='orange.marker'>\n" +
-        "  </li>\n" +
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>outline.poly</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=outline.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='outline.poly'>\n" +
-        "  </li>\n" +
-        // Geo-centroid style
-        "  <li style='flex: 1 1 128px;width: 256px; text-align: center;'>\n" +
-        "    <code>scaled.circles</code>\n" +
-        "    <img src='https://api.gbif.org/v2/map/occurrence/adhoc/0/0/0@Hx.png?mode=GEO_CENTROID&amp;style=scaled.circles&amp;srs=EPSG:4326&amp;taxonKey=797' title='scaled.circles'>\n" +
-        "  </li>\n" +
-        "</ul>\n" +
+        "Raster styles are predefined, and chosen with the `style=` parameter.  All available styles are shown below. " +
+        "Note the styles labelled “approimate” are not intended for precise analysis.\n" +
+        "\n" +
+        "<table style='text-align: center; border-collapse: collapse;'>\n" +
+        "  <tr>\n" +
+        "    <th colspan='2'>Style</th>\n" +
+        "    <th colspan='10'>Record count</th>\n" +
+        "  </tr>\n" +
+        "  <tr>\n" +
+        "    <th></th>\n" +
+        "    <th></th>\n" +
+        "    <td colspan='2' width='14%'>1–10</td>\n" +
+        "    <td colspan='2' width='14%'>11–100</td>\n" +
+        "    <td colspan='2' width='14%'>101–1000</td>\n" +
+        "    <td colspan='2' width='14%'>1001–10000</td>\n" +
+        "    <td width='14%'>10001–100000</td>\n" +
+        "    <td width='14%'>100001+</td>\n" +
+        "  </tr>\n" +
+        "\n" +
+        "  <tr>\n" +
+        "    <th rowspan='3'>Classic</th>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=classic.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='classic.point' width='128'><br>classic.point</td>\n" +
+        "    <td colspan='2' rowspan='3' style='background-color:#FFFF00'></td>\n" +
+        "    <td colspan='2' rowspan='3' style='background-color:#FFCC00'></td>\n" +
+        "    <td colspan='2' rowspan='3' style='background-color:#FF9900'></td>\n" +
+        "    <td colspan='2' rowspan='3' style='background-color:#FF6600'></td>\n" +
+        "    <td colspan='2' rowspan='3' style='background-color:#D60A00'></td>\n" +
+        "  </tr>\n" +
+        "  <tr>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=classic.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='classic.point' width='128'><br>classic.poly</td>\n" +
+        "  </tr>\n" +
+        "  <tr>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=classic-noborder.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='classic-noborder.point' width='128'><br>classic-noborder.poly</td>\n" +
+        "  </tr>\n" +
+        "\n" +
+        "  <tr>\n" +
+        "    <th rowspan='3'>Purple-yellow</th>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=purpleYellow.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='purpleYellow.point' width='128'><br>purpleYellow.point</td>\n" +
+        "    <td rowspan='3' style='background-color:#5e0063'></td>\n" +
+        "    <td rowspan='3' style='background-color:#851362'></td>\n" +
+        "    <td rowspan='3' style='background-color:#a42e61'></td>\n" +
+        "    <td rowspan='3' style='background-color:#be4c60'></td>\n" +
+        "    <td rowspan='3' style='background-color:#d26b63'></td>\n" +
+        "    <td rowspan='3' style='background-color:#e28b6b'></td>\n" +
+        "    <td rowspan='3' style='background-color:#eeab79'></td>\n" +
+        "    <td rowspan='3' style='background-color:#f7cb8e'></td>\n" +
+        "    <td colspan='2' rowspan='3' style='background-color:#ffebaa'></td>\n" +
+        "  </tr>\n" +
+        "  <tr>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=purpleYellow.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='purpleYellow.point' width='128'><br>purpleYellow.poly</td>\n" +
+        "  </tr>\n" +
+        "  <tr>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=purpleYellow-noborder.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='purpleYellow-noborder.point' width='128'><br>purpleYellow-noborder.poly</td>\n" +
+        "  </tr>\n" +
+        "\n" +
+        "  <tr>\n" +
+        "    <th rowspan='3'>Green</th>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=green.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='green.point' width='128'><br>green.point</td>\n" +
+        "    <td rowspan='3' style='background-color:#4D7C40'></td>\n" +
+        "    <td rowspan='3' style='background-color:#608A50'></td>\n" +
+        "    <td rowspan='3' style='background-color:#70955E'></td>\n" +
+        "    <td rowspan='3' style='background-color:#85A36F'></td>\n" +
+        "    <td rowspan='3' style='background-color:#95AD7C'></td>\n" +
+        "    <td rowspan='3' style='background-color:#AABA8D'></td>\n" +
+        "    <td rowspan='3' style='background-color:#BAC599'></td>\n" +
+        "    <td rowspan='3' style='background-color:#CCD0A8'></td>\n" +
+        "    <td rowspan='3' style='background-color:#DFDCB7'></td>\n" +
+        "    <td rowspan='3' style='background-color:#EFE6C4'></td>\n" +
+        "  </tr>\n" +
+        "  <tr>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=green.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='green.point' width='128'><br>green.poly</td>\n" +
+        "  </tr>\n" +
+        "  <tr>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=green-noborder.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='green.point' width='128'><br>green-noborder.poly</td>\n" +
+        "  </tr>\n" +
+        "\n" +
+        "  <tr>\n" +
+        "    <th rowspan='4'>Heat</th>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=purpleHeat.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='purpleHeat.point' width='128'><br>purpleHeat.point</td>\n" +
+        "    <td colspan='10' style='background: linear-gradient(to right, #ff21ad, #ffacff);'>Approximate</td>\n" +
+        "  </tr>\n" +
+        "  <tr>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=blueHeat.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='blueHeat.point' width='128'><br>blueHeat.point</td>\n" +
+        "    <td colspan='10' style='background: linear-gradient(to right, #206EFF, #a9fcff);'>Approximate</td>\n" +
+        "  </tr>\n" +
+        "  <tr>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=orangeHeat.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='orangeHeat.point' width='128'><br>orangeHeat.point</td>\n" +
+        "    <td colspan='10' style='background: linear-gradient(to right, #C06719, #fffb90);'>Approximate</td>\n" +
+        "  </tr>\n" +
+        "  <tr>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=greenHeat.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='greenHeat.point' width='128'><br>greenHeat.point</td>\n" +
+        "    <td colspan='10' style='background: linear-gradient(to right, #369617, #daff88);'>Approximate</td>\n" +
+        "  </tr>\n" +
+        "\n" +
+        "  <tr>\n" +
+        "    <th>Fire</th>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=fire.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='fire.point' width='128'><br>fire.point</td>\n" +
+        "    <td colspan='10' style='background: linear-gradient(to right, #5E0700, #EF4712, #DC6902, #F09C00, #F2F7F0)'>Approximate</td>\n" +
+        "  </tr>\n" +
+        "\n" +
+        "  <tr>\n" +
+        "    <th>Glacier</th>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?style=glacier.point&amp;srs=EPSG:4326&amp;taxonKey=797' title='glacier.point' width='128'><br>glacier.point</td>\n" +
+        "    <td colspan='10' style='background: linear-gradient(to right, #045a8d, #2b8cbe, #74a9cf, #bdc9e1, #f1eef6)'>Approximate</td>\n" +
+        "  </tr>\n" +
+        "\n" +
+        "  <tr>\n" +
+        "    <th rowspan='2'>Green 2</th>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=green2.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='green2.point' width='128'><br>green2.poly</td>\n" +
+        "    <td colspan='2' rowspan='2' style='background-color:#edf8e9'></td>\n" +
+        "    <td colspan='2' rowspan='2' style='background-color:#bae4b3'></td>\n" +
+        "    <td colspan='2' rowspan='2' style='background-color:#74c476'></td>\n" +
+        "    <td colspan='2' rowspan='2' style='background-color:#31a354'></td>\n" +
+        "    <td colspan='2' rowspan='2' style='background-color:#006d2c'></td>\n" +
+        "  </tr>\n" +
+        "  <tr>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=green2-noborder.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='green2.point' width='128'><br>green2-noborder.poly</td>\n" +
+        "  </tr>\n" +
+        "\n" +
+        "  <tr>\n" +
+        "    <th>iNaturalist</th>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=iNaturalist.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='iNaturalist.point' width='128'><br>iNaturalist.poly</td>\n" +
+        "    <td colspan='2' style='background-color:#F7005A; opacity 0.9'></td>\n" +
+        "    <td colspan='2' style='background-color:#D50067; opacity 0.9'></td>\n" +
+        "    <td colspan='2' style='background-color:#B5006C; opacity 0.9'></td>\n" +
+        "    <td colspan='2' style='background-color:#94006A; opacity 0.9'></td>\n" +
+        "    <td style='background-color:#72005F; opacity 0.9'></td>\n" +
+        "    <td style='background-color:#52034E; opacity 0.9'></td>\n" +
+        "  </tr>\n" +
+        "\n" +
+        "  <tr>\n" +
+        "    <th>Purple-white</th>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=purpleWhite.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='purpleWhite.point' width='128'><br>purpleWhite.poly</td>\n" +
+        "    <td style='background-color:#a000a0'></td>\n" +
+        "    <td style='background-color:#ab1fab'></td>\n" +
+        "    <td style='background-color:#b73fb7'></td>\n" +
+        "    <td style='background-color:#c35fc3'></td>\n" +
+        "    <td style='background-color:#cf7fcf'></td>\n" +
+        "    <td style='background-color:#db9fdb'></td>\n" +
+        "    <td style='background-color:#e7bfe7'></td>\n" +
+        "    <td style='background-color:#f3dff3'></td>\n" +
+        "    <td colspan='2' style='background-color:#ffffff'></td>\n" +
+        "  </tr>\n" +
+        "\n" +
+        "  <tr>\n" +
+        "    <th>Red</th>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=red.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='red.point' width='128'><br>red.poly</td>\n" +
+        "    <td colspan='10' style='background-color:#cc0000'></td>\n" +
+        "  </tr>\n" +
+        "\n" +
+        "  <tr>\n" +
+        "    <th rowspan='3'>Marker</th>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=blue.marker&amp;srs=EPSG:4326&amp;taxonKey=797' title='blue.marker' width='128'><br>blue.marker</td>\n" +
+        "    <td colspan='2' style='background: radial-gradient(circle, #209fffa7  4px, white  4px);'></td>\n" +
+        "    <td colspan='2' style='background: radial-gradient(circle, #209fffa7  8px, white  8px);'></td>\n" +
+        "    <td colspan='2' style='background: radial-gradient(circle, #209fffa7 12px, white 12px);'></td>\n" +
+        "    <td colspan='2' style='background: radial-gradient(circle, #209fffa7 14px, white 14px);'></td>\n" +
+        "    <td style='background: radial-gradient(circle, #209fffa7 16px, white 16px);'></td>\n" +
+        "    <td style='background: radial-gradient(circle, #209fffa7 25px, white 25px);'></td>\n" +
+        "  </tr>\n" +
+        "  <tr>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=orange.marker&amp;srs=EPSG:4326&amp;taxonKey=797' title='orange.marker' width='128'><br>orange.marker</td>\n" +
+        "    <td colspan='2' style='background: radial-gradient(circle, #FF6347CD  4px, white  4px);'></td>\n" +
+        "    <td colspan='2' style='background: radial-gradient(circle, #FF6347CD  8px, white  8px);'></td>\n" +
+        "    <td colspan='2' style='background: radial-gradient(circle, #FF6347CD 12px, white 12px);'></td>\n" +
+        "    <td colspan='2' style='background: radial-gradient(circle, #FF6347CD 14px, white 14px);'></td>\n" +
+        "    <td style='background: radial-gradient(circle, #FF6347CD 16px, white 16px);'></td>\n" +
+        "    <td style='background: radial-gradient(circle, #FF6347CD 25px, white 25px);'></td>\n" +
+        "  </tr>\n" +
+        "  <tr>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=outline.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='outline.poly' width='128'><br>outline.poly</td>\n" +
+        "    <td colspan='10' style='background: radial-gradient(circle, white 15px, #7b7b7bcd 16px, white 17px);'></td>\n" +
+        "  </tr>\n" +
+        "\n" +
+        "  <tr>\n" +
+        "    <th rowspan='3'>Geo-centroid</th>\n" +
+        "    <td><img src='https://api.gbif.org/v2/map/occurrence/adhoc/0/0/0@Hx.png?mode=GEO_CENTROID&amp;style=scaled.circles&amp;srs=EPSG:4326&amp;taxonKey=797' title='scaled.circles' width='128'><br>scaled.circles</td>\n" +
+        "    <td colspan='2' style='background: radial-gradient(circle, #fed976ff  6px, white  6px);'></td>\n" +
+        "    <td colspan='2' style='background: radial-gradient(circle, #fd8d3ccd  7px, white  7px);'></td>\n" +
+        "    <td colspan='2' style='background: radial-gradient(circle, #fd8d3cb3 10px, white 10px);'></td>\n" +
+        "    <td colspan='2' style='background: radial-gradient(circle, #f03b2099 16px, white 16px);'></td>\n" +
+        "    <td colspan='3' style='background: radial-gradient(circle, #bd002699 30px, white 30px);'></td>\n" +
+        "  </tr>\n" +
+        "</table>\n" +
         "\n" +
         "## Example queries\n" +
         "\n" +
