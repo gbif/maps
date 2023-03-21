@@ -89,7 +89,7 @@ function updateBaseLayer() {
 
   baseLayerGroup.getLayers().clear();
   baseLayerGroup.getLayers().extend([l]);
-  //console.log('layers', map.getLayers());
+  //console.log('New baselayer', l, base_url_template.value);
 }
 
 function updateDataLayer() {
