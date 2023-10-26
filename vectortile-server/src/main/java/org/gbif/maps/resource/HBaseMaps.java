@@ -186,12 +186,13 @@ public class HBaseMaps {
 
   Optional<String> getTileDate() {
     try {
-      return Optional.of(metastore.read().getTileTableDate());
+      String date = metastore.read().getTileTableDate();
+      return date != null ? Optional.of(date) : Optional.empty();
     } catch (Exception e) {
-      // there is nothing the caller can do.  Swallow this here, logging the error
-      LOG.error("Unexpected error loading tile data from HBase.  Returning no tile.", e);
-      return Optional.empty();
+      // Unable to read from ZK or the metastore is not configured
+      LOG.error("Unable to read the tile table date from ZK", e);
     }
+    return Optional.empty();
   }
 
   /**
@@ -210,12 +211,13 @@ public class HBaseMaps {
 
   Optional<String> getPointsDate() {
     try {
-      return Optional.of(metastore.read().getPointTableDate());
+      String date = metastore.read().getPointTableDate();
+      return date != null ? Optional.of(date) : Optional.empty();
     } catch (Exception e) {
-      // there is nothing the caller can do.  Swallow this here, logging the error
-      LOG.error("Unexpected error loading tile data from HBase.  Returning no tile.", e);
-      return Optional.empty();
+      // Unable to read from ZK or the metastore is not configured
+      LOG.error("Unable to read the point table date from ZK", e);
     }
+    return Optional.empty();
   }
 
   /**

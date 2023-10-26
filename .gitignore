@@ -9,5 +9,7 @@
 **/dependency-reduced-pom.xml
 **/*.log
 
+vectortile-server/local.yml
+
 **/node_modules/
 **/.vagrant

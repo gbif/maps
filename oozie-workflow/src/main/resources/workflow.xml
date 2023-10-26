@@ -60,8 +60,8 @@
       </configuration>
       <master>yarn-cluster</master>
       <name>Map processing [${wf:conf("gbif.map.mode")}]</name>
-      <class>org.gbif.maps.spark.Backfill</class>
-      <jar>lib/spark-process.jar</jar>
+      <class>org.gbif.maps.workflow.Backfill</class>
+      <jar>lib/spark-generate.jar</jar>
       <!-- Following enabling static service pools (cgroups) we found the native libraries would not load. The only way we found to pass this through was using extraLibraryPath -->
       <spark-opts>${wf:conf("gbif.map.spark.opts")} --conf spark.executor.extraLibraryPath=/opt/cloudera/parcels/CDH/lib/hadoop/lib/native</spark-opts>
       <arg>${wf:conf("gbif.map.mode")}</arg>
