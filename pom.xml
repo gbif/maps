@@ -30,7 +30,7 @@
   </distributionManagement>
 
   <properties>
-    <jdkLevel>17</jdkLevel>
+    <jdkLevel>11</jdkLevel>
     <gbif-occurrence.version>0.194.0-SNAPSHOT</gbif-occurrence.version>
     <gbif-api.version>1.13.0-SNAPSHOT</gbif-api.version>
     <gbif-common.ws.version>1.25</gbif-common.ws.version>
