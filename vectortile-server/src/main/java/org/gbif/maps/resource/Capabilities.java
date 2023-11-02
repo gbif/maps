@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import com.carrotsearch.hppc.IntHashSet;
 import com.google.common.annotations.VisibleForTesting;
-import com.vividsolutions.jts.geom.Point;
+import org.locationtech.jts.geom.Point;
 
 import no.ecc.vectortile.VectorTileDecoder;
 

@@ -83,7 +83,6 @@ public class Backfill {
               .sourceDir(snapshotSource)
               .hiveDB(config.getHiveDB())
               .hiveInputSuffix(mode.toLowerCase())
-              .zkQuorum(config.getHbase().getZkQuorum())
               .hbaseTable(config.getHbase().getTableName())
               .targetDir(config.getTargetDirectory())
               .modulo(config.getHbase().getKeySaltModulus())

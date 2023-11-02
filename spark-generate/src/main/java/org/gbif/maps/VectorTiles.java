@@ -21,10 +21,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.spark.sql.Row;
-
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.Point;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 
 import lombok.AllArgsConstructor;
 import no.ecc.vectortile.VectorTileEncoder;

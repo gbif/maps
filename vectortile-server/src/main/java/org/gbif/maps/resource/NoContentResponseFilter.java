@@ -14,7 +14,7 @@
 package org.gbif.maps.resource;
 
 
-import org.mortbay.jetty.Response;
+import javax.servlet.http.HttpServletResponse;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -47,7 +47,7 @@ public class NoContentResponseFilter implements ResponseBodyAdvice<Object> {
     ServerHttpRequest request,
     ServerHttpResponse response
   ) {
-    if (((ServletServerHttpResponse)response).getServletResponse().getStatus() == Response.SC_OK &&
+    if (((ServletServerHttpResponse)response).getServletResponse().getStatus() == HttpServletResponse.SC_OK &&
         body != null && ((byte[])body).length == 0) {
       response.setStatusCode(HttpStatus.NO_CONTENT);
     }

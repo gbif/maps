@@ -26,7 +26,7 @@ import javax.imageio.ImageIO;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
-import com.vividsolutions.jts.geom.Point;
+import org.locationtech.jts.geom.Point;
 
 import no.ecc.vectortile.VectorTileDecoder;
 

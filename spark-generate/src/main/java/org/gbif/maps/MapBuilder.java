@@ -24,11 +24,8 @@ import java.util.stream.Collectors;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat2;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.SnappyCodec;
-import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -40,7 +37,6 @@ import lombok.Builder;
 public class MapBuilder implements Serializable {
   private final String sourceDir;
   private final String hiveDB;
-  private final String zkQuorum;
   private final String hiveInputSuffix;
   private final String hbaseTable;
   private final int modulo;
@@ -60,7 +56,6 @@ public class MapBuilder implements Serializable {
         MapBuilder.builder()
             .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
             .hiveDB("tim")
-            .zkQuorum("c5zk1.gbif.org:2181,c5zk2.gbif.org:2181,c5zk3.gbif.org:2181")
             .hbaseTable("tim")
             .modulo(100)
             .threshold(250000)
@@ -74,7 +69,6 @@ public class MapBuilder implements Serializable {
         MapBuilder.builder()
             .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
             .hiveDB("tim")
-            .zkQuorum("c5zk1.gbif.org:2181,c5zk2.gbif.org:2181,c5zk3.gbif.org:2181")
             .hbaseTable("tim")
             .modulo(100)
             .threshold(250000)
@@ -211,12 +205,9 @@ public class MapBuilder implements Serializable {
   /** Creates the Hadoop configuration suitable for writing HFiles */
   private Configuration hadoopConf() throws IOException {
     Configuration conf = HBaseConfiguration.create();
-    conf.set("hbase.zookeeper.quorum", zkQuorum);
     conf.set(FileOutputFormat.COMPRESS, "true");
     conf.setClass(FileOutputFormat.COMPRESS_CODEC, SnappyCodec.class, CompressionCodec.class);
-    Job job = new Job(conf, "Map tile build"); // name not actually used
-    HTable table = new HTable(conf, hbaseTable);
-    HFileOutputFormat2.configureIncrementalLoad(job, table);
-    return job.getConfiguration(); // job created a copy of the conf
+    conf.set("hbase.mapreduce.hfileoutputformat.table.name", hbaseTable);
+    return conf;
   }
 }

@@ -8,10 +8,10 @@ public final class PointFeature {
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistryLite registry) {
   }
-  public interface PointFeaturesOrBuilder
-      extends com.google.protobuf.MessageLiteOrBuilder {
+  public interface PointFeaturesOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:org.gbif.maps.io.PointFeatures)
+      com.google.protobuf.MessageLiteOrBuilder {
 
-    // repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;
     /**
      * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
      */
@@ -27,94 +27,25 @@ public final class PointFeature {
     int getFeaturesCount();
   }
   /**
-   * Protobuf type {@code org.gbif.maps.io.PointFeatures}
-   *
    * <pre>
    **
    * A basic point feature that holds a latitude, longitude, basisOfRecord, year and the count.
    * </pre>
+   *
+   * Protobuf type {@code org.gbif.maps.io.PointFeatures}
    */
-  public static final class PointFeatures extends
-      com.google.protobuf.GeneratedMessageLite
-      implements PointFeaturesOrBuilder {
-    // Use PointFeatures.newBuilder() to construct.
-    private PointFeatures(com.google.protobuf.GeneratedMessageLite.Builder builder) {
-      super(builder);
-
+  public  static final class PointFeatures extends
+      com.google.protobuf.GeneratedMessageLite<
+          PointFeatures, PointFeatures.Builder> implements
+      // @@protoc_insertion_point(message_implements:org.gbif.maps.io.PointFeatures)
+      PointFeaturesOrBuilder {
+    private PointFeatures() {
+      features_ = emptyProtobufList();
     }
-    private PointFeatures(boolean noInit) {}
+    public interface FeatureOrBuilder extends
+        // @@protoc_insertion_point(interface_extends:org.gbif.maps.io.PointFeatures.Feature)
+        com.google.protobuf.MessageLiteOrBuilder {
 
-    private static final PointFeatures defaultInstance;
-    public static PointFeatures getDefaultInstance() {
-      return defaultInstance;
-    }
-
-    public PointFeatures getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-
-    private PointFeatures(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      initFields();
-      int mutable_bitField0_ = 0;
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            default: {
-              if (!parseUnknownField(input,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-            case 10: {
-              if (!((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
-                features_ = new java.util.ArrayList<org.gbif.maps.io.PointFeature.PointFeatures.Feature>();
-                mutable_bitField0_ |= 0x00000001;
-              }
-              features_.add(input.readMessage(org.gbif.maps.io.PointFeature.PointFeatures.Feature.PARSER, extensionRegistry));
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e.getMessage()).setUnfinishedMessage(this);
-      } finally {
-        if (((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
-          features_ = java.util.Collections.unmodifiableList(features_);
-        }
-        makeExtensionsImmutable();
-      }
-    }
-    public static com.google.protobuf.Parser<PointFeatures> PARSER =
-        new com.google.protobuf.AbstractParser<PointFeatures>() {
-      public PointFeatures parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new PointFeatures(input, extensionRegistry);
-      }
-    };
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<PointFeatures> getParserForType() {
-      return PARSER;
-    }
-
-    public interface FeatureOrBuilder
-        extends com.google.protobuf.MessageLiteOrBuilder {
-
-      // required double latitude = 1;
       /**
        * <code>required double latitude = 1;</code>
        */
@@ -124,7 +55,6 @@ public final class PointFeature {
        */
       double getLatitude();
 
-      // required double longitude = 2;
       /**
        * <code>required double longitude = 2;</code>
        */
@@ -134,7 +64,6 @@ public final class PointFeature {
        */
       double getLongitude();
 
-      // required .org.gbif.maps.io.PointFeatures.Feature.BasisOfRecord basisOfRecord = 3;
       /**
        * <code>required .org.gbif.maps.io.PointFeatures.Feature.BasisOfRecord basisOfRecord = 3;</code>
        */
@@ -144,7 +73,6 @@ public final class PointFeature {
        */
       org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord getBasisOfRecord();
 
-      // optional uint32 year = 4 [default = 0];
       /**
        * <code>optional uint32 year = 4 [default = 0];</code>
        */
@@ -154,7 +82,6 @@ public final class PointFeature {
        */
       int getYear();
 
-      // optional uint32 count = 5 [default = 1];
       /**
        * <code>optional uint32 count = 5 [default = 1];</code>
        */
@@ -167,170 +94,83 @@ public final class PointFeature {
     /**
      * Protobuf type {@code org.gbif.maps.io.PointFeatures.Feature}
      */
-    public static final class Feature extends
-        com.google.protobuf.GeneratedMessageLite
-        implements FeatureOrBuilder {
-      // Use Feature.newBuilder() to construct.
-      private Feature(com.google.protobuf.GeneratedMessageLite.Builder builder) {
-        super(builder);
-
+    public  static final class Feature extends
+        com.google.protobuf.GeneratedMessageLite<
+            Feature, Feature.Builder> implements
+        // @@protoc_insertion_point(message_implements:org.gbif.maps.io.PointFeatures.Feature)
+        FeatureOrBuilder {
+      private Feature() {
+        count_ = 1;
       }
-      private Feature(boolean noInit) {}
-
-      private static final Feature defaultInstance;
-      public static Feature getDefaultInstance() {
-        return defaultInstance;
-      }
-
-      public Feature getDefaultInstanceForType() {
-        return defaultInstance;
-      }
-
-      private Feature(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        initFields();
-        int mutable_bitField0_ = 0;
-        try {
-          boolean done = false;
-          while (!done) {
-            int tag = input.readTag();
-            switch (tag) {
-              case 0:
-                done = true;
-                break;
-              default: {
-                if (!parseUnknownField(input,
-                                       extensionRegistry, tag)) {
-                  done = true;
-                }
-                break;
-              }
-              case 9: {
-                bitField0_ |= 0x00000001;
-                latitude_ = input.readDouble();
-                break;
-              }
-              case 17: {
-                bitField0_ |= 0x00000002;
-                longitude_ = input.readDouble();
-                break;
-              }
-              case 24: {
-                int rawValue = input.readEnum();
-                org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord value = org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord.valueOf(rawValue);
-                if (value != null) {
-                  bitField0_ |= 0x00000004;
-                  basisOfRecord_ = value;
-                }
-                break;
-              }
-              case 32: {
-                bitField0_ |= 0x00000008;
-                year_ = input.readUInt32();
-                break;
-              }
-              case 40: {
-                bitField0_ |= 0x00000010;
-                count_ = input.readUInt32();
-                break;
-              }
-            }
-          }
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          throw e.setUnfinishedMessage(this);
-        } catch (java.io.IOException e) {
-          throw new com.google.protobuf.InvalidProtocolBufferException(
-              e.getMessage()).setUnfinishedMessage(this);
-        } finally {
-          makeExtensionsImmutable();
-        }
-      }
-      public static com.google.protobuf.Parser<Feature> PARSER =
-          new com.google.protobuf.AbstractParser<Feature>() {
-        public Feature parsePartialFrom(
-            com.google.protobuf.CodedInputStream input,
-            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-            throws com.google.protobuf.InvalidProtocolBufferException {
-          return new Feature(input, extensionRegistry);
-        }
-      };
-
-      @java.lang.Override
-      public com.google.protobuf.Parser<Feature> getParserForType() {
-        return PARSER;
-      }
-
       /**
-       * Protobuf enum {@code org.gbif.maps.io.PointFeatures.Feature.BasisOfRecord}
-       *
        * <pre>
        * this should hold the same values that the GBIF API support for consistency
        * </pre>
+       *
+       * Protobuf enum {@code org.gbif.maps.io.PointFeatures.Feature.BasisOfRecord}
        */
       public enum BasisOfRecord
           implements com.google.protobuf.Internal.EnumLite {
         /**
-         * <code>UNKNOWN = 0;</code>
-         *
          * <pre>
          * Deprecated
          * </pre>
+         *
+         * <code>UNKNOWN = 0;</code>
          */
-        UNKNOWN(0, 0),
+        UNKNOWN(0),
         /**
          * <code>PRESERVED_SPECIMEN = 1;</code>
          */
-        PRESERVED_SPECIMEN(1, 1),
+        PRESERVED_SPECIMEN(1),
         /**
          * <code>FOSSIL_SPECIMEN = 2;</code>
          */
-        FOSSIL_SPECIMEN(2, 2),
+        FOSSIL_SPECIMEN(2),
         /**
          * <code>LIVING_SPECIMEN = 3;</code>
          */
-        LIVING_SPECIMEN(3, 3),
+        LIVING_SPECIMEN(3),
         /**
          * <code>OBSERVATION = 4;</code>
          */
-        OBSERVATION(4, 4),
+        OBSERVATION(4),
         /**
          * <code>HUMAN_OBSERVATION = 5;</code>
          */
-        HUMAN_OBSERVATION(5, 5),
+        HUMAN_OBSERVATION(5),
         /**
          * <code>MACHINE_OBSERVATION = 6;</code>
          */
-        MACHINE_OBSERVATION(6, 6),
+        MACHINE_OBSERVATION(6),
         /**
          * <code>MATERIAL_SAMPLE = 7;</code>
          */
-        MATERIAL_SAMPLE(7, 7),
+        MATERIAL_SAMPLE(7),
         /**
-         * <code>LITERATURE = 8;</code>
-         *
          * <pre>
          * Deprecated
          * </pre>
+         *
+         * <code>LITERATURE = 8;</code>
          */
-        LITERATURE(8, 8),
+        LITERATURE(8),
         /**
          * <code>OCCURRENCE = 9;</code>
          */
-        OCCURRENCE(9, 9),
+        OCCURRENCE(9),
         /**
          * <code>MATERIAL_CITATION = 10;</code>
          */
-        MATERIAL_CITATION(10, 10),
+        MATERIAL_CITATION(10),
         ;
 
         /**
-         * <code>UNKNOWN = 0;</code>
-         *
          * <pre>
          * Deprecated
          * </pre>
+         *
+         * <code>UNKNOWN = 0;</code>
          */
         public static final int UNKNOWN_VALUE = 0;
         /**
@@ -362,11 +202,11 @@ public final class PointFeature {
          */
         public static final int MATERIAL_SAMPLE_VALUE = 7;
         /**
-         * <code>LITERATURE = 8;</code>
-         *
          * <pre>
          * Deprecated
          * </pre>
+         *
+         * <code>LITERATURE = 8;</code>
          */
         public static final int LITERATURE_VALUE = 8;
         /**
@@ -379,9 +219,20 @@ public final class PointFeature {
         public static final int MATERIAL_CITATION_VALUE = 10;
 
 
-        public final int getNumber() { return value; }
+        @java.lang.Override
+        public final int getNumber() {
+          return value;
+        }
 
+        /**
+         * @deprecated Use {@link #forNumber(int)} instead.
+         */
+        @java.lang.Deprecated
         public static BasisOfRecord valueOf(int value) {
+          return forNumber(value);
+        }
+
+        public static BasisOfRecord forNumber(int value) {
           switch (value) {
             case 0: return UNKNOWN;
             case 1: return PRESERVED_SPECIMEN;
@@ -402,17 +253,18 @@ public final class PointFeature {
             internalGetValueMap() {
           return internalValueMap;
         }
-        private static com.google.protobuf.Internal.EnumLiteMap<BasisOfRecord>
-            internalValueMap =
+        private static final com.google.protobuf.Internal.EnumLiteMap<
+            BasisOfRecord> internalValueMap =
               new com.google.protobuf.Internal.EnumLiteMap<BasisOfRecord>() {
+                @java.lang.Override
                 public BasisOfRecord findValueByNumber(int number) {
-                  return BasisOfRecord.valueOf(number);
+                  return BasisOfRecord.forNumber(number);
                 }
               };
 
         private final int value;
 
-        private BasisOfRecord(int index, int value) {
+        private BasisOfRecord(int value) {
           this.value = value;
         }
 
@@ -420,117 +272,168 @@ public final class PointFeature {
       }
 
       private int bitField0_;
-      // required double latitude = 1;
       public static final int LATITUDE_FIELD_NUMBER = 1;
       private double latitude_;
       /**
        * <code>required double latitude = 1;</code>
        */
+      @java.lang.Override
       public boolean hasLatitude() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
        * <code>required double latitude = 1;</code>
        */
+      @java.lang.Override
       public double getLatitude() {
         return latitude_;
       }
+      /**
+       * <code>required double latitude = 1;</code>
+       */
+      private void setLatitude(double value) {
+        bitField0_ |= 0x00000001;
+        latitude_ = value;
+      }
+      /**
+       * <code>required double latitude = 1;</code>
+       */
+      private void clearLatitude() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        latitude_ = 0D;
+      }
 
-      // required double longitude = 2;
       public static final int LONGITUDE_FIELD_NUMBER = 2;
       private double longitude_;
       /**
        * <code>required double longitude = 2;</code>
        */
+      @java.lang.Override
       public boolean hasLongitude() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
        * <code>required double longitude = 2;</code>
        */
+      @java.lang.Override
       public double getLongitude() {
         return longitude_;
       }
+      /**
+       * <code>required double longitude = 2;</code>
+       */
+      private void setLongitude(double value) {
+        bitField0_ |= 0x00000002;
+        longitude_ = value;
+      }
+      /**
+       * <code>required double longitude = 2;</code>
+       */
+      private void clearLongitude() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        longitude_ = 0D;
+      }
 
-      // required .org.gbif.maps.io.PointFeatures.Feature.BasisOfRecord basisOfRecord = 3;
       public static final int BASISOFRECORD_FIELD_NUMBER = 3;
-      private org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord basisOfRecord_;
+      private int basisOfRecord_;
       /**
        * <code>required .org.gbif.maps.io.PointFeatures.Feature.BasisOfRecord basisOfRecord = 3;</code>
        */
+      @java.lang.Override
       public boolean hasBasisOfRecord() {
         return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       /**
        * <code>required .org.gbif.maps.io.PointFeatures.Feature.BasisOfRecord basisOfRecord = 3;</code>
        */
+      @java.lang.Override
       public org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord getBasisOfRecord() {
-        return basisOfRecord_;
+        org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord result = org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord.forNumber(basisOfRecord_);
+        return result == null ? org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN : result;
+      }
+      /**
+       * <code>required .org.gbif.maps.io.PointFeatures.Feature.BasisOfRecord basisOfRecord = 3;</code>
+       */
+      private void setBasisOfRecord(org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        bitField0_ |= 0x00000004;
+        basisOfRecord_ = value.getNumber();
+      }
+      /**
+       * <code>required .org.gbif.maps.io.PointFeatures.Feature.BasisOfRecord basisOfRecord = 3;</code>
+       */
+      private void clearBasisOfRecord() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        basisOfRecord_ = 0;
       }
 
-      // optional uint32 year = 4 [default = 0];
       public static final int YEAR_FIELD_NUMBER = 4;
       private int year_;
       /**
        * <code>optional uint32 year = 4 [default = 0];</code>
        */
+      @java.lang.Override
       public boolean hasYear() {
         return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
        * <code>optional uint32 year = 4 [default = 0];</code>
        */
+      @java.lang.Override
       public int getYear() {
         return year_;
       }
+      /**
+       * <code>optional uint32 year = 4 [default = 0];</code>
+       */
+      private void setYear(int value) {
+        bitField0_ |= 0x00000008;
+        year_ = value;
+      }
+      /**
+       * <code>optional uint32 year = 4 [default = 0];</code>
+       */
+      private void clearYear() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        year_ = 0;
+      }
 
-      // optional uint32 count = 5 [default = 1];
       public static final int COUNT_FIELD_NUMBER = 5;
       private int count_;
       /**
        * <code>optional uint32 count = 5 [default = 1];</code>
        */
+      @java.lang.Override
       public boolean hasCount() {
         return ((bitField0_ & 0x00000010) == 0x00000010);
       }
       /**
        * <code>optional uint32 count = 5 [default = 1];</code>
        */
+      @java.lang.Override
       public int getCount() {
         return count_;
       }
-
-      private void initFields() {
-        latitude_ = 0D;
-        longitude_ = 0D;
-        basisOfRecord_ = org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN;
-        year_ = 0;
+      /**
+       * <code>optional uint32 count = 5 [default = 1];</code>
+       */
+      private void setCount(int value) {
+        bitField0_ |= 0x00000010;
+        count_ = value;
+      }
+      /**
+       * <code>optional uint32 count = 5 [default = 1];</code>
+       */
+      private void clearCount() {
+        bitField0_ = (bitField0_ & ~0x00000010);
         count_ = 1;
       }
-      private byte memoizedIsInitialized = -1;
-      public final boolean isInitialized() {
-        byte isInitialized = memoizedIsInitialized;
-        if (isInitialized != -1) return isInitialized == 1;
 
-        if (!hasLatitude()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-        if (!hasLongitude()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-        if (!hasBasisOfRecord()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-        memoizedIsInitialized = 1;
-        return true;
-      }
-
+      @java.lang.Override
       public void writeTo(com.google.protobuf.CodedOutputStream output)
                           throws java.io.IOException {
-        getSerializedSize();
         if (((bitField0_ & 0x00000001) == 0x00000001)) {
           output.writeDouble(1, latitude_);
         }
@@ -538,7 +441,7 @@ public final class PointFeature {
           output.writeDouble(2, longitude_);
         }
         if (((bitField0_ & 0x00000004) == 0x00000004)) {
-          output.writeEnum(3, basisOfRecord_.getNumber());
+          output.writeEnum(3, basisOfRecord_);
         }
         if (((bitField0_ & 0x00000008) == 0x00000008)) {
           output.writeUInt32(4, year_);
@@ -546,9 +449,10 @@ public final class PointFeature {
         if (((bitField0_ & 0x00000010) == 0x00000010)) {
           output.writeUInt32(5, count_);
         }
+        unknownFields.writeTo(output);
       }
 
-      private int memoizedSerializedSize = -1;
+      @java.lang.Override
       public int getSerializedSize() {
         int size = memoizedSerializedSize;
         if (size != -1) return size;
@@ -564,7 +468,7 @@ public final class PointFeature {
         }
         if (((bitField0_ & 0x00000004) == 0x00000004)) {
           size += com.google.protobuf.CodedOutputStream
-            .computeEnumSize(3, basisOfRecord_.getNumber());
+            .computeEnumSize(3, basisOfRecord_);
         }
         if (((bitField0_ & 0x00000008) == 0x00000008)) {
           size += com.google.protobuf.CodedOutputStream
@@ -574,394 +478,438 @@ public final class PointFeature {
           size += com.google.protobuf.CodedOutputStream
             .computeUInt32Size(5, count_);
         }
+        size += unknownFields.getSerializedSize();
         memoizedSerializedSize = size;
         return size;
       }
 
-      private static final long serialVersionUID = 0L;
-      @java.lang.Override
-      protected java.lang.Object writeReplace()
-          throws java.io.ObjectStreamException {
-        return super.writeReplace();
+      public static org.gbif.maps.io.PointFeature.PointFeatures.Feature parseFrom(
+          java.nio.ByteBuffer data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return com.google.protobuf.GeneratedMessageLite.parseFrom(
+            DEFAULT_INSTANCE, data);
       }
-
+      public static org.gbif.maps.io.PointFeature.PointFeatures.Feature parseFrom(
+          java.nio.ByteBuffer data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return com.google.protobuf.GeneratedMessageLite.parseFrom(
+            DEFAULT_INSTANCE, data, extensionRegistry);
+      }
       public static org.gbif.maps.io.PointFeature.PointFeatures.Feature parseFrom(
           com.google.protobuf.ByteString data)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return PARSER.parseFrom(data);
+        return com.google.protobuf.GeneratedMessageLite.parseFrom(
+            DEFAULT_INSTANCE, data);
       }
       public static org.gbif.maps.io.PointFeature.PointFeatures.Feature parseFrom(
           com.google.protobuf.ByteString data,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return PARSER.parseFrom(data, extensionRegistry);
+        return com.google.protobuf.GeneratedMessageLite.parseFrom(
+            DEFAULT_INSTANCE, data, extensionRegistry);
       }
       public static org.gbif.maps.io.PointFeature.PointFeatures.Feature parseFrom(byte[] data)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return PARSER.parseFrom(data);
+        return com.google.protobuf.GeneratedMessageLite.parseFrom(
+            DEFAULT_INSTANCE, data);
       }
       public static org.gbif.maps.io.PointFeature.PointFeatures.Feature parseFrom(
           byte[] data,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return PARSER.parseFrom(data, extensionRegistry);
+        return com.google.protobuf.GeneratedMessageLite.parseFrom(
+            DEFAULT_INSTANCE, data, extensionRegistry);
       }
       public static org.gbif.maps.io.PointFeature.PointFeatures.Feature parseFrom(java.io.InputStream input)
           throws java.io.IOException {
-        return PARSER.parseFrom(input);
+        return com.google.protobuf.GeneratedMessageLite.parseFrom(
+            DEFAULT_INSTANCE, input);
       }
       public static org.gbif.maps.io.PointFeature.PointFeatures.Feature parseFrom(
           java.io.InputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        return PARSER.parseFrom(input, extensionRegistry);
+        return com.google.protobuf.GeneratedMessageLite.parseFrom(
+            DEFAULT_INSTANCE, input, extensionRegistry);
       }
       public static org.gbif.maps.io.PointFeature.PointFeatures.Feature parseDelimitedFrom(java.io.InputStream input)
           throws java.io.IOException {
-        return PARSER.parseDelimitedFrom(input);
+        return parseDelimitedFrom(DEFAULT_INSTANCE, input);
       }
       public static org.gbif.maps.io.PointFeature.PointFeatures.Feature parseDelimitedFrom(
           java.io.InputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        return PARSER.parseDelimitedFrom(input, extensionRegistry);
+        return parseDelimitedFrom(DEFAULT_INSTANCE, input, extensionRegistry);
       }
       public static org.gbif.maps.io.PointFeature.PointFeatures.Feature parseFrom(
           com.google.protobuf.CodedInputStream input)
           throws java.io.IOException {
-        return PARSER.parseFrom(input);
+        return com.google.protobuf.GeneratedMessageLite.parseFrom(
+            DEFAULT_INSTANCE, input);
       }
       public static org.gbif.maps.io.PointFeature.PointFeatures.Feature parseFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        return PARSER.parseFrom(input, extensionRegistry);
+        return com.google.protobuf.GeneratedMessageLite.parseFrom(
+            DEFAULT_INSTANCE, input, extensionRegistry);
       }
 
-      public static Builder newBuilder() { return Builder.create(); }
-      public Builder newBuilderForType() { return newBuilder(); }
-      public static Builder newBuilder(org.gbif.maps.io.PointFeature.PointFeatures.Feature prototype) {
-        return newBuilder().mergeFrom(prototype);
+      public static Builder newBuilder() {
+        return (Builder) DEFAULT_INSTANCE.createBuilder();
       }
-      public Builder toBuilder() { return newBuilder(this); }
+      public static Builder newBuilder(org.gbif.maps.io.PointFeature.PointFeatures.Feature prototype) {
+        return (Builder) DEFAULT_INSTANCE.createBuilder(prototype);
+      }
 
       /**
        * Protobuf type {@code org.gbif.maps.io.PointFeatures.Feature}
        */
       public static final class Builder extends
           com.google.protobuf.GeneratedMessageLite.Builder<
-            org.gbif.maps.io.PointFeature.PointFeatures.Feature, Builder>
-          implements org.gbif.maps.io.PointFeature.PointFeatures.FeatureOrBuilder {
+            org.gbif.maps.io.PointFeature.PointFeatures.Feature, Builder> implements
+          // @@protoc_insertion_point(builder_implements:org.gbif.maps.io.PointFeatures.Feature)
+          org.gbif.maps.io.PointFeature.PointFeatures.FeatureOrBuilder {
         // Construct using org.gbif.maps.io.PointFeature.PointFeatures.Feature.newBuilder()
         private Builder() {
-          maybeForceBuilderInitialization();
+          super(DEFAULT_INSTANCE);
         }
 
-        private void maybeForceBuilderInitialization() {
-        }
-        private static Builder create() {
-          return new Builder();
-        }
 
-        public Builder clear() {
-          super.clear();
-          latitude_ = 0D;
-          bitField0_ = (bitField0_ & ~0x00000001);
-          longitude_ = 0D;
-          bitField0_ = (bitField0_ & ~0x00000002);
-          basisOfRecord_ = org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN;
-          bitField0_ = (bitField0_ & ~0x00000004);
-          year_ = 0;
-          bitField0_ = (bitField0_ & ~0x00000008);
-          count_ = 1;
-          bitField0_ = (bitField0_ & ~0x00000010);
-          return this;
-        }
-
-        public Builder clone() {
-          return create().mergeFrom(buildPartial());
-        }
-
-        public org.gbif.maps.io.PointFeature.PointFeatures.Feature getDefaultInstanceForType() {
-          return org.gbif.maps.io.PointFeature.PointFeatures.Feature.getDefaultInstance();
-        }
-
-        public org.gbif.maps.io.PointFeature.PointFeatures.Feature build() {
-          org.gbif.maps.io.PointFeature.PointFeatures.Feature result = buildPartial();
-          if (!result.isInitialized()) {
-            throw newUninitializedMessageException(result);
-          }
-          return result;
-        }
-
-        public org.gbif.maps.io.PointFeature.PointFeatures.Feature buildPartial() {
-          org.gbif.maps.io.PointFeature.PointFeatures.Feature result = new org.gbif.maps.io.PointFeature.PointFeatures.Feature(this);
-          int from_bitField0_ = bitField0_;
-          int to_bitField0_ = 0;
-          if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
-            to_bitField0_ |= 0x00000001;
-          }
-          result.latitude_ = latitude_;
-          if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
-            to_bitField0_ |= 0x00000002;
-          }
-          result.longitude_ = longitude_;
-          if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
-            to_bitField0_ |= 0x00000004;
-          }
-          result.basisOfRecord_ = basisOfRecord_;
-          if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
-            to_bitField0_ |= 0x00000008;
-          }
-          result.year_ = year_;
-          if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
-            to_bitField0_ |= 0x00000010;
-          }
-          result.count_ = count_;
-          result.bitField0_ = to_bitField0_;
-          return result;
-        }
-
-        public Builder mergeFrom(org.gbif.maps.io.PointFeature.PointFeatures.Feature other) {
-          if (other == org.gbif.maps.io.PointFeature.PointFeatures.Feature.getDefaultInstance()) return this;
-          if (other.hasLatitude()) {
-            setLatitude(other.getLatitude());
-          }
-          if (other.hasLongitude()) {
-            setLongitude(other.getLongitude());
-          }
-          if (other.hasBasisOfRecord()) {
-            setBasisOfRecord(other.getBasisOfRecord());
-          }
-          if (other.hasYear()) {
-            setYear(other.getYear());
-          }
-          if (other.hasCount()) {
-            setCount(other.getCount());
-          }
-          return this;
-        }
-
-        public final boolean isInitialized() {
-          if (!hasLatitude()) {
-            
-            return false;
-          }
-          if (!hasLongitude()) {
-            
-            return false;
-          }
-          if (!hasBasisOfRecord()) {
-            
-            return false;
-          }
-          return true;
-        }
-
-        public Builder mergeFrom(
-            com.google.protobuf.CodedInputStream input,
-            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-            throws java.io.IOException {
-          org.gbif.maps.io.PointFeature.PointFeatures.Feature parsedMessage = null;
-          try {
-            parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-            parsedMessage = (org.gbif.maps.io.PointFeature.PointFeatures.Feature) e.getUnfinishedMessage();
-            throw e;
-          } finally {
-            if (parsedMessage != null) {
-              mergeFrom(parsedMessage);
-            }
-          }
-          return this;
-        }
-        private int bitField0_;
-
-        // required double latitude = 1;
-        private double latitude_ ;
         /**
          * <code>required double latitude = 1;</code>
          */
+        @java.lang.Override
         public boolean hasLatitude() {
-          return ((bitField0_ & 0x00000001) == 0x00000001);
+          return instance.hasLatitude();
         }
         /**
          * <code>required double latitude = 1;</code>
          */
+        @java.lang.Override
         public double getLatitude() {
-          return latitude_;
+          return instance.getLatitude();
         }
         /**
          * <code>required double latitude = 1;</code>
          */
         public Builder setLatitude(double value) {
-          bitField0_ |= 0x00000001;
-          latitude_ = value;
-          
+          copyOnWrite();
+          instance.setLatitude(value);
           return this;
         }
         /**
          * <code>required double latitude = 1;</code>
          */
         public Builder clearLatitude() {
-          bitField0_ = (bitField0_ & ~0x00000001);
-          latitude_ = 0D;
-          
+          copyOnWrite();
+          instance.clearLatitude();
           return this;
         }
 
-        // required double longitude = 2;
-        private double longitude_ ;
         /**
          * <code>required double longitude = 2;</code>
          */
+        @java.lang.Override
         public boolean hasLongitude() {
-          return ((bitField0_ & 0x00000002) == 0x00000002);
+          return instance.hasLongitude();
         }
         /**
          * <code>required double longitude = 2;</code>
          */
+        @java.lang.Override
         public double getLongitude() {
-          return longitude_;
+          return instance.getLongitude();
         }
         /**
          * <code>required double longitude = 2;</code>
          */
         public Builder setLongitude(double value) {
-          bitField0_ |= 0x00000002;
-          longitude_ = value;
-          
+          copyOnWrite();
+          instance.setLongitude(value);
           return this;
         }
         /**
          * <code>required double longitude = 2;</code>
          */
         public Builder clearLongitude() {
-          bitField0_ = (bitField0_ & ~0x00000002);
-          longitude_ = 0D;
-          
+          copyOnWrite();
+          instance.clearLongitude();
           return this;
         }
 
-        // required .org.gbif.maps.io.PointFeatures.Feature.BasisOfRecord basisOfRecord = 3;
-        private org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord basisOfRecord_ = org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN;
         /**
          * <code>required .org.gbif.maps.io.PointFeatures.Feature.BasisOfRecord basisOfRecord = 3;</code>
          */
+        @java.lang.Override
         public boolean hasBasisOfRecord() {
-          return ((bitField0_ & 0x00000004) == 0x00000004);
+          return instance.hasBasisOfRecord();
         }
         /**
          * <code>required .org.gbif.maps.io.PointFeatures.Feature.BasisOfRecord basisOfRecord = 3;</code>
          */
+        @java.lang.Override
         public org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord getBasisOfRecord() {
-          return basisOfRecord_;
+          return instance.getBasisOfRecord();
         }
         /**
          * <code>required .org.gbif.maps.io.PointFeatures.Feature.BasisOfRecord basisOfRecord = 3;</code>
          */
         public Builder setBasisOfRecord(org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord value) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          bitField0_ |= 0x00000004;
-          basisOfRecord_ = value;
-          
+          copyOnWrite();
+          instance.setBasisOfRecord(value);
           return this;
         }
         /**
          * <code>required .org.gbif.maps.io.PointFeatures.Feature.BasisOfRecord basisOfRecord = 3;</code>
          */
         public Builder clearBasisOfRecord() {
-          bitField0_ = (bitField0_ & ~0x00000004);
-          basisOfRecord_ = org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord.UNKNOWN;
-          
+          copyOnWrite();
+          instance.clearBasisOfRecord();
           return this;
         }
 
-        // optional uint32 year = 4 [default = 0];
-        private int year_ ;
         /**
          * <code>optional uint32 year = 4 [default = 0];</code>
          */
+        @java.lang.Override
         public boolean hasYear() {
-          return ((bitField0_ & 0x00000008) == 0x00000008);
+          return instance.hasYear();
         }
         /**
          * <code>optional uint32 year = 4 [default = 0];</code>
          */
+        @java.lang.Override
         public int getYear() {
-          return year_;
+          return instance.getYear();
         }
         /**
          * <code>optional uint32 year = 4 [default = 0];</code>
          */
         public Builder setYear(int value) {
-          bitField0_ |= 0x00000008;
-          year_ = value;
-          
+          copyOnWrite();
+          instance.setYear(value);
           return this;
         }
         /**
          * <code>optional uint32 year = 4 [default = 0];</code>
          */
         public Builder clearYear() {
-          bitField0_ = (bitField0_ & ~0x00000008);
-          year_ = 0;
-          
+          copyOnWrite();
+          instance.clearYear();
           return this;
         }
 
-        // optional uint32 count = 5 [default = 1];
-        private int count_ = 1;
         /**
          * <code>optional uint32 count = 5 [default = 1];</code>
          */
+        @java.lang.Override
         public boolean hasCount() {
-          return ((bitField0_ & 0x00000010) == 0x00000010);
+          return instance.hasCount();
         }
         /**
          * <code>optional uint32 count = 5 [default = 1];</code>
          */
+        @java.lang.Override
         public int getCount() {
-          return count_;
+          return instance.getCount();
         }
         /**
          * <code>optional uint32 count = 5 [default = 1];</code>
          */
         public Builder setCount(int value) {
-          bitField0_ |= 0x00000010;
-          count_ = value;
-          
+          copyOnWrite();
+          instance.setCount(value);
           return this;
         }
         /**
          * <code>optional uint32 count = 5 [default = 1];</code>
          */
         public Builder clearCount() {
-          bitField0_ = (bitField0_ & ~0x00000010);
-          count_ = 1;
-          
+          copyOnWrite();
+          instance.clearCount();
           return this;
         }
 
         // @@protoc_insertion_point(builder_scope:org.gbif.maps.io.PointFeatures.Feature)
       }
+      private byte memoizedIsInitialized = 2;
+      @java.lang.Override
+      @java.lang.SuppressWarnings({"unchecked", "fallthrough"})
+      protected final java.lang.Object dynamicMethod(
+          com.google.protobuf.GeneratedMessageLite.MethodToInvoke method,
+          java.lang.Object arg0, java.lang.Object arg1) {
+        switch (method) {
+          case NEW_MUTABLE_INSTANCE: {
+            return new org.gbif.maps.io.PointFeature.PointFeatures.Feature();
+          }
+          case NEW_BUILDER: {
+            return new Builder();
+          }
+          case IS_INITIALIZED: {
+            byte isInitialized = memoizedIsInitialized;
+            if (isInitialized == 1) return DEFAULT_INSTANCE;
+            if (isInitialized == 0) return null;
 
-      static {
-        defaultInstance = new Feature(true);
-        defaultInstance.initFields();
+            boolean shouldMemoize = ((Boolean) arg0).booleanValue();
+            if (!hasLatitude()) {
+              return null;
+            }
+            if (!hasLongitude()) {
+              return null;
+            }
+            if (!hasBasisOfRecord()) {
+              return null;
+            }
+            return DEFAULT_INSTANCE;
+
+          }
+          case MAKE_IMMUTABLE: {
+            return null;
+          }
+          case VISIT: {
+            Visitor visitor = (Visitor) arg0;
+            org.gbif.maps.io.PointFeature.PointFeatures.Feature other = (org.gbif.maps.io.PointFeature.PointFeatures.Feature) arg1;
+            latitude_ = visitor.visitDouble(
+                hasLatitude(), latitude_,
+                other.hasLatitude(), other.latitude_);
+            longitude_ = visitor.visitDouble(
+                hasLongitude(), longitude_,
+                other.hasLongitude(), other.longitude_);
+            basisOfRecord_ = visitor.visitInt(hasBasisOfRecord(), basisOfRecord_,
+                other.hasBasisOfRecord(), other.basisOfRecord_);
+            year_ = visitor.visitInt(
+                hasYear(), year_,
+                other.hasYear(), other.year_);
+            count_ = visitor.visitInt(
+                hasCount(), count_,
+                other.hasCount(), other.count_);
+            if (visitor == com.google.protobuf.GeneratedMessageLite.MergeFromVisitor
+                .INSTANCE) {
+              bitField0_ |= other.bitField0_;
+            }
+            return this;
+          }
+          case MERGE_FROM_STREAM: {
+            com.google.protobuf.CodedInputStream input =
+                (com.google.protobuf.CodedInputStream) arg0;
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry =
+                (com.google.protobuf.ExtensionRegistryLite) arg1;
+            if (extensionRegistry == null) {
+              throw new java.lang.NullPointerException();
+            }
+            try {
+              boolean done = false;
+              while (!done) {
+                int tag = input.readTag();
+                switch (tag) {
+                  case 0:
+                    done = true;
+                    break;
+                  case 9: {
+                    bitField0_ |= 0x00000001;
+                    latitude_ = input.readDouble();
+                    break;
+                  }
+                  case 17: {
+                    bitField0_ |= 0x00000002;
+                    longitude_ = input.readDouble();
+                    break;
+                  }
+                  case 24: {
+                    int rawValue = input.readEnum();
+                    org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord value = org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord.forNumber(rawValue);
+                    if (value == null) {
+                      super.mergeVarintField(3, rawValue);
+                    } else {
+                      bitField0_ |= 0x00000004;
+                      basisOfRecord_ = rawValue;
+                    }
+                    break;
+                  }
+                  case 32: {
+                    bitField0_ |= 0x00000008;
+                    year_ = input.readUInt32();
+                    break;
+                  }
+                  case 40: {
+                    bitField0_ |= 0x00000010;
+                    count_ = input.readUInt32();
+                    break;
+                  }
+                  default: {
+                    if (!parseUnknownField(tag, input)) {
+                      done = true;
+                    }
+                    break;
+                  }
+                }
+              }
+            } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+              throw new RuntimeException(e.setUnfinishedMessage(this));
+            } catch (java.io.IOException e) {
+              throw new RuntimeException(
+                  new com.google.protobuf.InvalidProtocolBufferException(
+                      e.getMessage()).setUnfinishedMessage(this));
+            } finally {
+            }
+          }
+          // fall through
+          case GET_DEFAULT_INSTANCE: {
+            return DEFAULT_INSTANCE;
+          }
+          case GET_PARSER: {
+            com.google.protobuf.Parser<org.gbif.maps.io.PointFeature.PointFeatures.Feature> parser = PARSER;
+            if (parser == null) {
+              synchronized (org.gbif.maps.io.PointFeature.PointFeatures.Feature.class) {
+                parser = PARSER;
+                if (parser == null) {
+                  parser = new DefaultInstanceBasedParser(DEFAULT_INSTANCE);
+                  PARSER = parser;
+                }
+              }
+            }
+            return parser;
+        }
+        case GET_MEMOIZED_IS_INITIALIZED: {
+          return memoizedIsInitialized;
+        }
+        case SET_MEMOIZED_IS_INITIALIZED: {
+          memoizedIsInitialized = (byte) (arg0 == null ? 0 : 1);
+          return null;
+        }
+        }
+        throw new UnsupportedOperationException();
       }
 
+
       // @@protoc_insertion_point(class_scope:org.gbif.maps.io.PointFeatures.Feature)
+      private static final org.gbif.maps.io.PointFeature.PointFeatures.Feature DEFAULT_INSTANCE;
+      static {
+        // New instances are implicitly immutable so no need to make
+        // immutable.
+        DEFAULT_INSTANCE = new Feature();
+      }
+
+      public static org.gbif.maps.io.PointFeature.PointFeatures.Feature getDefaultInstance() {
+        return DEFAULT_INSTANCE;
+      }
+
+      private static volatile com.google.protobuf.Parser<Feature> PARSER;
+
+      public static com.google.protobuf.Parser<Feature> parser() {
+        return DEFAULT_INSTANCE.getParserForType();
+      }
     }
 
-    // repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;
     public static final int FEATURES_FIELD_NUMBER = 1;
-    private java.util.List<org.gbif.maps.io.PointFeature.PointFeatures.Feature> features_;
+    private com.google.protobuf.Internal.ProtobufList<org.gbif.maps.io.PointFeature.PointFeatures.Feature> features_;
     /**
      * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
      */
+    @java.lang.Override
     public java.util.List<org.gbif.maps.io.PointFeature.PointFeatures.Feature> getFeaturesList() {
       return features_;
     }
@@ -975,12 +923,14 @@ public final class PointFeature {
     /**
      * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
      */
+    @java.lang.Override
     public int getFeaturesCount() {
       return features_.size();
     }
     /**
      * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
      */
+    @java.lang.Override
     public org.gbif.maps.io.PointFeature.PointFeatures.Feature getFeatures(int index) {
       return features_.get(index);
     }
@@ -991,34 +941,102 @@ public final class PointFeature {
         int index) {
       return features_.get(index);
     }
-
-    private void initFields() {
-      features_ = java.util.Collections.emptyList();
+    private void ensureFeaturesIsMutable() {
+      if (!features_.isModifiable()) {
+        features_ =
+            com.google.protobuf.GeneratedMessageLite.mutableCopy(features_);
+       }
     }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
 
-      for (int i = 0; i < getFeaturesCount(); i++) {
-        if (!getFeatures(i).isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
+    /**
+     * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
+     */
+    private void setFeatures(
+        int index, org.gbif.maps.io.PointFeature.PointFeatures.Feature value) {
+      if (value == null) {
+        throw new NullPointerException();
       }
-      memoizedIsInitialized = 1;
-      return true;
+      ensureFeaturesIsMutable();
+      features_.set(index, value);
+    }
+    /**
+     * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
+     */
+    private void setFeatures(
+        int index, org.gbif.maps.io.PointFeature.PointFeatures.Feature.Builder builderForValue) {
+      ensureFeaturesIsMutable();
+      features_.set(index, builderForValue.build());
+    }
+    /**
+     * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
+     */
+    private void addFeatures(org.gbif.maps.io.PointFeature.PointFeatures.Feature value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      ensureFeaturesIsMutable();
+      features_.add(value);
+    }
+    /**
+     * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
+     */
+    private void addFeatures(
+        int index, org.gbif.maps.io.PointFeature.PointFeatures.Feature value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      ensureFeaturesIsMutable();
+      features_.add(index, value);
+    }
+    /**
+     * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
+     */
+    private void addFeatures(
+        org.gbif.maps.io.PointFeature.PointFeatures.Feature.Builder builderForValue) {
+      ensureFeaturesIsMutable();
+      features_.add(builderForValue.build());
+    }
+    /**
+     * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
+     */
+    private void addFeatures(
+        int index, org.gbif.maps.io.PointFeature.PointFeatures.Feature.Builder builderForValue) {
+      ensureFeaturesIsMutable();
+      features_.add(index, builderForValue.build());
+    }
+    /**
+     * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
+     */
+    private void addAllFeatures(
+        java.lang.Iterable<? extends org.gbif.maps.io.PointFeature.PointFeatures.Feature> values) {
+      ensureFeaturesIsMutable();
+      com.google.protobuf.AbstractMessageLite.addAll(
+          values, features_);
+    }
+    /**
+     * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
+     */
+    private void clearFeatures() {
+      features_ = emptyProtobufList();
+    }
+    /**
+     * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
+     */
+    private void removeFeatures(int index) {
+      ensureFeaturesIsMutable();
+      features_.remove(index);
     }
 
+    @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      getSerializedSize();
       for (int i = 0; i < features_.size(); i++) {
         output.writeMessage(1, features_.get(i));
       }
+      unknownFields.writeTo(output);
     }
 
-    private int memoizedSerializedSize = -1;
+    @java.lang.Override
     public int getSerializedSize() {
       int size = memoizedSerializedSize;
       if (size != -1) return size;
@@ -1028,217 +1046,139 @@ public final class PointFeature {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(1, features_.get(i));
       }
+      size += unknownFields.getSerializedSize();
       memoizedSerializedSize = size;
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
+    public static org.gbif.maps.io.PointFeature.PointFeatures parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
     }
-
+    public static org.gbif.maps.io.PointFeature.PointFeatures parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
+    }
     public static org.gbif.maps.io.PointFeature.PointFeatures parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
     }
     public static org.gbif.maps.io.PointFeature.PointFeatures parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
     }
     public static org.gbif.maps.io.PointFeature.PointFeatures parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data);
     }
     public static org.gbif.maps.io.PointFeature.PointFeatures parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, data, extensionRegistry);
     }
     public static org.gbif.maps.io.PointFeature.PointFeatures parseFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return PARSER.parseFrom(input);
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input);
     }
     public static org.gbif.maps.io.PointFeature.PointFeatures parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input, extensionRegistry);
     }
     public static org.gbif.maps.io.PointFeature.PointFeatures parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input);
+      return parseDelimitedFrom(DEFAULT_INSTANCE, input);
     }
     public static org.gbif.maps.io.PointFeature.PointFeatures parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+      return parseDelimitedFrom(DEFAULT_INSTANCE, input, extensionRegistry);
     }
     public static org.gbif.maps.io.PointFeature.PointFeatures parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
-      return PARSER.parseFrom(input);
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input);
     }
     public static org.gbif.maps.io.PointFeature.PointFeatures parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageLite.parseFrom(
+          DEFAULT_INSTANCE, input, extensionRegistry);
     }
 
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(org.gbif.maps.io.PointFeature.PointFeatures prototype) {
-      return newBuilder().mergeFrom(prototype);
+    public static Builder newBuilder() {
+      return (Builder) DEFAULT_INSTANCE.createBuilder();
     }
-    public Builder toBuilder() { return newBuilder(this); }
+    public static Builder newBuilder(org.gbif.maps.io.PointFeature.PointFeatures prototype) {
+      return (Builder) DEFAULT_INSTANCE.createBuilder(prototype);
+    }
 
     /**
-     * Protobuf type {@code org.gbif.maps.io.PointFeatures}
-     *
      * <pre>
      **
      * A basic point feature that holds a latitude, longitude, basisOfRecord, year and the count.
      * </pre>
+     *
+     * Protobuf type {@code org.gbif.maps.io.PointFeatures}
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessageLite.Builder<
-          org.gbif.maps.io.PointFeature.PointFeatures, Builder>
-        implements org.gbif.maps.io.PointFeature.PointFeaturesOrBuilder {
+          org.gbif.maps.io.PointFeature.PointFeatures, Builder> implements
+        // @@protoc_insertion_point(builder_implements:org.gbif.maps.io.PointFeatures)
+        org.gbif.maps.io.PointFeature.PointFeaturesOrBuilder {
       // Construct using org.gbif.maps.io.PointFeature.PointFeatures.newBuilder()
       private Builder() {
-        maybeForceBuilderInitialization();
+        super(DEFAULT_INSTANCE);
       }
 
-      private void maybeForceBuilderInitialization() {
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-
-      public Builder clear() {
-        super.clear();
-        features_ = java.util.Collections.emptyList();
-        bitField0_ = (bitField0_ & ~0x00000001);
-        return this;
-      }
-
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-
-      public org.gbif.maps.io.PointFeature.PointFeatures getDefaultInstanceForType() {
-        return org.gbif.maps.io.PointFeature.PointFeatures.getDefaultInstance();
-      }
-
-      public org.gbif.maps.io.PointFeature.PointFeatures build() {
-        org.gbif.maps.io.PointFeature.PointFeatures result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      public org.gbif.maps.io.PointFeature.PointFeatures buildPartial() {
-        org.gbif.maps.io.PointFeature.PointFeatures result = new org.gbif.maps.io.PointFeature.PointFeatures(this);
-        int from_bitField0_ = bitField0_;
-        if (((bitField0_ & 0x00000001) == 0x00000001)) {
-          features_ = java.util.Collections.unmodifiableList(features_);
-          bitField0_ = (bitField0_ & ~0x00000001);
-        }
-        result.features_ = features_;
-        return result;
-      }
-
-      public Builder mergeFrom(org.gbif.maps.io.PointFeature.PointFeatures other) {
-        if (other == org.gbif.maps.io.PointFeature.PointFeatures.getDefaultInstance()) return this;
-        if (!other.features_.isEmpty()) {
-          if (features_.isEmpty()) {
-            features_ = other.features_;
-            bitField0_ = (bitField0_ & ~0x00000001);
-          } else {
-            ensureFeaturesIsMutable();
-            features_.addAll(other.features_);
-          }
-          
-        }
-        return this;
-      }
-
-      public final boolean isInitialized() {
-        for (int i = 0; i < getFeaturesCount(); i++) {
-          if (!getFeatures(i).isInitialized()) {
-            
-            return false;
-          }
-        }
-        return true;
-      }
-
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        org.gbif.maps.io.PointFeature.PointFeatures parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (org.gbif.maps.io.PointFeature.PointFeatures) e.getUnfinishedMessage();
-          throw e;
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-      private int bitField0_;
-
-      // repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;
-      private java.util.List<org.gbif.maps.io.PointFeature.PointFeatures.Feature> features_ =
-        java.util.Collections.emptyList();
-      private void ensureFeaturesIsMutable() {
-        if (!((bitField0_ & 0x00000001) == 0x00000001)) {
-          features_ = new java.util.ArrayList<org.gbif.maps.io.PointFeature.PointFeatures.Feature>(features_);
-          bitField0_ |= 0x00000001;
-         }
-      }
 
       /**
        * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
        */
+      @java.lang.Override
       public java.util.List<org.gbif.maps.io.PointFeature.PointFeatures.Feature> getFeaturesList() {
-        return java.util.Collections.unmodifiableList(features_);
+        return java.util.Collections.unmodifiableList(
+            instance.getFeaturesList());
       }
       /**
        * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
        */
+      @java.lang.Override
       public int getFeaturesCount() {
-        return features_.size();
-      }
-      /**
+        return instance.getFeaturesCount();
+      }/**
        * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
        */
+      @java.lang.Override
       public org.gbif.maps.io.PointFeature.PointFeatures.Feature getFeatures(int index) {
-        return features_.get(index);
+        return instance.getFeatures(index);
       }
       /**
        * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
        */
       public Builder setFeatures(
           int index, org.gbif.maps.io.PointFeature.PointFeatures.Feature value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        ensureFeaturesIsMutable();
-        features_.set(index, value);
-
+        copyOnWrite();
+        instance.setFeatures(index, value);
         return this;
       }
       /**
@@ -1246,21 +1186,16 @@ public final class PointFeature {
        */
       public Builder setFeatures(
           int index, org.gbif.maps.io.PointFeature.PointFeatures.Feature.Builder builderForValue) {
-        ensureFeaturesIsMutable();
-        features_.set(index, builderForValue.build());
-
+        copyOnWrite();
+        instance.setFeatures(index, builderForValue);
         return this;
       }
       /**
        * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
        */
       public Builder addFeatures(org.gbif.maps.io.PointFeature.PointFeatures.Feature value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        ensureFeaturesIsMutable();
-        features_.add(value);
-
+        copyOnWrite();
+        instance.addFeatures(value);
         return this;
       }
       /**
@@ -1268,12 +1203,8 @@ public final class PointFeature {
        */
       public Builder addFeatures(
           int index, org.gbif.maps.io.PointFeature.PointFeatures.Feature value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        ensureFeaturesIsMutable();
-        features_.add(index, value);
-
+        copyOnWrite();
+        instance.addFeatures(index, value);
         return this;
       }
       /**
@@ -1281,9 +1212,8 @@ public final class PointFeature {
        */
       public Builder addFeatures(
           org.gbif.maps.io.PointFeature.PointFeatures.Feature.Builder builderForValue) {
-        ensureFeaturesIsMutable();
-        features_.add(builderForValue.build());
-
+        copyOnWrite();
+        instance.addFeatures(builderForValue);
         return this;
       }
       /**
@@ -1291,9 +1221,8 @@ public final class PointFeature {
        */
       public Builder addFeatures(
           int index, org.gbif.maps.io.PointFeature.PointFeatures.Feature.Builder builderForValue) {
-        ensureFeaturesIsMutable();
-        features_.add(index, builderForValue.build());
-
+        copyOnWrite();
+        instance.addFeatures(index, builderForValue);
         return this;
       }
       /**
@@ -1301,39 +1230,157 @@ public final class PointFeature {
        */
       public Builder addAllFeatures(
           java.lang.Iterable<? extends org.gbif.maps.io.PointFeature.PointFeatures.Feature> values) {
-        ensureFeaturesIsMutable();
-        super.addAll(values, features_);
-
+        copyOnWrite();
+        instance.addAllFeatures(values);
         return this;
       }
       /**
        * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
        */
       public Builder clearFeatures() {
-        features_ = java.util.Collections.emptyList();
-        bitField0_ = (bitField0_ & ~0x00000001);
-
+        copyOnWrite();
+        instance.clearFeatures();
         return this;
       }
       /**
        * <code>repeated .org.gbif.maps.io.PointFeatures.Feature features = 1;</code>
        */
       public Builder removeFeatures(int index) {
-        ensureFeaturesIsMutable();
-        features_.remove(index);
-
+        copyOnWrite();
+        instance.removeFeatures(index);
         return this;
       }
 
       // @@protoc_insertion_point(builder_scope:org.gbif.maps.io.PointFeatures)
     }
+    private byte memoizedIsInitialized = 2;
+    @java.lang.Override
+    @java.lang.SuppressWarnings({"unchecked", "fallthrough"})
+    protected final java.lang.Object dynamicMethod(
+        com.google.protobuf.GeneratedMessageLite.MethodToInvoke method,
+        java.lang.Object arg0, java.lang.Object arg1) {
+      switch (method) {
+        case NEW_MUTABLE_INSTANCE: {
+          return new org.gbif.maps.io.PointFeature.PointFeatures();
+        }
+        case NEW_BUILDER: {
+          return new Builder();
+        }
+        case IS_INITIALIZED: {
+          byte isInitialized = memoizedIsInitialized;
+          if (isInitialized == 1) return DEFAULT_INSTANCE;
+          if (isInitialized == 0) return null;
 
-    static {
-      defaultInstance = new PointFeatures(true);
-      defaultInstance.initFields();
+          boolean shouldMemoize = ((Boolean) arg0).booleanValue();
+          for (int i = 0; i < getFeaturesCount(); i++) {
+            if (!getFeatures(i).isInitialized()) {
+              return null;
+            }
+          }
+          return DEFAULT_INSTANCE;
+
+        }
+        case MAKE_IMMUTABLE: {
+          features_.makeImmutable();
+          return null;
+        }
+        case VISIT: {
+          Visitor visitor = (Visitor) arg0;
+          org.gbif.maps.io.PointFeature.PointFeatures other = (org.gbif.maps.io.PointFeature.PointFeatures) arg1;
+          features_= visitor.visitList(features_, other.features_);
+          if (visitor == com.google.protobuf.GeneratedMessageLite.MergeFromVisitor
+              .INSTANCE) {
+          }
+          return this;
+        }
+        case MERGE_FROM_STREAM: {
+          com.google.protobuf.CodedInputStream input =
+              (com.google.protobuf.CodedInputStream) arg0;
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry =
+              (com.google.protobuf.ExtensionRegistryLite) arg1;
+          if (extensionRegistry == null) {
+            throw new java.lang.NullPointerException();
+          }
+          try {
+            boolean done = false;
+            while (!done) {
+              int tag = input.readTag();
+              switch (tag) {
+                case 0:
+                  done = true;
+                  break;
+                case 10: {
+                  if (!features_.isModifiable()) {
+                    features_ =
+                        com.google.protobuf.GeneratedMessageLite.mutableCopy(features_);
+                  }
+                  features_.add(
+                      input.readMessage(org.gbif.maps.io.PointFeature.PointFeatures.Feature.parser(), extensionRegistry));
+                  break;
+                }
+                default: {
+                  if (!parseUnknownField(tag, input)) {
+                    done = true;
+                  }
+                  break;
+                }
+              }
+            }
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            throw new RuntimeException(e.setUnfinishedMessage(this));
+          } catch (java.io.IOException e) {
+            throw new RuntimeException(
+                new com.google.protobuf.InvalidProtocolBufferException(
+                    e.getMessage()).setUnfinishedMessage(this));
+          } finally {
+          }
+        }
+        // fall through
+        case GET_DEFAULT_INSTANCE: {
+          return DEFAULT_INSTANCE;
+        }
+        case GET_PARSER: {
+          com.google.protobuf.Parser<org.gbif.maps.io.PointFeature.PointFeatures> parser = PARSER;
+          if (parser == null) {
+            synchronized (org.gbif.maps.io.PointFeature.PointFeatures.class) {
+              parser = PARSER;
+              if (parser == null) {
+                parser = new DefaultInstanceBasedParser(DEFAULT_INSTANCE);
+                PARSER = parser;
+              }
+            }
+          }
+          return parser;
+      }
+      case GET_MEMOIZED_IS_INITIALIZED: {
+        return memoizedIsInitialized;
+      }
+      case SET_MEMOIZED_IS_INITIALIZED: {
+        memoizedIsInitialized = (byte) (arg0 == null ? 0 : 1);
+        return null;
+      }
+      }
+      throw new UnsupportedOperationException();
     }
 
+
     // @@protoc_insertion_point(class_scope:org.gbif.maps.io.PointFeatures)
+    private static final org.gbif.maps.io.PointFeature.PointFeatures DEFAULT_INSTANCE;
+    static {
+      // New instances are implicitly immutable so no need to make
+      // immutable.
+      DEFAULT_INSTANCE = new PointFeatures();
+    }
+
+    public static org.gbif.maps.io.PointFeature.PointFeatures getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static volatile com.google.protobuf.Parser<PointFeatures> PARSER;
+
+    public static com.google.protobuf.Parser<PointFeatures> parser() {
+      return DEFAULT_INSTANCE.getParserForType();
+    }
   }
 
 

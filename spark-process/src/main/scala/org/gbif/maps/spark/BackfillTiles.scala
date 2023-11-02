@@ -1,6 +1,6 @@
 package org.gbif.maps.spark
 
-import com.vividsolutions.jts.geom.{Coordinate, GeometryFactory}
+import org.locationtech.jts.geom.{Coordinate, GeometryFactory}
 import no.ecc.vectortile.VectorTileEncoder
 import org.apache.hadoop.hbase.KeyValue
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
