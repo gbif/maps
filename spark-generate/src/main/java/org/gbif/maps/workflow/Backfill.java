@@ -16,7 +16,6 @@ package org.gbif.maps.workflow;
 import org.gbif.maps.MapBuilder;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.UUID;
 
 import org.apache.curator.framework.CuratorFramework;
@@ -26,10 +25,7 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.io.Resources;
+import org.apache.hadoop.hbase.HBaseConfiguration;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,24 +38,18 @@ public class Backfill {
     if (!(args.length == 2 || args.length == 3))
       throw new IllegalArgumentException("Expects [tiles,points] configFile [oozieProperties]");
 
-    log.info("Reading from {}", args[1]);
-    URL conf = Resources.getResource(args[1]);
-    log.info("Reading from {}", conf);
-    MapConfiguration config =
-        new ObjectMapper(new YAMLFactory()).readValue(conf, MapConfiguration.class);
-
-    // MapConfiguration config = MapConfiguration.build(args[1]);
+    MapConfiguration config = MapConfiguration.build(args[1]);
 
     // Oozie does not support templated files, and therefore we opt to override parameters that are
     // calculated at runtime in the Oozie workflow.
     if (args.length == 3) {
       WorkflowParams o = WorkflowParams.buildFromOozie(args[2]);
-      config.getHbase().setZkQuorum(o.getZkQuorum());
+      // config.getHbase().setZkQuorum(o.getZkQuorum());
       config.setSnapshotDirectory(o.getSnapshotDirectory());
       config.setSourceSubdirectory(o.getSourceSubdirectory());
       config.getHbase().setTableName(o.getTargetTable());
       config.setTargetDirectory(o.getTargetDirectory());
-      config.getHdfsLockConfig().setZkConnectionString(o.getHdfsLockZkConnectionString());
+      // config.getHdfsLockConfig().setZkConnectionString(o.getHdfsLockZkConnectionString());
     }
 
     String snapshotName = UUID.randomUUID().toString();
@@ -104,10 +94,11 @@ public class Backfill {
 
   /** Creates a non-started instance of {@link CuratorFramework}. */
   private static CuratorFramework buildCurator(MapConfiguration.HdfsLockConfig config) {
+    Configuration hbaseConf = HBaseConfiguration.create();
     return CuratorFrameworkFactory.builder()
         .namespace(config.getNamespace())
         .retryPolicy(new ExponentialBackoffRetry(config.getSleepTimeMs(), config.getMaxRetries()))
-        .connectString(config.getZkConnectionString())
+        .connectString(hbaseConf.get("hbase.zookeeper.quorum"))
         .build();
   }
 

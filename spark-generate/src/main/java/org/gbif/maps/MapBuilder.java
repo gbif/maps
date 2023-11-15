@@ -132,7 +132,7 @@ public class MapBuilder implements Serializable {
     Dataset<Row> source =
         spark
             .read()
-            .format("com.databricks.spark.avro")
+            .format("avro")
             .load(sourceDir)
             .select(
                 "datasetKey",

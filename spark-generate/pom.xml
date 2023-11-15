@@ -59,6 +59,58 @@
           <release>11</release>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <version>${docker-maven-plugin.version}</version> <!-- Use the latest version available -->
+        <executions>
+          <execution>
+            <id>build-docker-image</id>
+            <phase>package</phase>
+            <goals>
+              <goal>build</goal>
+            </goals>
+            <configuration>
+              <registry>docker.gbif.org</registry>
+              <images>
+                <image>
+                  <registry>docker.gbif.org</registry>
+                  <name>docker.gbif.org/spark-generate-maps:${project.version}</name>
+                  <build>
+                    <contextDir>${project.basedir}</contextDir>
+                    <dockerFile>docker/Dockerfile</dockerFile>
+                    <buildOptions>
+                      <platform>linux/amd64</platform>
+                    </buildOptions>
+                    <args>
+                      <JAR_FILE>target/${project.artifactId}-${project.version}.jar</JAR_FILE>
+                    </args>
+                  </build>
+                </image>
+              </images>
+            </configuration>
+          </execution>
+
+          <!-- Push Docker image -->
+          <execution>
+            <id>push-docker-image</id>
+            <phase>install</phase>
+            <goals>
+              <goal>push</goal>
+            </goals>
+            <configuration>
+              <images>
+                <image>
+                  <name>docker.gbif.org/occurrence-download-spark:${project.version}</name>
+                  <build>
+                    <registry>docker.gbif.org</registry>
+                  </build>
+                </image>
+              </images>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   <dependencies>
@@ -69,6 +121,10 @@
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>log4j-over-slf4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -81,18 +137,62 @@
       <artifactId>hbase-mapreduce</artifactId>
       <version>${hbase.version}</version>
       <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>log4j-over-slf4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-server</artifactId>
       <version>${hbase.version}</version>
       <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>log4j-over-slf4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>${lombok.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
@@ -115,6 +215,19 @@
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-avro_${scala.tools.version}</artifactId>
       <version>${spark.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <!-- Jackson and Yaml-->
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+      <version>${jackson.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-xml</artifactId>
+      <version>${jackson.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -124,8 +237,8 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.fasterxml.jackson.dataformat</groupId>
-      <artifactId>jackson-dataformat-yaml</artifactId>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
       <version>${jackson.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -162,34 +275,20 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-server</artifactId>
-      <version>${hbase.version}</version>
-      <scope>test</scope>
-      <!-- Stops the MRAppMaster in Oozie from even starting (when in Oozie) -->
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.hadoop</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.mortbay.jetty</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <!-- Breaks spark2 -->
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>${scala.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.hbase</groupId>
-      <artifactId>hbase-server</artifactId>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 </project>

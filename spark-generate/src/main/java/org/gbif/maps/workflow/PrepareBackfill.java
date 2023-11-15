@@ -26,11 +26,27 @@ import org.apache.hadoop.hbase.io.compress.Compression;
 import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.regionserver.BloomType;
 
+import lombok.extern.slf4j.Slf4j;
+
 /** An Oozie step to prepare for a backfill, which creates the target table in HBase. */
+@Slf4j
 public class PrepareBackfill {
 
   public static void main(String[] args) throws IOException {
-    WorkflowParams params = WorkflowParams.buildForPrepare(args);
+    if (args.length > 3) {
+      log.info("Starting in Oozie mode");
+      WorkflowParams params = WorkflowParams.buildForPrepare(args);
+      System.out.println(params);
+      startOozieWorkflow(params);
+    } else {
+      log.info("Starting in Spark mode");
+      String mode = args[0];
+      MapConfiguration config = MapConfiguration.build(args[1]);
+      startSparkWorkflow(mode, config);
+    }
+  }
+
+  private static void startOozieWorkflow(WorkflowParams params) throws IOException {
     System.out.println(params);
     try {
       System.out.println("Connecting to HBase");
@@ -61,6 +77,32 @@ public class PrepareBackfill {
     }
   }
 
+  private static void startSparkWorkflow(String mode, MapConfiguration config) throws IOException {
+    try {
+      System.out.println("Connecting to HBase");
+      Configuration conf = HBaseConfiguration.create();
+      try (Connection connection = ConnectionFactory.createConnection(conf);
+          Admin admin = connection.getAdmin()) {
+
+        HTableDescriptor target =
+            new HTableDescriptor(TableName.valueOf(config.getHbase().getTableName()));
+        appendColumnFamily(target, "EPSG_4326"); // points and tiles both have this CF
+        if ("tiles".equalsIgnoreCase(mode)) {
+          appendColumnFamily(target, "EPSG_3857");
+          appendColumnFamily(target, "EPSG_3575");
+          appendColumnFamily(target, "EPSG_3031");
+        }
+        ModulusSalt salt = new ModulusSalt(config.getHbase().getKeySaltModulus());
+        System.out.format("Creating %s", config.getHbase().getTableName());
+        admin.createTable(target, salt.getTableRegions());
+      }
+
+    } catch (IOException e) {
+      System.err.println("Unable to prepare the tables for backfilling");
+      e.printStackTrace();
+      throw e; // deliberate log and throw to keep logs together
+    }
+  }
   /**
    * Sets the column family for the table as per
    * https://github.com/gbif/maps/blob/master/spark-process/README.md
@@ -71,7 +113,7 @@ public class PrepareBackfill {
   private static void appendColumnFamily(HTableDescriptor target, String name) {
     HColumnDescriptor cf = new HColumnDescriptor(name);
     cf.setMaxVersions(1);
-    cf.setCompressionType(Compression.Algorithm.SNAPPY);
+    cf.setCompressionType(Compression.Algorithm.GZ);
     cf.setDataBlockEncoding(DataBlockEncoding.FAST_DIFF);
     cf.setBloomFilterType(BloomType.NONE);
     target.addFamily(cf);
