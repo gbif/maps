@@ -18,6 +18,7 @@ import org.gbif.maps.udf.MapKeysUDF;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -192,13 +193,14 @@ public class MapBuilder implements Serializable {
                         + "GROUP BY mapKey",
                     source))
             .filter(String.format("occCount>=%d", threshold));
-
-    List<Row> statsList = stats.collectAsList();
-
-    Set<String> mapsToPyramid =
+    Set<String> mapsToPyramid = new HashSet<>();
+    if (!stats.isEmpty()) {
+      List<Row> statsList = stats.collectAsList();
+      mapsToPyramid =
         statsList.stream().map(s -> (String) s.getAs("mapKey")).collect(Collectors.toSet());
-    System.out.println(
+      System.out.println(
         String.format("Map views that require tile pyramid %d", mapsToPyramid.size()));
+    }
     return mapsToPyramid;
   }
 

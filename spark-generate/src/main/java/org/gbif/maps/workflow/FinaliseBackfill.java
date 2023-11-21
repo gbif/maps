@@ -17,11 +17,14 @@ import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.MapTables;
 import org.gbif.maps.common.meta.Metastores;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.FsShell;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -53,7 +56,7 @@ public class FinaliseBackfill {
   public static void main(String[] args) throws Exception {
     if (args.length > 3) {
       WorkflowParams params = WorkflowParams.buildFromOozie(args[0]);
-      System.out.println(params.toString());
+      log.info(params.toString());
 
       loadTable(params); // load HBase (throws exception on error)
       updateMeta(params); // update the metastore in ZK
@@ -85,13 +88,13 @@ public class FinaliseBackfill {
       if ("points".equalsIgnoreCase(params.getMode())) {
         MapTables newMeta =
             new MapTables((meta == null) ? null : meta.getTileTable(), params.getTargetTable());
-        System.out.println("Updating metadata with: " + newMeta);
+        log.info("Updating metadata with: " + newMeta);
         metastore.update(newMeta);
 
       } else {
         MapTables newMeta =
             new MapTables(params.getTargetTable(), (meta == null) ? null : meta.getPointTable());
-        System.out.println("Updating metadata with: " + newMeta);
+        log.info("Updating metadata with: " + newMeta);
         metastore.update(newMeta);
       }
     }
@@ -115,14 +118,14 @@ public class FinaliseBackfill {
         MapTables newMeta =
             new MapTables(
                 (meta == null) ? null : meta.getTileTable(), config.getHbase().getTableName());
-        System.out.println("Updating metadata with: " + newMeta);
+        log.info("Updating metadata with: " + newMeta);
         metastore.update(newMeta);
 
       } else {
         MapTables newMeta =
             new MapTables(
                 config.getHbase().getTableName(), (meta == null) ? null : meta.getPointTable());
-        System.out.println("Updating metadata with: " + newMeta);
+        log.info("Updating metadata with: " + newMeta);
         metastore.update(newMeta);
       }
     }
@@ -137,8 +140,7 @@ public class FinaliseBackfill {
 
     if ("points".equalsIgnoreCase(params.getMode())) {
       Path hfiles = new Path(params.getTargetDirectory(), new Path("points"));
-      System.out.println(
-          "Loading HBase table[" + params.getTargetTable() + "] from [" + hfiles + "]");
+      log.info("Loading HBase table[" + params.getTargetTable() + "] from [" + hfiles + "]");
       loader.bulkLoad(table, hfiles);
 
     } else {
@@ -147,7 +149,7 @@ public class FinaliseBackfill {
           Path hfiles =
               new Path(
                   params.getTargetDirectory(), new Path("tiles", new Path(projection, "z" + zoom)));
-          System.out.println(
+          log.info(
               "Zoom["
                   + zoom
                   + "] Loading HBase table["
@@ -169,7 +171,7 @@ public class FinaliseBackfill {
 
     if ("points".equalsIgnoreCase(mode)) {
       Path hfiles = new Path(config.getTargetDirectory(), new Path("points"));
-      System.out.println(
+      log.info(
           "Loading HBase table[" + config.getHbase().getTableName() + "] from [" + hfiles + "]");
       loader.bulkLoad(table, hfiles);
 
@@ -179,7 +181,7 @@ public class FinaliseBackfill {
           Path hfiles =
               new Path(
                   config.getTargetDirectory(), new Path("tiles", new Path(projection, "z" + zoom)));
-          System.out.println(
+          log.info(
               "Zoom["
                   + zoom
                   + "] Loading HBase table["
@@ -197,7 +199,7 @@ public class FinaliseBackfill {
   private static void cleanup(WorkflowParams params) throws Exception {
     Configuration conf = HBaseConfiguration.create();
     try {
-      System.out.println("Connecting to HBase");
+      log.info("Connecting to HBase");
       conf.set(HConstants.ZOOKEEPER_QUORUM, params.getZkQuorum());
       try (Connection connection = ConnectionFactory.createConnection(conf);
           Admin admin = connection.getAdmin();
@@ -221,7 +223,7 @@ public class FinaliseBackfill {
             });
 
         MapTables meta = metastore.read();
-        System.out.println("Current live tables[" + meta + "]");
+        log.info("Current live tables[" + meta + "]");
 
         for (int i = 0; i < tables.length - 2; i++) {
           // Defensive coding: read the metastore each time to minimise possible misue resulting in
@@ -234,15 +236,15 @@ public class FinaliseBackfill {
               && !meta.getPointTable().equalsIgnoreCase(tables[i].getNameAsString())
               && !meta.getTileTable().equalsIgnoreCase(tables[i].getNameAsString())) {
 
-            System.out.println("Disabling HBase table[" + tables[i].getNameAsString() + "]");
+            log.info("Disabling HBase table[" + tables[i].getNameAsString() + "]");
             admin.disableTable(tables[i]);
-            System.out.println("Deleting HBase table[" + tables[i].getNameAsString() + "]");
+            log.info("Deleting HBase table[" + tables[i].getNameAsString() + "]");
             admin.deleteTable(tables[i]);
           }
         }
       }
     } catch (IOException e) {
-      System.err.println("Unable to clean HBase tables");
+      log.error("Unable to clean HBase tables");
       e.printStackTrace();
       throw e; // deliberate log and throw to keep logs together
     }
@@ -254,7 +256,7 @@ public class FinaliseBackfill {
       try {
         String dir =
             params.getTargetDirectory().substring(params.getTargetDirectory().indexOf("/tmp"));
-        System.out.println(
+        log.info(
             "Deleting working directory ["
                 + params.getTargetDirectory()
                 + "] which translates to ["
@@ -267,7 +269,7 @@ public class FinaliseBackfill {
         throw new IOException("Unable to delete the working directory", e);
       }
     } else {
-      System.out.println(
+      log.info(
           "Working directory ["
               + params.getTargetDirectory()
               + "] will not be removed automatically "
@@ -278,7 +280,7 @@ public class FinaliseBackfill {
   private static void cleanup(String mode, MapConfiguration config) throws Exception {
     Configuration hbaseConfig = HBaseConfiguration.create();
     try {
-      System.out.println("Connecting to HBase");
+      log.info("Connecting to HBase");
       try (Connection connection = ConnectionFactory.createConnection(hbaseConfig);
           Admin admin = connection.getAdmin();
           // 1 sec retries
@@ -292,17 +294,11 @@ public class FinaliseBackfill {
         // table names are suffixed with a timestamp e.g. prod_d_maps_points_20180616_1320
         String tablesPattern = config.getHbase().getTableName() + "_" + mode + "_\\d{8}_\\d{4}";
         TableName[] tables = admin.listTableNames(tablesPattern);
-        Arrays.sort(
-            tables,
-            new Comparator<TableName>() { // TableName does not order lexigraphically by default
-              @Override
-              public int compare(TableName o1, TableName o2) {
-                return o1.getNameAsString().compareTo(o2.getNameAsString());
-              }
-            });
+        // TableName does not order lexigraphically by default
+        Arrays.sort(tables, Comparator.comparing(TableName::getNameAsString));
 
         MapTables meta = metastore.read();
-        System.out.println("Current live tables[" + meta + "]");
+        log.info("Current live tables[" + meta + "]");
 
         for (int i = 0; i < tables.length - 2; i++) {
           // Defensive coding: read the metastore each time to minimise possible misue resulting in
@@ -315,45 +311,47 @@ public class FinaliseBackfill {
               && !meta.getPointTable().equalsIgnoreCase(tables[i].getNameAsString())
               && !meta.getTileTable().equalsIgnoreCase(tables[i].getNameAsString())) {
 
-            System.out.println("Disabling HBase table[" + tables[i].getNameAsString() + "]");
+            log.info("Disabling HBase table[" + tables[i].getNameAsString() + "]");
             admin.disableTable(tables[i]);
-            System.out.println("Deleting HBase table[" + tables[i].getNameAsString() + "]");
+            log.info("Deleting HBase table[" + tables[i].getNameAsString() + "]");
             admin.deleteTable(tables[i]);
           }
         }
       }
     } catch (IOException e) {
-      System.err.println("Unable to clean HBase tables");
+      log.error("Unable to clean HBase tables");
       e.printStackTrace();
       throw e; // deliberate log and throw to keep logs together
     }
 
     // Cleanup the working directory if in hdfs://nameserver/tmp/* to avoid many small files
     String regex = "hdfs://[-_a-zA-Z0-9]+/tmp/.+"; // defensive, cleaning only /tmp in hdfs
-    /*if (config.getTargetDirectory().matches(regex)) {
-      FsShell shell = new FsShell(conf);
-
+    if (config.getTargetDirectory().matches(regex)) {
+      Configuration hdfsConfig = new Configuration();
+      hdfsConfig.addResource("core-site.xml");
+      hdfsConfig.addResource("hdfs-site.xml");
+      FileSystem hdfs = FileSystem.get(hdfsConfig);
       try {
         String dir =
-          params.getTargetDirectory().substring(params.getTargetDirectory().indexOf("/tmp"));
-        System.out.println(
-          "Deleting working directory ["
-            + params.getTargetDirectory()
-            + "] which translates to ["
-            + "-rm -r -skipTrash "
-            + dir
-            + "]");
+            config.getTargetDirectory().substring(config.getTargetDirectory().indexOf("/tmp"));
+        log.info(
+            "Deleting working directory ["
+                + config.getTargetDirectory()
+                + "] which translates to ["
+                + "-rm -r -skipTrash "
+                + dir
+                + "]");
 
-        shell.run(new String[] {"-rm", "-r", "-skipTrash", dir});
+        FileUtil.fullyDelete(new File(dir));
       } catch (Exception e) {
         throw new IOException("Unable to delete the working directory", e);
       }
     } else {
-      System.out.println(
-        "Working directory ["
-          + params.getTargetDirectory()
-          + "] will not be removed automatically "
-          + "- only /tmp/* working directories will be cleaned");
-    }*/
+      log.info(
+          "Working directory ["
+              + config.getTargetDirectory()
+              + "] will not be removed automatically "
+              + "- only /tmp/* working directories will be cleaned");
+    }
   }
 }

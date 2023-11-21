@@ -36,7 +36,7 @@ public class PrepareBackfill {
     if (args.length > 3) {
       log.info("Starting in Oozie mode");
       WorkflowParams params = WorkflowParams.buildForPrepare(args);
-      System.out.println(params);
+      log.info(params.toString());
       startOozieWorkflow(params);
     } else {
       log.info("Starting in Spark mode");
@@ -47,9 +47,9 @@ public class PrepareBackfill {
   }
 
   private static void startOozieWorkflow(WorkflowParams params) throws IOException {
-    System.out.println(params);
+    log.info(params.toString());
     try {
-      System.out.println("Connecting to HBase");
+      log.info("Connecting to HBase");
       Configuration conf = HBaseConfiguration.create();
       conf.set(HConstants.ZOOKEEPER_QUORUM, params.getZkQuorum());
       try (Connection connection = ConnectionFactory.createConnection(conf);
@@ -71,7 +71,7 @@ public class PrepareBackfill {
       params.saveToOozie();
 
     } catch (IOException e) {
-      System.err.println("Unable to prepare the tables for backfilling");
+      log.error("Unable to prepare the tables for backfilling");
       e.printStackTrace();
       throw e; // deliberate log and throw to keep logs together
     }
@@ -79,7 +79,7 @@ public class PrepareBackfill {
 
   private static void startSparkWorkflow(String mode, MapConfiguration config) throws IOException {
     try {
-      System.out.println("Connecting to HBase");
+      log.info("Connecting to HBase");
       Configuration conf = HBaseConfiguration.create();
       try (Connection connection = ConnectionFactory.createConnection(conf);
           Admin admin = connection.getAdmin()) {
@@ -97,8 +97,10 @@ public class PrepareBackfill {
         admin.createTable(target, salt.getTableRegions());
       }
 
+    } catch (TableExistsException e) {
+
     } catch (IOException e) {
-      System.err.println("Unable to prepare the tables for backfilling");
+      log.error("Unable to prepare the tables for backfilling");
       e.printStackTrace();
       throw e; // deliberate log and throw to keep logs together
     }
