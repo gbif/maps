@@ -17,14 +17,12 @@ import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.MapTables;
 import org.gbif.maps.common.meta.Metastores;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.FsShell;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -54,7 +52,7 @@ public class FinaliseBackfill {
   private static final int MAX_ZOOM = 16;
 
   public static void main(String[] args) throws Exception {
-    if (args.length > 3) {
+    if (args.length > 4) {
       WorkflowParams params = WorkflowParams.buildFromOozie(args[0]);
       log.info(params.toString());
 
@@ -63,11 +61,12 @@ public class FinaliseBackfill {
       cleanup(params);
     } else {
       log.info("Starting in Spark mode");
-      String mode = args[0];
       MapConfiguration config = MapConfiguration.build(args[1]);
-      loadTable(mode, config); // load HBase (throws exception on error)
-      updateMeta(mode, config); // update the metastore in ZK
-      cleanup(mode, config);
+      config.setTimestamp(args[2]);
+      config.setMode(args[0]);
+      loadTable(config); // load HBase (throws exception on error)
+      updateMeta(config); // update the metastore in ZK
+      cleanup(config);
     }
   }
 
@@ -100,7 +99,7 @@ public class FinaliseBackfill {
     }
   }
 
-  private static void updateMeta(String mode, MapConfiguration config) throws Exception {
+  private static void updateMeta(MapConfiguration config) throws Exception {
     // 1 sec retries
     Configuration hbaseConfig = HBaseConfiguration.create();
     try (MapMetastore metastore =
@@ -114,7 +113,7 @@ public class FinaliseBackfill {
       // NOTE: there is the possibility of a race condition here if 2 instances are updating
       // different
       // modes simultaneously
-      if ("points".equalsIgnoreCase(mode)) {
+      if ("points".equalsIgnoreCase(config.getMode())) {
         MapTables newMeta =
             new MapTables(
                 (meta == null) ? null : meta.getTileTable(), config.getHbase().getTableName());
@@ -163,16 +162,15 @@ public class FinaliseBackfill {
     }
   }
 
-  private static void loadTable(String mode, MapConfiguration config) throws Exception {
+  private static void loadTable(MapConfiguration config) throws Exception {
     Configuration conf = HBaseConfiguration.create();
 
-    TableName table = TableName.valueOf(config.getHbase().getTableName());
+    TableName table = TableName.valueOf(config.getFQTableName());
     BulkLoadHFilesTool loader = new BulkLoadHFilesTool(conf);
 
-    if ("points".equalsIgnoreCase(mode)) {
-      Path hfiles = new Path(config.getTargetDirectory(), new Path("points"));
-      log.info(
-          "Loading HBase table[" + config.getHbase().getTableName() + "] from [" + hfiles + "]");
+    if ("points".equalsIgnoreCase(config.getMode())) {
+      Path hfiles = new Path(config.getFQTargetDirectory(), new Path("points"));
+      log.info("Loading HBase table[" + config.getFQTableName() + "] from [" + hfiles + "]");
       loader.bulkLoad(table, hfiles);
 
     } else {
@@ -180,12 +178,13 @@ public class FinaliseBackfill {
         for (int zoom = 0; zoom <= MAX_ZOOM; zoom++) {
           Path hfiles =
               new Path(
-                  config.getTargetDirectory(), new Path("tiles", new Path(projection, "z" + zoom)));
+                  config.getFQTargetDirectory(),
+                  new Path("tiles", new Path(projection, "z" + zoom)));
           log.info(
               "Zoom["
                   + zoom
                   + "] Loading HBase table["
-                  + config.getHbase().getTableName()
+                  + config.getFQTableName()
                   + "] from ["
                   + hfiles
                   + "]");
@@ -277,7 +276,7 @@ public class FinaliseBackfill {
     }
   }
   /** Deletes the snapshot and old tables whereby we keep the 2 latest tables only. */
-  private static void cleanup(String mode, MapConfiguration config) throws Exception {
+  private static void cleanup(MapConfiguration config) throws Exception {
     Configuration hbaseConfig = HBaseConfiguration.create();
     try {
       log.info("Connecting to HBase");
@@ -292,7 +291,8 @@ public class FinaliseBackfill {
 
         // remove all but the last 2 tables
         // table names are suffixed with a timestamp e.g. prod_d_maps_points_20180616_1320
-        String tablesPattern = config.getHbase().getTableName() + "_" + mode + "_\\d{8}_\\d{4}";
+        String tablesPattern =
+            config.getHbase().getTableName() + "_" + config.getMode() + "_\\d{8}_\\d{4}";
         TableName[] tables = admin.listTableNames(tablesPattern);
         // TableName does not order lexigraphically by default
         Arrays.sort(tables, Comparator.comparing(TableName::getNameAsString));
@@ -307,7 +307,7 @@ public class FinaliseBackfill {
 
           // Defensive coding: don't delete anything that is the intended target, or currently in
           // use
-          if (!config.getHbase().getTableName().equalsIgnoreCase(tables[i].getNameAsString())
+          if (!config.getFQTableName().equalsIgnoreCase(tables[i].getNameAsString())
               && !meta.getPointTable().equalsIgnoreCase(tables[i].getNameAsString())
               && !meta.getTileTable().equalsIgnoreCase(tables[i].getNameAsString())) {
 
@@ -326,30 +326,29 @@ public class FinaliseBackfill {
 
     // Cleanup the working directory if in hdfs://nameserver/tmp/* to avoid many small files
     String regex = "hdfs://[-_a-zA-Z0-9]+/tmp/.+"; // defensive, cleaning only /tmp in hdfs
-    if (config.getTargetDirectory().matches(regex)) {
+    if (config.getFQTargetDirectory().matches(regex)) {
       Configuration hdfsConfig = new Configuration();
       hdfsConfig.addResource("core-site.xml");
       hdfsConfig.addResource("hdfs-site.xml");
       FileSystem hdfs = FileSystem.get(hdfsConfig);
       try {
         String dir =
-            config.getTargetDirectory().substring(config.getTargetDirectory().indexOf("/tmp"));
+            config.getTargetDirectory().substring(config.getFQTargetDirectory().indexOf("/tmp"));
         log.info(
             "Deleting working directory ["
-                + config.getTargetDirectory()
+                + config.getFQTargetDirectory()
                 + "] which translates to ["
                 + "-rm -r -skipTrash "
                 + dir
                 + "]");
-
-        FileUtil.fullyDelete(new File(dir));
+        hdfs.deleteOnExit(new Path(dir));
       } catch (Exception e) {
         throw new IOException("Unable to delete the working directory", e);
       }
     } else {
       log.info(
           "Working directory ["
-              + config.getTargetDirectory()
+              + config.getFQTargetDirectory()
               + "] will not be removed automatically "
               + "- only /tmp/* working directories will be cleaned");
     }

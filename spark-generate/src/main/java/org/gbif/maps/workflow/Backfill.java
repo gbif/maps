@@ -35,15 +35,17 @@ public class Backfill {
 
   /** Expects [tiles,points] configFile [oozieProperties] */
   public static void main(String[] args) throws Exception {
-    if (!(args.length == 2 || args.length == 3))
-      throw new IllegalArgumentException("Expects [tiles,points] configFile [oozieProperties]");
+    if (!(args.length == 3 || args.length == 4))
+      throw new IllegalArgumentException(
+          "Expects [tiles,points] configFile timestamp [oozieProperties]");
 
     MapConfiguration config = MapConfiguration.build(args[1]);
-
+    config.setTimestamp(args[2]);
+    config.setMode(args[0]);
     // Oozie does not support templated files, and therefore we opt to override parameters that are
     // calculated at runtime in the Oozie workflow.
-    if (args.length == 3) {
-      WorkflowParams o = WorkflowParams.buildFromOozie(args[2]);
+    if (args.length == 4) {
+      WorkflowParams o = WorkflowParams.buildFromOozie(args[3]);
       // config.getHbase().setZkQuorum(o.getZkQuorum());
       config.setSnapshotDirectory(o.getSnapshotDirectory());
       config.setSourceSubdirectory(o.getSourceSubdirectory());
@@ -67,14 +69,14 @@ public class Backfill {
     log.info("Created snapshot, {}", snapshotPath);
 
     try {
-      String mode = args[0]; // tiles or points
+      String mode = args[0].toLowerCase(); // tiles or points
       MapBuilder mapBuilder =
           MapBuilder.builder()
               .sourceDir(snapshotSource)
               .hiveDB(config.getHiveDB())
-              .hiveInputSuffix(mode.toLowerCase())
-              .hbaseTable(config.getHbase().getTableName())
-              .targetDir(config.getTargetDirectory())
+              .hiveInputSuffix(mode)
+              .hbaseTable(config.getFQTableName())
+              .targetDir(config.getFQTargetDirectory())
               .modulo(config.getHbase().getKeySaltModulus())
               .threshold(config.getTilesThreshold())
               .tileSize(config.getTileSize())

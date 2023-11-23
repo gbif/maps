@@ -197,9 +197,9 @@ public class MapBuilder implements Serializable {
     if (!stats.isEmpty()) {
       List<Row> statsList = stats.collectAsList();
       mapsToPyramid =
-        statsList.stream().map(s -> (String) s.getAs("mapKey")).collect(Collectors.toSet());
+          statsList.stream().map(s -> (String) s.getAs("mapKey")).collect(Collectors.toSet());
       System.out.println(
-        String.format("Map views that require tile pyramid %d", mapsToPyramid.size()));
+          String.format("Map views that require tile pyramid %d", mapsToPyramid.size()));
     }
     return mapsToPyramid;
   }

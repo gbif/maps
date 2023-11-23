@@ -33,16 +33,17 @@ import lombok.extern.slf4j.Slf4j;
 public class PrepareBackfill {
 
   public static void main(String[] args) throws IOException {
-    if (args.length > 3) {
+    if (args.length > 4) {
       log.info("Starting in Oozie mode");
       WorkflowParams params = WorkflowParams.buildForPrepare(args);
       log.info(params.toString());
       startOozieWorkflow(params);
     } else {
       log.info("Starting in Spark mode");
-      String mode = args[0];
       MapConfiguration config = MapConfiguration.build(args[1]);
-      startSparkWorkflow(mode, config);
+      config.setTimestamp(args[2]);
+      config.setMode(args[0]);
+      startSparkWorkflow(config);
     }
   }
 
@@ -77,23 +78,22 @@ public class PrepareBackfill {
     }
   }
 
-  private static void startSparkWorkflow(String mode, MapConfiguration config) throws IOException {
+  private static void startSparkWorkflow(MapConfiguration config) throws IOException {
     try {
       log.info("Connecting to HBase");
       Configuration conf = HBaseConfiguration.create();
       try (Connection connection = ConnectionFactory.createConnection(conf);
           Admin admin = connection.getAdmin()) {
 
-        HTableDescriptor target =
-            new HTableDescriptor(TableName.valueOf(config.getHbase().getTableName()));
+        HTableDescriptor target = new HTableDescriptor(TableName.valueOf(config.getFQTableName()));
         appendColumnFamily(target, "EPSG_4326"); // points and tiles both have this CF
-        if ("tiles".equalsIgnoreCase(mode)) {
+        if ("tiles".equalsIgnoreCase(config.getMode())) {
           appendColumnFamily(target, "EPSG_3857");
           appendColumnFamily(target, "EPSG_3575");
           appendColumnFamily(target, "EPSG_3031");
         }
         ModulusSalt salt = new ModulusSalt(config.getHbase().getKeySaltModulus());
-        System.out.format("Creating %s", config.getHbase().getTableName());
+        System.out.format("Creating %s", config.getFQTableName());
         admin.createTable(target, salt.getTableRegions());
       }
 

@@ -30,10 +30,13 @@ import lombok.extern.slf4j.Slf4j;
 @Jacksonized
 @Slf4j
 public class MapConfiguration {
+
   private String appName;
   private String snapshotDirectory;
   private String sourceSubdirectory;
   private String targetDirectory;
+  private String timestamp;
+  private String mode;
   private String hiveDB;
   private int tilesThreshold;
   private int tileSize;
@@ -69,5 +72,13 @@ public class MapConfiguration {
     URL conf = Resources.getResource(filename);
     log.info("Reading from {}", conf);
     return new ObjectMapper(new YAMLFactory()).readValue(conf, MapConfiguration.class);
+  }
+
+  public String getFQTableName() {
+    return String.format("%s_%s_%s", hbase.tableName, mode, timestamp);
+  }
+
+  public String getFQTargetDirectory() {
+    return String.format("%s_%s_%s", targetDirectory, mode, timestamp);
   }
 }
