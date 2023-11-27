@@ -53,7 +53,6 @@
     <hive.version>1.1.0-cdh5.12.0</hive.version>
     <hadoop.version>2.6.0-cdh5.12.0</hadoop.version>
     <hbase.version>1.2.0-cdh5.12.0</hbase.version>
-    <spark.version>1.6.1</spark.version>
     <geotools.version>15.0</geotools.version>
     <cache2k.version>2.4.1.Final</cache2k.version>
 
