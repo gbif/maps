@@ -292,7 +292,7 @@ public class FinaliseBackfill {
         // remove all but the last 2 tables
         // table names are suffixed with a timestamp e.g. prod_d_maps_points_20180616_1320
         String tablesPattern =
-            config.getHbase().getTableName() + "_" + config.getMode() + "_\\d{8}_\\d{4}";
+            config.getHbase().getTableName() + "_" + config.getMode() + "_\\d{8}T\\d{6}";
         TableName[] tables = admin.listTableNames(tablesPattern);
         // TableName does not order lexigraphically by default
         Arrays.sort(tables, Comparator.comparing(TableName::getNameAsString));
