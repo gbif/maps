@@ -31,10 +31,10 @@
 
   <properties>
     <jdkLevel>1.8</jdkLevel>
-    <gbif-occurrence.version>0.194.0-SNAPSHOT</gbif-occurrence.version>
-    <gbif-api.version>1.13.0-SNAPSHOT</gbif-api.version>
-    <gbif-common.ws.version>1.25</gbif-common.ws.version>
-    <dwc-api.version>1.48-SNAPSHOT</dwc-api.version>
+    <gbif-occurrence.version>0.194.6</gbif-occurrence.version>
+    <gbif-api.version>1.13.0</gbif-api.version>
+    <gbif-common.ws.version>1.26</gbif-common.ws.version>
+    <dwc-api.version>1.48</dwc-api.version>
     <gbif-predicates.version>1.2.0-SNAPSHOT</gbif-predicates.version>
 
     <slf4j.version>1.7.36</slf4j.version>
