@@ -95,7 +95,7 @@
 
     <maven-shade-plugin.version>3.5.0</maven-shade-plugin.version>
     <exec-maven-plugin.version>1.3.2</exec-maven-plugin.version>
-    <maven-ahh-plugin.version>0.3.5</maven-ahh-plugin.version>
+    <maven-protoc-plugin.version>0.3.5</maven-protoc-plugin.version>
     <build-helper-maven.version>1.9.1</build-helper-maven.version>
     <scala-maven-plugin.version>3.2.0</scala-maven-plugin.version>
     <scalatest-maven-plugin.version>1.0</scalatest-maven-plugin.version>
