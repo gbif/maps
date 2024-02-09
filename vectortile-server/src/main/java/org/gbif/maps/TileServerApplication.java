@@ -13,6 +13,8 @@
  */
 package org.gbif.maps;
 
+import com.google.common.base.Strings;
+
 import org.gbif.api.model.common.search.SearchParameter;
 import org.gbif.api.model.predicate.Predicate;
 import org.gbif.maps.common.meta.MapMetastore;
@@ -193,6 +195,11 @@ public class TileServerApplication {
       // Either use Zookeeper or static config to locate tables
       Configuration conf = HBaseConfiguration.create();
       conf.set("hbase.zookeeper.quorum", tileServerConfiguration.getHbase().getZookeeperQuorum());
+      String hbaseZNode = tileServerConfiguration.getHbase().getHbaseZnode();
+      if (!Strings.isNullOrEmpty(hbaseZNode)) {
+        conf.set("zookeeper.znode.parent", hbaseZNode);
+      }
+
 
       if (tileServerConfiguration.getMetastore() != null) {
         MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,

@@ -9,7 +9,7 @@
 
   <groupId>org.gbif.maps</groupId>
   <artifactId>maps-motherpom</artifactId>
-  <version>0.37.0-SNAPSHOT</version>
+  <version>0.37-H3-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <description>GBIF Map services</description>
@@ -31,11 +31,14 @@
 
   <properties>
     <jdkLevel>11</jdkLevel>
-    <gbif-occurrence.version>0.194.0-SNAPSHOT</gbif-occurrence.version>
-    <gbif-api.version>1.13.0-SNAPSHOT</gbif-api.version>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+
+    <gbif-occurrence.version>0.195.0-H3-SNAPSHOT</gbif-occurrence.version>
+    <gbif-api.version>1.13.0</gbif-api.version>
     <gbif-common.ws.version>1.25</gbif-common.ws.version>
-    <dwc-api.version>1.48-H3-SNAPSHOT</dwc-api.version>
-    <gbif-predicates.version>1.2.0-SNAPSHOT</gbif-predicates.version>
+    <dwc-api.version>1.49-H3-SNAPSHOT</dwc-api.version>
+    <gbif-predicates.version>1.2.0</gbif-predicates.version>
 
     <slf4j.version>2.0.6</slf4j.version>
     <javax.mail.version>1.4.1</javax.mail.version>
@@ -54,15 +57,16 @@
     <hadoop.version>3.3.4</hadoop.version>
     <hbase.version>2.5.4-hadoop3</hbase.version>
     <spark.version>3.4.0</spark.version>
-    <geotools.version>21.4</geotools.version>
+    <geotools.version>24.4.01</geotools.version>
     <cache2k.version>2.4.1.Final</cache2k.version>
+    <metrics.version>4.2.7</metrics.version>
+    <micrometer.version>1.12.2</micrometer.version>
+    <metrics-core.version>3.0.0</metrics-core.version>
 
     <jackson.version>2.14.2</jackson.version>
     <scala.tools.version>2.12</scala.tools.version>
     <scala.version>2.12.17</scala.version>
     <simple.arm.version>2.3.1</simple.arm.version>
-    <!-- laziness: rely on transient dependencies from DW -->
-    <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
     <scalatest.version>3.2.16</scalatest.version>
     <junit.version>4.13.1</junit.version>
     <curator.version>5.5.0</curator.version>
@@ -457,16 +461,6 @@
         <version>${java-vector-tile.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.dropwizard.metrics</groupId>
-        <artifactId>metrics-core</artifactId>
-        <version>${dropwizard.metrics.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.dropwizard.metrics</groupId>
-        <artifactId>metrics-annotation</artifactId>
-        <version>${dropwizard.metrics.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.apache.hive</groupId>
         <artifactId>hive-hbase-handler</artifactId>
         <version>${hive.version}</version>
@@ -754,6 +748,27 @@
         <groupId>org.cache2k</groupId>
         <artifactId>cache2k-spring</artifactId>
         <version>${cache2k.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-core</artifactId>
+        <version>${metrics.version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>com.codahale.metrics</groupId>
+        <artifactId>metrics-core</artifactId>
+        <version>${metrics-core.version}</version>
+      </dependency>
+
+      <!-- Metrics -->
+      <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-registry-prometheus</artifactId>
+        <version>${micrometer.version}</version>
+        <scope>runtime</scope>
       </dependency>
 
       <!--Test-->

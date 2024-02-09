@@ -45,6 +45,8 @@ public class TileServerConfiguration {
 
     private String zookeeperQuorum;
 
+    private String hbaseZnode;
+
     private String tilesTableName;
 
     private String pointsTableName;

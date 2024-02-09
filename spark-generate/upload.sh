@@ -1,6 +1,6 @@
 #!/bin/bash
 USER=$(whoami)
-SOURCE="./target/spark-generate-0.37.0-SNAPSHOT.jar"
+SOURCE="./target/spark-generate-0.37-H3-SNAPSHOT.jar"
 POD="${2:-gbif-hdfs-namenode-default-0}"
 NAME_SPACE="${3:-gbif-develop}"
 
