@@ -273,7 +273,7 @@
       Deprecated for spark-generate. To be removed.
     -->
     <!--module>spark-process</module-->
-    <module>spark-generate</module>
+    <module>spark-generate-maps</module>
     <module>oozie-workflow</module>
     <module>mapnik-server</module>
   </modules>

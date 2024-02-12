@@ -48,7 +48,7 @@
   <dependencies>
     <dependency>
       <groupId>org.gbif.maps</groupId>
-      <artifactId>spark-generate</artifactId>
+      <artifactId>spark-generate-maps</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
