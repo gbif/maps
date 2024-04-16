@@ -268,10 +268,6 @@
   <modules>
     <module>common</module>
     <module>vectortile-server</module>
-    <!--
-      Deprecated for spark-generate. To be removed.
-    -->
-    <!--module>spark-process</module-->
     <module>spark-generate</module>
     <module>oozie-workflow</module>
     <module>mapnik-server</module>
