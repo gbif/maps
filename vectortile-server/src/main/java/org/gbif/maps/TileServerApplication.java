@@ -13,6 +13,7 @@
  */
 package org.gbif.maps;
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Strings;
 
 import org.gbif.api.model.common.search.SearchParameter;
@@ -217,7 +218,9 @@ public class TileServerApplication {
     @Primary
     @Bean
     public ObjectMapper objectMapper() {
-      return JacksonJsonObjectMapperProvider.getObjectMapperWithBuilderSupport().addMixIn(SearchParameter.class, QueryVisitorFactory.OccurrenceSearchParameterMixin.class);
+      return JacksonJsonObjectMapperProvider.getObjectMapperWithBuilderSupport()
+                                            .addMixIn(SearchParameter.class, QueryVisitorFactory.OccurrenceSearchParameterMixin.class)
+                                            .registerModule(new JavaTimeModule());
     }
 
     @ConfigurationProperties(prefix = "cache.predicates")
