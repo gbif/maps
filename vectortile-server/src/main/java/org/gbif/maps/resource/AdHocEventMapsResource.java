@@ -13,11 +13,13 @@
  */
 package org.gbif.maps.resource;
 
-import com.codahale.metrics.annotation.Timed;
-import io.swagger.v3.oas.annotations.Hidden;
 import org.gbif.maps.TileServerConfiguration;
 import org.gbif.occurrence.search.cache.PredicateCacheService;
 import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -27,8 +29,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import com.codahale.metrics.annotation.Timed;
+
+import io.swagger.v3.oas.annotations.Hidden;
 
 import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
 import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;

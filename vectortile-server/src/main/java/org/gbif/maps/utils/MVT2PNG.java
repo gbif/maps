@@ -23,10 +23,11 @@ import java.util.Set;
 
 import javax.imageio.ImageIO;
 
+import org.locationtech.jts.geom.Point;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
-import org.locationtech.jts.geom.Point;
 
 import no.ecc.vectortile.VectorTileDecoder;
 

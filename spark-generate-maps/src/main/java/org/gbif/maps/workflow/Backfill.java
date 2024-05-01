@@ -42,18 +42,6 @@ public class Backfill {
     MapConfiguration config = MapConfiguration.build(args[1]);
     config.setTimestamp(args[2]);
     config.setMode(args[0]);
-    // Oozie does not support templated files, and therefore we opt to override parameters that are
-    // calculated at runtime in the Oozie workflow.
-    if (args.length == 4) {
-      WorkflowParams o = WorkflowParams.buildFromOozie(args[3]);
-      // config.getHbase().setZkQuorum(o.getZkQuorum());
-      config.setSnapshotDirectory(o.getSnapshotDirectory());
-      config.setSourceSubdirectory(o.getSourceSubdirectory());
-      config.getHbase().setTableName(o.getTargetTable());
-      config.setTargetDirectory(o.getTargetDirectory());
-      // config.getHdfsLockConfig().setZkConnectionString(o.getHdfsLockZkConnectionString());
-    }
-
     String snapshotName = UUID.randomUUID().toString();
     log.info("Creating snapshot {} {}", config.getSnapshotDirectory(), snapshotName);
 
@@ -82,8 +70,8 @@ public class Backfill {
               .tileSize(config.getTileSize())
               .bufferSize(config.getTileBufferSize())
               .maxZoom(config.getMaxZoom())
-              .buildPoints(mode.equalsIgnoreCase("points") ? true : false)
-              .buildTiles(mode.equalsIgnoreCase("tiles") ? true : false)
+              .buildPoints(mode.equalsIgnoreCase("points"))
+              .buildTiles(mode.equalsIgnoreCase("tiles"))
               .build();
       log.info("Launching map build with config: {}", mapBuilder);
       mapBuilder.run();

@@ -13,7 +13,6 @@
  */
 package org.gbif.maps.resource;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.Int2D;
 
@@ -22,13 +21,14 @@ import java.time.Year;
 import java.util.Arrays;
 import java.util.Map;
 
+import org.locationtech.jts.geom.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.carrotsearch.hppc.IntHashSet;
 import com.google.common.annotations.VisibleForTesting;
-import org.locationtech.jts.geom.Point;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import no.ecc.vectortile.VectorTileDecoder;
 
 /**

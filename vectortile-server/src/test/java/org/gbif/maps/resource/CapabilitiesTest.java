@@ -23,14 +23,14 @@ import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.carrotsearch.hppc.IntHashSet;
 import com.google.common.collect.ImmutableMap;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
 
 import no.ecc.vectortile.VectorTileEncoder;
 

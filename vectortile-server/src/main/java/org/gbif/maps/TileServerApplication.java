@@ -13,11 +13,9 @@
  */
 package org.gbif.maps;
 
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.base.Strings;
-
 import org.gbif.api.model.common.search.SearchParameter;
 import org.gbif.api.model.predicate.Predicate;
+import org.gbif.event.search.es.EventEsField;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.resource.*;
@@ -26,7 +24,6 @@ import org.gbif.occurrence.search.cache.PredicateCacheService;
 import org.gbif.occurrence.search.es.EsConfig;
 import org.gbif.occurrence.search.es.OccurrenceBaseEsFieldMapper;
 import org.gbif.occurrence.search.es.OccurrenceEsField;
-import org.gbif.event.search.es.EventEsField;
 import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
 import org.gbif.occurrence.search.predicate.QueryVisitorFactory;
 import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
@@ -60,6 +57,8 @@ import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.base.Strings;
 
 /**
  * The main entry point for running the member node.

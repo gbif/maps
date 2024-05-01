@@ -17,15 +17,15 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.codetome.hexameter.core.backport.Optional;
-
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LinearRing;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
 
 import no.ecc.vectortile.VectorTileDecoder;
 import no.ecc.vectortile.VectorTileEncoder;

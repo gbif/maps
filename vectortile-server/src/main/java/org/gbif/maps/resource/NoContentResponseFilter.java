@@ -15,6 +15,7 @@ package org.gbif.maps.resource;
 
 
 import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

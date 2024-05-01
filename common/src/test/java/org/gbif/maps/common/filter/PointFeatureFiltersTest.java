@@ -24,11 +24,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.junit.Test;
+import org.locationtech.jts.geom.Point;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.locationtech.jts.geom.Point;
 
 import no.ecc.vectortile.VectorTileDecoder;
 import no.ecc.vectortile.VectorTileEncoder;

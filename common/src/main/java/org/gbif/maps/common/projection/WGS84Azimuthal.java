@@ -17,11 +17,10 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 
 import org.geotools.geometry.jts.JTS;
-import org.opengis.referencing.operation.MathTransform;
-
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
+import org.opengis.referencing.operation.MathTransform;
 
 /**
  * Base class handling azimuthal projections.

@@ -23,10 +23,8 @@ import java.util.Comparator;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FsShell;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
@@ -52,51 +50,12 @@ public class FinaliseBackfill {
   private static final int MAX_ZOOM = 16;
 
   public static void main(String[] args) throws Exception {
-    if (args.length > 4) {
-      WorkflowParams params = WorkflowParams.buildFromOozie(args[0]);
-      log.info(params.toString());
-
-      loadTable(params); // load HBase (throws exception on error)
-      updateMeta(params); // update the metastore in ZK
-      cleanup(params);
-    } else {
-      log.info("Starting in Spark mode");
-      MapConfiguration config = MapConfiguration.build(args[1]);
-      config.setTimestamp(args[2]);
-      config.setMode(args[0]);
-      loadTable(config); // load HBase (throws exception on error)
-      updateMeta(config); // update the metastore in ZK
-      cleanup(config);
-    }
-  }
-
-  /**
-   * Updates the tile or point table registration in the metadata, depending on the mode in which we
-   * are running.
-   */
-  private static void updateMeta(WorkflowParams params) throws Exception {
-    // 1 sec retries
-    try (MapMetastore metastore =
-        Metastores.newZookeeperMapsMeta(params.getZkQuorum(), 1000, params.getZkMetaDataPath())) {
-
-      MapTables meta = metastore.read(); // we update any existing values
-
-      // NOTE: there is the possibility of a race condition here if 2 instances are updating
-      // different
-      // modes simultaneously
-      if ("points".equalsIgnoreCase(params.getMode())) {
-        MapTables newMeta =
-            new MapTables((meta == null) ? null : meta.getTileTable(), params.getTargetTable());
-        log.info("Updating metadata with: " + newMeta);
-        metastore.update(newMeta);
-
-      } else {
-        MapTables newMeta =
-            new MapTables(params.getTargetTable(), (meta == null) ? null : meta.getPointTable());
-        log.info("Updating metadata with: " + newMeta);
-        metastore.update(newMeta);
-      }
-    }
+    MapConfiguration config = MapConfiguration.build(args[1]);
+    config.setTimestamp(args[2]);
+    config.setMode(args[0]);
+    loadTable(config); // load HBase (throws exception on error)
+    updateMeta(config); // update the metastore in ZK
+    cleanup(config);
   }
 
   private static void updateMeta(MapConfiguration config) throws Exception {
@@ -104,9 +63,7 @@ public class FinaliseBackfill {
     Configuration hbaseConfig = HBaseConfiguration.create();
     try (MapMetastore metastore =
         Metastores.newZookeeperMapsMeta(
-            hbaseConfig.get("hbase.zookeeper.quorum"),
-            1000,
-            hbaseConfig.get("zookeeper.znode.parent"))) {
+            hbaseConfig.get("hbase.zookeeper.quorum"), 1000, config.getMetadataPath())) {
 
       MapTables meta = metastore.read(); // we update any existing values
 
@@ -126,38 +83,6 @@ public class FinaliseBackfill {
                 config.getHbase().getTableName(), (meta == null) ? null : meta.getPointTable());
         log.info("Updating metadata with: " + newMeta);
         metastore.update(newMeta);
-      }
-    }
-  }
-
-  private static void loadTable(WorkflowParams params) throws Exception {
-    Configuration conf = HBaseConfiguration.create();
-    conf.set(HConstants.ZOOKEEPER_QUORUM, params.getZkQuorum());
-
-    TableName table = TableName.valueOf(params.getTargetTable());
-    BulkLoadHFilesTool loader = new BulkLoadHFilesTool(conf);
-
-    if ("points".equalsIgnoreCase(params.getMode())) {
-      Path hfiles = new Path(params.getTargetDirectory(), new Path("points"));
-      log.info("Loading HBase table[" + params.getTargetTable() + "] from [" + hfiles + "]");
-      loader.bulkLoad(table, hfiles);
-
-    } else {
-      for (String projection : PROJECTIONS) {
-        for (int zoom = 0; zoom <= MAX_ZOOM; zoom++) {
-          Path hfiles =
-              new Path(
-                  params.getTargetDirectory(), new Path("tiles", new Path(projection, "z" + zoom)));
-          log.info(
-              "Zoom["
-                  + zoom
-                  + "] Loading HBase table["
-                  + params.getTargetTable()
-                  + "] from ["
-                  + hfiles
-                  + "]");
-          loader.bulkLoad(table, hfiles);
-        }
       }
     }
   }
@@ -194,87 +119,6 @@ public class FinaliseBackfill {
     }
   }
 
-  /** Deletes the snapshot and old tables whereby we keep the 2 latest tables only. */
-  private static void cleanup(WorkflowParams params) throws Exception {
-    Configuration conf = HBaseConfiguration.create();
-    try {
-      log.info("Connecting to HBase");
-      conf.set(HConstants.ZOOKEEPER_QUORUM, params.getZkQuorum());
-      try (Connection connection = ConnectionFactory.createConnection(conf);
-          Admin admin = connection.getAdmin();
-          // 1 sec retries
-          MapMetastore metastore =
-              Metastores.newZookeeperMapsMeta(
-                  params.getZkQuorum(), 1000, params.getZkMetaDataPath()); ) {
-
-        // remove all but the last 2 tables
-        // table names are suffixed with a timestamp e.g. prod_d_maps_points_20180616_1320
-        String tablesPattern =
-            params.getTargetTablePrefix() + "_" + params.getMode() + "_\\d{8}_\\d{4}";
-        TableName[] tables = admin.listTableNames(tablesPattern);
-        Arrays.sort(
-            tables,
-            new Comparator<TableName>() { // TableName does not order lexigraphically by default
-              @Override
-              public int compare(TableName o1, TableName o2) {
-                return o1.getNameAsString().compareTo(o2.getNameAsString());
-              }
-            });
-
-        MapTables meta = metastore.read();
-        log.info("Current live tables[" + meta + "]");
-
-        for (int i = 0; i < tables.length - 2; i++) {
-          // Defensive coding: read the metastore each time to minimise possible misue resulting in
-          // race conditions
-          meta = metastore.read();
-
-          // Defensive coding: don't delete anything that is the intended target, or currently in
-          // use
-          if (!params.getTargetTable().equalsIgnoreCase(tables[i].getNameAsString())
-              && !meta.getPointTable().equalsIgnoreCase(tables[i].getNameAsString())
-              && !meta.getTileTable().equalsIgnoreCase(tables[i].getNameAsString())) {
-
-            log.info("Disabling HBase table[" + tables[i].getNameAsString() + "]");
-            admin.disableTable(tables[i]);
-            log.info("Deleting HBase table[" + tables[i].getNameAsString() + "]");
-            admin.deleteTable(tables[i]);
-          }
-        }
-      }
-    } catch (IOException e) {
-      log.error("Unable to clean HBase tables");
-      e.printStackTrace();
-      throw e; // deliberate log and throw to keep logs together
-    }
-
-    // Cleanup the working directory if in hdfs://nameserver/tmp/* to avoid many small files
-    String regex = "hdfs://[-_a-zA-Z0-9]+/tmp/.+"; // defensive, cleaning only /tmp in hdfs
-    if (params.getTargetDirectory().matches(regex)) {
-      FsShell shell = new FsShell(conf);
-      try {
-        String dir =
-            params.getTargetDirectory().substring(params.getTargetDirectory().indexOf("/tmp"));
-        log.info(
-            "Deleting working directory ["
-                + params.getTargetDirectory()
-                + "] which translates to ["
-                + "-rm -r -skipTrash "
-                + dir
-                + "]");
-
-        shell.run(new String[] {"-rm", "-r", "-skipTrash", dir});
-      } catch (Exception e) {
-        throw new IOException("Unable to delete the working directory", e);
-      }
-    } else {
-      log.info(
-          "Working directory ["
-              + params.getTargetDirectory()
-              + "] will not be removed automatically "
-              + "- only /tmp/* working directories will be cleaned");
-    }
-  }
   /** Deletes the snapshot and old tables whereby we keep the 2 latest tables only. */
   private static void cleanup(MapConfiguration config) throws Exception {
     Configuration hbaseConfig = HBaseConfiguration.create();

@@ -57,7 +57,7 @@ public class WorkflowParams {
   private String hdfsLockZkConnectionString;
 
   /** Builder for the main() args. */
-  public static WorkflowParams buildForPrepare(String args[]) {
+  public static WorkflowParams buildForPrepare(String[] args) {
     try {
       WorkflowParams params = new WorkflowParams();
       params.zkQuorum = args[0];

@@ -33,49 +33,10 @@ import lombok.extern.slf4j.Slf4j;
 public class PrepareBackfill {
 
   public static void main(String[] args) throws IOException {
-    if (args.length > 4) {
-      log.info("Starting in Oozie mode");
-      WorkflowParams params = WorkflowParams.buildForPrepare(args);
-      log.info(params.toString());
-      startOozieWorkflow(params);
-    } else {
-      log.info("Starting in Spark mode");
-      MapConfiguration config = MapConfiguration.build(args[1]);
-      config.setTimestamp(args[2]);
-      config.setMode(args[0]);
-      startSparkWorkflow(config);
-    }
-  }
-
-  private static void startOozieWorkflow(WorkflowParams params) throws IOException {
-    log.info(params.toString());
-    try {
-      log.info("Connecting to HBase");
-      Configuration conf = HBaseConfiguration.create();
-      conf.set(HConstants.ZOOKEEPER_QUORUM, params.getZkQuorum());
-      try (Connection connection = ConnectionFactory.createConnection(conf);
-          Admin admin = connection.getAdmin()) {
-
-        HTableDescriptor target = new HTableDescriptor(TableName.valueOf(params.getTargetTable()));
-        appendColumnFamily(target, "EPSG_4326"); // points and tiles both have this CF
-        if ("tiles".equalsIgnoreCase(params.getMode())) {
-          appendColumnFamily(target, "EPSG_3857");
-          appendColumnFamily(target, "EPSG_3575");
-          appendColumnFamily(target, "EPSG_3031");
-        }
-        ModulusSalt salt = new ModulusSalt(params.getKeySaltModulus());
-        System.out.format("Creating %s", params.getTargetTable());
-        admin.createTable(target, salt.getTableRegions());
-      }
-
-      // update the Oozie WF parameters for future jobs
-      params.saveToOozie();
-
-    } catch (IOException e) {
-      log.error("Unable to prepare the tables for backfilling");
-      e.printStackTrace();
-      throw e; // deliberate log and throw to keep logs together
-    }
+    MapConfiguration config = MapConfiguration.build(args[1]);
+    config.setTimestamp(args[2]);
+    config.setMode(args[0]);
+    startSparkWorkflow(config);
   }
 
   private static void startSparkWorkflow(MapConfiguration config) throws IOException {
@@ -93,15 +54,14 @@ public class PrepareBackfill {
           appendColumnFamily(target, "EPSG_3031");
         }
         ModulusSalt salt = new ModulusSalt(config.getHbase().getKeySaltModulus());
-        System.out.format("Creating %s", config.getFQTableName());
+        log.info("Creating {}", config.getFQTableName());
         admin.createTable(target, salt.getTableRegions());
       }
 
     } catch (TableExistsException e) {
-
+      log.info("Ignoring non-existing table");
     } catch (IOException e) {
       log.error("Unable to prepare the tables for backfilling");
-      e.printStackTrace();
       throw e; // deliberate log and throw to keep logs together
     }
   }

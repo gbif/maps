@@ -38,6 +38,7 @@ public class MapConfiguration {
   private String timestamp;
   private String mode;
   private String hiveDB;
+  private String metadataPath;
   private int tilesThreshold;
   private int tileSize;
   private int maxZoom;
