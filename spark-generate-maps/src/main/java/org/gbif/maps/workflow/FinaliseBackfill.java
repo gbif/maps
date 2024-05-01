@@ -73,14 +73,14 @@ public class FinaliseBackfill {
       if ("points".equalsIgnoreCase(config.getMode())) {
         MapTables newMeta =
             new MapTables(
-                (meta == null) ? null : meta.getTileTable(), config.getHbase().getTableName());
+                (meta == null) ? null : meta.getTileTable(), config.getFQTableName());
         log.info("Updating metadata with: " + newMeta);
         metastore.update(newMeta);
 
       } else {
         MapTables newMeta =
             new MapTables(
-                config.getHbase().getTableName(), (meta == null) ? null : meta.getPointTable());
+                config.getFQTableName(), (meta == null) ? null : meta.getPointTable());
         log.info("Updating metadata with: " + newMeta);
         metastore.update(newMeta);
       }
@@ -131,7 +131,7 @@ public class FinaliseBackfill {
               Metastores.newZookeeperMapsMeta(
                   hbaseConfig.get("hbase.zookeeper.quorum"),
                   1000,
-                  hbaseConfig.get("zookeeper.znode.parent"))) {
+                 config.getMetadataPath())) {
 
         // remove all but the last 2 tables
         // table names are suffixed with a timestamp e.g. prod_d_maps_points_20180616_1320
