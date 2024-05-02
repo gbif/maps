@@ -17,13 +17,18 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import lombok.Builder;
+import lombok.Data;
 
 /**
  * The tables used for mapping and when they were generated.
  */
+
+
+@Data
 public class MapTables implements Serializable {
   private static final Pattern PIPE = Pattern.compile("\\|");
   private static final Pattern TABLE_TIMESTAMP = Pattern.compile("(20\\d\\d\\d\\d\\d\\d_\\d\\d\\d\\d)$");
@@ -32,6 +37,15 @@ public class MapTables implements Serializable {
   private final String tileTableDate;
   private final String pointTableDate;
 
+
+  public static MapTables.MapTablesBuilder builder(MapTables mapTables) {
+    if (mapTables != null) {
+      return new MapTablesBuilder().pointTable(mapTables.pointTable).tileTable(mapTables.tileTable);
+    }
+    return new MapTablesBuilder();
+  }
+
+  @Builder
   public MapTables(String tileTable, String pointTable) {
     this.tileTable = tileTable;
     this.pointTable = pointTable;
@@ -54,48 +68,6 @@ public class MapTables implements Serializable {
       }
     }
     return null;
-  }
-
-  public String getPointTable() {
-    return pointTable;
-  }
-
-  public String getTileTable() {
-    return tileTable;
-  }
-
-  public String getPointTableDate() {
-    return pointTableDate;
-  }
-
-  public String getTileTableDate() {
-    return tileTableDate;
-  }
-
-  @Override
-  public String toString() {
-    return "MapTables{" +
-           "tileTable=" + tileTable +
-           ", pointTable=" + pointTable +
-           '}';
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof MapTables)) {
-      return false;
-    }
-    MapTables mapTables = (MapTables) o;
-    return Objects.equals(tileTable, mapTables.tileTable) &&
-           Objects.equals(pointTable, mapTables.pointTable);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(tileTable, pointTable);
   }
 
   /**

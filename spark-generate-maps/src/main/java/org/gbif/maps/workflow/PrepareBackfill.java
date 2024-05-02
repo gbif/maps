@@ -17,14 +17,12 @@ import org.gbif.maps.common.hbase.ModulusSalt;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.*;
-import org.apache.hadoop.hbase.client.Admin;
-import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.io.compress.Compression;
 import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.regionserver.BloomType;
+import org.apache.hadoop.hbase.util.Bytes;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,11 +40,10 @@ public class PrepareBackfill {
   private static void startSparkWorkflow(MapConfiguration config) throws IOException {
     try {
       log.info("Connecting to HBase");
-      Configuration conf = HBaseConfiguration.create();
-      try (Connection connection = ConnectionFactory.createConnection(conf);
+      try (Connection connection = ConnectionFactory.createConnection(HBaseConfiguration.create());
           Admin admin = connection.getAdmin()) {
-
-        HTableDescriptor target = new HTableDescriptor(TableName.valueOf(config.getFQTableName()));
+        TableDescriptorBuilder target =
+            TableDescriptorBuilder.newBuilder(TableName.valueOf(config.getFQTableName()));
         appendColumnFamily(target, "EPSG_4326"); // points and tiles both have this CF
         if ("tiles".equalsIgnoreCase(config.getMode())) {
           appendColumnFamily(target, "EPSG_3857");
@@ -55,7 +52,7 @@ public class PrepareBackfill {
         }
         ModulusSalt salt = new ModulusSalt(config.getHbase().getKeySaltModulus());
         log.info("Creating {}", config.getFQTableName());
-        admin.createTable(target, salt.getTableRegions());
+        admin.createTable(target.build(), salt.getTableRegions());
       }
 
     } catch (TableExistsException e) {
@@ -72,12 +69,13 @@ public class PrepareBackfill {
    * @param target The target table
    * @param name The CF name
    */
-  private static void appendColumnFamily(HTableDescriptor target, String name) {
-    HColumnDescriptor cf = new HColumnDescriptor(name);
+  private static void appendColumnFamily(TableDescriptorBuilder target, String name) {
+    ColumnFamilyDescriptorBuilder cf =
+        ColumnFamilyDescriptorBuilder.newBuilder(Bytes.toBytes(name));
     cf.setMaxVersions(1);
     cf.setCompressionType(Compression.Algorithm.GZ);
     cf.setDataBlockEncoding(DataBlockEncoding.FAST_DIFF);
     cf.setBloomFilterType(BloomType.NONE);
-    target.addFamily(cf);
+    target.setColumnFamily(cf.build());
   }
 }

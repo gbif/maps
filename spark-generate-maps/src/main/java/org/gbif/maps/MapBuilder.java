@@ -198,14 +198,13 @@ public class MapBuilder implements Serializable {
       List<Row> statsList = stats.collectAsList();
       mapsToPyramid =
           statsList.stream().map(s -> (String) s.getAs("mapKey")).collect(Collectors.toSet());
-      System.out.println(
-          String.format("Map views that require tile pyramid %d", mapsToPyramid.size()));
+      System.out.printf("Map views that require tile pyramid %d%n", mapsToPyramid.size());
     }
     return mapsToPyramid;
   }
 
   /** Creates the Hadoop configuration suitable for writing HFiles */
-  private Configuration hadoopConf() throws IOException {
+  private Configuration hadoopConf() {
     Configuration conf = HBaseConfiguration.create();
     conf.set(FileOutputFormat.COMPRESS, "true");
     conf.setClass(FileOutputFormat.COMPRESS_CODEC, SnappyCodec.class, CompressionCodec.class);

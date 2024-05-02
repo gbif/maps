@@ -30,14 +30,16 @@ import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.tool.BulkLoadHFilesTool;
+import org.jetbrains.annotations.NotNull;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * Finalising the backfill involves the following:
  *
  * <ol>
- *   <li>Bulkloading the HFiles into the target table
+ *   <li>Bulk loading the HFiles into the target table
  *   <li>Updating the Maps metastore table (ZK)
  *   <li>Deleting the snapshot table
  *   <li>Deleting the intermediate folders
@@ -65,26 +67,26 @@ public class FinaliseBackfill {
         Metastores.newZookeeperMapsMeta(
             hbaseConfig.get("hbase.zookeeper.quorum"), 1000, config.getMetadataPath())) {
 
-      MapTables meta = metastore.read(); // we update any existing values
+      MapTables existingMeta = metastore.read(); // we update any existing values
 
       // NOTE: there is the possibility of a race condition here if 2 instances are updating
       // different
       // modes simultaneously
-      if ("points".equalsIgnoreCase(config.getMode())) {
-        MapTables newMeta =
-            new MapTables(
-                (meta == null) ? null : meta.getTileTable(), config.getFQTableName());
-        log.info("Updating metadata with: " + newMeta);
-        metastore.update(newMeta);
-
-      } else {
-        MapTables newMeta =
-            new MapTables(
-                config.getFQTableName(), (meta == null) ? null : meta.getPointTable());
-        log.info("Updating metadata with: " + newMeta);
-        metastore.update(newMeta);
-      }
+      MapTables newMeta = getNewMeta(config, existingMeta);
+      log.info("Updating metadata with: " + newMeta);
+      metastore.update(newMeta);
     }
+  }
+
+  @NotNull
+  private static MapTables getNewMeta(MapConfiguration config, MapTables existingMeta) {
+    MapTables.MapTablesBuilder newMeta = MapTables.builder(existingMeta);
+    if ("points".equalsIgnoreCase(config.getMode())) {
+      newMeta.pointTable(config.getFQTableName());
+    } else {
+      newMeta.tileTable(config.getFQTableName());
+    }
+    return newMeta.build();
   }
 
   private static void loadTable(MapConfiguration config) throws Exception {
@@ -95,7 +97,7 @@ public class FinaliseBackfill {
 
     if ("points".equalsIgnoreCase(config.getMode())) {
       Path hfiles = new Path(config.getFQTargetDirectory(), new Path("points"));
-      log.info("Loading HBase table[" + config.getFQTableName() + "] from [" + hfiles + "]");
+      log.info("Loading HBase table[{}] from [{}]", config.getFQTableName(), hfiles);
       loader.bulkLoad(table, hfiles);
 
     } else {
@@ -106,13 +108,7 @@ public class FinaliseBackfill {
                   config.getFQTargetDirectory(),
                   new Path("tiles", new Path(projection, "z" + zoom)));
           log.info(
-              "Zoom["
-                  + zoom
-                  + "] Loading HBase table["
-                  + config.getFQTableName()
-                  + "] from ["
-                  + hfiles
-                  + "]");
+              "Zoom[{}] Loading HBase table[{}] from [{}]", zoom, config.getFQTableName(), hfiles);
           loader.bulkLoad(table, hfiles);
         }
       }
@@ -129,9 +125,7 @@ public class FinaliseBackfill {
           // 1 sec retries
           MapMetastore metastore =
               Metastores.newZookeeperMapsMeta(
-                  hbaseConfig.get("hbase.zookeeper.quorum"),
-                  1000,
-                 config.getMetadataPath())) {
+                  hbaseConfig.get("hbase.zookeeper.quorum"), 1000, config.getMetadataPath())) {
 
         // remove all but the last 2 tables
         // table names are suffixed with a timestamp e.g. prod_d_maps_points_20180616_1320
@@ -142,10 +136,10 @@ public class FinaliseBackfill {
         Arrays.sort(tables, Comparator.comparing(TableName::getNameAsString));
 
         MapTables meta = metastore.read();
-        log.info("Current live tables[" + meta + "]");
+        log.info("Current live tables[{}]", meta);
 
         for (int i = 0; i < tables.length - 2; i++) {
-          // Defensive coding: read the metastore each time to minimise possible misue resulting in
+          // Defensive coding: read the metastore each time to minimise possible misuse resulting in
           // race conditions
           meta = metastore.read();
 
@@ -155,46 +149,49 @@ public class FinaliseBackfill {
               && !meta.getPointTable().equalsIgnoreCase(tables[i].getNameAsString())
               && !meta.getTileTable().equalsIgnoreCase(tables[i].getNameAsString())) {
 
-            log.info("Disabling HBase table[" + tables[i].getNameAsString() + "]");
+            log.info("Disabling HBase table[{}]", tables[i].getNameAsString());
             admin.disableTable(tables[i]);
-            log.info("Deleting HBase table[" + tables[i].getNameAsString() + "]");
+            log.info("Deleting HBase table[{}]", tables[i].getNameAsString());
             admin.deleteTable(tables[i]);
           }
         }
       }
     } catch (IOException e) {
-      log.error("Unable to clean HBase tables");
-      e.printStackTrace();
+      log.error("Unable to clean HBase tables", e);
       throw e; // deliberate log and throw to keep logs together
     }
 
     // Cleanup the working directory if in hdfs://nameserver/tmp/* to avoid many small files
     String regex = "hdfs://[-_a-zA-Z0-9]+/tmp/.+"; // defensive, cleaning only /tmp in hdfs
     if (config.getFQTargetDirectory().matches(regex)) {
-      Configuration hdfsConfig = new Configuration();
-      hdfsConfig.addResource("core-site.xml");
-      hdfsConfig.addResource("hdfs-site.xml");
-      FileSystem hdfs = FileSystem.get(hdfsConfig);
-      try {
+      try (FileSystem hdfs = getHdfsFileSystem()) {
         String dir =
             config.getTargetDirectory().substring(config.getFQTargetDirectory().indexOf("/tmp"));
         log.info(
-            "Deleting working directory ["
-                + config.getFQTargetDirectory()
-                + "] which translates to ["
-                + "-rm -r -skipTrash "
-                + dir
-                + "]");
+            "Deleting working directory [{}] which translates to [-rm -r -skipTrash {}]",
+            config.getFQTargetDirectory(),
+            dir);
         hdfs.deleteOnExit(new Path(dir));
       } catch (Exception e) {
         throw new IOException("Unable to delete the working directory", e);
       }
     } else {
       log.info(
-          "Working directory ["
-              + config.getFQTargetDirectory()
-              + "] will not be removed automatically "
-              + "- only /tmp/* working directories will be cleaned");
+          "Working directory [{}] will not be removed automatically - only /tmp/* working directories will be cleaned",
+          config.getFQTargetDirectory());
     }
+  }
+
+  @SneakyThrows
+  private static FileSystem getHdfsFileSystem() {
+    Configuration hdfsConfig = getHdfsConfig();
+    return FileSystem.get(hdfsConfig);
+  }
+
+  private static Configuration getHdfsConfig() {
+    Configuration hdfsConfig = new Configuration();
+    hdfsConfig.addResource("core-site.xml");
+    hdfsConfig.addResource("hdfs-site.xml");
+    return hdfsConfig;
   }
 }
