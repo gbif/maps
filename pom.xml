@@ -35,7 +35,7 @@
     <maven.compiler.target>11</maven.compiler.target>
 
     <gbif-occurrence.version>0.195.0-H3-SNAPSHOT</gbif-occurrence.version>
-    <gbif-api.version>1.16.1-SNAPSHOT</gbif-api.version>
+    <gbif-api.version>1.17.0-SNAPSHOT</gbif-api.version>
     <gbif-common.ws.version>1.26</gbif-common.ws.version>
     <dwc-api.version>1.49-H3-SNAPSHOT</dwc-api.version>
     <gbif-predicates.version>1.3.3-SNAPSHOT</gbif-predicates.version>
