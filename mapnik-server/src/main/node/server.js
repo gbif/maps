@@ -52,7 +52,14 @@ function createServer(config) {
             console.log("Retrieved", results.length, "tiles, error", err);
             if (!err && results.length == 4) {
               writeHeaders(200, results[0].etag, res);
-              renderer(parameters, results.map(r => r.body), res);
+              try {
+                renderer(parameters, results.map(r => r.body), res);
+              } catch (e) {
+                // something went wrong
+                res.writeHead(500, {'Content-Type': 'image/png', 'Access-Control-Allow-Origin': '*', 'X-Error': e.message});
+                res.end(fs.readFileSync('./public/map/500.png'));
+                console.log(e);
+              }
             } else {
               console.log("Error retrieving four vector tiles", err);
               res.writeHead(503, {'Content-Type': 'image/png', 'Access-Control-Allow-Origin': '*', 'X-Error': err.message});
