@@ -409,8 +409,8 @@
     </dependency>
     <dependency>
       <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-starter-zookeeper-discovery</artifactId>
-      <scope>runtime</scope>
+      <artifactId>spring-cloud-starter-zookeeper-all</artifactId>
+      <version>${spring-cloud-zookeeper.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.apache.zookeeper</groupId>
@@ -432,15 +432,16 @@
           <groupId>org.springframework.cloud</groupId>
           <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </exclusion>
+        <exclusion>
+          <artifactId>spring-cloud-starter-zookeeper-config</artifactId>
+          <groupId>org.springframework.cloud</groupId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-starter-zookeeper-config</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-starter-openfeign</artifactId>
+      <artifactId>spring-cloud-starter-zookeeper-discovery</artifactId>
+      <version>${spring-cloud-zookeeper.version}</version>
     </dependency>
     <dependency>
       <groupId>javax.validation</groupId>
