@@ -44,7 +44,6 @@ import org.elasticsearch.client.sniff.SniffOnFailureListener;
 import org.elasticsearch.client.sniff.Sniffer;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.actuate.autoconfigure.elasticsearch.ElasticSearchRestHealthContributorAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -69,8 +68,7 @@ import com.google.common.base.Strings;
     "org.gbif.ws.server.mapper"
   },
   exclude = {
-    RabbitAutoConfiguration.class,
-    ElasticSearchRestHealthContributorAutoConfiguration.class
+    RabbitAutoConfiguration.class
   })
 @EnableConfigurationProperties
 public class TileServerApplication {
