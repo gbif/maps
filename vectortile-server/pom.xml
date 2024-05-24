@@ -13,6 +13,8 @@
 
   <properties>
     <start-class>org.gbif.maps.TileServerApplication</start-class>
+    <!-- Using java 17 for applications -->
+    <java.version>17</java.version>
   </properties>
 
   <build>
