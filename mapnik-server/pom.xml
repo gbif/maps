@@ -11,59 +11,32 @@
 
   <build>
     <plugins>
-      <!-- Download Node and NPM -->
+      <!-- Build Docker image -->
       <plugin>
-        <groupId>com.github.eirslett</groupId>
-        <artifactId>frontend-maven-plugin</artifactId>
-        <version>1.0</version>
-
+        <groupId>io.fabric8</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <version>0.45.0</version>
         <configuration>
-          <workingDirectory>src/main/node</workingDirectory>
+          <images>
+            <image>
+              <name>docker.gbif.org/mapnik-server:%l</name>
+            </image>
+          </images>
         </configuration>
-
         <executions>
           <execution>
-            <id>install node and npm</id>
+            <id>docker-build</id>
             <goals>
-              <goal>install-node-and-npm</goal>
-            </goals>
-            <configuration>
-              <nodeVersion>v8.4.0</nodeVersion>
-              <npmVersion>5.3.0</npmVersion>
-            </configuration>
-          </execution>
-
-          <execution>
-            <id>npm install</id>
-            <goals>
-              <goal>npm</goal>
-            </goals>
-            <configuration>
-              <arguments>install</arguments>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <!-- Create an archive containing the Node app and node_modules -->
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.2-beta-5</version>
-        <executions>
-          <execution>
-            <id>node assembly</id>
-            <goals>
-              <goal>single</goal>
+              <goal>build</goal>
             </goals>
             <phase>package</phase>
-            <configuration>
-              <appendAssemblyId>false</appendAssemblyId>
-              <descriptors>
-                <descriptor>assembly.xml</descriptor>
-              </descriptors>
-              <tarLongFileMode>gnu</tarLongFileMode>
-              <useProjectArtifact>false</useProjectArtifact>
-            </configuration>
+          </execution>
+          <execution>
+            <id>docker-install</id>
+            <goals>
+              <goal>push</goal>
+            </goals>
+            <phase>deploy</phase>
           </execution>
         </executions>
       </plugin>
