@@ -19,7 +19,7 @@
         <configuration>
           <images>
             <image>
-              <name>docker.gbif.org/mapnik-server:%l</name>
+              <name>docker.gbif.org/%a:%v</name>
             </image>
           </images>
         </configuration>

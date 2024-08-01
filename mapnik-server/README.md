@@ -8,7 +8,7 @@ For continuous integration with the Java modules, this project is built using Ma
 
 ```
 mvn clean install
-docker run --rm -it --volume $PWD/conf:/usr/local/gbif/conf --publish 8080:8080 docker.gbif.org/mapnik-server:dev
+docker run --rm -it --volume $PWD/conf:/usr/local/gbif/conf --publish 8080:8080 docker.gbif.org/mapnik-server
 ```
 
 ## Backward compatibility with V1 API
