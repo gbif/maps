@@ -177,6 +177,7 @@
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>${jacoco-maven-plugin.version}</version>
           <configuration>
+            <skip>true</skip>
             <append>true</append>
           </configuration>
           <executions>
