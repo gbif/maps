@@ -40,7 +40,7 @@ gbifServiceRegistry.register = function(config) {
     var zkUuid = uuid.v4();
 
     var host = config.service.host;
-    var port = parseInt(process.argv[3]);
+    var port = config.service.externalPort ? config.service.externalPort : parseInt(process.argv[3]);
     var ip = quickLocalIp.getLocalIP4();
     var url = "http://"+host+":"+port+"/";
 

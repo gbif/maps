@@ -25,7 +25,7 @@ import lombok.AllArgsConstructor;
 import static org.gbif.maps.io.PointFeature.*;
 import static org.gbif.maps.io.PointFeature.PointFeatures.*;
 
-/** Generates a GBIF protobug tile from the structured input. */
+/** Generates a GBIF protobuf tile from the structured input. */
 @AllArgsConstructor
 public class ProtobufTiles implements Serializable {
   public static byte[] generate(Row row) {

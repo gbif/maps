@@ -1,0 +1,6 @@
+.git*
+Dockerfile
+target
+tmp
+src/main/node/node
+src/main/node/node_modules

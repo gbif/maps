@@ -1,10 +1,10 @@
 tileServer:
-#  host: api.gbif-uat.org
-#  port: 80
-#  prefix: /v2
-  host: "localhost"
-  port: 7001
-  prefix: ""
+  host: api.gbif.org
+  port: 80
+  prefix: /v2
+#  host: "localhost"
+#  port: 7001
+#  prefix: ""
   timeout: 10000
 
 # If set, service will register with ZooKeeper
