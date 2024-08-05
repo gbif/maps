@@ -8,6 +8,7 @@
 **/logs/
 **/dependency-reduced-pom.xml
 **/*.log
+java-generated
 
 vectortile-server/local.yml
 
