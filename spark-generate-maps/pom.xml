@@ -36,6 +36,14 @@
                   <pattern>org.hsqldb</pattern>
                   <shadedPattern>shared.org.hsqldb</shadedPattern>
                 </relocation>
+                <relocation>
+                  <pattern>com.google.protobuf</pattern>
+                  <shadedPattern>shared.com.google.protobuf</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.curator</pattern>
+                  <shadedPattern>shared.org.apache.curator</shadedPattern>
+                </relocation>
               </relocations>
             </configuration>
           </execution>
