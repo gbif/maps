@@ -38,6 +38,9 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+
+import org.gbif.vocabulary.client.ConceptClient;
+
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Polygon;
@@ -114,11 +117,12 @@ public final class RegressionResource {
   @Autowired
   public RegressionResource(TileResource tiles,
                             @Qualifier("esOccurrenceClient") RestHighLevelClient esClient,
-                            TileServerConfiguration configuration) {
+                            TileServerConfiguration configuration,
+                            ConceptClient conceptClient) {
     this.tiles = tiles;
     this.esClient = esClient;
     this.esIndex = configuration.getEsOccurrenceConfiguration().getElasticsearch().getIndex();
-    this.esSearchRequestBuilder = new EsSearchRequestBuilder(OccurrenceEsField.buildFieldMapper());
+    this.esSearchRequestBuilder = new EsSearchRequestBuilder(OccurrenceEsField.buildFieldMapper(), conceptClient);
   }
 
   /**
