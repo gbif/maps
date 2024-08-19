@@ -87,7 +87,7 @@
     <spring-cloud-zookeeper.version>2.2.5.RELEASE</spring-cloud-zookeeper.version>
     <spring-cloud-openfeign.version>2.2.10.RELEASE</spring-cloud-openfeign.version>
     <spring-boot-admin.version>2.2.4</spring-boot-admin.version>
-    <springdoc-openapi-ui.version>1.8.0</springdoc-openapi-ui.version>
+    <springdoc-openapi-ui.version>1.5.8</springdoc-openapi-ui.version>
 
     <!-- Tools-->
     <lombok.version>1.18.28</lombok.version>
