@@ -26,7 +26,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 
 import lombok.extern.slf4j.Slf4j;
 
-/** An Oozie step to prepare for a backfill, which creates the target table in HBase. */
+/** An Airflow step to prepare for a backfill, which creates the target table in HBase. */
 @Slf4j
 public class PrepareBackfill {
 

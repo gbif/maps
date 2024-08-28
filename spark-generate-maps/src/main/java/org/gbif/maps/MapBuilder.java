@@ -83,7 +83,7 @@ public class MapBuilder implements Serializable {
     tiles.run();
   }
 
-  public void run() throws IOException {
+  public void run() {
     SparkSession spark =
         SparkSession.builder().appName("Map Builder").enableHiveSupport().getOrCreate();
     spark.sql("use " + hiveDB);

@@ -46,7 +46,7 @@ public class TileXYUDF implements UDF3<Integer, Integer, Integer, Row[]>, Serial
     NW,
     SE,
     SW
-  };
+  }
 
   final String epsg;
   final int tileSize;
@@ -87,20 +87,18 @@ public class TileXYUDF implements UDF3<Integer, Integer, Integer, Row[]>, Serial
     readdressAndAppend(
         addresses, tileSchema, globalXY, tileXY, zoom, localXY.getX(), localXY.getY());
 
-    Set<Row> rows =
-        addresses.stream()
-            .map(
-                s -> {
-                  String p[] = s.split(",");
-                  return RowFactory.create(
-                      Integer.valueOf(p[0]),
-                      Integer.valueOf(p[1]),
-                      Integer.valueOf(p[2]),
-                      Integer.valueOf(p[3]));
-                })
-            .collect(Collectors.toSet());
-
-    return rows.toArray(new Row[rows.size()]);
+    return addresses.stream()
+        .map(
+            s -> {
+              String[] p = s.split(",");
+              return RowFactory.create(
+                  Integer.valueOf(p[0]),
+                  Integer.valueOf(p[1]),
+                  Integer.valueOf(p[2]),
+                  Integer.valueOf(p[3]));
+            })
+        .distinct()
+        .toArray(Row[]::new);
   }
 
   /**

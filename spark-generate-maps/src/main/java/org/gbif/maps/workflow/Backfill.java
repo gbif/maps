@@ -29,15 +29,16 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 
 import lombok.extern.slf4j.Slf4j;
 
-/** The driver for back-filling the map tables from Oozie. */
+/** The driver for back-filling the map tables from Airflow. */
 @Slf4j
 public class Backfill {
 
-  /** Expects [tiles,points] configFile [oozieProperties] */
+  /** Expects [tiles,points] configFile [airflowProperties] */
   public static void main(String[] args) throws Exception {
-    if (!(args.length == 3 || args.length == 4))
+    if (args.length != 3 && args.length != 4) {
       throw new IllegalArgumentException(
-          "Expects [tiles,points] configFile timestamp [oozieProperties]");
+          "Expects [tiles,points] configFile timestamp [airflowProperties]");
+    }
 
     MapConfiguration config = MapConfiguration.build(args[1]);
     config.setTimestamp(args[2]);

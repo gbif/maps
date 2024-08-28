@@ -28,7 +28,7 @@ import org.apache.spark.sql.types.DataTypes;
 import com.google.common.collect.Sets;
 
 import lombok.AllArgsConstructor;
-import scala.collection.JavaConversions;
+import scala.collection.JavaConverters;
 import scala.collection.mutable.WrappedArray;
 
 /** Returns the map keys for the record. */
@@ -125,25 +125,24 @@ public class MapKeysUDF
     appendNonNull(keys, "PUBLISHER", publishingOrgKey);
     appendNonNull(keys, "COUNTRY", countryCode);
     appendNonNull(keys, "PUBLISHING_COUNTRY", publishingCountry);
-    if (networkKeys != null && networkKeys.size() > 0) {
-      for (String n : JavaConversions.seqAsJavaList(networkKeys)) {
+    if (networkKeys != null && !networkKeys.isEmpty()) {
+      for (String n : JavaConverters.seqAsJavaList(networkKeys)) {
         appendNonNull(keys, "NETWORK", n);
       }
     }
 
     if (!denyOrApproveKeys.isEmpty()) {
-      Set<String> filtered =
-          keys.stream()
-              .filter(
-                  s -> {
-                    if (isApprove) return denyOrApproveKeys.contains(s);
-                    else return !denyOrApproveKeys.contains(s);
-                  })
-              .collect(Collectors.toSet());
-      return filtered.toArray(new String[filtered.size()]);
+      return keys.stream()
+          .filter(
+              s -> {
+                if (isApprove) return denyOrApproveKeys.contains(s);
+                else return !denyOrApproveKeys.contains(s);
+              })
+          .distinct()
+          .toArray(String[]::new);
     }
 
-    return keys.toArray(new String[keys.size()]);
+    return keys.toArray(new String[0]);
   }
 
   public static void appendNonNull(Set<String> target, String prefix, Object l) {

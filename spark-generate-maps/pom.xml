@@ -206,26 +206,11 @@
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>
-      <exclusions>
-        <!-- Breaks spark2 css and JS when launched in Oozie -->
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-client</artifactId>
       <exclusions>
-        <!--
-          This is excluded since it stops the MRAppMaster in Oozie from even starting (when in Oozie).
-        -->
-        <exclusion>
-          <groupId>org.apache.hadoop</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
         <!--
           Breaks spark2
         -->

@@ -33,7 +33,7 @@ import no.ecc.vectortile.VectorTileEncoder;
 public class VectorTiles implements Serializable {
   private int tileSize;
   private int bufferSize;
-  private static GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
+  private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
 
   public byte[] generate(List<Row> tileData) {
     VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
@@ -73,12 +73,10 @@ public class VectorTiles implements Serializable {
         long count = encoded.getAs("occCount");
         Map<String, Long> yearCounts = target.getOrDefault(bor, new HashMap<>());
         yearCounts.put(String.valueOf(year), count); // TODO: what are nulls meant to be?
-        if (!target.containsKey(bor)) target.put(bor, yearCounts);
+        target.putIfAbsent(bor, yearCounts);
       }
 
-      for (String bor : target.keySet()) {
-        encoder.addFeature(bor, target.get(bor), point);
-      }
+      target.forEach((bor, value) -> encoder.addFeature(bor, value, point));
     }
     return encoder.encode();
   }

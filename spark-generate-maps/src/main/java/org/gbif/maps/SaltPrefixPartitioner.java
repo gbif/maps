@@ -22,7 +22,7 @@ public class SaltPrefixPartitioner extends Partitioner {
   final int numPartitions;
 
   public SaltPrefixPartitioner(int saltLength) {
-    numPartitions = new Double(Math.pow(10, saltLength)).intValue();
+    numPartitions = Double.valueOf(Math.pow(10, saltLength)).intValue();
   }
 
   @Override

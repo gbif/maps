@@ -50,8 +50,6 @@ public class MapConfiguration {
   @Builder
   @Jacksonized
   static class HBaseConfiguration {
-    // private String zkQuorum;
-    // private String rootDir;
     private int keySaltModulus;
     private String tableName;
   }
@@ -60,7 +58,6 @@ public class MapConfiguration {
   @Builder
   @Jacksonized
   static class HdfsLockConfig {
-    // private String zkConnectionString;
     private String namespace;
     private String lockingPath;
     private String lockName;
