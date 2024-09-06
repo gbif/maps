@@ -42,7 +42,7 @@
     <javax.activation.version>1.1.1</javax.activation.version>
     <jts.version>1.13</jts.version>
     <!-- Important: same version as the PBF library installed -->
-    <protoc.version>2.5.0</protoc.version>
+    <protoc.version>3.20.3</protoc.version>
     <logback.version>1.4.11</logback.version>
     <logstash-encoder.version>4.11</logstash-encoder.version>
     <janino-logback.version>2.5.15</janino-logback.version>

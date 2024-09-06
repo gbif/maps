@@ -90,7 +90,7 @@ public class PointFeatureFilters {
             yearCounts.forEach((year, count) -> meta.put(String.valueOf(year), count));
 
             // add a total value across all years
-            long sum = yearCounts.values().stream().mapToLong(v -> (Integer)v).sum();
+            long sum = yearCounts.values().stream().mapToLong(v -> v).sum();
             meta.put("total", sum);
             features.incrementAndGet();
             encoder.addFeature(layerName, meta, point);

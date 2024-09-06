@@ -13,7 +13,8 @@
  */
 package org.gbif.maps.resource;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.Int2D;
 
@@ -22,13 +23,14 @@ import java.time.Year;
 import java.util.Arrays;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.logger;
+import org.slf4j.loggerFactory;
 
 import com.carrotsearch.hppc.IntHashSet;
 import com.google.common.annotations.VisibleForTesting;
 import com.vividsolutions.jts.geom.Point;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import no.ecc.vectortile.VectorTileDecoder;
 
 /**
@@ -38,8 +40,9 @@ import no.ecc.vectortile.VectorTileDecoder;
  * Returned values are accurate to the nearest degree, since this process typically uses zoom level 0 tiles, and
  * that is roughly the limit of the resolution.
  */
+@Slf4j
+@Getter
 public class Capabilities {
-  private static final Logger LOG = LoggerFactory.getLogger(Capabilities.class);
 
   private static final String META_TOTAL = "total";
 
@@ -112,22 +115,6 @@ public class Capabilities {
 
   public int getMaxLng() {
     return ceil(maxLng, 180);
-  }
-
-  public Integer getMinYear() {
-    return minYear;
-  }
-
-  public Integer getMaxYear() {
-    return maxYear;
-  }
-
-  public long getTotal() {
-    return total;
-  }
-
-  public String getGenerated() {
-    return generated;
   }
 
   private static int floor(Double d, int defaultValue) {
@@ -312,7 +299,7 @@ public class Capabilities {
       int left = 0;
       int right = 0;
 
-      LOG.trace("Spread values {}", values);
+      log.trace("Spread values {}", values);
 
       do {
         // …measure the distance to the next value to the left of the current range,
@@ -331,7 +318,7 @@ public class Capabilities {
           leftDist = values[left] - values[left-1];
         }
 
-        LOG.trace("Spread: left p[{}]={}, right p[{}]={}.  leftDist {}, rightDist {}: Expand {}", left, values[left], right, values[right], leftDist, rightDist, rightDist > leftDist ? "left" : "right");
+        log.trace("Spread: left p[{}]={}, right p[{}]={}.  leftDist {}, rightDist {}: Expand {}", left, values[left], right, values[right], leftDist, rightDist, rightDist > leftDist ? "left" : "right");
 
         // Extend the range to envelop the nearest point to the current range
         // Favour expanding to the right (so only > not ≥ here) so a whole-world tile ends at -180–180°.
@@ -340,7 +327,7 @@ public class Capabilities {
         } else {
           right = (right + 1) % values.length;
         }
-        LOG.trace("Spread: left p[{}]={}, right p[{}]={}.", left, values[left], right, values[right]);
+        log.trace("Spread: left p[{}]={}, right p[{}]={}.", left, values[left], right, values[right]);
 
         // Finish when we are a step away from closing the loop
       } while ((right+1)%values.length != left);

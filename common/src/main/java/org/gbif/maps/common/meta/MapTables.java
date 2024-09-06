@@ -99,7 +99,7 @@ public class MapTables implements Serializable {
   }
 
   /**
-   * @return a human readable string (as bytes) for serialization
+   * @return a human-readable string (as bytes) for serialization
    */
   public byte[] serialize() {
     return (tileTable + "|" + pointTable).getBytes(StandardCharsets.UTF_8);

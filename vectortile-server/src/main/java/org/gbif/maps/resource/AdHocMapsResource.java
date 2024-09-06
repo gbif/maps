@@ -13,16 +13,6 @@
  */
 package org.gbif.maps.resource;
 
-import com.codahale.metrics.annotation.Timed;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.Point;
-import com.vividsolutions.jts.geom.Polygon;
-import io.swagger.v3.oas.annotations.Hidden;
-import no.ecc.vectortile.VectorTileEncoder;
 import org.gbif.api.model.predicate.Predicate;
 import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.bin.SquareBin;
@@ -36,6 +26,20 @@ import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapRequest;
 import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapRequestProvider;
 import org.gbif.occurrence.search.heatmap.es.EsOccurrenceHeatmapResponse;
 import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -48,17 +52,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import com.codahale.metrics.annotation.Timed;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.geom.Polygon;
+
+import io.swagger.v3.oas.annotations.Hidden;
+import no.ecc.vectortile.VectorTileEncoder;
 
 import static org.gbif.maps.resource.Params.BIN_MODE_HEX;
 import static org.gbif.maps.resource.Params.BIN_MODE_SQUARE;
@@ -206,10 +209,11 @@ public class AdHocMapsResource {
       for (OccurrenceHeatmapRequest heatmapRequest : heatmapRequests) {
         EsOccurrenceHeatmapResponse.GeoCentroidResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoCentroid(heatmapRequest);
         int[] featureCount = {0};
-        occurrenceHeatmapResponse.getBuckets().stream().filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
+        occurrenceHeatmapResponse.getBuckets().stream()
+          .filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
           .forEach(geoGridBucket -> {
             // for binning, we add the cell centre point, and the geohash to allow for webgl clicking
-            Map<String, Object> attributes = new HashMap();
+            Map<String, Object> attributes = new HashMap<>(2);
             attributes.put("total", geoGridBucket.getDocCount());
             attributes.put("geohash", geoGridBucket.getKey());
             encoder.addFeature(LAYER_NAME, attributes,
@@ -230,14 +234,6 @@ public class AdHocMapsResource {
       return encodeTile(bin, z, x, y, hexPerTile, squareSize, encoder.encode());
     }
   }
-
-  private void checkPredicateHashParam(HttpServletRequest httpServletRequest) {
-    String predicateHashParam = httpServletRequest.getParameter(OccurrenceHeatmapRequestProvider.PARAM_PREDICATE_HASH);
-    if (!Strings.isNullOrEmpty(predicateHashParam)) {
-      Predicate predicate = predicateCacheService.get(Integer.parseInt(predicateHashParam));
-    }
-  }
-
 
   /**
    * Translates the bounds into a Bbox2D.

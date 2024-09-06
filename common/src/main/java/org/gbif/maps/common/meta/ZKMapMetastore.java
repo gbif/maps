@@ -65,7 +65,7 @@ class ZKMapMetastore implements MapMetastore, Closeable {
     LOG.info("Starting watcher for {}", zkNodePath);
     zkNodeCache.start(true);
 
-    updateInternal(zkNodeCache); // set the inital state
+    updateInternal(zkNodeCache); // set the initial state
   }
 
   @Override

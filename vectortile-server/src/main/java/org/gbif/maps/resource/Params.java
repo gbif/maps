@@ -19,6 +19,7 @@ import org.gbif.api.util.SearchTypeValidator;
 import org.gbif.api.util.VocabularyUtils;
 import org.gbif.maps.common.filter.Range;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -28,7 +29,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 
 /**
  * Utilities for dealing with the parameters and mappings.
@@ -88,7 +88,7 @@ public class Params {
   public static String[] mapKeys(Map<String, String[]> params) {
 
     String mapKey = null,
-      countryMaskKey = null;
+    countryMaskKey = null;
 
     for (Map.Entry<String, String[]> param : params.entrySet()) {
       if (MAP_TYPES.containsKey(param.getKey())) {
@@ -134,10 +134,10 @@ public class Params {
       if (years.length == 2) {
         Integer min = null;
         Integer max = null;
-        if (years[0].length() > 0) {
+        if (!years[0].isEmpty()) {
           min = Integer.parseInt(years[0]);
         }
-        if (years[1].length() > 0) {
+        if (!years[1].isEmpty()) {
           max = Integer.parseInt(years[1]);
         }
         return new Range(min, max);
@@ -172,7 +172,7 @@ public class Params {
    */
   private static OccurrenceSearchParameter findSearchParam(String name) {
     try {
-      return (OccurrenceSearchParameter) VocabularyUtils.lookupEnum(name, OccurrenceSearchParameter.class);
+      return VocabularyUtils.lookupEnum(name, OccurrenceSearchParameter.class);
     } catch (IllegalArgumentException e) {
       // we have all params here, not only the enum ones, so this is ok to end up here a few times
     }
@@ -184,10 +184,10 @@ public class Params {
    * Each value is trimmed(String.trim()) in order to remove all sizes of empty parameters.
    */
   private static List<String> removeEmptyParameters(String[] parameters) {
-    List<String> cleanParameters = Lists.newArrayListWithCapacity(parameters.length);
+    List<String> cleanParameters = new ArrayList<>(parameters.length);
     for (String param : parameters) {
       final String cleanParam = Strings.nullToEmpty(param).trim();
-      if (cleanParam.length() > 0) {
+      if (!cleanParam.isEmpty()) {
         cleanParameters.add(cleanParam);
       }
     }

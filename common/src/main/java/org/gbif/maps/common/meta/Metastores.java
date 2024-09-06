@@ -26,16 +26,17 @@ public class Metastores {
     if (args.length == 2 || args.length == 4) {
       String zkQuorum = args[0];
       String zkPath = args[1];
-      LOG.info("Reading ZK[{}], path[{}]" + zkQuorum, zkPath);
-      MapMetastore meta = newZookeeperMapsMeta(zkQuorum, 1000, zkPath);
-      LOG.info("{}", meta.read());
+      LOG.info("Reading ZK[{}], path[{}]", zkQuorum, zkPath);
+      try(MapMetastore meta = newZookeeperMapsMeta(zkQuorum, 1000, zkPath)) {
+        LOG.info("{}", meta.read());
 
-      if (args.length == 4) {
-        String tileTable = args[2];
-        String pointTable = args[3];
-        LOG.info("Update tileTable[{}], pointTable[{}]", tileTable, pointTable);
-        meta.update(new MapTables(tileTable, pointTable));
-        LOG.info("Done.");
+        if (args.length == 4) {
+          String tileTable = args[2];
+          String pointTable = args[3];
+          LOG.info("Update tileTable[{}], pointTable[{}]", tileTable, pointTable);
+          meta.update(new MapTables(tileTable, pointTable));
+          LOG.info("Done.");
+        }
       }
     } else {
       LOG.error("Usage (supply table names to issue update): Metastores zkQuorum path [pointTable tileTable]");

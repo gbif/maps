@@ -102,7 +102,6 @@ public class HexBin implements Binnable {
     VectorTileDecoder.FeatureIterable tile = DECODER.decode(sourceTile, LAYER_NAME);
     Preconditions.checkArgument(tile.getLayerNames().contains(LAYER_NAME), "Tile is missing the expected layer: "
                                                                           + LAYER_NAME);
-    Iterable<VectorTileDecoder.Feature> features = () -> tile.iterator();
 
     HexagonalGrid grid = newGridInstance();
 
@@ -118,7 +117,7 @@ public class HexBin implements Binnable {
 
     // for each feature returned from the datastore locate its hexagon and store the data on the hexagon
     Set<Hexagon> dataCells = Sets.newHashSet();
-    for (VectorTileDecoder.Feature feature : features) {
+    for (VectorTileDecoder.Feature feature : tile) {
       double scale = ((double)tileSize) / feature.getExtent(); // adjust for differing tile sizes
       //LOG.debug("Scaling from {} to {} with {}", feature.getExtent(), tileSize, scale);
       Geometry geom = feature.getGeometry();
@@ -164,9 +163,7 @@ public class HexBin implements Binnable {
 
       // TODO: control only for verbose
       if (hexagon.getSatelliteData().isPresent()) {
-        hexagon.getSatelliteData().get().getMetadata().forEach((k,v) -> {
-          meta.put(k, v);
-        });
+        meta.putAll(hexagon.getSatelliteData().get().getMetadata());
       }
 
 
@@ -243,26 +240,15 @@ public class HexBin implements Binnable {
       if (hexagon.getSatelliteData().isPresent()) {
         HexagonData cellData = hexagon.getSatelliteData().get();
 
-        Optional<Long> total = totalCount(feature.getAttributes());
-        if (total.isPresent()) {
-          if (!cellData.getMetadata().containsKey(META_TOTAL_KEY)) {
-            cellData.getMetadata().put(META_TOTAL_KEY, total.get());
-          } else {
-            long existing = (Long)cellData.getMetadata().get(META_TOTAL_KEY);
-            cellData.getMetadata().put(META_TOTAL_KEY, total.get() + existing);
-          }
+        Long total = totalCount(feature.getAttributes());
+        if (total != null) {
+          cellData.getMetadata().merge(META_TOTAL_KEY, total, (existing, newValue) -> (Long) existing + (Long) newValue);
         }
 
         // TODO: this should only be done if a verbose count is asked
-        feature.getAttributes().forEach((year, count) -> {
-          if (!cellData.getMetadata().containsKey(year)) {
-            cellData.getMetadata().put(year, (Long) count);
-          } else {
-            long existing = (Long)cellData.getMetadata().get(year);
-            cellData.getMetadata().put(year, (Long) count + existing);
-          }
-
-        });
+        feature.getAttributes()
+          .forEach((year, count) ->  cellData.getMetadata()
+                                      .merge(year, count, (existing, newValue) -> (Long) existing + (Long) newValue));
       }
       return hexagon;
     }
@@ -273,16 +259,15 @@ public class HexBin implements Binnable {
   /**
    * Leniently attempts to get a total from the meta.
    */
-  private Optional<Long> totalCount(Map<String, Object> meta) {
+  private Long totalCount(Map<String, Object> meta) {
     if (meta != null && meta.containsKey(META_TOTAL_KEY)) {
       try {
-        Long total = Long.parseLong(meta.get(META_TOTAL_KEY).toString()); // support anything that can be parsed
-        return Optional.of(total);
+        return Long.parseLong(meta.get(META_TOTAL_KEY).toString()); // support anything that can be parsed
       } catch (NumberFormatException e) {
         // swallow
       }
     }
-    return Optional.empty();
+    return null;
   }
 
 

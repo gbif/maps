@@ -13,15 +13,14 @@
  */
 package org.gbif.maps.resource;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+
 /**
  * Storing the tile and date, as a string for simplicity.
  */
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class DatedVectorTile {
   byte[] tile;
   String date;
-
-  DatedVectorTile(byte[] tile, String date) {
-    this.tile = tile;
-    this.date = date;
-  }
 }

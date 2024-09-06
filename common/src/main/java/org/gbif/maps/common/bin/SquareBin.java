@@ -14,12 +14,11 @@
 package org.gbif.maps.common.bin;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
-import org.codetome.hexameter.core.backport.Optional;
-
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -70,37 +69,33 @@ public class SquareBin implements Binnable {
                                                                           + LAYER_NAME);
 
     // The final data is encoded cellKey -> [YearAsString -> count]
-    Map<Long, Long> cells = Maps.newHashMap();
+    Map<Long, Long> cells = new HashMap<>();
 
-    Iterable<VectorTileDecoder.Feature> features = (Iterable<VectorTileDecoder.Feature>)() -> tile.iterator();
     int scale = 1; // ratio between the supplied tile to the target tile (e.g. 512 -> 4096 = 8)
-    for (VectorTileDecoder.Feature feature : features) {
+    for (VectorTileDecoder.Feature feature : tile) {
 
       Geometry geom = feature.getGeometry();
       Preconditions.checkArgument(geom instanceof Point, "Only Point based vector tiles can be binned");
+
       Point tileLocalXY = (Point) geom;
-      scale = (int) ((double)tileSize) / feature.getExtent();
+      int extent = feature.getExtent();
+      scale = tileSize / extent;
 
       // skip boundaries
-      if (tileContains(feature.getExtent(), tileLocalXY)) {
-
+      if (tileContains(extent, tileLocalXY)) {
         long cellID = cellKey(tileLocalXY.getX(), tileLocalXY.getY(), scale);
-        long total = cells.getOrDefault(cellID, 0l);
-        Optional<Long> cellTotal = totalCount(feature.getAttributes());
-        if (cellTotal.isPresent()) {
-          total += cellTotal.get();
-        }
+        long total = cells.getOrDefault(cellID, 0L);
+
+        total += totalCount(feature.getAttributes());
         cells.put(cellID, total);
       }
     }
+
     final int scaleFinal = scale;
     VectorTileEncoder encoder = new VectorTileEncoder(tileSize, 0, false); // no buffer because squares tesselate nicely
     cells.forEach((cellID, total) -> {
-
       Polygon poly = cellToPoly(cellID, scaleFinal);
-      Map<String, Object> meta = Maps.newHashMap();
-      meta.put(META_TOTAL_KEY, total);
-      encoder.addFeature(LAYER_NAME, meta, poly);
+      encoder.addFeature(LAYER_NAME, Collections.singletonMap(META_TOTAL_KEY, total), poly);
     });
 
 
@@ -119,8 +114,7 @@ public class SquareBin implements Binnable {
     int x = (int) ((pixelX * scale)/cellSize);
     int y = (int) ((pixelY * scale)/cellSize);
 
-    long id = (((long)x) << 32) | (y & 0xffffffffL);
-    return id;
+    return (((long)x) << 32) | (y & 0xffffffffL);
   }
 
   Polygon cellToPoly(long cellID, int scale) {
@@ -148,15 +142,14 @@ public class SquareBin implements Binnable {
   /**
    * Leniently attempts to get a total from the meta.
    */
-  private Optional<Long> totalCount(Map<String, Object> meta) {
+  private long totalCount(Map<String, Object> meta) {
     if (meta != null && meta.containsKey(META_TOTAL_KEY)) {
       try {
-        Long total = Long.parseLong(meta.get(META_TOTAL_KEY).toString()); // support anything that can be parsed
-        return Optional.of(total);
+        return Long.parseLong(meta.get(META_TOTAL_KEY).toString()); // support anything that can be parsed
       } catch (NumberFormatException e) {
         // swallow
       }
     }
-    return Optional.empty();
+    return 0;
   }
 }

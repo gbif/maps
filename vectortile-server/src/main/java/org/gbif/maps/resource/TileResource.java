@@ -13,9 +13,43 @@
  */
 package org.gbif.maps.resource;
 
+import org.gbif.maps.TileServerConfiguration;
+import org.gbif.maps.common.bin.HexBin;
+import org.gbif.maps.common.bin.SquareBin;
+import org.gbif.maps.common.filter.PointFeatureFilters;
+import org.gbif.maps.common.filter.Range;
+import org.gbif.maps.common.filter.VectorTileFilters;
+import org.gbif.maps.common.projection.Double2D;
+import org.gbif.maps.common.projection.TileProjection;
+import org.gbif.maps.common.projection.TileSchema;
+import org.gbif.maps.common.projection.Tiles;
+import org.gbif.maps.io.PointFeature;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import javax.annotation.Nullable;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -31,36 +65,6 @@ import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import no.ecc.vectortile.VectorTileDecoder;
 import no.ecc.vectortile.VectorTileEncoder;
-import org.gbif.maps.TileServerConfiguration;
-import org.gbif.maps.common.bin.HexBin;
-import org.gbif.maps.common.bin.SquareBin;
-import org.gbif.maps.common.filter.PointFeatureFilters;
-import org.gbif.maps.common.filter.Range;
-import org.gbif.maps.common.filter.VectorTileFilters;
-import org.gbif.maps.common.projection.Double2D;
-import org.gbif.maps.common.projection.TileProjection;
-import org.gbif.maps.common.projection.TileSchema;
-import org.gbif.maps.common.projection.Tiles;
-import org.gbif.maps.io.PointFeature;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Profile;
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.NotNull;
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 
 import static org.gbif.maps.resource.Params.BIN_MODE_HEX;
 import static org.gbif.maps.resource.Params.BIN_MODE_SQUARE;
@@ -613,7 +617,7 @@ public final class TileResource {
 
     VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
 
-    // Attempt to get a preprepared tile first, before falling back to a point tile
+    // Attempt to get a prepared tile first, before falling back to a point tile
     Optional<byte[]> encoded = hbaseMaps.getTile(mapKey, srs, z, x, y);
     String date;
 
@@ -625,7 +629,7 @@ public final class TileResource {
                                             years, basisOfRecords, verbose);
       return new DatedVectorTile(encoder.encode(), date);
     } else {
-      // The tile size is chosen to match the size of preprepared tiles.
+      // The tile size is chosen to match the size of prepared tiles.
       date = hbaseMaps.getPointsDate().orElse(null);
       Optional<PointFeature.PointFeatures> optionalFeatures = hbaseMaps.getPoints(mapKey);
       if (optionalFeatures.isPresent()) {

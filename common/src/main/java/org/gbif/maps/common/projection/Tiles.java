@@ -118,9 +118,9 @@ public class Tiles {
 
       // if the tile adjoins the dateline and it is a match vertically
       if (x == 0) {
-        contained |= globalPixelXY.getX() >= tileSize - bufferPixels;
+        contained = globalPixelXY.getX() >= tileSize - bufferPixels;
       } else if (x == maxTileAddress) {
-        contained |= globalPixelXY.getX() < bufferPixels;
+        contained = globalPixelXY.getX() < bufferPixels;
       }
     }
     return contained;
