@@ -20,7 +20,6 @@ import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.io.PointFeature;
 
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.conf.Configuration;
@@ -31,16 +30,18 @@ import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.cache2k.Cache;
+import org.cache2k.Cache2kBuilder;
+import org.cache2k.io.CacheLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Objects;
 import com.google.common.base.Stopwatch;
-import com.google.common.base.Throwables;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 /**
  * The data access service for the map data which resides in HBase.
@@ -82,11 +83,11 @@ public class HBaseMaps {
     return TableName.valueOf(meta.getTileTable());
   }
 
-  private LoadingCache<String, Optional<PointFeature.PointFeatures>> pointCache = CacheBuilder
-    .newBuilder()
-    .maximumSize(1000)
-    .expireAfterAccess(1, TimeUnit.MINUTES)
-    .build(
+  private final Cache<String, Optional<PointFeature.PointFeatures>> pointCache = new Cache2kBuilder<String, Optional<PointFeature.PointFeatures>>(){}
+    .name("point_cache")
+    .entryCapacity(1_000)
+    .expireAfterWrite(1, TimeUnit.MINUTES)
+    .loader(
       new CacheLoader<String, Optional<PointFeature.PointFeatures>>() {
         @Override
         public Optional<PointFeature.PointFeatures> load(String rowKey) throws Exception {
@@ -103,7 +104,7 @@ public class HBaseMaps {
                 try {
                   return PointFeature.PointFeatures.parseFrom(e);
                 } catch (InvalidProtocolBufferException ex) {
-                  throw Throwables.propagate(ex);
+                  throw new RuntimeException(ex);
                 }
               });
             } else {
@@ -112,13 +113,13 @@ public class HBaseMaps {
           }
         }
       }
-    );
+    ).build();
 
-  private LoadingCache<TileKey, Optional<byte[]>> tileCache = CacheBuilder
-    .newBuilder()
-    .maximumSize(1000)
+  private final Cache<TileKey, Optional<byte[]>> tileCache =  new Cache2kBuilder<TileKey, Optional<byte[]>>(){}
+    .name("tileCache")
+    .entryCapacity(1_000)
     .expireAfterWrite(1, TimeUnit.MINUTES)
-    .build(
+    .loader(
       new CacheLoader<TileKey, Optional<byte[]>>() {
         @Override
         public Optional<byte[]> load(TileKey rowCell) throws Exception {
@@ -141,7 +142,7 @@ public class HBaseMaps {
           }
         }
       }
-    );
+    ).build();
 
   /**
    * Returns a tile from HBase if one exists.
@@ -149,7 +150,7 @@ public class HBaseMaps {
   public Optional<byte[]> getTile(String mapKey, String srs, int z, long x, long y) {
     try {
       return tileCache.get(new TileKey(mapKey, srs, z, x, y));
-    } catch (ExecutionException e) {
+    } catch (Exception e) {
       // there is nothing the caller can do.  Swallow this here, logging the error
       LOG.error("Unexpected error loading tile data from HBase.  Returning no tile.", e);
       return Optional.empty();
@@ -202,7 +203,7 @@ public class HBaseMaps {
     try {
       LOG.info("Getting points");
       return pointCache.get(mapKey);
-    } catch (ExecutionException e) {
+    } catch (Exception e) {
       // there is nothing the caller can do.  Swallow this here, logging the error
       LOG.error("Unexpected error loading point data from HBase.  Returning empty features collection.", e);
       return Optional.empty();
@@ -223,6 +224,8 @@ public class HBaseMaps {
   /**
    * Container class to allow a single object for the caching key
    */
+  @Data
+  @AllArgsConstructor(access = AccessLevel.PACKAGE)
   private static class TileKey {
     final String rowKey;
     final String srs;
@@ -230,37 +233,9 @@ public class HBaseMaps {
     final long x;
     final long y;
 
-    TileKey(String rowKey, String srs, int z, long x, long y) {
-      this.rowKey = rowKey;
-      this.srs = srs;
-      this.z = z;
-      this.x = x;
-      this.y = y;
-    }
-
     String zxy() {
       return z + ":" + x + ":" + y;
     }
 
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (!(o instanceof TileKey)) {
-        return false;
-      }
-      TileKey that = (TileKey) o;
-      return Objects.equal(this.rowKey, that.rowKey) &&
-             Objects.equal(this.srs, that.srs) &&
-             Objects.equal(this.z, that.z) &&
-             Objects.equal(this.x, that.x) &&
-             Objects.equal(this.y, that.y);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hashCode(rowKey, srs, z, x, y);
-    }
   }
 }

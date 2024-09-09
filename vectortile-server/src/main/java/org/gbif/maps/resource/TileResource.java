@@ -617,7 +617,7 @@ public final class TileResource {
 
     VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
 
-    // Attempt to get a preprepared tile first, before falling back to a point tile
+    // Attempt to get a prepared tile first, before falling back to a point tile
     Optional<byte[]> encoded = hbaseMaps.getTile(mapKey, srs, z, x, y);
     String date;
 
@@ -629,7 +629,7 @@ public final class TileResource {
                                             years, basisOfRecords, verbose);
       return new DatedVectorTile(encoder.encode(), date);
     } else {
-      // The tile size is chosen to match the size of preprepared tiles.
+      // The tile size is chosen to match the size of prepared tiles.
       date = hbaseMaps.getPointsDate().orElse(null);
       Optional<PointFeature.PointFeatures> optionalFeatures = hbaseMaps.getPoints(mapKey);
       if (optionalFeatures.isPresent()) {

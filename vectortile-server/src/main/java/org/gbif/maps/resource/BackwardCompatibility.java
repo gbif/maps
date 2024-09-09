@@ -63,7 +63,7 @@ public class BackwardCompatibility {
    * Construct the resource
    */
   @Autowired
-  public BackwardCompatibility(TileResource tileResource) throws Exception {
+  public BackwardCompatibility(TileResource tileResource) {
     this.tileResource = tileResource;
   }
 

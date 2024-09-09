@@ -72,7 +72,7 @@ class WGS84AntarcticPolarStereographic extends WGS84Azimuthal {
 
   @Override
   public boolean isPlottable(double latitude, double longitude) {
-    // clipped to equator and below by deliberate choice, even though the projection recommends 60° south
+    // clipped to the equator and below by deliberate choice, even though the projection recommends 60° south
     return latitude <= 0 && longitude>=-180 && longitude<=180;
   }
 
@@ -92,15 +92,15 @@ class WGS84AntarcticPolarStereographic extends WGS84Azimuthal {
     int tilesPerZoom = 1 << z;
 
     // Unbuffered corners
-    double x1u = (x+0)*getTileSize();
+    double x1u = x*getTileSize();
     double x2u = (x+1)*getTileSize();
-    double y1u = (y+0)*getTileSize();
+    double y1u = y*getTileSize();
     double y2u = (y+1)*getTileSize();
 
     // Buffered corners
-    double x1b = (x+0-tileBuffer)*getTileSize();
+    double x1b = (x-tileBuffer)*getTileSize();
     double x2b = (x+1+tileBuffer)*getTileSize();
-    double y1b = (y+0-tileBuffer)*getTileSize();
+    double y1b = (y-tileBuffer)*getTileSize();
     double y2b = (y+1+tileBuffer)*getTileSize();
 
     // Tiles on the vertical and horizontal "seams" (0°, 90°, 180°, -90°) have this coordinate, or the next one.

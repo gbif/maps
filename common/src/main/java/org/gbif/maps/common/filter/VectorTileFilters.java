@@ -22,11 +22,13 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import java.util.Collections;
 
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
@@ -91,10 +93,8 @@ public class VectorTileFilters {
       DECODER.decode(sourceTile, basisOfRecords);
 
     // convert the features to a stream source filtering only to those on the tile and within the year range
-    Iterable<VectorTileDecoder.Feature> iterable = () -> features.iterator();
-    Stream<VectorTileDecoder.Feature> featureStream =
-      StreamSupport.stream(iterable.spliterator(), false)
-                   .filter(filterFeatureByTile(schema, z,x,y,sourceX,sourceY,tileSize,bufferSize));
+    Stream<VectorTileDecoder.Feature> featureStream = StreamSupport.stream(features.spliterator(), false)
+                                                        .filter(filterFeatureByTile(schema, z,x,y,sourceX,sourceY,tileSize,bufferSize));
 
     // only filter years if a range is given (performance optimisation)
     if (!years.isUnbounded()) {
@@ -122,7 +122,7 @@ public class VectorTileFilters {
         Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(pixel.getX(), pixel.getY()));
 
         // add a total value across all years
-        long sum = yearCounts.values().stream().mapToLong(v -> (Long)v).sum();
+        long sum = yearCounts.values().stream().mapToLong(v -> v).sum();
         yearCounts.put(TOTAL_KEY, sum);
 
         // If another feature exists at that pixel it is not our concern (there should not be)
@@ -133,28 +133,22 @@ public class VectorTileFilters {
 
     } else {
       // merge the data into total counts only by pixels
+      // simply accumulate totals
       Map<Long2D, Long> pixels = featureStream.collect(
         // accumulate totals for each pixel
         Collectors.toMap(
           toTileLocalPixelXY(schema, z, x, y, sourceX, sourceY, tileSize, bufferSize),
           totalCountForYears(years), // note: we throw away year values here
-          (m1,m2) -> {
-            // simply accumulate totals
-            return m1 + m2;
-          }
+          Long::sum
         ));
 
       // add the pixel to the encoder
       pixels.forEach((pixel, total) -> {
-
         Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(pixel.getX(), pixel.getY()));
-
-        Map<String, Object> meta = Maps.newHashMap();
-        meta.put(TOTAL_KEY, total);
 
         // If another feature exists at that pixel it is not our concern (there should not be)
         LOG.trace("Adding {} to {}", pixel, layerName);
-        encoder.addFeature(layerName, meta, point);
+        encoder.addFeature(layerName, Collections.singletonMap(TOTAL_KEY, total), point);
 
       });
     }
@@ -181,9 +175,8 @@ public class VectorTileFilters {
       DECODER.decode(sourceTile, basisOfRecords);
 
     // convert the features to a stream source filtering only to those on the tile and within the year range
-    Iterable<VectorTileDecoder.Feature> iterable = () -> features.iterator();
-    Stream<VectorTileDecoder.Feature> featureStream =
-      StreamSupport.stream(iterable.spliterator(), false);
+      Stream<VectorTileDecoder.Feature> featureStream =
+      StreamSupport.stream(features.spliterator(), false);
 
     // only filter years if a range is given (performance optimisation)
     if (!years.isUnbounded()) {
@@ -208,30 +201,24 @@ public class VectorTileFilters {
       // add the pixel to the encoder
       data.forEach((geom, yearCounts) -> {
         // add a total value across all years
-        long sum = yearCounts.values().stream().mapToLong(v -> (Long)v).sum();
+        long sum = yearCounts.values().stream().mapToLong(v -> v).sum();
         yearCounts.put(TOTAL_KEY, sum);
         encoder.addFeature(layerName, yearCounts, geom);
       });
 
     } else {
       // merge the data into total counts only by pixels
+      // simply accumulate totals
       Map<Geometry, Long> data = featureStream.collect(
         // accumulate totals for each pixel
         Collectors.toMap(
           extractGeometry(),
           totalCountForYears(years), // note: we throw away year values here
-          (m1,m2) -> {
-            // simply accumulate totals
-            return m1 + m2;
-          }
+          Long::sum
         ));
 
       // add the feature to the encoder
-      data.forEach((geom, total) -> {
-        Map<String, Object> meta = Maps.newHashMap();
-        meta.put(TOTAL_KEY, total);
-        encoder.addFeature(layerName, meta, geom);
-      });
+      data.forEach((geom, total) -> encoder.addFeature(layerName, Collections.singletonMap(TOTAL_KEY, total), geom));
     }
   }
 
@@ -261,7 +248,7 @@ public class VectorTileFilters {
    */
   public static Function<VectorTileDecoder.Feature, Map<String, Long>> attributesPrunedToYears(final Range years) {
     return (feature -> {
-      Map<String, Long> result = Maps.newHashMap();
+      Map<String, Long> result = new HashMap<>(feature.getAttributes().size());
       for(Map.Entry<String, Object> e : feature.getAttributes().entrySet()) {
         try {
           Integer year = Integer.parseInt(e.getKey());
@@ -281,7 +268,7 @@ public class VectorTileFilters {
    * @return The function to extract the geometry.
    */
   public static Function<VectorTileDecoder.Feature, Geometry> extractGeometry() {
-    return (f -> f.getGeometry());
+    return (VectorTileDecoder.Feature::getGeometry);
   }
 
   /**
@@ -320,8 +307,9 @@ public class VectorTileFilters {
             return true; // short circuit
           }
 
-        } catch (Exception e) {
-          // ignore attributes in unexpected formats
+        } catch (NumberFormatException e) {
+          // Log only if necessary, e.g., at a debug level
+          LOG.debug("Skipping non-year attribute key: {}", yearAsStream);
         }
       }
 
@@ -376,8 +364,7 @@ public class VectorTileFilters {
     }
     LOG.debug("Mask contains {} geometries (points)", mask.size());
 
-    Stream<VectorTileDecoder.Feature> stream = StreamSupport.stream(DECODER.decode(sourceTile, layerName).spliterator(), false);
-    stream
+    StreamSupport.stream(DECODER.decode(sourceTile, layerName).spliterator(), false)
       .filter(f -> mask.contains(f.getGeometry()))
       .forEach(f -> encoder.addFeature(layerName, f.getAttributes(), f.getGeometry()));
 

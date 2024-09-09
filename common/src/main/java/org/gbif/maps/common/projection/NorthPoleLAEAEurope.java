@@ -72,15 +72,15 @@ class NorthPoleLAEAEurope extends WGS84LambertAzimuthalEqualArea {
     int tilesPerZoom = 1 << z;
 
     // Unbuffered corners
-    double x1u = (x+0)*getTileSize();
+    double x1u = x*getTileSize();
     double x2u = (x+1)*getTileSize();
-    double y1u = (y+0)*getTileSize();
+    double y1u = y*getTileSize();
     double y2u = (y+1)*getTileSize();
 
     // Buffered corners
-    double x1b = (x+0-tileBuffer)*getTileSize();
+    double x1b = (x-tileBuffer)*getTileSize();
     double x2b = (x+1+tileBuffer)*getTileSize();
-    double y1b = (y+0-tileBuffer)*getTileSize();
+    double y1b = (y-tileBuffer)*getTileSize();
     double y2b = (y+1+tileBuffer)*getTileSize();
 
     // Tiles on the vertical and horizontal "seams" (180°, 90°, 0°, -90°) have this coordinate, or the next one.
@@ -135,9 +135,8 @@ class NorthPoleLAEAEurope extends WGS84LambertAzimuthalEqualArea {
           pForLng2 = pA;
         }
         if (x+1 == seamCoordinate) { // right of top left quadrant
-          Double2D pForLngAM = pD;
-          // Over the antimeridian
-          pForLng2 = new Double2D(pForLngAM.getX(), pForLngAM.getY()-360);
+            // Over the antimeridian
+          pForLng2 = new Double2D(pD.getX(), pD.getY()-360);
         } else if (x == seamCoordinate) { // left of bottom right quadrant
           pForLng1 = pA;
         }

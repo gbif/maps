@@ -13,9 +13,12 @@
  */
 package org.gbif.maps.common.projection;
 
+import lombok.Getter;
+
 /**
  * Describes a tile schema; that is, how the tiles are arranged over the extent of a projection.
  */
+@Getter
 public enum TileSchema {
   WGS84_PLATE_CAREÉ (2, 1, true),
   WEB_MERCATOR (1, 1, true),
@@ -35,22 +38,11 @@ public enum TileSchema {
     switch (srs.toUpperCase()) {
       case "EPSG:3857": return WEB_MERCATOR;
       case "EPSG:4326": return WGS84_PLATE_CAREÉ;
-      case "EPSG:3575": return POLAR;
-      case "EPSG:3031": return POLAR;
-      default: return null;
+      case "EPSG:3575":
+        case "EPSG:3031":
+            return POLAR;
+        default: return null;
     }
-  }
-
-  public int getZzTilesHorizontal() {
-    return zzTilesHorizontal;
-  }
-
-  public int getZzTilesVertical() {
-    return zzTilesVertical;
-  }
-
-  public boolean isWrapX() {
-    return wrapX;
   }
 
   @Override

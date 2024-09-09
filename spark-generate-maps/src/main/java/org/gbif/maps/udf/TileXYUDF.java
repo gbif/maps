@@ -17,8 +17,6 @@ import org.gbif.maps.common.projection.*;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;

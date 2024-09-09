@@ -13,14 +13,13 @@
  */
 package org.gbif.maps.common.bin;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.codetome.hexameter.core.api.defaults.DefaultSatelliteData;
 
-import com.google.common.collect.Maps;
-
 public class HexagonData extends DefaultSatelliteData {
-  private final Map<String, Object> metadata = Maps.newHashMap();
+  private final Map<String, Object> metadata = new HashMap<>();
 
   public Map<String, Object> getMetadata() {
     return metadata;
