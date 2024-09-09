@@ -23,9 +23,6 @@ import java.time.Year;
 import java.util.Arrays;
 import java.util.Map;
 
-import org.slf4j.logger;
-import org.slf4j.loggerFactory;
-
 import com.carrotsearch.hppc.IntHashSet;
 import com.google.common.annotations.VisibleForTesting;
 import com.vividsolutions.jts.geom.Point;
