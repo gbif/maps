@@ -20,6 +20,7 @@ import org.gbif.maps.common.meta.Metastores;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.stream.Collectors;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -130,10 +131,15 @@ public class FinaliseBackfill {
         // remove all but the last 2 tables
         // table names are suffixed with a timestamp e.g. prod_d_maps_points_20180616_1320
         String tablesPattern =
-            config.getHbase().getTableName() + "_" + config.getMode() + "_\\d{8}T\\d{6}";
+          config.getHbase().getTableName() + "_" + config.getMode() + "_\\d{8}_\\d{4}";
+
         TableName[] tables = admin.listTableNames(tablesPattern);
         // TableName does not order lexigraphically by default
         Arrays.sort(tables, Comparator.comparing(TableName::getNameAsString));
+
+        log.info(
+            "Table list: {}",
+            Arrays.stream(tables).map(TableName::getNameAsString).collect(Collectors.joining(",")));
 
         MapTables meta = metastore.read();
         log.info("Current live tables[{}]", meta);
