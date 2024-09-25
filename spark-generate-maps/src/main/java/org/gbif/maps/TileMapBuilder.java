@@ -52,6 +52,8 @@ class TileMapBuilder implements Serializable {
     // process an input table for the map keys
     String inputTable = prepareInput(spark);
 
+    spark.sql(String.format("CACHE TABLE %s", inputTable));
+
     runProjection(spark, "EPSG:3857", inputTable);
     runProjection(spark, "EPSG:4326", inputTable);
     runProjection(spark, "EPSG:3575", inputTable);
@@ -59,7 +61,12 @@ class TileMapBuilder implements Serializable {
     // Optimisation since there are fewer records in the southern hemisphere (100km buffer)
     String south =
         filterToNewTable(spark, inputTable, String.format("%s_south", inputTable), "lat<=1");
+
+    spark.sql(String.format("CACHE TABLE %s", south));
+    spark.sql(String.format("UNCACHE TABLE %s", inputTable));
+
     runProjection(spark, "EPSG:3031", south);
+    spark.sql(String.format("UNCACHE TABLE %s", south));
   }
 
   /** Runs the tile pyramid build for the projection */
@@ -100,7 +107,8 @@ class TileMapBuilder implements Serializable {
                 + "      datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
                 + "    ) "
                 + "  ) m AS mapKey "
-                + "GROUP BY mapKey, lat, lng, borYear",
+                + "GROUP BY mapKey, lat, lng, borYear "
+                + "ORDER BY mapKey, borYear",
             targetTable, sourceTable));
     return targetTable;
   }
