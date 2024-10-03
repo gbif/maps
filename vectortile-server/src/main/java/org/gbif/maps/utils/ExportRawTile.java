@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.cache2k.extra.spring.SpringCache2kCacheManager;
 
 import com.google.common.io.Files;
 
@@ -58,7 +59,7 @@ public class ExportRawTile {
       Configuration conf = HBaseConfiguration.create();
       conf.set("hbase.zookeeper.quorum", zk);
       HBaseMaps maps = null;
-        maps = new HBaseMaps(conf, tableName, salt);
+        maps = new HBaseMaps(conf, tableName, salt, new SpringCache2kCacheManager());
       Optional<byte[]> tile = maps.getTile(mapKey, srs, z, x, y);
       if (tile.isPresent()) {
         Files.write(tile.get(), targetFile);

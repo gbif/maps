@@ -14,13 +14,10 @@
 package org.gbif.maps;
 
 import org.gbif.api.model.common.search.SearchParameter;
-import org.gbif.api.model.predicate.Predicate;
 import org.gbif.event.search.es.EventEsField;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.resource.*;
-import org.gbif.occurrence.search.cache.DefaultInMemoryPredicateCacheService;
-import org.gbif.occurrence.search.cache.PredicateCacheService;
 import org.gbif.occurrence.search.es.EsConfig;
 import org.gbif.occurrence.search.es.OccurrenceBaseEsFieldMapper;
 import org.gbif.occurrence.search.es.OccurrenceEsField;
@@ -35,7 +32,7 @@ import java.net.URL;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.http.HttpHost;
-import org.cache2k.config.Cache2kConfig;
+import org.cache2k.extra.spring.SpringCache2kCacheManager;
 import org.elasticsearch.client.NodeSelector;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
@@ -189,7 +186,7 @@ public class TileServerApplication {
 
     @Bean
     @Profile("!es-only")
-    HBaseMaps hBaseMaps(TileServerConfiguration tileServerConfiguration) throws Exception {
+    HBaseMaps hBaseMaps(TileServerConfiguration tileServerConfiguration, SpringCache2kCacheManager cacheManager) throws Exception {
       // Either use Zookeeper or static config to locate tables
       Configuration conf = HBaseConfiguration.create();
       conf.set("hbase.zookeeper.quorum", tileServerConfiguration.getHbase().getZookeeperQuorum());
@@ -197,13 +194,12 @@ public class TileServerApplication {
       if (tileServerConfiguration.getMetastore() != null) {
         MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
           tileServerConfiguration.getMetastore().getPath());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus());
+        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager);
 
       } else {
-        //
         MapMetastore meta = Metastores.newStaticMapsMeta(tileServerConfiguration.getHbase().getTilesTableName(),
           tileServerConfiguration.getHbase().getPointsTableName());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus());
+        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager);
       }
     }
 
@@ -211,24 +207,6 @@ public class TileServerApplication {
     @Bean
     public ObjectMapper objectMapper() {
       return JacksonJsonObjectMapperProvider.getObjectMapperWithBuilderSupport().addMixIn(SearchParameter.class, QueryVisitorFactory.OccurrenceSearchParameterMixin.class);
-    }
-
-    @ConfigurationProperties(prefix = "cache.predicates")
-    @Bean
-    public Cache2kConfig<Integer,Predicate> predicateCache2kConfig() {
-      return new Cache2kConfig<>();
-    }
-
-    @Bean("occurrencePredicateCache")
-    @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
-    public PredicateCacheService occurrencePredicateCacheService(ObjectMapper objectMapper, Cache2kConfig<Integer, Predicate> cache2kConfig) {
-      return new DefaultInMemoryPredicateCacheService(objectMapper, cache2kConfig.builder().name("occurrencePredicateCache").build());
-    }
-
-    @Bean("eventPredicateCache")
-    @ConditionalOnExpression("${esEventConfiguration.enabled}")
-    public PredicateCacheService eventPredicateCacheService(ObjectMapper objectMapper, Cache2kConfig<Integer, Predicate> cache2kConfig) {
-      return new DefaultInMemoryPredicateCacheService(objectMapper, cache2kConfig.builder().name("eventPredicateCache").build());
     }
 
   }

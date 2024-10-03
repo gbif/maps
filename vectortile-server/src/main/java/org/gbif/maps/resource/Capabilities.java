@@ -13,8 +13,6 @@
  */
 package org.gbif.maps.resource;
 
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.Int2D;
 
@@ -28,6 +26,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.vividsolutions.jts.geom.Point;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import no.ecc.vectortile.VectorTileDecoder;
 
 /**
