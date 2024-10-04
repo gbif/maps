@@ -100,5 +100,30 @@ public class CacheConfiguration {
       .description("Hit rate for this cache")
       .tags("cache", cache.getName())
       .register(meterRegistry);
+
+    Gauge.builder("cache.load_count", internalCache, c -> c.getInfo().getLoadCount())
+      .description("Successful loads including reloads and refresh")
+      .tags("cache", cache.getName())
+      .register(meterRegistry);
+
+    Gauge.builder("cache.refresh_hit_count", internalCache, c -> c.getInfo().getRefreshedHitCount())
+      .description("All triggered and tried refresh actions, including those that produced and exception as result")
+      .tags("cache", cache.getName())
+      .register(meterRegistry);
+
+    Gauge.builder("cache.expired_count", internalCache, c -> c.getInfo().getExpiredCount())
+      .description("Counts entries that expired")
+      .tags("cache", cache.getName())
+      .register(meterRegistry);
+
+    Gauge.builder("cache.millis_per_load", internalCache, c -> c.getInfo().getMillisPerLoad())
+      .description("Counts entries that expired")
+      .tags("cache", cache.getName())
+      .register(meterRegistry);
+
+    Gauge.builder("cache.heap_capacity", internalCache, c -> c.getInfo().getHeapCapacity())
+      .description("Configured limit of the total cache entry capacity or -1 if weigher is used")
+      .tags("cache", cache.getName())
+      .register(meterRegistry);
   }
 }
