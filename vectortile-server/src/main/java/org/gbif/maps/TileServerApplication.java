@@ -55,6 +55,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.micrometer.core.instrument.MeterRegistry;
+
 /**
  * The main entry point for running the member node.
  */
@@ -186,7 +188,7 @@ public class TileServerApplication {
 
     @Bean
     @Profile("!es-only")
-    HBaseMaps hBaseMaps(TileServerConfiguration tileServerConfiguration, SpringCache2kCacheManager cacheManager) throws Exception {
+    HBaseMaps hBaseMaps(TileServerConfiguration tileServerConfiguration, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry) throws Exception {
       // Either use Zookeeper or static config to locate tables
       Configuration conf = HBaseConfiguration.create();
       conf.set("hbase.zookeeper.quorum", tileServerConfiguration.getHbase().getZookeeperQuorum());
@@ -194,12 +196,12 @@ public class TileServerApplication {
       if (tileServerConfiguration.getMetastore() != null) {
         MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
           tileServerConfiguration.getMetastore().getPath());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager);
+        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager, meterRegistry);
 
       } else {
         MapMetastore meta = Metastores.newStaticMapsMeta(tileServerConfiguration.getHbase().getTilesTableName(),
           tileServerConfiguration.getHbase().getPointsTableName());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager);
+        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager, meterRegistry);
       }
     }
 

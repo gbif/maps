@@ -28,6 +28,8 @@ import org.cache2k.extra.spring.SpringCache2kCacheManager;
 
 import com.google.common.io.Files;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
 /**
  * This utility exports a raw tile without modifying it and save it to a file.
  * This is useful to extract tiles from HBase for diagnostic reasons.
@@ -59,7 +61,7 @@ public class ExportRawTile {
       Configuration conf = HBaseConfiguration.create();
       conf.set("hbase.zookeeper.quorum", zk);
       HBaseMaps maps = null;
-        maps = new HBaseMaps(conf, tableName, salt, new SpringCache2kCacheManager());
+        maps = new HBaseMaps(conf, tableName, salt, new SpringCache2kCacheManager(), new SimpleMeterRegistry());
       Optional<byte[]> tile = maps.getTile(mapKey, srs, z, x, y);
       if (tile.isPresent()) {
         Files.write(tile.get(), targetFile);

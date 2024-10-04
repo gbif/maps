@@ -52,7 +52,7 @@ public class CacheConfiguration {
   public PredicateCacheService occurrencePredicateCacheService(ObjectMapper objectMapper, Cache2kConfig<Integer, Predicate> cache2kConfig, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry) {
     cacheManager.addCaches(b -> cache2kConfig.builder().manager(cacheManager.getNativeCacheManager()).name("occurrencePredicateCache"));
     Cache<Integer, Predicate> cache = cacheManager.getNativeCacheManager().getCache("occurrencePredicateCache");
-    registerCacheMetrics(cache, "occurrencePredicateCache", meterRegistry);
+    registerCacheMetrics(cache, meterRegistry);
     return new DefaultInMemoryPredicateCacheService(objectMapper, cache);
   }
 
@@ -61,17 +61,17 @@ public class CacheConfiguration {
   public PredicateCacheService eventPredicateCacheService(ObjectMapper objectMapper, Cache2kConfig<Integer, Predicate> cache2kConfig, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry) {
     cacheManager.addCaches(b -> cache2kConfig.builder().manager(cacheManager.getNativeCacheManager()).name("eventPredicateCache"));
     Cache<Integer, Predicate> cache = cacheManager.getNativeCacheManager().getCache("eventPredicateCache");
-    registerCacheMetrics(cache, "eventPredicateCache", meterRegistry);
+    registerCacheMetrics(cache,  meterRegistry);
     return new DefaultInMemoryPredicateCacheService(objectMapper, cache);
   }
 
   // Manually expose Cache2K metrics using Micrometer
-  private void registerCacheMetrics(Cache<?, ?> cache, String cacheName, MeterRegistry meterRegistry) {
+  public static void registerCacheMetrics(Cache<?, ?> cache, MeterRegistry meterRegistry) {
     // Obtain Cache2K's internal statistics
     InternalCache<?,?> internalCache = cache.requestInterface(InternalCache.class);
 
     // Register custom Micrometer gauges for cache metrics
-    Gauge.builder("cache.size", internalCache, c -> c.getTotalEntryCount())
+    Gauge.builder("cache.size", internalCache, InternalCache::getTotalEntryCount)
       .description("The number of entries in the cache")
       .tags("cache", cache.getName())
       .register(meterRegistry);

@@ -13,6 +13,7 @@
  */
 package org.gbif.maps.resource;
 
+import org.gbif.maps.CacheConfiguration;
 import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.MapTables;
@@ -40,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Stopwatch;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -56,20 +58,20 @@ public class HBaseMaps {
   private final Cache<String, Optional<PointFeature.PointFeatures>> pointCache;
   private final Cache<TileKey, Optional<byte[]>> tileCache;
 
-  public HBaseMaps(Configuration conf, String tableName, int saltModulus, SpringCache2kCacheManager cacheManager) throws Exception {
+  public HBaseMaps(Configuration conf, String tableName, int saltModulus, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry) throws Exception {
     connection = ConnectionFactory.createConnection(conf);
     metastore = Metastores.newStaticMapsMeta(tableName, tableName); // backward compatible version
     salt = new ModulusSalt(saltModulus);
-    pointCache = pointCacheBuilder(cacheManager);
-    tileCache = tileCacheBuilder(cacheManager);
+    pointCache = pointCacheBuilder(cacheManager, meterRegistry);
+    tileCache = tileCacheBuilder(cacheManager, meterRegistry);
   }
 
-  public HBaseMaps(Configuration conf, MapMetastore metastore, int saltModulus, SpringCache2kCacheManager cacheManager) throws Exception {
+  public HBaseMaps(Configuration conf, MapMetastore metastore, int saltModulus, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry) throws Exception {
     connection = ConnectionFactory.createConnection(conf);
     this.metastore = metastore;
     salt = new ModulusSalt(saltModulus);
-    pointCache = pointCacheBuilder(cacheManager);
-    tileCache = tileCacheBuilder(cacheManager);
+    pointCache = pointCacheBuilder(cacheManager, meterRegistry);
+    tileCache = tileCacheBuilder(cacheManager, meterRegistry);
   }
 
   private TableName pointTable() throws Exception {
@@ -90,7 +92,7 @@ public class HBaseMaps {
     return TableName.valueOf(meta.getTileTable());
   }
 
-  private Cache<String, Optional<PointFeature.PointFeatures>> pointCacheBuilder(SpringCache2kCacheManager manager) {
+  private Cache<String, Optional<PointFeature.PointFeatures>> pointCacheBuilder(SpringCache2kCacheManager manager, MeterRegistry meterRegistry) {
 
     manager.addCaches( b->
      new Cache2kBuilder<String, Optional<PointFeature.PointFeatures>>() {
@@ -126,10 +128,12 @@ public class HBaseMaps {
           }
         }
       ));
-    return manager.getNativeCacheManager().getCache("pointCache");
+    Cache<String, Optional<PointFeature.PointFeatures>> cache = manager.getNativeCacheManager().getCache("pointCache");
+    CacheConfiguration.registerCacheMetrics(cache, meterRegistry);
+    return cache;
   }
 
-  private Cache<TileKey, Optional<byte[]>> tileCacheBuilder(SpringCache2kCacheManager manager) {
+  private Cache<TileKey, Optional<byte[]>> tileCacheBuilder(SpringCache2kCacheManager manager, MeterRegistry meterRegistry) {
     manager.addCaches( b -> new Cache2kBuilder<TileKey, Optional<byte[]>>() {
     }
       .manager(manager.getNativeCacheManager())
@@ -160,7 +164,10 @@ public class HBaseMaps {
           }
         }
       ));
-    return manager.getNativeCacheManager().getCache("tileCache");
+
+    Cache<TileKey, Optional<byte[]>> cache = manager.getNativeCacheManager().getCache("tileCache");
+    CacheConfiguration.registerCacheMetrics(cache, meterRegistry);
+    return cache;
   }
 
   /**
