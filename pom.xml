@@ -56,7 +56,7 @@
     <hive.version>3.1.3</hive.version>
     <hadoop.version>3.3.4</hadoop.version>
     <hbase.version>2.5.4-hadoop3</hbase.version>
-    <spark.version>3.4.0</spark.version>
+    <spark.version>3.5.2</spark.version>
     <geotools.version>24.4.01</geotools.version>
     <cache2k.version>2.4.1.Final</cache2k.version>
     <metrics.version>4.2.7</metrics.version>
