@@ -42,7 +42,7 @@
     <javax.activation.version>1.1.1</javax.activation.version>
     <jts.version>1.13</jts.version>
     <!-- Important: same version as the PBF library installed -->
-    <protoc.version>2.5.0</protoc.version>
+    <protoc.version>3.23.3</protoc.version>
     <logback.version>1.1.5</logback.version>
     <logstash-encoder.version>4.11</logstash-encoder.version>
     <janino-logback.version>2.5.15</janino-logback.version>
@@ -55,6 +55,7 @@
     <hbase.version>1.2.0-cdh5.12.0</hbase.version>
     <geotools.version>15.0</geotools.version>
     <cache2k.version>2.4.1.Final</cache2k.version>
+    <micrometer-prometheus.version>1.8.0</micrometer-prometheus.version>
 
     <hsqldb.version>2.4.1</hsqldb.version>
     <!-- fixed to the version coming with Spark -->
@@ -86,6 +87,7 @@
     <spring-cloud-zookeeper.version>2.2.5.RELEASE</spring-cloud-zookeeper.version>
     <spring-boot-admin.version>2.2.4</spring-boot-admin.version>
     <springdoc-openapi-ui.version>1.5.8</springdoc-openapi-ui.version>
+    <spring-boot-starter-cache.version>2.3.12.RELEASE</spring-boot-starter-cache.version>
 
     <!-- Tools-->
     <lombok.version>1.18.28</lombok.version>
@@ -747,12 +749,29 @@
         <artifactId>springdoc-openapi-ui</artifactId>
         <version>${springdoc-openapi-ui.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-cache</artifactId>
+        <version>${spring-boot-starter-cache.version}</version>
+      </dependency>
 
       <!-- Cache -->
       <dependency>
         <groupId>org.cache2k</groupId>
         <artifactId>cache2k-spring</artifactId>
         <version>${cache2k.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.cache2k</groupId>
+        <artifactId>cache2k-jmx</artifactId>
+        <version>${cache2k.version}</version>
+      </dependency>
+
+      <!-- Micrometer integration for cache metrics -->
+      <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-registry-prometheus</artifactId>
+        <version>${micrometer-prometheus.version}</version>
       </dependency>
 
       <!--Test-->
