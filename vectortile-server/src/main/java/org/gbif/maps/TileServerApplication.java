@@ -37,7 +37,7 @@ import java.net.URL;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.http.HttpHost;
-import org.cache2k.config.Cache2kConfig;
+import org.cache2k.extra.spring.SpringCache2kCacheManager;
 import org.elasticsearch.client.NodeSelector;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
@@ -47,6 +47,7 @@ import org.elasticsearch.client.sniff.Sniffer;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.autoconfigure.elasticsearch.ElasticSearchRestHealthContributorAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -61,6 +62,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Strings;
+import io.micrometer.core.instrument.MeterRegistry;
 
 /**
  * The main entry point for running the member node.
@@ -71,7 +73,8 @@ import com.google.common.base.Strings;
     "org.gbif.ws.server.mapper"
   },
   exclude = {
-    RabbitAutoConfiguration.class
+    RabbitAutoConfiguration.class,
+    ElasticSearchRestHealthContributorAutoConfiguration.class
   })
 @EnableConfigurationProperties
 public class TileServerApplication {
@@ -229,24 +232,6 @@ public class TileServerApplication {
       return JacksonJsonObjectMapperProvider.getObjectMapperWithBuilderSupport()
                                             .addMixIn(SearchParameter.class, QueryVisitorFactory.OccurrenceSearchParameterMixin.class)
                                             .registerModule(new JavaTimeModule());
-    }
-
-    @ConfigurationProperties(prefix = "cache.predicates")
-    @Bean
-    public Cache2kConfig<Integer,Predicate> predicateCache2kConfig() {
-      return new Cache2kConfig<>();
-    }
-
-    @Bean("occurrencePredicateCache")
-    @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
-    public PredicateCacheService occurrencePredicateCacheService(ObjectMapper objectMapper, Cache2kConfig<Integer, Predicate> cache2kConfig) {
-      return new DefaultInMemoryPredicateCacheService(objectMapper, cache2kConfig.builder().name("occurrencePredicateCache").build());
-    }
-
-    @Bean("eventPredicateCache")
-    @ConditionalOnExpression("${esEventConfiguration.enabled}")
-    public PredicateCacheService eventPredicateCacheService(ObjectMapper objectMapper, Cache2kConfig<Integer, Predicate> cache2kConfig) {
-      return new DefaultInMemoryPredicateCacheService(objectMapper, cache2kConfig.builder().name("eventPredicateCache").build());
     }
 
     @Bean

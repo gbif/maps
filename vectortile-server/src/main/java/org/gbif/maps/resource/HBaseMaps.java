@@ -13,6 +13,7 @@
  */
 package org.gbif.maps.resource;
 
+import org.gbif.maps.CacheConfiguration;
 import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.MapTables;
@@ -32,6 +33,7 @@ import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.extra.spring.SpringCache2kCacheManager;
 import org.cache2k.io.CacheLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Stopwatch;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -52,17 +55,23 @@ public class HBaseMaps {
   private final Connection connection;
   private final MapMetastore metastore;
   private final ModulusSalt salt;
+  private final Cache<String, Optional<PointFeature.PointFeatures>> pointCache;
+  private final Cache<TileKey, Optional<byte[]>> tileCache;
 
-  public HBaseMaps(Configuration conf, String tableName, int saltModulus) throws Exception {
+  public HBaseMaps(Configuration conf, String tableName, int saltModulus, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry) throws Exception {
     connection = ConnectionFactory.createConnection(conf);
     metastore = Metastores.newStaticMapsMeta(tableName, tableName); // backward compatible version
     salt = new ModulusSalt(saltModulus);
+    pointCache = pointCacheBuilder(cacheManager, meterRegistry);
+    tileCache = tileCacheBuilder(cacheManager, meterRegistry);
   }
 
-  public HBaseMaps(Configuration conf, MapMetastore metastore, int saltModulus) throws Exception {
+  public HBaseMaps(Configuration conf, MapMetastore metastore, int saltModulus, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry) throws Exception {
     connection = ConnectionFactory.createConnection(conf);
     this.metastore = metastore;
     salt = new ModulusSalt(saltModulus);
+    pointCache = pointCacheBuilder(cacheManager, meterRegistry);
+    tileCache = tileCacheBuilder(cacheManager, meterRegistry);
   }
 
   private TableName pointTable() throws Exception {
@@ -83,66 +92,83 @@ public class HBaseMaps {
     return TableName.valueOf(meta.getTileTable());
   }
 
-  private final Cache<String, Optional<PointFeature.PointFeatures>> pointCache = new Cache2kBuilder<String, Optional<PointFeature.PointFeatures>>(){}
-    .name("point_cache")
-    .entryCapacity(1_000)
-    .expireAfterWrite(1, TimeUnit.MINUTES)
-    .loader(
-      new CacheLoader<String, Optional<PointFeature.PointFeatures>>() {
-        @Override
-        public Optional<PointFeature.PointFeatures> load(String rowKey) throws Exception {
-          LOG.info("Table {}", metastore.read().getPointTable());
-          try (Table table = connection.getTable(pointTable())) {
-            LOG.info(salt.saltToString(rowKey));
-            byte[] saltedKey = salt.salt(rowKey);
-            Get get = new Get(saltedKey);
-            get.addColumn(Bytes.toBytes("EPSG_4326"), Bytes.toBytes("features"));
-            Result result = table.get(get);
-            if (result != null) {
-              byte[] encoded = result.getValue(Bytes.toBytes("EPSG_4326"), Bytes.toBytes("features"));
-              return Optional.ofNullable(encoded).map( e -> {
-                try {
-                  return PointFeature.PointFeatures.parseFrom(e);
-                } catch (InvalidProtocolBufferException ex) {
-                  throw new RuntimeException(ex);
-                }
-              });
-            } else {
-              return Optional.empty();
+  private Cache<String, Optional<PointFeature.PointFeatures>> pointCacheBuilder(SpringCache2kCacheManager manager, MeterRegistry meterRegistry) {
+
+    manager.addCaches( b->
+     new Cache2kBuilder<String, Optional<PointFeature.PointFeatures>>() {
+    }
+      .manager(manager.getNativeCacheManager())
+      .name("pointCache")
+      .entryCapacity(1_000)
+      .expireAfterWrite(1, TimeUnit.MINUTES)
+      .loader(
+        new CacheLoader<String, Optional<PointFeature.PointFeatures>>() {
+          @Override
+          public Optional<PointFeature.PointFeatures> load(String rowKey) throws Exception {
+            LOG.info("Table {}", metastore.read().getPointTable());
+            try (Table table = connection.getTable(pointTable())) {
+              LOG.info(salt.saltToString(rowKey));
+              byte[] saltedKey = salt.salt(rowKey);
+              Get get = new Get(saltedKey);
+              get.addColumn(Bytes.toBytes("EPSG_4326"), Bytes.toBytes("features"));
+              Result result = table.get(get);
+              if (result != null) {
+                byte[] encoded = result.getValue(Bytes.toBytes("EPSG_4326"), Bytes.toBytes("features"));
+                return Optional.ofNullable(encoded).map(e -> {
+                  try {
+                    return PointFeature.PointFeatures.parseFrom(e);
+                  } catch (InvalidProtocolBufferException ex) {
+                    throw new RuntimeException(ex);
+                  }
+                });
+              } else {
+                return Optional.empty();
+              }
             }
           }
         }
-      }
-    ).build();
+      ));
+    Cache<String, Optional<PointFeature.PointFeatures>> cache = manager.getNativeCacheManager().getCache("pointCache");
+    CacheConfiguration.registerCacheMetrics(cache, meterRegistry);
+    return cache;
+  }
 
-  private final Cache<TileKey, Optional<byte[]>> tileCache =  new Cache2kBuilder<TileKey, Optional<byte[]>>(){}
-    .name("tileCache")
-    .entryCapacity(1_000)
-    .expireAfterWrite(1, TimeUnit.MINUTES)
-    .loader(
-      new CacheLoader<TileKey, Optional<byte[]>>() {
-        @Override
-        public Optional<byte[]> load(TileKey rowCell) throws Exception {
-          LOG.info("Table {}", metastore.read().getTileTable());
-          try (Table table = connection.getTable(tileTable())) {
-            String unsalted = rowCell.rowKey + ":" + rowCell.zxy();
-            byte[] saltedKey = salt.salt(unsalted);
-            LOG.info(salt.saltToString(unsalted));
+  private Cache<TileKey, Optional<byte[]>> tileCacheBuilder(SpringCache2kCacheManager manager, MeterRegistry meterRegistry) {
+    manager.addCaches( b -> new Cache2kBuilder<TileKey, Optional<byte[]>>() {
+    }
+      .manager(manager.getNativeCacheManager())
+      .name("tileCache")
+      .entryCapacity(1_000)
+      .expireAfterWrite(1, TimeUnit.MINUTES)
+      .loader(
+        new CacheLoader<TileKey, Optional<byte[]>>() {
+          @Override
+          public Optional<byte[]> load(TileKey rowCell) throws Exception {
+            LOG.info("Table {}", metastore.read().getTileTable());
+            try (Table table = connection.getTable(tileTable())) {
+              String unsalted = rowCell.rowKey + ":" + rowCell.zxy();
+              byte[] saltedKey = salt.salt(unsalted);
+              LOG.info(salt.saltToString(unsalted));
 
-            Get get = new Get(saltedKey);
-            String columnFamily = rowCell.srs.replaceAll(":", "_").toUpperCase();
-            get.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("tile"));
-            Result result = table.get(get);
-            if (result != null) {
-              byte[] encoded = result.getValue(Bytes.toBytes(columnFamily), Bytes.toBytes("tile"));
-              return Optional.ofNullable(encoded);
-            } else {
-              return Optional.empty();
+              Get get = new Get(saltedKey);
+              String columnFamily = rowCell.srs.replaceAll(":", "_").toUpperCase();
+              get.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("tile"));
+              Result result = table.get(get);
+              if (result != null) {
+                byte[] encoded = result.getValue(Bytes.toBytes(columnFamily), Bytes.toBytes("tile"));
+                return Optional.ofNullable(encoded);
+              } else {
+                return Optional.empty();
+              }
             }
           }
         }
-      }
-    ).build();
+      ));
+
+    Cache<TileKey, Optional<byte[]>> cache = manager.getNativeCacheManager().getCache("tileCache");
+    CacheConfiguration.registerCacheMetrics(cache, meterRegistry);
+    return cache;
+  }
 
   /**
    * Returns a tile from HBase if one exists.

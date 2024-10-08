@@ -32,8 +32,6 @@ server:
     mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript,text/css,image/jpeg,application/x-protobuf,application/gzip
     excluded-user-agents:
 spring:
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration
   resources:
     static-locations: classpath:/static/
   liquibase:
