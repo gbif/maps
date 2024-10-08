@@ -540,6 +540,16 @@
       <artifactId>springdoc-openapi-ui</artifactId>
     </dependency>
 
+    <!-- Cache2k -->
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-spring</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-jmx</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>com.codahale.metrics</groupId>
       <artifactId>metrics-core</artifactId>
