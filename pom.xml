@@ -27,6 +27,14 @@
       <id>gh-pages</id>
       <url>https://gbif.github.io/maps/</url>
     </site>
+    <repository>
+      <id>gbif-release</id>
+      <url>https://repository.gbif.org/content/repositories/releases</url>
+    </repository>
+    <snapshotRepository>
+      <id>gbif-deploy</id>
+      <url>https://repository.gbif.org/content/repositories/snapshots</url>
+    </snapshotRepository>
   </distributionManagement>
 
   <properties>

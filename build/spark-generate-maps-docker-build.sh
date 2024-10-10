@@ -1,6 +1,8 @@
 #Simple script for pushing a image containing the named modules build artifact
 MODULE="spark-generate-maps"
 
+POM_VERSION=$(mvn -q -Dexec.executable="echo" -Dexec.args='${project.version}' --non-recursive exec:exec)
+
 echo "Building Docker image: docker.gbif.org/${MODULE}:${POM_VERSION}"
 docker build -f ./${MODULE}/docker/Dockerfile ./${MODULE} --build-arg JAR_FILE=${MODULE}-${POM_VERSION}.jar -t docker.gbif.org/${MODULE}:${POM_VERSION}
 
