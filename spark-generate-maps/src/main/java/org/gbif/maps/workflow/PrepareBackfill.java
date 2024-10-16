@@ -19,7 +19,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
-import org.apache.hadoop.hbase.io.compress.Compression;
+import org.apache.hadoop.hbase.io.compress.Compression.Algorithm;
 import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.regionserver.BloomType;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -73,7 +73,7 @@ public class PrepareBackfill {
     ColumnFamilyDescriptorBuilder cf =
         ColumnFamilyDescriptorBuilder.newBuilder(Bytes.toBytes(name));
     cf.setMaxVersions(1);
-    cf.setCompressionType(Compression.Algorithm.GZ);
+    cf.setCompressionType(Algorithm.SNAPPY);
     cf.setDataBlockEncoding(DataBlockEncoding.FAST_DIFF);
     cf.setBloomFilterType(BloomType.NONE);
     target.setColumnFamily(cf.build());
