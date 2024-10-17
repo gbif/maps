@@ -50,23 +50,20 @@ class TileMapBuilder implements Serializable {
   /** Generates the tile pyramid. */
   void generate() {
     // process an input table for the map keys
-    String inputTable = prepareInput(spark);
+    String inputCacheTable = prepareInput(spark);
 
-    spark.sql(String.format("CACHE TABLE %s", inputTable));
-
-    runProjection(spark, "EPSG:3857", inputTable);
-    runProjection(spark, "EPSG:4326", inputTable);
-    runProjection(spark, "EPSG:3575", inputTable);
+    runProjection(spark, "EPSG:3857", inputCacheTable);
+    runProjection(spark, "EPSG:4326", inputCacheTable);
+    runProjection(spark, "EPSG:3575", inputCacheTable);
 
     // Optimisation since there are fewer records in the southern hemisphere (100km buffer)
-    String south =
-        filterToNewTable(spark, inputTable, String.format("%s_south", inputTable), "lat<=1");
+    String southCacheTable =
+        filterToNewTable(spark, inputCacheTable, String.format("%s_south", inputCacheTable), "lat<=1");
 
-    spark.sql(String.format("CACHE TABLE %s", south));
-    spark.sql(String.format("UNCACHE TABLE %s", inputTable));
+    spark.sql(String.format("UNCACHE TABLE %s", inputCacheTable));
 
-    runProjection(spark, "EPSG:3031", south);
-    spark.sql(String.format("UNCACHE TABLE %s", south));
+    runProjection(spark, "EPSG:3031", southCacheTable);
+    spark.sql(String.format("UNCACHE TABLE %s", southCacheTable));
   }
 
   /** Runs the tile pyramid build for the projection */
@@ -89,10 +86,9 @@ class TileMapBuilder implements Serializable {
     EncodeBorYearUDF.register(spark, "encodeBorYear");
 
     String targetTable = String.format("%s_filtered", sourceTable);
-    spark.sql(String.format("DROP TABLE IF EXISTS %s", targetTable));
     spark.sql(
         String.format(
-            "CREATE TABLE %s STORED AS parquet AS "
+            "CACHE TABLE %s AS "
                 + "SELECT "
                 + "  mapKey, "
                 + "  decimalLatitude AS lat, "
@@ -209,10 +205,9 @@ class TileMapBuilder implements Serializable {
 
   /** Creates a new table using the provided filter */
   private String filterToNewTable(SparkSession spark, String source, String target, String filter) {
-    spark.sql(String.format("DROP TABLE IF EXISTS %s", target));
     spark.sql(
         String.format(
-            "      CREATE TABLE %s STORED AS parquet AS "
+            "CACHE TABLE %s AS "
                 + "SELECT mapKey,lat,lng,borYear,occCount FROM %s WHERE %s",
             target, source, filter));
     return target;
