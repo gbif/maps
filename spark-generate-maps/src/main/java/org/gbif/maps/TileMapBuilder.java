@@ -142,8 +142,7 @@ class TileMapBuilder implements Serializable {
     // readdress pixels onto tiles noting that addresses in buffer zones fall on multiple tiles
     HBaseKeyUDF.registerTileKey(spark, "hbaseKey", salter);
     TileXYUDF.register(spark, "collectToTiles", epsg, tileSize, bufferSize);
-    Dataset<Row> t3 =
-        spark.sql(
+    return spark.sql(
             String.format(
                 "SELECT "
                     + "    hbaseKey(mapKey, %d, tile.tileX, tile.tileY) AS key,"
@@ -157,8 +156,6 @@ class TileMapBuilder implements Serializable {
                     + "    ) t AS tile "
                     + "  GROUP BY key",
                 zoom, zoom));
-    t3.createOrReplaceTempView("t3");
-    return t3;
   }
 
   /** Generates the Vector Tiles for the provided data. */
