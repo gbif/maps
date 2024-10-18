@@ -42,7 +42,7 @@
     <maven.compiler.source>${jdkLevel}</maven.compiler.source>
     <maven.compiler.target>${jdkLevel}</maven.compiler.target>
 
-    <gbif-occurrence.version>0.195.0-H3-SNAPSHOT</gbif-occurrence.version>
+    <gbif-occurrence.version>0.195.4-H3-SNAPSHOT</gbif-occurrence.version>
     <gbif-api.version>1.17.0-SNAPSHOT</gbif-api.version>
     <gbif-common-ws.version>1.28-SNAPSHOT</gbif-common-ws.version>
     <dwc-api.version>1.49-H3-SNAPSHOT</dwc-api.version>
