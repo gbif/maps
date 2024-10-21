@@ -14,13 +14,10 @@
 package org.gbif.maps;
 
 import org.gbif.api.model.common.search.SearchParameter;
-import org.gbif.api.model.predicate.Predicate;
 import org.gbif.event.search.es.EventEsField;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.resource.*;
-import org.gbif.occurrence.search.cache.DefaultInMemoryPredicateCacheService;
-import org.gbif.occurrence.search.cache.PredicateCacheService;
 import org.gbif.occurrence.search.es.EsConfig;
 import org.gbif.occurrence.search.es.OccurrenceBaseEsFieldMapper;
 import org.gbif.occurrence.search.es.OccurrenceEsField;
@@ -219,7 +216,6 @@ public class TileServerApplication {
         return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager, meterRegistry);
 
       } else {
-        //
         MapMetastore meta = Metastores.newStaticMapsMeta(tileServerConfiguration.getHbase().getTilesTableName(),
           tileServerConfiguration.getHbase().getPointsTableName());
         return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager, meterRegistry);
