@@ -77,7 +77,7 @@ class TileMapBuilder implements Serializable {
 
     IntConsumer projectionFn =
         zoom -> {
-          spark.sparkContext().setJobDescription("Processing zoom " + zoom);
+          spark.sparkContext().setJobDescription("Processing zoom " + zoom + " " + epsg);
           String dir = targetDir + "/tiles/" + epsg.replaceAll(":", "_") + "/z" + zoom;
 
           Dataset<Row> tileData = createTiles(spark, table, epsg, zoom);
