@@ -19,6 +19,9 @@ import org.gbif.maps.udf.*;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.IntConsumer;
+import java.util.stream.IntStream;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
@@ -32,6 +35,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 
 import lombok.Builder;
+import lombok.SneakyThrows;
 import scala.Tuple2;
 
 /** Builds HFiles for the pyramid of map tiles. */
@@ -67,17 +71,26 @@ class TileMapBuilder implements Serializable {
   }
 
   /** Runs the tile pyramid build for the projection */
+  @SneakyThrows
   private void runProjection(SparkSession spark, String epsg, String table) {
     spark.sparkContext().setJobDescription("Reading input data for " + epsg);
 
-    for (int z = maxZoom; z >= 0; z--) { // slowest first
-      spark.sparkContext().setJobDescription("Processing zoom " + z);
-      String dir = targetDir + "/tiles/" + epsg.replaceAll(":", "_") + "/z" + z;
+    IntConsumer projectionFn =
+        zoom -> {
+          spark.sparkContext().setJobDescription("Processing zoom " + zoom);
+          String dir = targetDir + "/tiles/" + epsg.replaceAll(":", "_") + "/z" + zoom;
 
-      Dataset<Row> tileData = createTiles(spark, table, epsg, z);
-      JavaPairRDD<String, byte[]> vectorTiles = generateMVTs(tileData);
-      writeHFiles(vectorTiles, dir, epsg);
-    }
+          Dataset<Row> tileData = createTiles(spark, table, epsg, zoom);
+          JavaPairRDD<String, byte[]> vectorTiles = generateMVTs(tileData);
+          writeHFiles(vectorTiles, dir, epsg);
+        };
+
+    CompletableFuture<?>[] futures =
+        IntStream.iterate(maxZoom, z -> z >= 0, z -> z - 1)
+            .mapToObj(x -> CompletableFuture.runAsync(() -> projectionFn.accept(x)))
+            .toArray(CompletableFuture[]::new);
+
+    CompletableFuture.allOf(futures).get();
   }
 
   /** Creates a new input table that includes the mapKeys for those views that require tiling. */
