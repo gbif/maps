@@ -20,6 +20,8 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
 
@@ -75,6 +77,8 @@ class TileMapBuilder implements Serializable {
   private void runProjection(SparkSession spark, String epsg, String table) {
     spark.sparkContext().setJobDescription("Reading input data for " + epsg);
 
+    ExecutorService executor = Executors.newFixedThreadPool(2);
+
     IntConsumer projectionFn =
         zoom -> {
           spark.sparkContext().setJobDescription("Processing zoom " + zoom + " " + epsg);
@@ -87,10 +91,11 @@ class TileMapBuilder implements Serializable {
 
     CompletableFuture<?>[] futures =
         IntStream.iterate(maxZoom, z -> z >= 0, z -> z - 1)
-            .mapToObj(x -> CompletableFuture.runAsync(() -> projectionFn.accept(x)))
+            .mapToObj(x -> CompletableFuture.runAsync(() -> projectionFn.accept(x), executor))
             .toArray(CompletableFuture[]::new);
 
     CompletableFuture.allOf(futures).get();
+    executor.shutdown();
   }
 
   /** Creates a new input table that includes the mapKeys for those views that require tiling. */
