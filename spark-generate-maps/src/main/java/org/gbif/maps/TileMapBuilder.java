@@ -38,9 +38,11 @@ import org.apache.spark.sql.SparkSession;
 
 import lombok.Builder;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import scala.Tuple2;
 
 /** Builds HFiles for the pyramid of map tiles. */
+@Slf4j
 @Builder
 class TileMapBuilder implements Serializable {
   private final SparkSession spark;
@@ -52,6 +54,7 @@ class TileMapBuilder implements Serializable {
   private final int tileSize;
   private final int bufferSize;
   private final int maxZoom;
+  private final int projectionParallelism;
 
   /** Generates the tile pyramid. */
   void generate() {
@@ -77,22 +80,33 @@ class TileMapBuilder implements Serializable {
   private void runProjection(SparkSession spark, String epsg, String table) {
     spark.sparkContext().setJobDescription("Reading input data for " + epsg);
 
-    ExecutorService executor = Executors.newFixedThreadPool(2);
-
+    // Main projection function
     IntConsumer projectionFn =
-        zoom -> {
-          spark.sparkContext().setJobDescription("Processing zoom " + zoom + " " + epsg);
-          String dir = targetDir + "/tiles/" + epsg.replaceAll(":", "_") + "/z" + zoom;
+      zoom -> {
+        spark.sparkContext().setJobDescription("Processing zoom " + zoom + " " + epsg);
+        String dir = targetDir + "/tiles/" + epsg.replaceAll(":", "_") + "/z" + zoom;
 
-          Dataset<Row> tileData = createTiles(spark, table, epsg, zoom);
-          JavaPairRDD<String, byte[]> vectorTiles = generateMVTs(tileData);
-          writeHFiles(vectorTiles, dir, epsg);
-        };
+        Dataset<Row> tileData = createTiles(spark, table, epsg, zoom);
+        JavaPairRDD<String, byte[]> vectorTiles = generateMVTs(tileData);
+        writeHFiles(vectorTiles, dir, epsg);
+      };
 
+    // Limit parallelism to max zoom
+    int parallelism = projectionParallelism;
+    if (parallelism <= 0) {
+      parallelism = 1;
+    } else if (parallelism > maxZoom) {
+      parallelism = maxZoom;
+    }
+
+    log.info("Run projection tasks, parallelism is {}", parallelism);
+
+    // Run projections in parallel, limited number of running tasks to parallelism and wait until all job are done
+    ExecutorService executor = Executors.newFixedThreadPool(parallelism);
     CompletableFuture<?>[] futures =
-        IntStream.iterate(maxZoom, z -> z >= 0, z -> z - 1)
-            .mapToObj(x -> CompletableFuture.runAsync(() -> projectionFn.accept(x), executor))
-            .toArray(CompletableFuture[]::new);
+      IntStream.iterate(maxZoom, z -> z >= 0, z -> z - 1)
+        .mapToObj(x -> CompletableFuture.runAsync(() -> projectionFn.accept(x), executor))
+        .toArray(CompletableFuture[]::new);
 
     CompletableFuture.allOf(futures).get();
     executor.shutdown();

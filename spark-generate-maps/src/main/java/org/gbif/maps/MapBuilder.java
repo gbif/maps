@@ -44,6 +44,7 @@ public class MapBuilder implements Serializable {
   private final int tileSize;
   private final int bufferSize;
   private final int maxZoom;
+  private final int projectionParallelism;
   private final String targetDir;
   private final int threshold;
   private boolean buildPoints;
@@ -117,6 +118,7 @@ public class MapBuilder implements Serializable {
           .tileSize(tileSize)
           .bufferSize(bufferSize)
           .maxZoom(maxZoom)
+          .projectionParallelism(projectionParallelism)
           .targetDir(targetDir)
           .hadoopConf(hadoopConf())
           .build()

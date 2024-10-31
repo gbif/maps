@@ -42,6 +42,7 @@ public class MapConfiguration {
   private int tilesThreshold;
   private int tileSize;
   private int maxZoom;
+  private int projectionParallelism;
   private int tileBufferSize;
   private HBaseConfiguration hbase;
   private HdfsLockConfig hdfsLockConfig;
