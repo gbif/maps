@@ -67,7 +67,8 @@ class TileMapBuilder implements Serializable {
 
     // Optimisation since there are fewer records in the southern hemisphere (100km buffer)
     String southCacheTable =
-        filterToNewTable(spark, inputCacheTable, String.format("%s_south", inputCacheTable), "lat<=1");
+        filterToNewTable(
+            spark, inputCacheTable, String.format("%s_south", inputCacheTable), "lat<=1");
 
     spark.sql(String.format("UNCACHE TABLE %s", inputCacheTable));
 
@@ -78,18 +79,18 @@ class TileMapBuilder implements Serializable {
   /** Runs the tile pyramid build for the projection */
   @SneakyThrows
   private void runProjection(SparkSession spark, String epsg, String table) {
-    spark.sparkContext().setJobDescription("Reading input data for " + epsg);
+    spark.sparkContext().setJobGroup(epsg, "Processing projection " + epsg, true);
 
     // Main projection function
     IntConsumer projectionFn =
-      zoom -> {
-        spark.sparkContext().setJobDescription("Processing zoom " + zoom + " " + epsg);
-        String dir = targetDir + "/tiles/" + epsg.replaceAll(":", "_") + "/z" + zoom;
+        zoom -> {
+          spark.sparkContext().setJobDescription("Processing zoom " + zoom + " " + epsg);
+          String dir = targetDir + "/tiles/" + epsg.replaceAll(":", "_") + "/z" + zoom;
 
-        Dataset<Row> tileData = createTiles(spark, table, epsg, zoom);
-        JavaPairRDD<String, byte[]> vectorTiles = generateMVTs(tileData);
-        writeHFiles(vectorTiles, dir, epsg);
-      };
+          Dataset<Row> tileData = createTiles(spark, table, epsg, zoom);
+          JavaPairRDD<String, byte[]> vectorTiles = generateMVTs(tileData);
+          writeHFiles(vectorTiles, dir, epsg);
+        };
 
     // Limit parallelism to max zoom
     int parallelism = projectionParallelism;
@@ -101,12 +102,13 @@ class TileMapBuilder implements Serializable {
 
     log.info("Run projection tasks, parallelism is {}", parallelism);
 
-    // Run projections in parallel, limited number of running tasks to parallelism and wait until all job are done
+    // Run projections in parallel, limited number of running tasks to parallelism and wait until
+    // all job are done
     ExecutorService executor = Executors.newFixedThreadPool(parallelism);
     CompletableFuture<?>[] futures =
-      IntStream.iterate(maxZoom, z -> z >= 0, z -> z - 1)
-        .mapToObj(x -> CompletableFuture.runAsync(() -> projectionFn.accept(x), executor))
-        .toArray(CompletableFuture[]::new);
+        IntStream.iterate(maxZoom, z -> z >= 0, z -> z - 1)
+            .mapToObj(x -> CompletableFuture.runAsync(() -> projectionFn.accept(x), executor))
+            .toArray(CompletableFuture[]::new);
 
     CompletableFuture.allOf(futures).get();
     executor.shutdown();
@@ -114,6 +116,7 @@ class TileMapBuilder implements Serializable {
 
   /** Creates a new input table that includes the mapKeys for those views that require tiling. */
   private String prepareInput(SparkSession spark) {
+    spark.sparkContext().setJobGroup("PREPARE", "Preparing input data", true);
     MapKeysUDF.register(spark, "mapKeys", largeMapKeys, true);
     EncodeBorYearUDF.register(spark, "encodeBorYear");
 
@@ -175,19 +178,19 @@ class TileMapBuilder implements Serializable {
     HBaseKeyUDF.registerTileKey(spark, "hbaseKey", salter);
     TileXYUDF.register(spark, "collectToTiles", epsg, tileSize, bufferSize);
     return spark.sql(
-            String.format(
-                "SELECT "
-                    + "    hbaseKey(mapKey, %d, tile.tileX, tile.tileY) AS key,"
-                    + "    collect_list("
-                    + "      struct(tile.pixelX AS x, tile.pixelY AS y, features)"
-                    + "    ) AS tile "
-                    + "  FROM "
-                    + "    t2 "
-                    + "    LATERAL VIEW explode("
-                    + "      collectToTiles(%d, xy.x, xy.y)" // readdresses global pixels
-                    + "    ) t AS tile "
-                    + "  GROUP BY key",
-                zoom, zoom));
+        String.format(
+            "SELECT "
+                + "    hbaseKey(mapKey, %d, tile.tileX, tile.tileY) AS key,"
+                + "    collect_list("
+                + "      struct(tile.pixelX AS x, tile.pixelY AS y, features)"
+                + "    ) AS tile "
+                + "  FROM "
+                + "    t2 "
+                + "    LATERAL VIEW explode("
+                + "      collectToTiles(%d, xy.x, xy.y)" // readdresses global pixels
+                + "    ) t AS tile "
+                + "  GROUP BY key",
+            zoom, zoom));
   }
 
   /** Generates the Vector Tiles for the provided data. */
@@ -236,8 +239,7 @@ class TileMapBuilder implements Serializable {
   private String filterToNewTable(SparkSession spark, String source, String target, String filter) {
     spark.sql(
         String.format(
-            "CACHE TABLE %s AS "
-                + "SELECT mapKey,lat,lng,borYear,occCount FROM %s WHERE %s",
+            "CACHE TABLE %s AS " + "SELECT mapKey,lat,lng,borYear,occCount FROM %s WHERE %s",
             target, source, filter));
     return target;
   }
