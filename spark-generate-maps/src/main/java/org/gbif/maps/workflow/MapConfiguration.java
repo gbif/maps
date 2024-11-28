@@ -53,6 +53,7 @@ public class MapConfiguration {
   static class HBaseConfiguration {
     private int keySaltModulus;
     private String tableName;
+    private long maxFileSize = 10L * 1024 * 1024 * 1024; //Default to 10GB
   }
 
   @Data

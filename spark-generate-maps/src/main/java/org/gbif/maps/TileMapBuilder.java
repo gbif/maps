@@ -19,11 +19,6 @@ import org.gbif.maps.udf.*;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.function.IntConsumer;
-import java.util.stream.IntStream;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
@@ -82,36 +77,14 @@ class TileMapBuilder implements Serializable {
     spark.sparkContext().setJobGroup(epsg, "Processing projection " + epsg, true);
 
     // Main projection function
-    IntConsumer projectionFn =
-        zoom -> {
-          spark.sparkContext().setJobDescription("Processing zoom " + zoom + " " + epsg);
-          String dir = targetDir + "/tiles/" + epsg.replaceAll(":", "_") + "/z" + zoom;
+    for (int z = maxZoom; z >= 0; z--) { // slowest first
+      spark.sparkContext().setJobDescription("Processing zoom " + z);
+      String dir = targetDir + "/tiles/" + epsg.replaceAll(":", "_") + "/z" + z;
 
-          Dataset<Row> tileData = createTiles(spark, table, epsg, zoom);
-          JavaPairRDD<String, byte[]> vectorTiles = generateMVTs(tileData);
-          writeHFiles(vectorTiles, dir, epsg);
-        };
-
-    // Limit parallelism to max zoom
-    int parallelism = projectionParallelism;
-    if (parallelism <= 0) {
-      parallelism = 1;
-    } else if (parallelism > maxZoom) {
-      parallelism = maxZoom;
+      Dataset<Row> tileData = createTiles(spark, table, epsg, z);
+      JavaPairRDD<String, byte[]> vectorTiles = generateMVTs(tileData);
+      writeHFiles(vectorTiles, dir, epsg);
     }
-
-    log.info("Run projection tasks, parallelism is {}", parallelism);
-
-    // Run projections in parallel, limited number of running tasks to parallelism and wait until
-    // all job are done
-    ExecutorService executor = Executors.newFixedThreadPool(parallelism);
-    CompletableFuture<?>[] futures =
-        IntStream.iterate(maxZoom, z -> z >= 0, z -> z - 1)
-            .mapToObj(x -> CompletableFuture.runAsync(() -> projectionFn.accept(x), executor))
-            .toArray(CompletableFuture[]::new);
-
-    CompletableFuture.allOf(futures).get();
-    executor.shutdown();
   }
 
   /** Creates a new input table that includes the mapKeys for those views that require tiling. */

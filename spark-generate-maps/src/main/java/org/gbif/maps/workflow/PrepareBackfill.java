@@ -44,6 +44,7 @@ public class PrepareBackfill {
           Admin admin = connection.getAdmin()) {
         TableDescriptorBuilder target =
             TableDescriptorBuilder.newBuilder(TableName.valueOf(config.getFQTableName()));
+        target.setMaxFileSize(config.getHbase().getMaxFileSize());
         appendColumnFamily(target, "EPSG_4326"); // points and tiles both have this CF
         if ("tiles".equalsIgnoreCase(config.getMode())) {
           appendColumnFamily(target, "EPSG_3857");
