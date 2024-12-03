@@ -1,7 +1,10 @@
-#Simple script for pushing a image containing the named modules build artifact
+#!/bin/bash -e
+
+IS_M2RELEASEBUILD=$1
+POM_VERSION=$2
+
 MODULE="spark-generate-maps"
 
-POM_VERSION=$(mvn -q -Dexec.executable="echo" -Dexec.args='${project.version}' --non-recursive exec:exec)
 IMAGE=docker.gbif.org/${MODULE}:${POM_VERSION}
 IMAGE_LATEST=docker.gbif.org/${MODULE}:latest
 
@@ -18,9 +21,9 @@ if [[ $IS_M2RELEASEBUILD = true ]]; then
 fi
 
 echo "Removing local Docker image: ${IMAGE}"
-docker rmi ${IMAGE}
+docker rmi -f ${IMAGE}
 
 if [[ $IS_M2RELEASEBUILD = true ]]; then
   echo "Removing local Docker image with latest tag: ${IMAGE_LATEST}"
-  docker rmi ${IMAGE_LATEST}
+  docker rmi -f ${IMAGE_LATEST}
 fi
