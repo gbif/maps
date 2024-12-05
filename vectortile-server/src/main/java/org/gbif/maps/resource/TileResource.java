@@ -407,6 +407,9 @@ public final class TileResource {
   }
 
   private final HBaseMaps hbaseMaps;
+
+  private final ClickhouseMaps clickhouseMaps;
+
   private final int tileSize;
   private final int bufferSize;
 
@@ -418,6 +421,7 @@ public final class TileResource {
   @Autowired
   public TileResource(HBaseMaps hbaseMaps, TileServerConfiguration configuration) {
     this.hbaseMaps = hbaseMaps;
+    this.clickhouseMaps = new ClickhouseMaps();
     this.tileSize = configuration.getHbase().getTileSize();
     this.bufferSize = configuration.getHbase().getBufferSize();
   }
@@ -614,6 +618,16 @@ public final class TileResource {
   private DatedVectorTile filteredVectorTile(int z, long x, long y, String mapKey, String srs,
                                     @Nullable Set<String> basisOfRecords, @NotNull Range years, boolean verbose)
     throws IOException {
+
+    // HACK
+    Optional<byte[]> ch = clickhouseMaps.getTile(z, x, y);
+    if (ch.isPresent()) {
+      LOG.info("BINGO clickhouse");
+      String date = null;
+      return new DatedVectorTile(ch.get(), date);
+    } else if (!ch.isPresent()){
+      throw new RuntimeException("Clickhouse error");
+    }
 
     VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
 

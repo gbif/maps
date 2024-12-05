@@ -56,6 +56,8 @@
     <geotools.version>15.0</geotools.version>
     <cache2k.version>2.4.1.Final</cache2k.version>
     <micrometer-prometheus.version>1.8.0</micrometer-prometheus.version>
+    <clickhouse.version>0.7.1-patch1</clickhouse.version>
+    <commons-compress.version>1.27.1</commons-compress.version>
 
     <hsqldb.version>2.4.1</hsqldb.version>
     <!-- fixed to the version coming with Spark -->
@@ -466,6 +468,17 @@
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-annotation</artifactId>
         <version>${dropwizard.metrics.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.clickhouse</groupId>
+        <artifactId>client-v2</artifactId>
+        <version>${clickhouse.version}</version>
+      </dependency>
+      <!-- Can be removed in later clickhouse https://github.com/ClickHouse/clickhouse-java/issues/1927 -->
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-compress</artifactId>
+        <version>${commons-compress.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hive</groupId>
