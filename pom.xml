@@ -97,6 +97,7 @@
     <spring-boot-admin.version>2.2.4</spring-boot-admin.version>
     <springdoc-openapi-ui.version>1.5.8</springdoc-openapi-ui.version>
     <spring-boot-starter-cache.version>2.3.12.RELEASE</spring-boot-starter-cache.version>
+    <swagger-annotations.version>2.2.3</swagger-annotations.version>
 
     <!-- Tools-->
     <lombok.version>1.18.28</lombok.version>
@@ -777,6 +778,13 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-cache</artifactId>
         <version>${spring-boot-starter-cache.version}</version>
+      </dependency>
+
+      <!-- Open API docs-->
+      <dependency>
+        <groupId>io.swagger.core.v3</groupId>
+        <artifactId>swagger-annotations</artifactId>
+        <version>${swagger-annotations.version}</version>
       </dependency>
 
       <!-- Cache -->
