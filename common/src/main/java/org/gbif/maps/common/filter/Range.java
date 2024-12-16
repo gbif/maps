@@ -19,6 +19,8 @@ package org.gbif.maps.common.filter;
  * too many if / else statements to handle the states of the range bounds (e.g. if it is bounded only on 1 side).
  */
 public class Range {
+
+
   private final Integer lower;
   private final Integer upper;
 
@@ -59,4 +61,11 @@ public class Range {
     return (lower == null  && upper == null);
   }
 
+  public Integer getLower() {
+    return lower;
+  }
+
+  public Integer getUpper() {
+    return upper;
+  }
 }

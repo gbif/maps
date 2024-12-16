@@ -620,13 +620,12 @@ public final class TileResource {
     throws IOException {
 
     // HACK
-    Optional<byte[]> ch = clickhouseMaps.getTile(z, x, y);
+    Optional<byte[]> ch = clickhouseMaps.getTile(z, x, y, basisOfRecords, years);
     if (ch.isPresent()) {
-      LOG.info("BINGO clickhouse");
       String date = null;
       return new DatedVectorTile(ch.get(), date);
     } else if (!ch.isPresent()){
-      throw new RuntimeException("Clickhouse error");
+      throw new RuntimeException("Clickhouse error for x=" + x + " y=" + y + " z=" + z + " mapKey=" + mapKey + " srs=" + srs + " basisOfRecords=" + basisOfRecords + " years=" + years + " verbose=" + verbose);
     }
 
     VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
