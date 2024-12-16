@@ -409,6 +409,9 @@ public final class TileResource {
   private final HBaseMaps hbaseMaps;
   private final int tileSize;
   private final int bufferSize;
+  private final int featuresBufferSize;
+
+
 
   /**
    * Construct the resource
@@ -420,6 +423,7 @@ public final class TileResource {
     this.hbaseMaps = hbaseMaps;
     this.tileSize = configuration.getHbase().getTileSize();
     this.bufferSize = configuration.getHbase().getBufferSize();
+    this.featuresBufferSize = configuration.getHbase().getFeaturesBufferSize();
   }
 
   @Operation(
@@ -626,7 +630,7 @@ public final class TileResource {
       LOG.info("Found tile {} {}/{}/{} for key {} with encoded length of {} and date {}", srs, z, x, y, mapKey, encoded.get().length, date);
 
       VectorTileFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, encoded.get(),
-                                            years, basisOfRecords, verbose);
+                                            years, basisOfRecords, verbose, featuresBufferSize);
       return new DatedVectorTile(encoder.encode(), date);
     } else {
       // The tile size is chosen to match the size of prepared tiles.

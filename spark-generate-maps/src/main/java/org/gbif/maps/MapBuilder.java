@@ -169,7 +169,7 @@ public class MapBuilder implements Serializable {
             spark.sparkContext().conf().getInt("spark.sql.shuffle.partitions", 1200));
 
     // write as table to avoid any lazy evaluation re-reading small avro input
-    spark.sql(String.format("DROP TABLE IF EXISTS %s", targetHiveTable));
+    spark.sql(String.format("DROP TABLE IF EXISTS %s PURGE", targetHiveTable));
     partitioned.write().format("parquet").saveAsTable(targetHiveTable);
   }
 

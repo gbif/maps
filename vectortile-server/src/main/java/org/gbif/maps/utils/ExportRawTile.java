@@ -13,6 +13,7 @@
  */
 package org.gbif.maps.utils;
 
+import org.cache2k.config.Cache2kConfig;
 import org.gbif.maps.resource.HBaseMaps;
 import org.gbif.maps.resource.Params;
 
@@ -61,7 +62,7 @@ public class ExportRawTile {
       Configuration conf = HBaseConfiguration.create();
       conf.set("hbase.zookeeper.quorum", zk);
       HBaseMaps maps = null;
-        maps = new HBaseMaps(conf, tableName, salt, new SpringCache2kCacheManager(), new SimpleMeterRegistry());
+        maps = new HBaseMaps(conf, tableName, salt, new SpringCache2kCacheManager(), new SimpleMeterRegistry(), new Cache2kConfig<>(){}, new Cache2kConfig<>(){});
       Optional<byte[]> tile = maps.getTile(mapKey, srs, z, x, y);
       if (tile.isPresent()) {
         Files.write(tile.get(), targetFile);

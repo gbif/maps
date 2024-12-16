@@ -4,12 +4,12 @@
   <parent>
     <groupId>org.gbif</groupId>
     <artifactId>motherpom</artifactId>
-    <version>58</version>
+    <version>59</version>
   </parent>
 
   <groupId>org.gbif.maps</groupId>
   <artifactId>maps-motherpom</artifactId>
-  <version>1.0.1-SNAPSHOT</version>
+  <version>1.0.6-multitaxonomy-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <description>GBIF Map services</description>
@@ -42,11 +42,11 @@
     <maven.compiler.source>${jdkLevel}</maven.compiler.source>
     <maven.compiler.target>${jdkLevel}</maven.compiler.target>
 
-    <gbif-occurrence.version>1.0.5</gbif-occurrence.version>
-    <gbif-api.version>2.0.0</gbif-api.version>
-    <gbif-common-ws.version>2.0.3</gbif-common-ws.version>
-    <dwc-api.version>2.0.0</dwc-api.version>
-    <gbif-predicates.version>2.0.0</gbif-predicates.version>
+    <gbif-occurrence.version>1.0.28</gbif-occurrence.version>
+    <gbif-api.version>2.1.0</gbif-api.version>
+    <gbif-common-ws.version>2.0.7</gbif-common-ws.version>
+    <dwc-api.version>2.0.1</dwc-api.version>
+    <gbif-predicates.version>2.0.5</gbif-predicates.version>
 
     <javax.mail.version>1.4.1</javax.mail.version>
     <javax.activation.version>1.1.1</javax.activation.version>
