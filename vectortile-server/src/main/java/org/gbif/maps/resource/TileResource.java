@@ -620,7 +620,7 @@ public final class TileResource {
     throws IOException {
 
     // HACK
-    Optional<byte[]> ch = clickhouseMaps.getTile(z, x, y, basisOfRecords, years);
+    Optional<byte[]> ch = clickhouseMaps.getTile(z, x, y, mapKey, srs, Optional.ofNullable(basisOfRecords), Optional.of(years), verbose);
     if (ch.isPresent()) {
       String date = null;
       return new DatedVectorTile(ch.get(), date);
