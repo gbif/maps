@@ -48,7 +48,6 @@ public class ClickhouseMaps {
       .build();
   }
 
-
   // Decode the map keys into SQL. This may be refactoerd if we remove HBase and stop encoding mapKeys.
   private static final Map<String, String> REVERSE_MAP_TYPES = new ImmutableMap.Builder<String, String>()
     .put("0", "") // everything
@@ -71,20 +70,19 @@ public class ClickhouseMaps {
 
     return String.format(
         "        WITH \n" +
-        "          bitShiftLeft(1::UInt64, {z:UInt8}) AS zoom_factor, \n" +
-        "          bitShiftLeft(1::UInt64, 32 - {z:UInt8}) AS tile_size, \n" +
-        "          bitShiftRight(tile_size, 4) AS buffer, \n" + // 1/16th tile buffer
+        "          bitShiftLeft(1024::UInt64, 16 - {z:UInt8}) AS tile_size, \n" + // data was processed to zoom 16
+        "          bitShiftRight(tile_size, 2) AS buffer, \n" + // 1/4 tile buffer
         "          tile_size * {x:UInt16} AS tile_x_begin, \n" +
         "          tile_size * ({x:UInt16} + 1) AS tile_x_end, \n" +
         "          tile_size * {y:UInt16} AS tile_y_begin, \n" +
         "          tile_size * ({y:UInt16} + 1) AS tile_y_end, \n" +
         "          mercator_x >= tile_x_begin - buffer AND mercator_x < tile_x_end + buffer \n" +
         "          AND mercator_y >= tile_y_begin - buffer AND mercator_y < tile_y_end + buffer AS in_tile, \n" +
-        "          bitShiftRight(mercator_x - tile_x_begin, 32 - 10 - {z:UInt8}) AS x, \n" +
-        "          bitShiftRight(mercator_y - tile_y_begin, 32 - 10 - {z:UInt8}) AS y, \n" +
+        "          bitShiftRight(mercator_x - tile_x_begin, 16 - {z:UInt8}) AS x, \n" +
+        "          bitShiftRight(mercator_y - tile_y_begin, 16 - {z:UInt8}) AS y, \n" +
         "          sum(occcount) AS occ_count\n" +
         "        SELECT x,y,occ_count \n" +
-        "        FROM gbif_mercator \n" +
+        "        FROM occurrence_mercator \n" +
         "        WHERE in_tile %s %s %s \n" +
         "        GROUP BY x,y",
       typeSQL, borSQL, yearSQL);
