@@ -62,6 +62,7 @@ public class ClickhouseMaps {
 
   private static final Map<String, String> TABLES = new ImmutableMap.Builder<String, String>()
     .put("EPSG:3857", "occurrence_mercator")
+    .put("EPSG:3575", "occurrence_arctic")
     .put("EPSG:3031", "occurrence_antarctic")
     .build();
 
