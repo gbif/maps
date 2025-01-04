@@ -48,7 +48,7 @@ public class ClickhouseMaps {
       .build();
   }
 
-  // Decode the map keys into SQL. This may be refactoerd if we remove HBase and stop encoding mapKeys.
+  // Decode the map keys into SQL. This may be refactored if we remove HBase and stop encoding mapKeys.
   private static final Map<String, String> REVERSE_MAP_TYPES = new ImmutableMap.Builder<String, String>()
     .put("0", "") // everything
     // Clickhouse does not support " AND %s IN(kingdomkey, phylumkey,.. ,taxonkey) " syntax
