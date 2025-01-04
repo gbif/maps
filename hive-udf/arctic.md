@@ -16,7 +16,7 @@ SELECT
  genusKey, speciesKey, taxonKey, year, count(*) AS occCount
 FROM (
   SELECT
-    project(decimalLatitude, decimalLongitude, 'EPSG:3031', 16) AS xy,
+    project(decimalLatitude, decimalLongitude, 'EPSG:3575', 16) AS xy,
     datasetKey, publishingOrgKey, publishingCountry, networkKey,
     countryCode, basisOfRecord, kingdomKey, phylumKey, classKey, orderKey, familyKey,
     genusKey, speciesKey, taxonKey, year
