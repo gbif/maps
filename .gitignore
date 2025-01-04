@@ -11,5 +11,7 @@
 
 vectortile-server/local.yml
 
+common/src/main/java-generated
+
 **/node_modules/
 **/.vagrant

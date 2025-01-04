@@ -60,7 +60,12 @@ public class ClickhouseMaps {
     .put("6", " AND has(networkkey, '%s'::UUID) ")
     .build();
 
-  public String getTileQuery(String mapKey, String srs, Optional<Set<String>> basisOfRecords, Optional<Range> years, boolean verbose) {
+  private static final Map<String, String> TABLES = new ImmutableMap.Builder<String, String>()
+    .put("EPSG:3857", "occurrence_mercator")
+    .put("EPSG:3031", "occurrence_antarctic")
+    .build();
+
+  public String getTileQuery(String mapKey, String epsg, Optional<Set<String>> basisOfRecords, Optional<Range> years, boolean verbose) {
     // SQL for filters
     String typeSQL = String.format(REVERSE_MAP_TYPES.get(mapKey.split(":")[0]), mapKey.split(":")[1]);
     String borSQL = basisOfRecords.isPresent() ?
@@ -76,16 +81,16 @@ public class ClickhouseMaps {
         "          tile_size * ({x:UInt16} + 1) AS tile_x_end, \n" +
         "          tile_size * {y:UInt16} AS tile_y_begin, \n" +
         "          tile_size * ({y:UInt16} + 1) AS tile_y_end, \n" +
-        "          mercator_x >= tile_x_begin - buffer AND mercator_x < tile_x_end + buffer \n" +
-        "          AND mercator_y >= tile_y_begin - buffer AND mercator_y < tile_y_end + buffer AS in_tile, \n" +
-        "          bitShiftRight(mercator_x - tile_x_begin, 16 - {z:UInt8}) AS x, \n" +
-        "          bitShiftRight(mercator_y - tile_y_begin, 16 - {z:UInt8}) AS y, \n" +
+        "          x >= tile_x_begin - buffer AND x < tile_x_end + buffer \n" +
+        "          AND y >= tile_y_begin - buffer AND y < tile_y_end + buffer AS in_tile, \n" +
+        "          bitShiftRight(x - tile_x_begin, 16 - {z:UInt8}) AS local_x, \n" + // tile local coordinates
+        "          bitShiftRight(y - tile_y_begin, 16 - {z:UInt8}) AS local_y, \n" +
         "          sum(occcount) AS occ_count\n" +
-        "        SELECT x,y,occ_count \n" +
-        "        FROM occurrence_mercator \n" +
+        "        SELECT local_x, local_y, occ_count \n" +
+        "        FROM %s \n" +
         "        WHERE in_tile %s %s %s \n" +
-        "        GROUP BY x,y",
-      typeSQL, borSQL, yearSQL);
+        "        GROUP BY local_x, local_y",
+      TABLES.get(epsg), typeSQL, borSQL, yearSQL);
   }
 
   private static String yearSQL(Range years) {
@@ -99,13 +104,13 @@ public class ClickhouseMaps {
   }
 
   /** Read from clickhouse and build the MVT */
-  public Optional<byte[]> getTile(int z, long x, long y, String mapKey, String srs, Optional<Set<String>> basisOfRecords, Optional<Range> years, boolean verbose) {
+  public Optional<byte[]> getTile(int z, long x, long y, String mapKey, String epsg, Optional<Set<String>> basisOfRecords, Optional<Range> years, boolean verbose) {
     Map<String, Object> queryParams = new HashMap<>();
     queryParams.put("z", z);
     queryParams.put("x", x);
     queryParams.put("y", y);
 
-    String sql = getTileQuery(mapKey, srs, basisOfRecords, years, verbose);
+    String sql = getTileQuery(mapKey, epsg, basisOfRecords, years, verbose);
 
     try (QueryResponse response = client.query(sql,
       queryParams, new QuerySettings()).get(10, TimeUnit.SECONDS);) {
@@ -119,8 +124,8 @@ public class ClickhouseMaps {
         reader.next();
 
         // get values
-        long px = reader.getLong("x");
-        long py = reader.getLong("y");
+        long px = reader.getLong("local_x");
+        long py = reader.getLong("local_y");
         long total = reader.getLong("occ_count");
 
         Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(px, py));
