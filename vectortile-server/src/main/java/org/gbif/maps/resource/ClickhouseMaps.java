@@ -26,9 +26,10 @@ import no.ecc.vectortile.VectorTileEncoder;
 import org.gbif.maps.common.filter.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The data access service for clickhouse.
@@ -75,6 +76,9 @@ public class ClickhouseMaps {
       : "";
     String yearSQL = years.isPresent() && !years.get().isUnbounded() ? yearSQL(years.get()) : "";
 
+    // verbose year handling into a map of "year:count", or otherwise a total sum
+    String selectSQL = verbose ? "sumMap(map(year, occcount)) AS year_count" : "sum(occcount) AS occ_count";
+
     return String.format(
         "        WITH \n" +
         "          bitShiftLeft(1024::UInt64, 16 - {z:UInt8}) AS tile_size, \n" + // data was processed to zoom 16
@@ -87,12 +91,12 @@ public class ClickhouseMaps {
         "          AND y >= tile_y_begin - buffer AND y < tile_y_end + buffer AS in_tile, \n" +
         "          bitShiftRight(x - tile_x_begin, 16 - {z:UInt8}) AS local_x, \n" + // tile local coordinates
         "          bitShiftRight(y - tile_y_begin, 16 - {z:UInt8}) AS local_y, \n" +
-        "          sum(occcount) AS occ_count\n" +
-        "        SELECT local_x, local_y, occ_count \n" +
+        "          occcount\n" +
+        "        SELECT local_x, local_y, %s \n" +
         "        FROM %s \n" +
         "        WHERE in_tile %s %s %s \n" +
-        "        GROUP BY local_x, local_y",
-      TABLES.get(epsg), typeSQL, borSQL, yearSQL);
+        "        GROUP BY ALL",
+      selectSQL, TABLES.get(epsg), typeSQL, borSQL, yearSQL);
   }
 
   private static String yearSQL(Range years) {
@@ -118,24 +122,36 @@ public class ClickhouseMaps {
       queryParams, new QuerySettings()).get(10, TimeUnit.SECONDS);) {
 
       ClickHouseBinaryFormatReader reader = client.newBinaryFormatReader(response);
-
-      if (!reader.hasNext())  return Optional.empty();
+      if (!reader.hasNext()) return Optional.empty();
 
       VectorTileEncoder encoder = new VectorTileEncoder(1024, 32, false);
+
       while (reader.hasNext()) {
         reader.next();
 
-        // get values
-        long px = reader.getLong("local_x");
-        long py = reader.getLong("local_y");
-        long total = reader.getLong("occ_count");
+        // feature metadata with a total or the verbose year counts
+        Map<String, Long> meta = Maps.newHashMap();
+        if (!verbose) {
+          long occCount = reader.getLong("occ_count");
+          meta.put("total", occCount);
 
-        Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(px, py));
-        Map<String, Object> meta = Maps.newHashMap();
-        meta.put("total", total);
+        } else {
+          Map<Integer, BigInteger> yearCounts = reader.readValue("year_count");
+          final AtomicLong total = new AtomicLong(0);
+          yearCounts.forEach((k,v) -> {
+            meta.put(String.valueOf(k), v.longValue());
+            total.addAndGet(v.longValue());
+          });
+          meta.put("total", total.get());
+        }
+
+        Point point = GEOMETRY_FACTORY.createPoint(
+          new Coordinate(reader.getLong("local_x"), reader.getLong("local_y")));
         encoder.addFeature("occurrence", meta, point);
       }
+
       return Optional.of(encoder.encode());
+
     } catch (Exception e) {
       e.printStackTrace();
       LOG.error("Unexpected error loading from clickhouse.  Returning no tile.", e);
