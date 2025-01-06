@@ -129,10 +129,10 @@ public class ClickhouseMaps {
       long maxTileX = "EPSG:3857".equals(epsg) ? (1l << z)-1 : (2l << z)-1; // 1 or 2 tiles per zoom
       if ( x ==  maxTileX) { // Eastern dateline
         queryParams.put("x", 0);
-        sql = getTileQuery(mapKey, epsg, basisOfRecords, years, verbose, "AND x <= tile_x_end+buffer");
+        sql = getTileQuery(mapKey, epsg, basisOfRecords, years, verbose, "AND x <= tile_x_start+buffer");
         queryAndAddToMVT(encoder, sql, queryParams, verbose, false, 1024);
-      }
-      if ( x == 0 ) { // Western dateline
+
+      } else if ( x == 0 ) { // Western dateline
         queryParams.put("x", maxTileX);
         sql = getTileQuery(mapKey, epsg, basisOfRecords, years, verbose, "AND x >= tile_x_end-buffer");
         queryAndAddToMVT(encoder, sql, queryParams, verbose, false, -1024);
