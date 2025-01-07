@@ -70,6 +70,7 @@ public class ClickhouseMapBuilder implements Serializable {
                 + "    project(decimalLatitude, decimalLongitude, 'EPSG:4326', %2$d) AS wgs84_xy, "
                 + "    project(decimalLatitude, decimalLongitude, 'EPSG:3575', %2$d) AS arctic_xy, "
                 + "    project(decimalLatitude, decimalLongitude, 'EPSG:3031', %2$d) AS antarctic_xy, "
+                + "    decimalLatitude,"
                 + "    occCount, "
                 + "    %3$s "
                 + "  FROM %4$s",
