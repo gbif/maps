@@ -15,9 +15,16 @@ package org.gbif.maps.clickhouse;
 
 import org.gbif.maps.udf.ProjectUDF;
 
-import java.io.Serializable;
+import java.io.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import org.apache.spark.sql.SparkSession;
+
+import com.clickhouse.client.api.Client;
+import com.clickhouse.client.api.query.QuerySettings;
 
 import lombok.Builder;
 
@@ -29,27 +36,39 @@ public class ClickhouseMapBuilder implements Serializable {
   private final String hivePrefix;
   private final int tileSize;
   private final int maxZoom;
+  private final String clickhouseEndpoint;
+  private final String clickhouseUser; // for replacing tables
+  private final String clickhousePassword;
+  private final String clickhouseReadOnlyUser; // for granting access for the vector tile server
 
   // dimensions for the map cube
   private static final String DIMENSIONS =
       "datasetKey, publishingOrgKey, publishingCountry, networkKey, countryCode, basisOfRecord, kingdomKey, phylumKey,"
           + " classKey, orderKey, familyKey, genusKey, speciesKey, taxonKey, year";
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     // This method intentionally left in for development.
     // Start by creating the HDFS snapshot.
-    ClickhouseMapBuilder.builder()
-        .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
-        .hiveDB("tim")
-        .zkQuorum("c5zk1.gbif.org:2181,c5zk2.gbif.org:2181,c5zk3.gbif.org:2181")
-        .hivePrefix("map_clickhouse")
-        .tileSize(1024)
-        .maxZoom(16)
-        .build()
-        .run();
+    ClickhouseMapBuilder builder =
+        ClickhouseMapBuilder.builder()
+            .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
+            .hiveDB("tim")
+            .zkQuorum("c5zk1.gbif.org:2181,c5zk2.gbif.org:2181,c5zk3.gbif.org:2181")
+            .hivePrefix("map_clickhouse")
+            .tileSize(1024)
+            .maxZoom(16)
+            .clickhouseEndpoint("http://clickhouse.gbif-dev.org:8123/")
+            .clickhouseUser("default")
+            .clickhousePassword("clickhouse")
+            .clickhouseReadOnlyUser("tim")
+            .build();
+
+    // builder.prepareInSpark();
+    builder.loadClickhouse();
   }
 
-  public void run() {
+  /** Establishes a Spark cluster, prepares data, and then releases resources. */
+  public void prepareInSpark() {
     SparkSession spark =
         SparkSession.builder().appName("Clickhouse Map Builder").enableHiveSupport().getOrCreate();
     spark.sql("use " + hiveDB);
@@ -118,6 +137,8 @@ public class ClickhouseMapBuilder implements Serializable {
                 + "  WHERE decimalLatitude <= 0"
                 + "  GROUP BY x, y, %1$s ",
             DIMENSIONS, projectedTable));
+
+    spark.close();
   }
 
   /**
@@ -150,5 +171,70 @@ public class ClickhouseMapBuilder implements Serializable {
   private static void replaceTable(SparkSession spark, String table, String sql) {
     spark.sql(String.format("DROP TABLE IF EXISTS %s", table));
     spark.sql(sql).write().format("parquet").saveAsTable(table);
+  }
+
+  private void loadClickhouse()
+      throws IOException, ExecutionException, InterruptedException, TimeoutException {
+    try (Client client =
+            new Client.Builder()
+                .addEndpoint(clickhouseEndpoint)
+                .setUsername(clickhouseUser)
+                .setPassword(clickhousePassword)
+                .setSocketTimeout(1000 * 60 * 60) // TODO: see comments below
+                .setConnectTimeout(1000 * 60 * 60) // TODO: see comments below
+                .build();
+        // clickhouse-java does not support multiline statements
+        InputStream hiveSQL =
+            this.getClass().getResourceAsStream("/clickhouse/create-hive-table.sql");
+        InputStream localSQL =
+            this.getClass().getResourceAsStream("/clickhouse/create-local-table.sql");
+        InputStream loadSQL =
+            this.getClass().getResourceAsStream("/clickhouse/load-local-table.sql")) {
+
+      String createHive =
+          new BufferedReader(new InputStreamReader(hiveSQL))
+              .lines()
+              .collect(Collectors.joining("\n"));
+      String createLocal =
+          new BufferedReader(new InputStreamReader(localSQL))
+              .lines()
+              .collect(Collectors.joining("\n"));
+      String loadLocal =
+          new BufferedReader(new InputStreamReader(loadSQL))
+              .lines()
+              .collect(Collectors.joining("\n"));
+
+      replaceClickhouseTable(client, "mercator", createHive, createLocal, loadLocal);
+      replaceClickhouseTable(client, "wgs84", createHive, createLocal, loadLocal);
+      replaceClickhouseTable(client, "arctic", createHive, createLocal, loadLocal);
+      replaceClickhouseTable(client, "antarctic", createHive, createLocal, loadLocal);
+    }
+  }
+
+  /**
+   * Recreates the clickhouse table for te provided projection by mounting tables on the hive
+   * warehouse and doing a copy.
+   */
+  private void replaceClickhouseTable(
+      Client client, String projection, String createHive, String createLocal, String loadLocal)
+      throws InterruptedException, ExecutionException, TimeoutException {
+    QuerySettings settings = new QuerySettings();
+    settings.setOption("allow_suspicious_low_cardinality_types", 1);
+
+    // TODO: review how completable futures are used here. Seems odd...
+
+    client.query(String.format("DROP TABLE IF EXISTS hdfs_%s;", projection)).get(1, TimeUnit.HOURS);
+    client.query(String.format(createHive, projection, hiveDB), settings).get(1, TimeUnit.HOURS);
+    client
+        .query(String.format("DROP TABLE IF EXISTS occurrence_%s;", projection))
+        .get(1, TimeUnit.HOURS);
+    client.query(String.format(createLocal, projection), settings).get(1, TimeUnit.HOURS);
+    client
+        .query(
+            String.format(
+                "GRANT SELECT ON default.occurrence_%s TO %s", projection, clickhouseReadOnlyUser))
+        .get(1, TimeUnit.HOURS);
+    client.query(String.format(loadLocal, projection)).get(1, TimeUnit.HOURS);
+    client.query(String.format("DROP TABLE IF EXISTS hdfs_%s", projection)).get(1, TimeUnit.HOURS);
   }
 }
