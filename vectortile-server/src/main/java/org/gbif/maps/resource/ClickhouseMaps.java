@@ -23,9 +23,13 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import no.ecc.vectortile.VectorTileEncoder;
+import org.gbif.maps.TileServerConfiguration;
 import org.gbif.maps.common.filter.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -34,18 +38,22 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * The data access service for clickhouse.
  */
-public class ClickhouseMaps {
+public class ClickhouseMaps implements TileMaps {
   private static final Logger LOG = LoggerFactory.getLogger(ClickhouseMaps.class);
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
 
   private final Client client;
 
-  public ClickhouseMaps() {
+  public ClickhouseMaps(TileServerConfiguration.ClickhouseConfiguration config) {
     client = new Client.Builder()
-      .addEndpoint("http://clickhouse.gbif-dev.org:8123/")
-      .setUsername("tim")
-      .setPassword(null)
-      .setSocketTimeout(10000) // expect filtered maps to fail otherwise
+      .addEndpoint(config.getEndpoint())
+      .setUsername(config.getUsername())
+      .setPassword(config.getPassword())
+      .enableConnectionPool(config.getEnableConnectionPool())
+      .setConnectTimeout(config.getConnectTimeout())
+      .setMaxConnections(config.getMaxConnections())
+      .setMaxRetries(config.getMaxRetries())
+      .setSocketTimeout(config.getSocketTimeout()) // expect filtered maps to fail otherwise
       .build();
   }
 
@@ -68,12 +76,38 @@ public class ClickhouseMaps {
     .put("EPSG:3031", "occurrence_antarctic")
     .build();
 
-  public String getTileQuery(String mapKey, String epsg, Optional<Set<String>> basisOfRecords, Optional<Range> years, boolean verbose, String where) {
+  /**
+   * Retrieves the data from Clickhouse, applies the filters and merges the result into a vector tile containing a single
+   * @param z The zoom level
+   * @param x The tile X address for the vector tile
+   * @param y The tile Y address for the vector tile
+   * @param mapKey The map key being requested
+   * @param srs The SRS of the requested tile
+   * @param basisOfRecords To include in the filter.  An empty or null value will include all values
+   * @param years The year range to filter.
+   * @param verbose If true, the vector tile will contain record counts per year
+   * @param tileSize The size of the tile in pixels
+   * @param bufferSize The size of the buffer in pixels
+   * @return DatedVectorTile containing the vector tile data
+   */
+  public DatedVectorTile filteredVectorTile(int z, long x, long y, String mapKey, String srs,
+                                            @Nullable Set<String> basisOfRecords,
+                                            @NotNull Range years, boolean verbose,
+                                            Integer tileSize, Integer bufferSize
+  ) {
+
+    Optional<byte[]> ch = getTile(z, x, y, mapKey, srs, Optional.ofNullable(basisOfRecords), Optional.of(years), verbose);
+    if (ch.isPresent()) {
+      return new DatedVectorTile(ch.get(), null);
+    } else {
+      throw new RuntimeException("Clickhouse error for x=" + x + " y=" + y + " z=" + z + " mapKey=" + mapKey + " srs=" + srs + " basisOfRecords=" + basisOfRecords + " years=" + years + " verbose=" + verbose);
+    }
+  }
+
+private String getTileQuery(String mapKey, String epsg, Optional<Set<String>> basisOfRecords, Optional<Range> years, boolean verbose, String where) {
     // SQL for filters
     String typeSQL = String.format(REVERSE_MAP_TYPES.get(mapKey.split(":")[0]), mapKey.split(":")[1]);
-    String borSQL = basisOfRecords.isPresent() ?
-      String.format(" AND basisofrecord IN ('%s') ", String.join("', '", basisOfRecords.get()))
-      : "";
+    String borSQL = basisOfRecords.map(bor -> String.format(" AND basisofrecord IN ('%s') ", String.join("', '", bor))).orElse("");
     String yearSQL = years.isPresent() && !years.get().isUnbounded() ? yearSQL(years.get()) : "";
 
     // verbose year handling into a map of "year:count", or otherwise a total sum
@@ -104,12 +138,11 @@ public class ClickhouseMaps {
     if (Objects.equals(lower, upper))  return (String.format(" AND year = %d", lower));
     else if (lower != null && upper != null) return (String.format(" AND year BETWEEN %d AND %d ", lower, upper));
     else if (lower != null) return (String.format(" AND year >= %d ", lower));
-    else if (upper != null) return (String.format(" AND year < %d ", upper));
-    else throw new IllegalArgumentException("Unexpected year range: " + years);
+    else return (String.format(" AND year < %d ", upper));
   }
 
   /** Read from clickhouse and build the MVT */
-  public Optional<byte[]> getTile(int z, long x, long y, String mapKey, String epsg, Optional<Set<String>> basisOfRecords, Optional<Range> years, boolean verbose) {
+  private Optional<byte[]> getTile(int z, long x, long y, String mapKey, String epsg, Optional<Set<String>> basisOfRecords, Optional<Range> years, boolean verbose) {
     Map<String, Object> queryParams = new HashMap<>();
     queryParams.put("z", z);
     queryParams.put("x", x);
@@ -181,14 +214,13 @@ public class ClickhouseMaps {
           point = GEOMETRY_FACTORY.createPoint(new Coordinate(px + 1024, py));
           encoder.addFeature("occurrence", meta, point);
 
-        } else if (isGlobalMercator && px >= buffer) {
+        } else if (isGlobalMercator) {
           point = GEOMETRY_FACTORY.createPoint(new Coordinate(px - 1024, py));
           encoder.addFeature("occurrence", meta, point);
         }
       }
 
     } catch (Exception e) {
-      e.printStackTrace();
       LOG.error("Unexpected error loading from clickhouse.  Returning no tile.", e);
     }
   }

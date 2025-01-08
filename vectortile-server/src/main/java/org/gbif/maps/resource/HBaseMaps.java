@@ -13,14 +13,23 @@
  */
 package org.gbif.maps.resource;
 
+import no.ecc.vectortile.VectorTileEncoder;
 import org.gbif.maps.CacheConfiguration;
+import org.gbif.maps.common.filter.PointFeatureFilters;
+import org.gbif.maps.common.filter.Range;
+import org.gbif.maps.common.filter.VectorTileFilters;
 import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.MapTables;
 import org.gbif.maps.common.meta.Metastores;
+import org.gbif.maps.common.projection.TileProjection;
+import org.gbif.maps.common.projection.TileSchema;
+import org.gbif.maps.common.projection.Tiles;
 import org.gbif.maps.io.PointFeature;
 
+import java.io.IOException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.conf.Configuration;
@@ -46,11 +55,16 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+
+import static org.gbif.maps.resource.TileResource.LAYER_OCCURRENCE;
+
 /**
  * The data access service for the map data which resides in HBase.
  * This implements a small cache since we recognise that map use often results in similar requests.
  */
-public class HBaseMaps {
+public class HBaseMaps implements TileMaps {
   private static final Logger LOG = LoggerFactory.getLogger(HBaseMaps.class);
   private final Connection connection;
   private final MapMetastore metastore;
@@ -90,6 +104,58 @@ public class HBaseMaps {
       throw new IllegalStateException("Unable to read tile metadata to locate table");
     }
     return TableName.valueOf(meta.getTileTable());
+  }
+
+  /**
+   * Retrieves the data from HBase, applies the filters and merges the result into a vector tile containing a single
+   * layer named {@link TileResource#LAYER_OCCURRENCE}.
+   * <p>
+   * This method handles both pre-tiled and simple feature list stored data, returning a consistent format of vector
+   * tile regardless of the storage format.  Please note that the tile size can vary and should be inspected before use.
+   *
+   * @param z The zoom level
+   * @param x The tile X address for the vector tile
+   * @param y The tile Y address for the vector tile
+   * @param mapKey The map key being requested
+   * @param srs The SRS of the requested tile
+   * @param basisOfRecords To include in the filter.  An empty or null value will include all values
+   * @param years The year range to filter.
+   * @return A byte array representing an encoded vector tile.  The tile may be empty.
+   * @throws IOException Only if the data in HBase is corrupt and cannot be decoded.  This is fatal.
+   */
+  public DatedVectorTile filteredVectorTile(
+    int z, long x, long y,
+    String mapKey, String srs,
+    @Nullable Set<String> basisOfRecords, @NotNull Range years, boolean verbose, Integer tileSize, Integer bufferSize)
+    throws IOException {
+
+    Optional<byte[]> encoded = getTile(mapKey, srs, z, x, y);
+    VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
+
+    String date;
+
+    if (encoded.isPresent()) {
+      date = getTileDate().orElse(null);
+      LOG.info("Found tile {} {}/{}/{} for key {} with encoded length of {} and date {}", srs, z, x, y, mapKey, encoded.get().length, date);
+
+      VectorTileFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, encoded.get(),
+        years, basisOfRecords, verbose);
+      return new DatedVectorTile(encoder.encode(), date);
+    } else {
+      // The tile size is chosen to match the size of prepared tiles.
+      date = getPointsDate().orElse(null);
+      Optional<PointFeature.PointFeatures> optionalFeatures = getPoints(mapKey);
+      if (optionalFeatures.isPresent()) {
+        TileProjection projection = Tiles.fromEPSG(srs, tileSize);
+        PointFeature.PointFeatures features = optionalFeatures.get();
+        LOG.info("Found {} features for key {}, date {}", features.getFeaturesCount(), mapKey, date);
+
+        PointFeatureFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, features.getFeaturesList(),
+          projection, TileSchema.fromSRS(srs), z, x, y, tileSize, bufferSize,
+          years, basisOfRecords);
+      }
+      return new DatedVectorTile(encoder.encode(), date); // may be empty
+    }
   }
 
   private Cache<String, Optional<PointFeature.PointFeatures>> pointCacheBuilder(SpringCache2kCacheManager manager, MeterRegistry meterRegistry) {
