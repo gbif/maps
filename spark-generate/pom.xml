@@ -27,6 +27,11 @@
                   <pattern>org.hsqldb</pattern>
                   <shadedPattern>shared.org.hsqldb</shadedPattern>
                 </relocation>
+                <!-- Collision for clickhouse -->
+                <relocation>
+                  <pattern>com.fasterxml.jackson.core</pattern>
+                  <shadedPattern>shared.com.fasterxml.jackson.core</shadedPattern>
+                </relocation>
               </relocations>
             </configuration>
           </execution>
@@ -172,13 +177,12 @@
     <dependency>
       <groupId>com.clickhouse</groupId>
       <artifactId>client-v2</artifactId>
-      <exclusions>
-        <!-- We needed to port the currentName() into this project -->
+      <!--exclusions>
         <exclusion>
           <groupId>com.fasterxml.jackson.core</groupId>
           <artifactId>jackson-core</artifactId>
         </exclusion>
-      </exclusions>
+      </exclusions-->
     </dependency>
     <dependency>
       <groupId>junit</groupId>

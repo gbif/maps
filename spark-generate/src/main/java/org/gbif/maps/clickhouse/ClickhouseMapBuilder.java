@@ -22,14 +22,17 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import org.apache.spark.sql.SparkSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.clickhouse.client.api.Client;
-import com.clickhouse.client.api.query.QuerySettings;
 
 import lombok.Builder;
 
 @Builder(toBuilder = true)
 public class ClickhouseMapBuilder implements Serializable {
+  private static final Logger LOG = LoggerFactory.getLogger(ClickhouseMapBuilder.class);
+
   private final String sourceDir;
   private final String hiveDB;
   private final String zkQuorum;
@@ -63,7 +66,9 @@ public class ClickhouseMapBuilder implements Serializable {
             .clickhouseReadOnlyUser("tim")
             .build();
 
-    // builder.prepareInSpark();
+    LOG.info("Preparing data in Spark");
+    builder.prepareInSpark();
+    LOG.info("Preparing and loading Clickhouse");
     builder.loadClickhouse();
   }
 
@@ -218,23 +223,24 @@ public class ClickhouseMapBuilder implements Serializable {
   private void replaceClickhouseTable(
       Client client, String projection, String createHive, String createLocal, String loadLocal)
       throws InterruptedException, ExecutionException, TimeoutException {
-    QuerySettings settings = new QuerySettings();
-    settings.setOption("allow_suspicious_low_cardinality_types", 1);
 
+    LOG.info("Starting table preparation for {}", projection);
     // TODO: review how completable futures are used here. Seems odd...
 
     client.query(String.format("DROP TABLE IF EXISTS hdfs_%s;", projection)).get(1, TimeUnit.HOURS);
-    client.query(String.format(createHive, projection, hiveDB), settings).get(1, TimeUnit.HOURS);
+    client.query(String.format(createHive, projection, hiveDB)).get(1, TimeUnit.HOURS);
     client
         .query(String.format("DROP TABLE IF EXISTS occurrence_%s;", projection))
         .get(1, TimeUnit.HOURS);
-    client.query(String.format(createLocal, projection), settings).get(1, TimeUnit.HOURS);
+    client.query(String.format(createLocal, projection)).get(1, TimeUnit.HOURS);
     client
         .query(
             String.format(
                 "GRANT SELECT ON default.occurrence_%s TO %s", projection, clickhouseReadOnlyUser))
         .get(1, TimeUnit.HOURS);
+    LOG.info("Starting data load for {}", projection);
     client.query(String.format(loadLocal, projection)).get(1, TimeUnit.HOURS);
+    LOG.info("Finished data load for {}", projection);
     client.query(String.format("DROP TABLE IF EXISTS hdfs_%s", projection)).get(1, TimeUnit.HOURS);
   }
 }

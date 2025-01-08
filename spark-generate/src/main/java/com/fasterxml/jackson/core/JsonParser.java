@@ -230,10 +230,7 @@ public abstract class JsonParser implements Closeable, Versioned {
   /**********************************************************
    */
 
-  /**
-   * Bit flag composed of bits that indicate which {@link
-   * com.fasterxml.jackson.core.JsonParser.Feature}s are enabled.
-   */
+  /** Bit flag composed of bits that indicate which {@link Feature}s are enabled. */
   protected int _features;
 
   /*
@@ -394,11 +391,10 @@ public abstract class JsonParser implements Closeable, Versioned {
    * Closes the parser so that no further iteration or data access can be made; will also close the
    * underlying input source if parser either <b>owns</b> the input source, or feature {@link
    * Feature#AUTO_CLOSE_SOURCE} is enabled. Whether parser owns the input source depends on factory
-   * method that was used to construct instance (so check {@link
-   * com.fasterxml.jackson.core.JsonFactory} for details, but the general idea is that if caller
-   * passes in closable resource (such as {@link InputStream} or {@link Reader}) parser does NOT own
-   * the source; but if it passes a reference (such as {@link java.io.File} or {@link java.net.URL}
-   * and creates stream or reader it does own them.
+   * method that was used to construct instance (so check {@link JsonFactory} for details, but the
+   * general idea is that if caller passes in closable resource (such as {@link InputStream} or
+   * {@link Reader}) parser does NOT own the source; but if it passes a reference (such as {@link
+   * File} or {@link java.net.URL} and creates stream or reader it does own them.
    */
   @Override
   public abstract void close() throws IOException;
@@ -1230,11 +1226,10 @@ public abstract class JsonParser implements Closeable, Versioned {
   }
 
   /**
-   * Method that will try to convert value of current token to a {@link java.lang.String}. JSON
-   * Strings map naturally; scalar values get converted to their textual representation. If
-   * representation can not be converted to a String value (including structured types like Objects
-   * and Arrays and null token), default value of <b>null</b> will be returned; no exceptions are
-   * thrown.
+   * Method that will try to convert value of current token to a {@link String}. JSON Strings map
+   * naturally; scalar values get converted to their textual representation. If representation can
+   * not be converted to a String value (including structured types like Objects and Arrays and null
+   * token), default value of <b>null</b> will be returned; no exceptions are thrown.
    *
    * @since 2.1
    */
@@ -1243,10 +1238,10 @@ public abstract class JsonParser implements Closeable, Versioned {
   }
 
   /**
-   * Method that will try to convert value of current token to a {@link java.lang.String}. JSON
-   * Strings map naturally; scalar values get converted to their textual representation. If
-   * representation can not be converted to a String value (including structured types like Objects
-   * and Arrays and null token), specified default value will be returned; no exceptions are thrown.
+   * Method that will try to convert value of current token to a {@link String}. JSON Strings map
+   * naturally; scalar values get converted to their textual representation. If representation can
+   * not be converted to a String value (including structured types like Objects and Arrays and null
+   * token), specified default value will be returned; no exceptions are thrown.
    *
    * @since 2.1
    */
@@ -1322,11 +1317,10 @@ public abstract class JsonParser implements Closeable, Versioned {
 
   /**
    * Method to deserialize JSON content into a non-container type (it can be an array type,
-   * however): typically a bean, array or a wrapper type (like {@link java.lang.Boolean}).
-   * <b>Note</b>: method can only be called if the parser has an object codec assigned; this is true
-   * for parsers constructed by <code>MappingJsonFactory</code> (from "jackson-databind" jar) but
-   * not for {@link JsonFactory} (unless its <code>setCodec</code> method has been explicitly
-   * called).
+   * however): typically a bean, array or a wrapper type (like {@link Boolean}). <b>Note</b>: method
+   * can only be called if the parser has an object codec assigned; this is true for parsers
+   * constructed by <code>MappingJsonFactory</code> (from "jackson-databind" jar) but not for {@link
+   * JsonFactory} (unless its <code>setCodec</code> method has been explicitly called).
    *
    * <p>This method may advance the event stream, for structured types the current token will be the
    * closing end marker (END_ARRAY, END_OBJECT) of the bound structure. For non-structured Json
