@@ -16,9 +16,9 @@ package org.gbif.maps.clickhouse;
 import org.gbif.maps.udf.ProjectUDF;
 
 import java.io.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import org.apache.spark.sql.SparkSession;
@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.clickhouse.client.api.Client;
+import com.clickhouse.client.api.command.CommandResponse;
 
 import lombok.Builder;
 
@@ -178,13 +179,13 @@ public class ClickhouseMapBuilder implements Serializable {
     spark.sql(sql).write().format("parquet").saveAsTable(table);
   }
 
-  private void loadClickhouse()
-      throws IOException, ExecutionException, InterruptedException, TimeoutException {
+  private void loadClickhouse() throws Exception {
     try (Client client =
             new Client.Builder()
                 .addEndpoint(clickhouseEndpoint)
                 .setUsername(clickhouseUser)
                 .setPassword(clickhousePassword)
+                .enableConnectionPool(true)
                 .setSocketTimeout(1000 * 60 * 60) // TODO: see comments below
                 .setConnectTimeout(1000 * 60 * 60) // TODO: see comments below
                 .build();
@@ -213,6 +214,47 @@ public class ClickhouseMapBuilder implements Serializable {
       replaceClickhouseTable(client, "wgs84", createHive, createLocal, loadLocal);
       replaceClickhouseTable(client, "arctic", createHive, createLocal, loadLocal);
       replaceClickhouseTable(client, "antarctic", createHive, createLocal, loadLocal);
+
+      LOG.info("Starting data load for mercator");
+
+      /*
+      CompletableFuture<QueryResponse> q1 = client.query(String.format(loadLocal, "mercator"));
+      LOG.info("Finished data load for mercator");
+      LOG.info("Starting data load for wgs84");
+      CompletableFuture<CommandResponse> q2 = client.execute(String.format(loadLocal, "wgs84"));
+      LOG.info("Finished data load for wgs84");
+      LOG.info("Starting data load for arctic");
+      CompletableFuture<CommandResponse> q3 = client.execute(String.format(loadLocal, "arctic"));
+      LOG.info("Finished data load for arctic");
+      LOG.info("Starting data load for antarctic");
+      CompletableFuture<CommandResponse> q4 = client.execute(String.format(loadLocal, "antarctic"));
+      LOG.info("Finished data load for antarctic");
+      */
+
+      ExecutorService EXEC = Executors.newCachedThreadPool();
+      List<Callable<CompletableFuture<CommandResponse>>> tasks = new ArrayList<>();
+      tasks.add(() -> client.execute(String.format(loadLocal, "mercator")));
+      tasks.add(() -> client.execute(String.format(loadLocal, "wgs84")));
+      tasks.add(() -> client.execute(String.format(loadLocal, "arctic")));
+      tasks.add(() -> client.execute(String.format(loadLocal, "antarctic")));
+
+      LOG.info("Invoking concurrent load");
+      List<Future<CompletableFuture<CommandResponse>>> results = EXEC.invokeAll(tasks);
+      for (Future<CompletableFuture<CommandResponse>> result : results) {
+        result.get(1, TimeUnit.HOURS);
+      }
+      LOG.info("Finished loading clickhouse!");
+
+      client
+          .execute(String.format("DROP TABLE IF EXISTS hdfs_%s", "mercator"))
+          .get(1, TimeUnit.HOURS);
+      client.execute(String.format("DROP TABLE IF EXISTS hdfs_%s", "wgs84")).get(1, TimeUnit.HOURS);
+      client
+          .execute(String.format("DROP TABLE IF EXISTS hdfs_%s", "arctic"))
+          .get(1, TimeUnit.HOURS);
+      client
+          .execute(String.format("DROP TABLE IF EXISTS hdfs_%s", "antarctic"))
+          .get(1, TimeUnit.HOURS);
     }
   }
 
@@ -222,25 +264,28 @@ public class ClickhouseMapBuilder implements Serializable {
    */
   private void replaceClickhouseTable(
       Client client, String projection, String createHive, String createLocal, String loadLocal)
-      throws InterruptedException, ExecutionException, TimeoutException {
+      throws Exception {
 
     LOG.info("Starting table preparation for {}", projection);
     // TODO: review how completable futures are used here. Seems odd...
 
-    client.query(String.format("DROP TABLE IF EXISTS hdfs_%s;", projection)).get(1, TimeUnit.HOURS);
-    client.query(String.format(createHive, projection, hiveDB)).get(1, TimeUnit.HOURS);
     client
-        .query(String.format("DROP TABLE IF EXISTS occurrence_%s;", projection))
+        .execute(String.format("DROP TABLE IF EXISTS hdfs_%s;", projection))
         .get(1, TimeUnit.HOURS);
-    client.query(String.format(createLocal, projection)).get(1, TimeUnit.HOURS);
+    client.execute(String.format(createHive, projection, hiveDB)).get(1, TimeUnit.HOURS);
     client
-        .query(
+        .execute(String.format("DROP TABLE IF EXISTS occurrence_%s;", projection))
+        .get(1, TimeUnit.HOURS);
+    client.execute(String.format(createLocal, projection)).get(1, TimeUnit.HOURS);
+    client
+        .execute(
             String.format(
                 "GRANT SELECT ON default.occurrence_%s TO %s", projection, clickhouseReadOnlyUser))
         .get(1, TimeUnit.HOURS);
-    LOG.info("Starting data load for {}", projection);
-    client.query(String.format(loadLocal, projection)).get(1, TimeUnit.HOURS);
-    LOG.info("Finished data load for {}", projection);
-    client.query(String.format("DROP TABLE IF EXISTS hdfs_%s", projection)).get(1, TimeUnit.HOURS);
+    // LOG.info("Starting data load for {}", projection);
+    // client.execute(String.format(loadLocal, projection)).get(1, TimeUnit.HOURS);
+    // LOG.info("Finished data load for {}", projection);
+    // client.execute(String.format("DROP TABLE IF EXISTS hdfs_%s", projection)).get(1,
+    // TimeUnit.HOURS);
   }
 }

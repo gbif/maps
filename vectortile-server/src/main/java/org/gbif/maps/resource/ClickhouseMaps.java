@@ -60,13 +60,13 @@ public class ClickhouseMaps implements TileMaps {
   // Decode the map keys into SQL. This may be refactored if we remove HBase and stop encoding mapKeys.
   private static final Map<String, String> REVERSE_MAP_TYPES = new ImmutableMap.Builder<String, String>()
     .put("0", "") // everything
-    // Clickhouse does not support " AND %s IN(kingdomkey, phylumkey,.. ,taxonkey) " syntax
-    .put("1", " AND (kingdomkey=%1$s OR phylumkey=%1$s OR classkey=%1$s OR orderkey=%1$s OR familykey=%1$s OR genuskey=%1$s OR specieskey=%1$s OR taxonkey=%1$s) ")
-    .put("2", " AND datasetkey ='%s' ")
-    .put("3", " AND publishingorgkey ='%s' ")
-    .put("4", " AND country ='%s' ")
-    .put("5", " AND publishingcountry ='%s' ")
-    .put("6", " AND has(networkkey, '%s'::UUID) ")
+    // Clickhouse does not support " AND %s IN(kingdomKey, phylumKey,.. ,taxonkey) " syntax
+    .put("1", " AND (kingdomKey=%1$s OR phylumKey=%1$s OR classKey=%1$s OR orderKey=%1$s OR familyKey=%1$s OR genusKey=%1$s OR speciesKey=%1$s OR taxonKey=%1$s) ")
+    .put("2", " AND datasetKey ='%s' ")
+    .put("3", " AND publishingOrgKey ='%s' ")
+    .put("4", " AND countryCode ='%s' ")
+    .put("5", " AND publishingCountry ='%s' ")
+    .put("6", " AND has(networkKey, '%s'::UUID) ")
     .build();
 
   private static final Map<String, String> TABLES = new ImmutableMap.Builder<String, String>()
@@ -107,11 +107,11 @@ public class ClickhouseMaps implements TileMaps {
 private String getTileQuery(String mapKey, String epsg, Optional<Set<String>> basisOfRecords, Optional<Range> years, boolean verbose, String where) {
     // SQL for filters
     String typeSQL = String.format(REVERSE_MAP_TYPES.get(mapKey.split(":")[0]), mapKey.split(":")[1]);
-    String borSQL = basisOfRecords.map(bor -> String.format(" AND basisofrecord IN ('%s') ", String.join("', '", bor))).orElse("");
+    String borSQL = basisOfRecords.map(bor -> String.format(" AND basisOfRecord IN ('%s') ", String.join("', '", bor))).orElse("");
     String yearSQL = years.isPresent() && !years.get().isUnbounded() ? yearSQL(years.get()) : "";
 
     // verbose year handling into a map of "year:count", or otherwise a total sum
-    String selectSQL = verbose ? "sumMap(map(year, occcount)) AS year_count" : "sum(occcount) AS occ_count";
+    String selectSQL = verbose ? "sumMap(map(year, occCount)) AS year_count" : "sum(occCount) AS occ_count";
 
     return String.format(
         "        WITH \n" +
