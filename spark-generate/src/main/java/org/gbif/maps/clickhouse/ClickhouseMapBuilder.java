@@ -215,8 +215,6 @@ public class ClickhouseMapBuilder implements Serializable {
       replaceClickhouseTable(client, "arctic", createHive, createLocal, loadLocal);
       replaceClickhouseTable(client, "antarctic", createHive, createLocal, loadLocal);
 
-      LOG.info("Starting data load for mercator");
-
       /*
       CompletableFuture<QueryResponse> q1 = client.query(String.format(loadLocal, "mercator"));
       LOG.info("Finished data load for mercator");

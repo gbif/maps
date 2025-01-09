@@ -123,6 +123,7 @@ public class HBaseMaps implements TileMaps {
    * @return A byte array representing an encoded vector tile.  The tile may be empty.
    * @throws IOException Only if the data in HBase is corrupt and cannot be decoded.  This is fatal.
    */
+  @Override
   public DatedVectorTile filteredVectorTile(
     int z, long x, long y,
     String mapKey, String srs,

@@ -70,10 +70,10 @@ public class ClickhouseMaps implements TileMaps {
     .build();
 
   private static final Map<String, String> TABLES = new ImmutableMap.Builder<String, String>()
-    .put("EPSG:3857", "occurrence_mercator")
-    .put("EPSG:4326", "occurrence_wgs84")
-    .put("EPSG:3575", "occurrence_arctic")
-    .put("EPSG:3031", "occurrence_antarctic")
+    .put("EPSG:3857", "view_occurrence_mercator")
+    .put("EPSG:4326", "view_occurrence_wgs84")
+    .put("EPSG:3575", "view_occurrence_arctic")
+    .put("EPSG:3031", "view_occurrence_antarctic")
     .build();
 
   /**
@@ -90,6 +90,7 @@ public class ClickhouseMaps implements TileMaps {
    * @param bufferSize The size of the buffer in pixels
    * @return DatedVectorTile containing the vector tile data
    */
+  @Override
   public DatedVectorTile filteredVectorTile(int z, long x, long y, String mapKey, String srs,
                                             @Nullable Set<String> basisOfRecords,
                                             @NotNull Range years, boolean verbose,
