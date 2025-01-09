@@ -70,10 +70,10 @@ public class ClickhouseMaps implements TileMaps {
     .build();
 
   private static final Map<String, String> TABLES = new ImmutableMap.Builder<String, String>()
-    .put("EPSG:3857", "view_occurrence_mercator")
-    .put("EPSG:4326", "view_occurrence_wgs84")
-    .put("EPSG:3575", "view_occurrence_arctic")
-    .put("EPSG:3031", "view_occurrence_antarctic")
+    .put("EPSG:3857", "occurrence_mercator")
+    .put("EPSG:4326", "occurrence_wgs84")
+    .put("EPSG:3575", "occurrence_arctic")
+    .put("EPSG:3031", "occurrence_antarctic")
     .build();
 
   /**
