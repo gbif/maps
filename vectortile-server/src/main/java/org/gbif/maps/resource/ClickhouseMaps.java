@@ -180,12 +180,11 @@ private String getTileQuery(String mapKey, String epsg, Optional<Set<String>> ba
    */
   private void queryAndAddToMVT(VectorTileEncoder encoder, String sql, Map<String, Object> queryParams, boolean verbose, boolean isGlobalMercator, long xAdjustment) {
     try (QueryResponse response = client.query(sql,
-      queryParams, new QuerySettings()).get(10, TimeUnit.SECONDS);
-      ClickHouseBinaryFormatReader reader = client.newBinaryFormatReader(response)
-    ) {
+      queryParams, new QuerySettings()).get(10, TimeUnit.SECONDS);) {
+
+      ClickHouseBinaryFormatReader reader = client.newBinaryFormatReader(response);
 
       while (reader.hasNext()) {
-
         reader.next();
 
         // feature metadata with a total or the verbose year counts
@@ -220,6 +219,7 @@ private String getTileQuery(String mapKey, String epsg, Optional<Set<String>> ba
           encoder.addFeature("occurrence", meta, point);
         }
       }
+
     } catch (Exception e) {
       LOG.error("Unexpected error loading from clickhouse.  Returning no tile.", e);
     }
