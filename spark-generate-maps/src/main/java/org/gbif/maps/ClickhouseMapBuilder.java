@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.gbif.maps.clickhouse;
+package org.gbif.maps;
 
 import org.gbif.maps.udf.ProjectUDF;
 
@@ -36,7 +36,6 @@ public class ClickhouseMapBuilder implements Serializable {
 
   private final String sourceDir;
   private final String hiveDB;
-  private final String zkQuorum;
   private final String hivePrefix;
   private final int tileSize;
   private final int maxZoom;
@@ -55,9 +54,8 @@ public class ClickhouseMapBuilder implements Serializable {
     // Start by creating the HDFS snapshot.
     ClickhouseMapBuilder builder =
         ClickhouseMapBuilder.builder()
-            .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
-            .hiveDB("tim")
-            .zkQuorum("c5zk1.gbif.org:2181,c5zk2.gbif.org:2181,c5zk3.gbif.org:2181")
+            .sourceDir("/data/hdfsview/occurrence/.snapshot/dave-occurrence-map/occurrence/*.avro")
+            .hiveDB("dave")
             .hivePrefix("map_clickhouse")
             .tileSize(1024)
             .maxZoom(16)
@@ -179,7 +177,7 @@ public class ClickhouseMapBuilder implements Serializable {
     spark.sql(sql).write().format("parquet").saveAsTable(table);
   }
 
-  private void loadClickhouse() throws Exception {
+  public void loadClickhouse() throws Exception {
     try (Client client =
             new Client.Builder()
                 .addEndpoint(clickhouseEndpoint)
@@ -280,6 +278,7 @@ public class ClickhouseMapBuilder implements Serializable {
             String.format(
                 "GRANT SELECT ON default.occurrence_%s TO %s", projection, clickhouseReadOnlyUser))
         .get(1, TimeUnit.HOURS);
+
     // LOG.info("Starting data load for {}", projection);
     // client.execute(String.format(loadLocal, projection)).get(1, TimeUnit.HOURS);
     // LOG.info("Finished data load for {}", projection);

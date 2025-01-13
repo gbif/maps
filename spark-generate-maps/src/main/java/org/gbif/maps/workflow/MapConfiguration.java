@@ -45,6 +45,7 @@ public class MapConfiguration {
   private int projectionParallelism;
   private int tileBufferSize;
   private HBaseConfiguration hbase;
+  private ClickhouseConfiguration clickhouse;
   private HdfsLockConfig hdfsLockConfig;
 
   @Data
@@ -59,6 +60,20 @@ public class MapConfiguration {
   @Data
   @Builder
   @Jacksonized
+  static class ClickhouseConfiguration {
+    private String endpoint;
+    private String username;
+    private String password;
+    private Boolean enableConnectionPool;
+    private Integer connectTimeout;
+    private Integer maxConnections;
+    private Integer maxRetries;
+    private Integer socketTimeout;
+  }
+
+  @Data
+  @Builder
+  @Jacksonized
   static class HdfsLockConfig {
     private String namespace;
     private String lockingPath;
@@ -68,7 +83,7 @@ public class MapConfiguration {
   }
 
   /** E.g. pass in the filename relative to the classpath, e.g. "/dev.yml" */
-  static MapConfiguration build(String filename) throws IOException {
+  public static MapConfiguration build(String filename) throws IOException {
     URL conf = Resources.getResource(filename);
     log.info("Reading from {}", conf);
     return new ObjectMapper(new YAMLFactory()).readValue(conf, MapConfiguration.class);
