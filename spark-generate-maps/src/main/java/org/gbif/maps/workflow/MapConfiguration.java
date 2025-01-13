@@ -70,6 +70,10 @@ public class MapConfiguration {
     private Integer maxConnections;
     private Integer maxRetries;
     private Integer socketTimeout;
+    /** Prefix used for the generated hive tables */
+    private String hivePrefix;
+    private Integer tileSize; // 1024
+    private Integer maxZoom; // 16
   }
 
   @Data
