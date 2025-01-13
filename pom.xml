@@ -38,7 +38,7 @@
   </distributionManagement>
 
   <properties>
-    <jdkLevel>17</jdkLevel>
+    <jdkLevel>11</jdkLevel>
     <maven.compiler.source>${jdkLevel}</maven.compiler.source>
     <maven.compiler.target>${jdkLevel}</maven.compiler.target>
 
