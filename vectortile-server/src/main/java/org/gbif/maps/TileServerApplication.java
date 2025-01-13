@@ -13,6 +13,7 @@
  */
 package org.gbif.maps;
 
+import lombok.extern.slf4j.Slf4j;
 import org.gbif.api.model.common.search.SearchParameter;
 import org.gbif.event.search.es.EventEsField;
 import org.gbif.maps.common.meta.MapMetastore;
@@ -58,7 +59,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.base.Strings;
 import io.micrometer.core.instrument.MeterRegistry;
 
 /**
@@ -74,6 +74,7 @@ import io.micrometer.core.instrument.MeterRegistry;
     ElasticSearchRestHealthContributorAutoConfiguration.class
   })
 @EnableConfigurationProperties
+@Slf4j
 public class TileServerApplication {
 
   public static void main(String[] args) {
@@ -200,15 +201,16 @@ public class TileServerApplication {
 
     @Bean
     @Profile("!es-only")
-    HBaseMaps hBaseMaps(TileServerConfiguration tileServerConfiguration, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry) throws Exception {
+    TileMaps tileMaps(TileServerConfiguration tileServerConfiguration, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry) throws Exception {
+
+      if (tileServerConfiguration.getClickhouse() != null && tileServerConfiguration.getClickhouse().getEndpoint() != null) {
+        log.info("Using Clickhouse for database driven tile maps");
+        return new ClickhouseMaps(tileServerConfiguration.getClickhouse());
+      } else {
+        log.info("Using HBase for database driven tile maps");
       // Either use Zookeeper or static config to locate tables
       Configuration conf = HBaseConfiguration.create();
       conf.set("hbase.zookeeper.quorum", tileServerConfiguration.getHbase().getZookeeperQuorum());
-      String hbaseZNode = tileServerConfiguration.getHbase().getHbaseZnode();
-      if (!Strings.isNullOrEmpty(hbaseZNode)) {
-        conf.set("zookeeper.znode.parent", hbaseZNode);
-      }
-
 
       if (tileServerConfiguration.getMetastore() != null) {
         MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
@@ -220,6 +222,7 @@ public class TileServerApplication {
           tileServerConfiguration.getHbase().getPointsTableName());
         return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager, meterRegistry);
       }
+    }
     }
 
     @Primary

@@ -231,6 +231,10 @@
       <artifactId>slf4j-api</artifactId>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>com.clickhouse</groupId>
+      <artifactId>client-v2</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>junit</groupId>

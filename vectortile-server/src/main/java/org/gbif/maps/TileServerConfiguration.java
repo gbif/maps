@@ -25,6 +25,8 @@ public class TileServerConfiguration {
 
   private HBaseConfiguration hbase;
 
+  private ClickhouseConfiguration clickhouse;
+
   private EsTileConfiguration esOccurrenceConfiguration;
 
   private EsTileConfiguration esEventConfiguration;
@@ -56,6 +58,27 @@ public class TileServerConfiguration {
     private Integer bufferSize;
 
     private Integer saltModulus;
+
+  }
+
+  @Data
+  public static class ClickhouseConfiguration  {
+
+    private String endpoint;
+
+    private String username;
+
+    private String password;
+
+    private Boolean enableConnectionPool;
+
+    private Integer connectTimeout;
+
+    private Integer maxConnections;
+
+    private Integer maxRetries;
+
+    private Integer socketTimeout;
 
   }
 

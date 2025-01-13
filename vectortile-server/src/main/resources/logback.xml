@@ -13,6 +13,7 @@
 
   <logger name="org.gbif" level="DEBUG"/>
   <logger name="org.gbif.maps.common.bin.HexBin" level="INFO"/>
+  <logger name="com.clickhouse.client.api.internal.ClickHouseLZ4InputStream" level="ERROR"/>
   <!--logger name="org.gbif.maps.common.projection" level="TRACE"/-->
 
   <root level="INFO">

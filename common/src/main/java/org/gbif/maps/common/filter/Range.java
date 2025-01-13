@@ -59,4 +59,11 @@ public class Range {
     return (lower == null  && upper == null);
   }
 
+  public Integer getLower() {
+    return lower;
+  }
+
+  public Integer getUpper() {
+    return upper;
+  }
 }

@@ -101,12 +101,12 @@
       <fieldset id="projection">
         <legend>Projection</legend>
         <label>
-          <input type="radio" name="projection" value="3857" />
+          <input type="radio" name="projection" value="3857" checked="checked" />
           <img src="https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-classic"/>
           Web Mercator
         </label>
         <label>
-          <input type="radio" name="projection" value="4326" checked="checked" />
+          <input type="radio" name="projection" value="4326" />
           <img src="https://tile.gbif.org/4326/omt/0/0/0@1x.png?style=gbif-classic"/><img src="https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-classic"/>
           WGS84 Plate Careé
         </label>
@@ -206,7 +206,7 @@
       <fieldset id="data_source">
         <legend>Data source</legend>
         <label>
-          <input type="radio" name="datasource" id="datasource_hbase" value="density" checked="checked" /> Simple (HBase)
+          <input type="radio" name="datasource" id="datasource_hbase" value="density" checked="checked" /> Simple (HBase/Clickhouse)
         </label>
         <label>
           <input type="radio" name="datasource" id="datasource_es"  value="adhoc" /> Ad-hoc search (ES)

@@ -1,0 +1,153 @@
+sudo rm -fr /var/lib/clickhouse/user_files/occurrence_mercator
+sudo rm -fr /var/lib/clickhouse/user_files/occurrence_wgs84
+sudo rm -fr /var/lib/clickhouse/user_files/occurrence_arctic
+sudo rm -fr /var/lib/clickhouse/user_files/occurrence_antarctic
+
+sudo mkdir /var/lib/clickhouse/user_files/occurrence_mercator
+sudo mkdir /var/lib/clickhouse/user_files/occurrence_wgs84
+sudo mkdir /var/lib/clickhouse/user_files/occurrence_arctic
+sudo mkdir /var/lib/clickhouse/user_files/occurrence_antarctic
+
+sudo rclone sync c5:/user/hive/warehouse/tim.db/map_clickhouse_mercator /var/lib/clickhouse/user_files/occurrence_mercator/.
+sudo rclone sync c5:/user/hive/warehouse/tim.db/map_clickhouse_wgs84 /var/lib/clickhouse/user_files/occurrence_wgs84/.
+sudo rclone sync c5:/user/hive/warehouse/tim.db/map_clickhouse_arctic /var/lib/clickhouse/user_files/occurrence_arctic/.
+sudo rclone sync c5:/user/hive/warehouse/tim.db/map_clickhouse_antarctic /var/lib/clickhouse/user_files/occurrence_antarctic/.
+
+
+DROP TABLE IF EXISTS occurrence_mercator;
+SET allow_suspicious_low_cardinality_types=1;
+CREATE TABLE occurrence_mercator
+(
+    x UInt32,
+    y UInt32,
+    INDEX idx_x (x) TYPE minmax,
+    INDEX idx_y (y) TYPE minmax,
+    datasetkey LowCardinality(UUID),
+    publishingorgkey LowCardinality(UUID),
+    publishingcountry FixedString(2),
+    networkkey Array(LowCardinality(UUID)),
+    countrycode FixedString(2),
+    basisofrecord LowCardinality(String),
+    kingdomkey UInt8,
+    phylumkey UInt32,
+    classkey UInt32,
+    orderkey UInt32,
+    familykey UInt32,
+    genuskey UInt32,
+    specieskey UInt32,
+    taxonkey UInt32,
+    year LowCardinality(UInt16),
+    occcount UInt64
+) ENGINE = MergeTree ORDER BY (mortonEncode(x, y));
+GRANT SELECT ON default.occurrence_mercator TO tim;
+
+INSERT INTO occurrence_mercator
+SELECT toUInt32(x), toUInt32(y), datasetKey, publishingOrgKey,
+  publishingCountry, networkKey, countryCode, basisOfRecord, kingdomKey,
+  phylumKey, classKey, orderKey, familyKey, genusKey, speciesKey, taxonKey,
+  year, occCount
+FROM file('occurrence_mercator/*.parquet', Parquet);
+
+DROP TABLE IF EXISTS occurrence_wgs84;
+SET allow_suspicious_low_cardinality_types=1;
+CREATE TABLE occurrence_wgs84
+(
+    x UInt32,
+    y UInt32,
+    INDEX idx_x (x) TYPE minmax,
+    INDEX idx_y (y) TYPE minmax,
+    datasetKey LowCardinality(UUID),
+    publishingorgkey LowCardinality(UUID),
+    publishingcountry FixedString(2),
+    networkkey Array(LowCardinality(UUID)),
+    countrycode FixedString(2),
+    basisofrecord LowCardinality(String),
+    kingdomkey UInt8,
+    phylumkey UInt32,
+    classkey UInt32,
+    orderkey UInt32,
+    familykey UInt32,
+    genuskey UInt32,
+    specieskey UInt32,
+    taxonkey UInt32,
+    year LowCardinality(UInt16),
+    occcount UInt64
+) ENGINE = MergeTree ORDER BY (mortonEncode(x, y));
+GRANT SELECT ON default.occurrence_wgs84 TO tim;
+
+INSERT INTO occurrence_wgs84
+SELECT toUInt32(x), toUInt32(y), datasetKey, publishingOrgKey,
+  publishingCountry, networkKey, countryCode, basisOfRecord, kingdomKey,
+  phylumKey, classKey, orderKey, familyKey, genusKey, speciesKey, taxonKey,
+  year, occCount
+FROM file('occurrence_wgs84/*.parquet', Parquet);
+
+DROP TABLE IF EXISTS occurrence_arctic;
+SET allow_suspicious_low_cardinality_types=1;
+CREATE TABLE occurrence_arctic
+(
+    x UInt32,
+    y UInt32,
+    INDEX idx_x (x) TYPE minmax,
+    INDEX idx_y (y) TYPE minmax,
+    datasetkey LowCardinality(UUID),
+    publishingorgkey LowCardinality(UUID),
+    publishingcountry FixedString(2),
+    networkkey Array(LowCardinality(UUID)),
+    countrycode FixedString(2),
+    basisofrecord LowCardinality(String),
+    kingdomkey UInt8,
+    phylumkey UInt32,
+    classkey UInt32,
+    orderkey UInt32,
+    familykey UInt32,
+    genuskey UInt32,
+    specieskey UInt32,
+    taxonkey UInt32,
+    year LowCardinality(UInt16),
+    occcount UInt64
+) ENGINE = MergeTree ORDER BY (mortonEncode(x, y));
+GRANT SELECT ON default.occurrence_arctic TO tim;
+
+INSERT INTO occurrence_arctic
+SELECT toUInt32(x), toUInt32(y), datasetKey, publishingOrgKey,
+  publishingCountry, networkKey, countryCode, basisOfRecord, kingdomKey,
+  phylumKey, classKey, orderKey, familyKey, genusKey, speciesKey, taxonKey,
+  year, occCount
+FROM file('occurrence_arctic/*.parquet', Parquet);
+
+DROP TABLE IF EXISTS occurrence_antarctic;
+SET allow_suspicious_low_cardinality_types=1;
+CREATE TABLE occurrence_antarctic
+(
+    x UInt32,
+    y UInt32,
+    INDEX idx_x (x) TYPE minmax,
+    INDEX idx_y (y) TYPE minmax,
+    datasetkey LowCardinality(UUID),
+    publishingorgkey LowCardinality(UUID),
+    publishingcountry FixedString(2),
+    networkkey Array(LowCardinality(UUID)),
+    countrycode FixedString(2),
+    basisofrecord LowCardinality(String),
+    kingdomkey UInt8,
+    phylumkey UInt32,
+    classkey UInt32,
+    orderkey UInt32,
+    familykey UInt32,
+    genuskey UInt32,
+    specieskey UInt32,
+    taxonkey UInt32,
+    year LowCardinality(UInt16),
+    occcount UInt64
+) ENGINE = MergeTree ORDER BY (mortonEncode(x, y));
+GRANT SELECT ON default.occurrence_antarctic TO tim;
+
+INSERT INTO occurrence_antarctic
+SELECT toUInt32(x), toUInt32(y), datasetKey, publishingOrgKey,
+  publishingCountry, networkKey, countryCode, basisOfRecord, kingdomKey,
+  phylumKey, classKey, orderKey, familyKey, genusKey, speciesKey, taxonKey,
+  year, occCount
+FROM file('occurrence_antarctic/*.parquet', Parquet);
+
+

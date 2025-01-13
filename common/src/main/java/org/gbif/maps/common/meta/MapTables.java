@@ -26,8 +26,6 @@ import lombok.Data;
 /**
  * The tables used for mapping and when they were generated.
  */
-
-
 @Data
 public class MapTables implements Serializable {
   private static final Pattern PIPE = Pattern.compile("\\|");
