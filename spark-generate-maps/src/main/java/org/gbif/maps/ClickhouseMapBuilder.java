@@ -75,11 +75,15 @@ public class ClickhouseMapBuilder implements Serializable {
   public void prepareInSpark() {
     SparkSession spark =
         SparkSession.builder().appName("Clickhouse Map Builder").enableHiveSupport().getOrCreate();
+
+    LOG.info("Using Hive DB: {}", hiveDB);
     spark.sql("use " + hiveDB);
+
     spark.sparkContext().conf().set("hive.exec.compress.output", "true");
 
     // Surface the avro files as a table
     String sourceTable = String.format("%s_avro", hivePrefix);
+    LOG.info("Using source table: {}", sourceTable);
     readAvroSource(spark, sourceTable);
 
     // Project the coordinates
@@ -150,6 +154,8 @@ public class ClickhouseMapBuilder implements Serializable {
    * coordinates with a count and registers a temp view.
    */
   private void readAvroSource(SparkSession spark, String targetView) {
+
+    LOG.info("Reading avro files from {}", sourceDir);
     spark
         .read()
         .format("com.databricks.spark.avro")
