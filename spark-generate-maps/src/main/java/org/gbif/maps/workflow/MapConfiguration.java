@@ -64,6 +64,7 @@ public class MapConfiguration {
     private String endpoint;
     private String username;
     private String password;
+    private String readOnlyUser;
     private Boolean enableConnectionPool;
     private Integer connectTimeout;
     private Integer maxConnections;

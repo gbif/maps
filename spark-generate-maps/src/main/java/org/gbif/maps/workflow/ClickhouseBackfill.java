@@ -54,7 +54,7 @@ public class ClickhouseBackfill {
             snapshotName,
             config.getHdfsLockConfig());
     String snapshotSource = snapshotPath + "/" + config.getSourceSubdirectory();
-    log.info("Created snapshot, {}", snapshotPath);
+    log.info("Created snapshot source, {}", snapshotSource);
 
     try {
       ClickhouseMapBuilder builder =
@@ -65,9 +65,9 @@ public class ClickhouseBackfill {
               .tileSize(1024)
               .maxZoom(16)
               .clickhouseEndpoint(config.getClickhouse().getEndpoint())
-              .clickhouseUser(config.getClickhouse().getUsername())
+              .clickhouseUsername(config.getClickhouse().getUsername())
               .clickhousePassword(config.getClickhouse().getPassword())
-              .clickhouseReadOnlyUser("tim")
+              .clickhouseReadOnlyUser(config.getClickhouse().getReadOnlyUser())
               .build();
 
       log.info("Preparing data in Spark");

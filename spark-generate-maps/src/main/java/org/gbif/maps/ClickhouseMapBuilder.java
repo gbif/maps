@@ -40,7 +40,7 @@ public class ClickhouseMapBuilder implements Serializable {
   private final int tileSize;
   private final int maxZoom;
   private final String clickhouseEndpoint;
-  private final String clickhouseUser; // for replacing tables
+  private final String clickhouseUsername; // for replacing tables
   private final String clickhousePassword;
   private final String clickhouseReadOnlyUser; // for granting access for the vector tile server
 
@@ -60,7 +60,7 @@ public class ClickhouseMapBuilder implements Serializable {
             .tileSize(1024)
             .maxZoom(16)
             .clickhouseEndpoint("http://clickhouse.gbif-dev.org:8123/")
-            .clickhouseUser("default")
+            .clickhouseUsername("default")
             .clickhousePassword("clickhouse")
             .clickhouseReadOnlyUser("tim")
             .build();
@@ -181,7 +181,7 @@ public class ClickhouseMapBuilder implements Serializable {
     try (Client client =
             new Client.Builder()
                 .addEndpoint(clickhouseEndpoint)
-                .setUsername(clickhouseUser)
+                .setUsername(clickhouseUsername)
                 .setPassword(clickhousePassword)
                 .enableConnectionPool(true)
                 .setSocketTimeout(1000 * 60 * 60) // TODO: see comments below
