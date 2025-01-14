@@ -24,4 +24,4 @@ CREATE TABLE hdfs_%1$s
     taxonKey UInt32,
     year UInt16,
     occCount UInt64
-) ENGINE = HDFS('hdfs://gbif-hdfs/hive/warehouse/%2$s.db/map_clickhouse_%1$s/*.parquet', 'parquet');
+) ENGINE = HDFS('hdfs://gbif-hdfs/dev2/map_clickhouse_%1$s/*.parquet', 'parquet');

@@ -65,15 +65,19 @@ public class ClickhouseBackfill {
               .tileSize(config.getClickhouse().getTileSize())
               .maxZoom(config.getClickhouse().getMaxZoom())
               .clickhouseEndpoint(config.getClickhouse().getEndpoint())
+              .clickhouseDatabase(config.getClickhouse().getDatabase())
               .clickhouseUsername(config.getClickhouse().getUsername())
               .clickhousePassword(config.getClickhouse().getPassword())
               .clickhouseReadOnlyUser(config.getClickhouse().getReadOnlyUser())
+              .clickhouseEnableConnectionPool(config.getClickhouse().getEnableConnectionPool())
+              .clickhouseConnectTimeout(config.getClickhouse().getConnectTimeout())
+              .clickhouseSocketTimeout(config.getClickhouse().getSocketTimeout())
               .build();
 
       log.info("Preparing data in Spark");
       builder.prepareInSpark();
-      //      log.info("Preparing and loading Clickhouse");
-      //      builder.loadClickhouse();
+      log.info("Preparing and loading Clickhouse");
+      builder.loadClickhouse();
 
     } finally {
       log.info("Deleting snapshot {} {}", config.getSnapshotDirectory(), snapshotName);

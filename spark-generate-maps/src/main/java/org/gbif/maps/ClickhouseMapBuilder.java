@@ -40,9 +40,13 @@ public class ClickhouseMapBuilder implements Serializable {
   private final int tileSize;
   private final int maxZoom;
   private final String clickhouseEndpoint;
+  private final String clickhouseDatabase;
   private final String clickhouseUsername; // for replacing tables
   private final String clickhousePassword;
   private final String clickhouseReadOnlyUser; // for granting access for the vector tile server
+  private final Boolean clickhouseEnableConnectionPool;
+  private final Integer clickhouseSocketTimeout; //(1000 * 60 * 60);
+  private final Integer clickhouseConnectTimeout; //(1000 * 60 * 60);
 
   // dimensions for the map cube
   private static final String DIMENSIONS =
@@ -189,10 +193,11 @@ public class ClickhouseMapBuilder implements Serializable {
                 .addEndpoint(clickhouseEndpoint)
                 .setUsername(clickhouseUsername)
                 .setPassword(clickhousePassword)
-                .enableConnectionPool(true)
-                .setSocketTimeout(1000 * 60 * 60) // TODO: see comments below
-                .setConnectTimeout(1000 * 60 * 60) // TODO: see comments below
+                .enableConnectionPool(clickhouseEnableConnectionPool)
+                .setSocketTimeout(clickhouseSocketTimeout)
+                .setConnectTimeout(clickhouseConnectTimeout)
                 .build();
+
         // clickhouse-java does not support multiline statements
         InputStream hiveSQL =
             this.getClass().getResourceAsStream("/clickhouse/create-hive-table.sql");
@@ -214,10 +219,10 @@ public class ClickhouseMapBuilder implements Serializable {
               .lines()
               .collect(Collectors.joining("\n"));
 
-      replaceClickhouseTable(client, "mercator", createHive, createLocal, loadLocal);
-      replaceClickhouseTable(client, "wgs84", createHive, createLocal, loadLocal);
-      replaceClickhouseTable(client, "arctic", createHive, createLocal, loadLocal);
-      replaceClickhouseTable(client, "antarctic", createHive, createLocal, loadLocal);
+      replaceClickhouseTable(client, "mercator", createHive, createLocal, loadLocal, clickhouseDatabase);
+      replaceClickhouseTable(client, "wgs84", createHive, createLocal, loadLocal, clickhouseDatabase);
+      replaceClickhouseTable(client, "arctic", createHive, createLocal, loadLocal, clickhouseDatabase);
+      replaceClickhouseTable(client, "antarctic", createHive, createLocal, loadLocal, clickhouseDatabase);
 
       /*
       CompletableFuture<QueryResponse> q1 = client.query(String.format(loadLocal, "mercator"));
@@ -247,16 +252,19 @@ public class ClickhouseMapBuilder implements Serializable {
       }
       LOG.info("Finished loading clickhouse!");
 
-      client
-          .execute(String.format("DROP TABLE IF EXISTS hdfs_%s", "mercator"))
-          .get(1, TimeUnit.HOURS);
-      client.execute(String.format("DROP TABLE IF EXISTS hdfs_%s", "wgs84")).get(1, TimeUnit.HOURS);
-      client
-          .execute(String.format("DROP TABLE IF EXISTS hdfs_%s", "arctic"))
-          .get(1, TimeUnit.HOURS);
-      client
-          .execute(String.format("DROP TABLE IF EXISTS hdfs_%s", "antarctic"))
-          .get(1, TimeUnit.HOURS);
+      LOG.info("Cleanup HDFS temp tables...");
+      List.of("mercator", "wgs84", "arctic", "antarctic")
+          .forEach(
+              projection -> {
+                try {
+                  String sql = String.format("GRANT SELECT ON %s.occurrence_%s TO %s",
+                    clickhouseDatabase, projection, clickhouseReadOnlyUser);
+                  LOG.info("Clickhouse - executing SQL: {}", sql);
+                  client.execute(sql).get(1, TimeUnit.HOURS);
+                } catch (Exception e) {
+                  LOG.error("Failed to grant access to clickhouse", e);
+                }
+              });
     }
   }
 
@@ -265,25 +273,35 @@ public class ClickhouseMapBuilder implements Serializable {
    * warehouse and doing a copy.
    */
   private void replaceClickhouseTable(
-      Client client, String projection, String createHive, String createLocal, String loadLocal)
+      Client client, String projection, String createHive, String createLocal, String loadLocal,
+      String clickhouseDB)
       throws Exception {
 
     LOG.info("Starting table preparation for {}", projection);
     // TODO: review how completable futures are used here. Seems odd...
 
-    client
-        .execute(String.format("DROP TABLE IF EXISTS hdfs_%s;", projection))
-        .get(1, TimeUnit.HOURS);
+    String dropHive = String.format("DROP TABLE IF EXISTS %s.%s_%s;", hiveDB, hivePrefix, projection);
+    LOG.info("Clickhouse - executing SQL: {}", dropHive);
+    client.execute(dropHive).get(1, TimeUnit.HOURS);
+
+    LOG.info("Clickhouse - executing SQL: {}", createHive);
     client.execute(String.format(createHive, projection, hiveDB)).get(1, TimeUnit.HOURS);
+
+    String dropCHTable =  String.format("DROP TABLE IF EXISTS %s.occurrence_%s;", clickhouseDB, projection);
+    LOG.info("Clickhouse - executing SQL: {}", dropCHTable);
     client
-        .execute(String.format("DROP TABLE IF EXISTS occurrence_%s;", projection))
+        .execute(dropCHTable)
         .get(1, TimeUnit.HOURS);
-    client.execute(String.format(createLocal, projection)).get(1, TimeUnit.HOURS);
-    client
-        .execute(
-            String.format(
-                "GRANT SELECT ON default.occurrence_%s TO %s", projection, clickhouseReadOnlyUser))
-        .get(1, TimeUnit.HOURS);
+
+    String createCHTable = String.format(createLocal, projection);
+    LOG.info("Clickhouse - executing SQL: {}", createCHTable);
+    client.execute(createCHTable).get(1, TimeUnit.HOURS);
+
+    String grant = String.format("GRANT SELECT ON %s.occurrence_%s TO %s", clickhouseDB, projection,
+      clickhouseReadOnlyUser);
+
+    LOG.info("Clickhouse - executing SQL: {}", grant);
+    client.execute(grant).get(1, TimeUnit.HOURS);
 
     // LOG.info("Starting data load for {}", projection);
     // client.execute(String.format(loadLocal, projection)).get(1, TimeUnit.HOURS);

@@ -62,6 +62,7 @@ public class MapConfiguration {
   @Jacksonized
   static class ClickhouseConfiguration {
     private String endpoint;
+    private String database;
     private String username;
     private String password;
     private String readOnlyUser;
