@@ -251,7 +251,7 @@ public class ClickhouseMapBuilder implements Serializable {
                 try {
                   String sql =
                       String.format(
-                          "GRANT SELECT ON %s.occurrence_%s TO %s", database, projection, clickhouseReadOnlyUser);
+                          "DROP TABLE IF EXISTS %s.hdfs_%s TO %s", database, projection);
                   LOG.info("Clickhouse - executing SQL: {}", sql);
                   client.execute(sql).get(1, TimeUnit.HOURS);
                 } catch (Exception e) {
@@ -296,11 +296,5 @@ public class ClickhouseMapBuilder implements Serializable {
 
     LOG.info("Clickhouse - executing SQL: {}", grant);
     client.execute(grant).get(1, TimeUnit.HOURS);
-
-    // LOG.info("Starting data load for {}", projection);
-    // client.execute(String.format(loadLocal, projection)).get(1, TimeUnit.HOURS);
-    // LOG.info("Finished data load for {}", projection);
-    // client.execute(String.format("DROP TABLE IF EXISTS hdfs_%s", projection)).get(1,
-    // TimeUnit.HOURS);
   }
 }
