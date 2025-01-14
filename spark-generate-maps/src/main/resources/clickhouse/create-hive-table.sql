@@ -4,7 +4,7 @@
 
 -- Mount a table backed by parquet files on HDFS
 -- (Requires clickhouse to be configured with an hdfs-site.xml and an HA NN named as ha-nn)
-CREATE TABLE hdfs_%1$s
+CREATE TABLE %1$s.hdfs_%2$s
 (
     x UInt32,
     y UInt32,
@@ -24,4 +24,4 @@ CREATE TABLE hdfs_%1$s
     taxonKey UInt32,
     year UInt16,
     occCount UInt64
-) ENGINE = HDFS('hdfs://gbif-hdfs/dev2/map_clickhouse_%1$s/*.parquet', 'parquet');
+) ENGINE = HDFS('hdfs://gbif-hdfs/dev2/map_clickhouse_%2$s/*.parquet', 'parquet');

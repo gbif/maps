@@ -219,10 +219,10 @@ public class ClickhouseMapBuilder implements Serializable {
               .lines()
               .collect(Collectors.joining("\n"));
 
-      replaceClickhouseTable(client, "mercator", createHive, createLocal, loadLocal, clickhouseDatabase);
-      replaceClickhouseTable(client, "wgs84", createHive, createLocal, loadLocal, clickhouseDatabase);
-      replaceClickhouseTable(client, "arctic", createHive, createLocal, loadLocal, clickhouseDatabase);
-      replaceClickhouseTable(client, "antarctic", createHive, createLocal, loadLocal, clickhouseDatabase);
+      replaceClickhouseTable(client, "mercator", createHive, createLocal, clickhouseDatabase);
+      replaceClickhouseTable(client, "wgs84", createHive, createLocal, clickhouseDatabase);
+      replaceClickhouseTable(client, "arctic", createHive, createLocal, clickhouseDatabase);
+      replaceClickhouseTable(client, "antarctic", createHive, createLocal, clickhouseDatabase);
 
       /*
       CompletableFuture<QueryResponse> q1 = client.query(String.format(loadLocal, "mercator"));
@@ -273,19 +273,22 @@ public class ClickhouseMapBuilder implements Serializable {
    * warehouse and doing a copy.
    */
   private void replaceClickhouseTable(
-      Client client, String projection, String createHive, String createLocal, String loadLocal,
+      Client client, String projection,
+      String createHive,
+      String createLocal,
       String clickhouseDB)
       throws Exception {
 
     LOG.info("Starting table preparation for {}", projection);
     // TODO: review how completable futures are used here. Seems odd...
 
-    String dropHive = String.format("DROP TABLE IF EXISTS %s.%s_%s;", hiveDB, hivePrefix, projection);
+    String dropHive = String.format("DROP TABLE IF EXISTS %s.hdfs_%s;", clickhouseDB, projection);
     LOG.info("Clickhouse - executing SQL: {}", dropHive);
     client.execute(dropHive).get(1, TimeUnit.HOURS);
 
-    LOG.info("Clickhouse - executing SQL: {}", createHive);
-    client.execute(String.format(createHive, projection, hiveDB)).get(1, TimeUnit.HOURS);
+    String createHiveSQL = String.format(createHive, clickhouseDB, projection);
+    LOG.info("Clickhouse - executing SQL: {}", createHiveSQL);
+    client.execute(createHiveSQL).get(1, TimeUnit.HOURS);
 
     String dropCHTable =  String.format("DROP TABLE IF EXISTS %s.occurrence_%s;", clickhouseDB, projection);
     LOG.info("Clickhouse - executing SQL: {}", dropCHTable);
@@ -293,7 +296,7 @@ public class ClickhouseMapBuilder implements Serializable {
         .execute(dropCHTable)
         .get(1, TimeUnit.HOURS);
 
-    String createCHTable = String.format(createLocal, projection);
+    String createCHTable = String.format(createLocal, clickhouseDB, projection);
     LOG.info("Clickhouse - executing SQL: {}", createCHTable);
     client.execute(createCHTable).get(1, TimeUnit.HOURS);
 
