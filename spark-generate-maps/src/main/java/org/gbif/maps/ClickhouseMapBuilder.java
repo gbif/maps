@@ -220,7 +220,7 @@ public class ClickhouseMapBuilder implements Serializable {
               .lines()
               .collect(Collectors.joining("\n"));
 
-      String database = String.format("%s_%s;", clickhouseDatabase, timestamp);
+      final String database = String.format("%s_%s", clickhouseDatabase, timestamp);
 
       String createDatabase = String.format("CREATE DATABASE %s;", database);
       LOG.info("Clickhouse - executing SQL: {}", createDatabase);
