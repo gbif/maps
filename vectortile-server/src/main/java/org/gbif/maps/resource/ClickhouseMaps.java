@@ -62,7 +62,7 @@ public class ClickhouseMaps implements TileMaps {
   private static final Map<String, String> REVERSE_MAP_TYPES = new ImmutableMap.Builder<String, String>()
     .put("0", "") // everything
     // Clickhouse does not support " AND %s IN(kingdomKey, phylumKey,.. ,taxonkey) " syntax
-    .put("1", " AND (kingdomKey=%1$s OR phylumKey=%1$s OR classKey=%1$s OR orderKey=%1$s OR familyKey=%1$s OR genusKey=%1$s OR speciesKey=%1$s OR taxonKey=%1$s) ")
+    .put("1", " AND (kingdomKey='%1$s' OR phylumKey='%1$s' OR classKey='%1$s' OR orderKey='%1$s' OR familyKey='%1$s' OR genusKey='%1$s' OR speciesKey='%1$s' OR taxonKey='%1$s') ")
     .put("2", " AND datasetKey ='%s' ")
     .put("3", " AND publishingOrgKey ='%s' ")
     .put("4", " AND countryCode ='%s' ")
