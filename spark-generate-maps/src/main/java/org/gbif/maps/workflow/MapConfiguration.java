@@ -75,6 +75,8 @@ public class MapConfiguration {
     private String hivePrefix;
     private Integer tileSize; // 1024
     private Integer maxZoom; // 16
+    private String metadataPath;
+    private String zkConnectionString;
   }
 
   @Data

@@ -28,6 +28,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 
 import lombok.extern.slf4j.Slf4j;
+import org.gbif.maps.common.meta.CHMetastore;
+import org.gbif.maps.common.meta.Metastores;
 
 @Slf4j
 public class ClickhouseBackfill {
@@ -79,10 +81,30 @@ public class ClickhouseBackfill {
       builder.prepareInSpark();
       log.info("Preparing and loading Clickhouse");
       builder.loadClickhouse();
+      log.info("Updating metadata");
+      updateZookeeperMeta(config, snapshotName, hadoopConfiguration);
 
     } finally {
       log.info("Deleting snapshot {} {}", config.getSnapshotDirectory(), snapshotName);
       deleteHdfsSnapshot(hadoopConfiguration, config.getSnapshotDirectory(), snapshotName);
+    }
+  }
+
+  private static void updateZookeeperMeta(MapConfiguration config, String clickhouseDatabaseName, Configuration hadoopConfiguration) {
+
+    try (CHMetastore metastore =
+           Metastores.newZookeeperCHMeta(config.getClickhouse().getZkConnectionString(),
+             1000, config.getClickhouse().getMetadataPath())) {
+
+      String existingDB = metastore.getClickhouseDB(); // we update any existing values
+      log.info("Current clickhouse DB: " + existingDB);
+      log.info("Updating clickhouse DB with: " + clickhouseDatabaseName);
+      metastore.setClickhouseDB(clickhouseDatabaseName);
+
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
   }
 

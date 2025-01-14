@@ -13,12 +13,7 @@
  */
 package org.gbif.maps.common.meta;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
-import javax.annotation.Nullable;
-
+import com.google.common.io.Closeables;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -29,23 +24,24 @@ import org.apache.curator.utils.EnsurePath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.io.Closeables;
+import java.io.Closeable;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * An implementation of the MapMetastore backed by Zookeeper.
  *
  * This uses a Zookeeper Path Cache pattern to watch for changes of the ZK node.
  */
-class ZKMapMetastore implements MapMetastore, Closeable {
-  private static final Logger LOG = LoggerFactory.getLogger(ZKMapMetastore.class);
+class ZKCHMetastore implements CHMetastore, Closeable {
+  private static final Logger LOG = LoggerFactory.getLogger(ZKCHMetastore.class);
 
   private final CuratorFramework client;
   private final NodeCache zkNodeCache;
   private final String zkNodePath;
-  private MapTables mapTables;
   private String clickhouseDB;
 
-  ZKMapMetastore(String zkEnsemble, int retryIntervalMs, String zkNodePath) throws Exception {
+  ZKCHMetastore(String zkEnsemble, int retryIntervalMs, String zkNodePath) throws Exception {
     this.zkNodePath = zkNodePath;
     client = CuratorFrameworkFactory.newClient(zkEnsemble, new RetryNTimes(Integer.MAX_VALUE, retryIntervalMs));
     client.start();
@@ -70,16 +66,16 @@ class ZKMapMetastore implements MapMetastore, Closeable {
     updateInternal(zkNodeCache); // set the initial state
   }
 
+
   @Override
-  @Nullable
-  public MapTables read() {
-    return mapTables;
+  public String getClickhouseDB() throws Exception {
+    return clickhouseDB;
   }
 
   @Override
-  public void update(MapTables meta) throws Exception {
-    LOG.info("Updating MapTables[{}] with: {}", zkNodePath, meta);
-    client.setData().forPath(zkNodePath, meta.serialize());
+  public void setClickhouseDB(String db) throws Exception {
+    LOG.info("Updating ClickhouseDB[{}] with: {}", zkNodePath, db);
+    client.setData().forPath(zkNodePath, db.getBytes(StandardCharsets.UTF_8));
   }
 
   @Override
@@ -95,11 +91,10 @@ class ZKMapMetastore implements MapMetastore, Closeable {
     try {
 
       ChildData child = cache.getCurrentData();
-      mapTables = MapTables.deserialize(child.getData());
       clickhouseDB = new String(child.getData(), StandardCharsets.UTF_8);
-      LOG.info("MapTables for {} updated {}", zkNodePath, mapTables);
+      LOG.info("Clickhouse DB for {} updated {}", zkNodePath, clickhouseDB);
     } catch(Exception e) {
-      LOG.error("Unable to update MapTables from ZooKeeper (MapMeta may return state data until recovered).", e);
+      LOG.error("Unable to update Clickhouse from ZooKeeper (MapMeta may return state data until recovered).", e);
     }
   }
 }

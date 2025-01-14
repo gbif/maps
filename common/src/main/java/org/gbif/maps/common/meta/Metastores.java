@@ -57,6 +57,19 @@ public class Metastores {
   }
 
   /**
+   * Creates a new ZK backed CHMetastore that will reflect external changes.
+   * @param zkEnsemble For the ZK assemble
+   * @param retryIntervalMs Number of msecs between retries on ZK issues (1000 is sensible value)
+   * @param zkNodePath To monitor
+   * @return The metastore
+   * @throws Exception If the environment is not working
+   */
+  public static CHMetastore newZookeeperCHMeta(String zkEnsemble, int retryIntervalMs, String zkNodePath)
+    throws Exception {
+    return new ZKCHMetastore(zkEnsemble, retryIntervalMs, zkNodePath);
+  }
+
+  /**
    * Return a static value MapMetastore
    * @param tileTable The table name with tile data
    * @param pointTable The table name with point data
