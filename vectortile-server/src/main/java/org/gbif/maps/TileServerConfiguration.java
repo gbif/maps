@@ -66,6 +66,8 @@ public class TileServerConfiguration {
 
     private String endpoint;
 
+    private String database;
+
     private String username;
 
     private String password;

@@ -47,6 +47,7 @@ public class ClickhouseMaps implements TileMaps {
   public ClickhouseMaps(TileServerConfiguration.ClickhouseConfiguration config) {
     client = new Client.Builder()
       .addEndpoint(config.getEndpoint())
+      .setDefaultDatabase(config.getDatabase())
       .setUsername(config.getUsername())
       .setPassword(config.getPassword())
       .enableConnectionPool(config.getEnableConnectionPool())
