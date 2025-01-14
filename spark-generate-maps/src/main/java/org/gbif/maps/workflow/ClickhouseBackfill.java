@@ -60,6 +60,7 @@ public class ClickhouseBackfill {
       ClickhouseMapBuilder builder =
           ClickhouseMapBuilder.builder()
               .sourceDir(snapshotSource)
+               .timestamp(config.getTimestamp())
               .hiveDB(config.getHiveDB())
               .hivePrefix(config.getClickhouse().getHivePrefix())
               .tileSize(config.getClickhouse().getTileSize())
