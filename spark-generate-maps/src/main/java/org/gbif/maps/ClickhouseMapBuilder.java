@@ -37,6 +37,7 @@ public class ClickhouseMapBuilder implements Serializable {
   private final String sourceDir;
   private final String hiveDB;
   private final String hivePrefix;
+  private final String timestamp;
   private final int tileSize;
   private final int maxZoom;
   private final String clickhouseEndpoint;
@@ -219,31 +220,23 @@ public class ClickhouseMapBuilder implements Serializable {
               .lines()
               .collect(Collectors.joining("\n"));
 
-      replaceClickhouseTable(client, "mercator", createHive, createLocal, clickhouseDatabase);
-      replaceClickhouseTable(client, "wgs84", createHive, createLocal, clickhouseDatabase);
-      replaceClickhouseTable(client, "arctic", createHive, createLocal, clickhouseDatabase);
-      replaceClickhouseTable(client, "antarctic", createHive, createLocal, clickhouseDatabase);
+      String database = String.format("%s_%s;", clickhouseDatabase, timestamp);
 
-      /*
-      CompletableFuture<QueryResponse> q1 = client.query(String.format(loadLocal, "mercator"));
-      LOG.info("Finished data load for mercator");
-      LOG.info("Starting data load for wgs84");
-      CompletableFuture<CommandResponse> q2 = client.execute(String.format(loadLocal, "wgs84"));
-      LOG.info("Finished data load for wgs84");
-      LOG.info("Starting data load for arctic");
-      CompletableFuture<CommandResponse> q3 = client.execute(String.format(loadLocal, "arctic"));
-      LOG.info("Finished data load for arctic");
-      LOG.info("Starting data load for antarctic");
-      CompletableFuture<CommandResponse> q4 = client.execute(String.format(loadLocal, "antarctic"));
-      LOG.info("Finished data load for antarctic");
-      */
+      String createDatabase = String.format("CREATE DATABASE %s;", database);
+      LOG.info("Clickhouse - executing SQL: {}", createDatabase);
+      client.execute(createDatabase).get(1, TimeUnit.HOURS);
+
+      replaceClickhouseTable(client, "mercator", createHive, createLocal, database);
+      replaceClickhouseTable(client, "wgs84", createHive, createLocal, database);
+      replaceClickhouseTable(client, "arctic", createHive, createLocal, database);
+      replaceClickhouseTable(client, "antarctic", createHive, createLocal, database);
 
       ExecutorService EXEC = Executors.newCachedThreadPool();
       List<Callable<CompletableFuture<CommandResponse>>> tasks = new ArrayList<>();
-      tasks.add(() -> client.execute(String.format(loadLocal, clickhouseDatabase, "mercator")));
-      tasks.add(() -> client.execute(String.format(loadLocal, clickhouseDatabase, "wgs84")));
-      tasks.add(() -> client.execute(String.format(loadLocal, clickhouseDatabase, "arctic")));
-      tasks.add(() -> client.execute(String.format(loadLocal, clickhouseDatabase, "antarctic")));
+      tasks.add(() -> client.execute(String.format(loadLocal, database, "mercator")));
+      tasks.add(() -> client.execute(String.format(loadLocal, database, "wgs84")));
+      tasks.add(() -> client.execute(String.format(loadLocal, database, "arctic")));
+      tasks.add(() -> client.execute(String.format(loadLocal, database, "antarctic")));
       LOG.info("Invoking concurrent load");
       List<Future<CompletableFuture<CommandResponse>>> results = EXEC.invokeAll(tasks);
       for (Future<CompletableFuture<CommandResponse>> result : results) {
@@ -258,8 +251,7 @@ public class ClickhouseMapBuilder implements Serializable {
                 try {
                   String sql =
                       String.format(
-                          "GRANT SELECT ON %s.occurrence_%s TO %s",
-                          clickhouseDatabase, projection, clickhouseReadOnlyUser);
+                          "GRANT SELECT ON %s.occurrence_%s TO %s", database, projection, clickhouseReadOnlyUser);
                   LOG.info("Clickhouse - executing SQL: {}", sql);
                   client.execute(sql).get(1, TimeUnit.HOURS);
                 } catch (Exception e) {
