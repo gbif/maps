@@ -240,11 +240,10 @@ public class ClickhouseMapBuilder implements Serializable {
 
       ExecutorService EXEC = Executors.newCachedThreadPool();
       List<Callable<CompletableFuture<CommandResponse>>> tasks = new ArrayList<>();
-      tasks.add(() -> client.execute(String.format(loadLocal, "mercator")));
-      tasks.add(() -> client.execute(String.format(loadLocal, "wgs84")));
-      tasks.add(() -> client.execute(String.format(loadLocal, "arctic")));
-      tasks.add(() -> client.execute(String.format(loadLocal, "antarctic")));
-
+      tasks.add(() -> client.execute(String.format(loadLocal, clickhouseDatabase, "mercator")));
+      tasks.add(() -> client.execute(String.format(loadLocal, clickhouseDatabase, "wgs84")));
+      tasks.add(() -> client.execute(String.format(loadLocal, clickhouseDatabase, "arctic")));
+      tasks.add(() -> client.execute(String.format(loadLocal, clickhouseDatabase, "antarctic")));
       LOG.info("Invoking concurrent load");
       List<Future<CompletableFuture<CommandResponse>>> results = EXEC.invokeAll(tasks);
       for (Future<CompletableFuture<CommandResponse>> result : results) {
