@@ -45,8 +45,8 @@ public class ClickhouseMapBuilder implements Serializable {
   private final String clickhousePassword;
   private final String clickhouseReadOnlyUser; // for granting access for the vector tile server
   private final Boolean clickhouseEnableConnectionPool;
-  private final Integer clickhouseSocketTimeout; //(1000 * 60 * 60);
-  private final Integer clickhouseConnectTimeout; //(1000 * 60 * 60);
+  private final Integer clickhouseSocketTimeout; // (1000 * 60 * 60);
+  private final Integer clickhouseConnectTimeout; // (1000 * 60 * 60);
 
   // dimensions for the map cube
   private static final String DIMENSIONS =
@@ -256,8 +256,10 @@ public class ClickhouseMapBuilder implements Serializable {
           .forEach(
               projection -> {
                 try {
-                  String sql = String.format("GRANT SELECT ON %s.occurrence_%s TO %s",
-                    clickhouseDatabase, projection, clickhouseReadOnlyUser);
+                  String sql =
+                      String.format(
+                          "GRANT SELECT ON %s.occurrence_%s TO %s",
+                          clickhouseDatabase, projection, clickhouseReadOnlyUser);
                   LOG.info("Clickhouse - executing SQL: {}", sql);
                   client.execute(sql).get(1, TimeUnit.HOURS);
                 } catch (Exception e) {
@@ -272,10 +274,7 @@ public class ClickhouseMapBuilder implements Serializable {
    * warehouse and doing a copy.
    */
   private void replaceClickhouseTable(
-      Client client, String projection,
-      String createHive,
-      String createLocal,
-      String clickhouseDB)
+      Client client, String projection, String createHive, String createLocal, String clickhouseDB)
       throws Exception {
 
     LOG.info("Starting table preparation for {}", projection);
@@ -289,18 +288,19 @@ public class ClickhouseMapBuilder implements Serializable {
     LOG.info("Clickhouse - executing SQL: {}", createHiveSQL);
     client.execute(createHiveSQL).get(1, TimeUnit.HOURS);
 
-    String dropCHTable =  String.format("DROP TABLE IF EXISTS %s.occurrence_%s;", clickhouseDB, projection);
+    String dropCHTable =
+        String.format("DROP TABLE IF EXISTS %s.occurrence_%s;", clickhouseDB, projection);
     LOG.info("Clickhouse - executing SQL: {}", dropCHTable);
-    client
-        .execute(dropCHTable)
-        .get(1, TimeUnit.HOURS);
+    client.execute(dropCHTable).get(1, TimeUnit.HOURS);
 
     String createCHTable = String.format(createLocal, clickhouseDB, projection);
     LOG.info("Clickhouse - executing SQL: {}", createCHTable);
     client.execute(createCHTable).get(1, TimeUnit.HOURS);
 
-    String grant = String.format("GRANT SELECT ON %s.occurrence_%s TO %s", clickhouseDB, projection,
-      clickhouseReadOnlyUser);
+    String grant =
+        String.format(
+            "GRANT SELECT ON %s.occurrence_%s TO %s",
+            clickhouseDB, projection, clickhouseReadOnlyUser);
 
     LOG.info("Clickhouse - executing SQL: {}", grant);
     client.execute(grant).get(1, TimeUnit.HOURS);
