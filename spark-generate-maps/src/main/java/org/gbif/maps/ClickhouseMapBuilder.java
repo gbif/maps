@@ -255,7 +255,7 @@ public class ClickhouseMapBuilder implements Serializable {
                   LOG.info("Clickhouse - executing SQL: {}", sql);
                   client.execute(sql).get(1, TimeUnit.HOURS);
                 } catch (Exception e) {
-                  LOG.error("Failed to grant access to clickhouse", e);
+                  LOG.error("Failed to drop temp hdfs table for projection {}", projection, e);
                 }
               });
     }
