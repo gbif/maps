@@ -49,7 +49,6 @@ public class ClickhouseMaps implements TileMaps {
     this.metastore = metastore;
     this.client = new Client.Builder()
       .addEndpoint(config.getEndpoint())
-      .setDefaultDatabase(config.getDatabase())
       .setUsername(config.getUsername())
       .setPassword(config.getPassword())
       .enableConnectionPool(config.getEnableConnectionPool())
