@@ -13,6 +13,8 @@
  */
 package org.gbif.maps;
 
+import com.clickhouse.client.api.data_formats.ClickHouseBinaryFormatReader;
+import com.clickhouse.client.api.query.QueryResponse;
 import org.gbif.maps.udf.ProjectUDF;
 
 import java.io.*;
@@ -51,24 +53,27 @@ public class ClickhouseMapBuilder implements Serializable {
 
   // dimensions for the map cube
   private static final String DIMENSIONS =
-      "datasetKey, publishingOrgKey, publishingCountry, networkKey, countryCode, basisOfRecord, kingdomKey, phylumKey,"
-          + " classKey, orderKey, familyKey, genusKey, speciesKey, taxonKey, year";
+    "datasetKey, publishingOrgKey, publishingCountry, networkKey, countryCode, basisOfRecord, kingdomKey, phylumKey,"
+      + " classKey, orderKey, familyKey, genusKey, speciesKey, taxonKey, year";
 
   public static void main(String[] args) throws Exception {
     // This method intentionally left in for development.
     // Start by creating the HDFS snapshot.
     ClickhouseMapBuilder builder =
-        ClickhouseMapBuilder.builder()
-            .sourceDir("/data/hdfsview/occurrence/.snapshot/dave-occurrence-map/occurrence/*.avro")
-            .hiveDB("dave")
-            .hivePrefix("map_clickhouse")
-            .tileSize(1024)
-            .maxZoom(16)
-            .clickhouseEndpoint("http://clickhouse.gbif-dev.org:8123/")
-            .clickhouseUsername("default")
-            .clickhousePassword("clickhouse")
-            .clickhouseReadOnlyUser("tim")
-            .build();
+      ClickhouseMapBuilder.builder()
+        .sourceDir("/data/hdfsview/occurrence/.snapshot/dave-occurrence-map/occurrence/*.avro")
+        .hiveDB("dave")
+        .hivePrefix("map_clickhouse")
+        .tileSize(1024)
+        .maxZoom(16)
+        .clickhouseEnableConnectionPool(true)
+        .clickhouseSocketTimeout(3600000)
+        .clickhouseConnectTimeout(3600000)
+        .clickhouseEndpoint("http://clickhouse.gbif-dev.org:8123/")
+        .clickhouseUsername("default")
+        .clickhousePassword("clickhouse")
+        .clickhouseReadOnlyUser("tim")
+        .build();
 
     LOG.info("Preparing data in Spark");
     builder.prepareInSpark();
@@ -76,10 +81,12 @@ public class ClickhouseMapBuilder implements Serializable {
     builder.createClickhouseDB();
   }
 
-  /** Establishes a Spark cluster, prepares data, and then releases resources. */
+  /**
+   * Establishes a Spark cluster, prepares data, and then releases resources.
+   */
   public void prepareInSpark() {
     SparkSession spark =
-        SparkSession.builder().appName("Clickhouse Map Builder").enableHiveSupport().getOrCreate();
+      SparkSession.builder().appName("Clickhouse Map Builder").enableHiveSupport().getOrCreate();
 
     LOG.info("Using Hive DB: {}", hiveDB);
     spark.sql("use " + hiveDB);
@@ -95,61 +102,61 @@ public class ClickhouseMapBuilder implements Serializable {
     ProjectUDF.register(spark, "project", tileSize);
     String projectedTable = String.format("%s_projected", hivePrefix);
     spark.sql(
-        String.format(
-            "        CACHE TABLE %1$s AS "
-                + "  SELECT "
-                + "    project(decimalLatitude, decimalLongitude, 'EPSG:3857', %2$d) AS mercator_xy, "
-                + "    project(decimalLatitude, decimalLongitude, 'EPSG:4326', %2$d) AS wgs84_xy, "
-                + "    project(decimalLatitude, decimalLongitude, 'EPSG:3575', %2$d) AS arctic_xy, "
-                + "    project(decimalLatitude, decimalLongitude, 'EPSG:3031', %2$d) AS antarctic_xy, "
-                + "    decimalLatitude,"
-                + "    occCount, "
-                + "    %3$s "
-                + "  FROM %4$s",
-            projectedTable, maxZoom, DIMENSIONS, sourceTable));
+      String.format(
+        "        CACHE TABLE %1$s AS "
+          + "  SELECT "
+          + "    project(decimalLatitude, decimalLongitude, 'EPSG:3857', %2$d) AS mercator_xy, "
+          + "    project(decimalLatitude, decimalLongitude, 'EPSG:4326', %2$d) AS wgs84_xy, "
+          + "    project(decimalLatitude, decimalLongitude, 'EPSG:3575', %2$d) AS arctic_xy, "
+          + "    project(decimalLatitude, decimalLongitude, 'EPSG:3031', %2$d) AS antarctic_xy, "
+          + "    decimalLatitude,"
+          + "    occCount, "
+          + "    %3$s "
+          + "  FROM %4$s",
+        projectedTable, maxZoom, DIMENSIONS, sourceTable));
 
     // mercator
     replaceTable(
-        spark,
-        String.format("%s_mercator", hivePrefix),
-        String.format(
-            "        SELECT mercator_xy.x AS x, mercator_xy.y AS y, %1$s, sum(occCount) AS occCount "
-                + "  FROM %2$s "
-                + "  WHERE decimalLatitude BETWEEN -85 AND 85"
-                + "  GROUP BY x, y, %1$s ",
-            DIMENSIONS, projectedTable));
+      spark,
+      String.format("%s_mercator", hivePrefix),
+      String.format(
+        "        SELECT mercator_xy.x AS x, mercator_xy.y AS y, %1$s, sum(occCount) AS occCount "
+          + "  FROM %2$s "
+          + "  WHERE decimalLatitude BETWEEN -85 AND 85"
+          + "  GROUP BY x, y, %1$s ",
+        DIMENSIONS, projectedTable));
 
     // wgs84
     replaceTable(
-        spark,
-        String.format("%s_wgs84", hivePrefix),
-        String.format(
-            "        SELECT wgs84_xy.x AS x, wgs84_xy.y AS y, %1$s, sum(occCount) AS occCount "
-                + "  FROM %2$s "
-                + "  GROUP BY x, y, %1$s ",
-            DIMENSIONS, projectedTable));
+      spark,
+      String.format("%s_wgs84", hivePrefix),
+      String.format(
+        "        SELECT wgs84_xy.x AS x, wgs84_xy.y AS y, %1$s, sum(occCount) AS occCount "
+          + "  FROM %2$s "
+          + "  GROUP BY x, y, %1$s ",
+        DIMENSIONS, projectedTable));
 
     // arctic
     replaceTable(
-        spark,
-        String.format("%s_arctic", hivePrefix),
-        String.format(
-            "        SELECT arctic_xy.x AS x, arctic_xy.y AS y, %1$s, sum(occCount) AS occCount "
-                + "  FROM %2$s "
-                + "  WHERE decimalLatitude >= 0"
-                + "  GROUP BY x, y, %1$s ",
-            DIMENSIONS, projectedTable));
+      spark,
+      String.format("%s_arctic", hivePrefix),
+      String.format(
+        "        SELECT arctic_xy.x AS x, arctic_xy.y AS y, %1$s, sum(occCount) AS occCount "
+          + "  FROM %2$s "
+          + "  WHERE decimalLatitude >= 0"
+          + "  GROUP BY x, y, %1$s ",
+        DIMENSIONS, projectedTable));
 
     // antarctic
     replaceTable(
-        spark,
-        String.format("%s_antarctic", hivePrefix),
-        String.format(
-            "        SELECT antarctic_xy.x AS x, antarctic_xy.y AS y, %1$s, sum(occCount) AS occCount "
-                + "  FROM %2$s "
-                + "  WHERE decimalLatitude <= 0"
-                + "  GROUP BY x, y, %1$s ",
-            DIMENSIONS, projectedTable));
+      spark,
+      String.format("%s_antarctic", hivePrefix),
+      String.format(
+        "        SELECT antarctic_xy.x AS x, antarctic_xy.y AS y, %1$s, sum(occCount) AS occCount "
+          + "  FROM %2$s "
+          + "  WHERE decimalLatitude <= 0"
+          + "  GROUP BY x, y, %1$s ",
+        DIMENSIONS, projectedTable));
 
     spark.close();
   }
@@ -162,27 +169,29 @@ public class ClickhouseMapBuilder implements Serializable {
 
     LOG.info("Reading avro files from {}", sourceDir);
     spark
-        .read()
-        .format("com.databricks.spark.avro")
-        .load(sourceDir)
-        .createOrReplaceTempView("avro_files");
+      .read()
+      .format("com.databricks.spark.avro")
+      .load(sourceDir)
+      .createOrReplaceTempView("avro_files");
     spark
-        .sql(
-            String.format(
-                "        SELECT decimalLatitude, decimalLongitude, %1$s, count(*) AS occCount"
-                    + "  FROM avro_files "
-                    + "  WHERE"
-                    + "    decimalLatitude IS NOT NULL AND "
-                    + "    decimalLongitude IS NOT NULL AND "
-                    + "    hasGeospatialIssues = false AND "
-                    + "    occurrenceStatus='PRESENT' "
-                    + "  GROUP BY decimalLatitude, decimalLongitude, %1$s", // reduces to 1/3
-                DIMENSIONS))
-        .repartition(spark.sparkContext().conf().getInt("spark.sql.shuffle.partitions", 1200))
-        .createOrReplaceTempView(targetView);
+      .sql(
+        String.format(
+          "        SELECT decimalLatitude, decimalLongitude, %1$s, count(*) AS occCount"
+            + "  FROM avro_files "
+            + "  WHERE"
+            + "    decimalLatitude IS NOT NULL AND "
+            + "    decimalLongitude IS NOT NULL AND "
+            + "    hasGeospatialIssues = false AND "
+            + "    occurrenceStatus='PRESENT' "
+            + "  GROUP BY decimalLatitude, decimalLongitude, %1$s", // reduces to 1/3
+          DIMENSIONS))
+      .repartition(spark.sparkContext().conf().getInt("spark.sql.shuffle.partitions", 1200))
+      .createOrReplaceTempView(targetView);
   }
 
-  /** Drop the table, execute the query and create the table stored as parquet */
+  /**
+   * Drop the table, execute the query and create the table stored as parquet
+   */
   private static void replaceTable(SparkSession spark, String table, String sql) {
     spark.sql(String.format("DROP TABLE IF EXISTS %s", table));
     spark.sql(sql).write().format("parquet").saveAsTable(table);
@@ -190,35 +199,35 @@ public class ClickhouseMapBuilder implements Serializable {
 
   public String createClickhouseDB() throws Exception {
     try (Client client =
-            new Client.Builder()
-                .addEndpoint(clickhouseEndpoint)
-                .setUsername(clickhouseUsername)
-                .setPassword(clickhousePassword)
-                .enableConnectionPool(clickhouseEnableConnectionPool)
-                .setSocketTimeout(clickhouseSocketTimeout)
-                .setConnectTimeout(clickhouseConnectTimeout)
-                .build();
+           new Client.Builder()
+             .addEndpoint(clickhouseEndpoint)
+             .setUsername(clickhouseUsername)
+             .setPassword(clickhousePassword)
+             .enableConnectionPool(clickhouseEnableConnectionPool)
+             .setSocketTimeout(clickhouseSocketTimeout)
+             .setConnectTimeout(clickhouseConnectTimeout)
+             .build();
 
-        // clickhouse-java does not support multiline statements
-        InputStream hiveSQL =
-            this.getClass().getResourceAsStream("/clickhouse/create-hive-table.sql");
-        InputStream localSQL =
-            this.getClass().getResourceAsStream("/clickhouse/create-local-table.sql");
-        InputStream loadSQL =
-            this.getClass().getResourceAsStream("/clickhouse/load-local-table.sql")) {
+         // clickhouse-java does not support multiline statements
+         InputStream hiveSQL =
+           this.getClass().getResourceAsStream("/clickhouse/create-hive-table.sql");
+         InputStream localSQL =
+           this.getClass().getResourceAsStream("/clickhouse/create-local-table.sql");
+         InputStream loadSQL =
+           this.getClass().getResourceAsStream("/clickhouse/load-local-table.sql")) {
 
       String createHive =
-          new BufferedReader(new InputStreamReader(hiveSQL))
-              .lines()
-              .collect(Collectors.joining("\n"));
+        new BufferedReader(new InputStreamReader(hiveSQL))
+          .lines()
+          .collect(Collectors.joining("\n"));
       String createLocal =
-          new BufferedReader(new InputStreamReader(localSQL))
-              .lines()
-              .collect(Collectors.joining("\n"));
+        new BufferedReader(new InputStreamReader(localSQL))
+          .lines()
+          .collect(Collectors.joining("\n"));
       String loadLocal =
-          new BufferedReader(new InputStreamReader(loadSQL))
-              .lines()
-              .collect(Collectors.joining("\n"));
+        new BufferedReader(new InputStreamReader(loadSQL))
+          .lines()
+          .collect(Collectors.joining("\n"));
 
       final String database = String.format("%s_%s", clickhouseDatabase, timestamp);
 
@@ -243,22 +252,20 @@ public class ClickhouseMapBuilder implements Serializable {
       for (Future<CompletableFuture<CommandResponse>> result : results) {
         result.get(1, TimeUnit.HOURS);
       }
-      LOG.info("Finished loading clickhouse!");
-
-      LOG.info("Cleanup HDFS temp tables...");
+      LOG.info("Finished loading clickhouse! Cleanup HDFS temp tables...");
       List.of("mercator", "wgs84", "arctic", "antarctic")
-          .forEach(
-              projection -> {
-                try {
-                  String sql =
-                      String.format(
-                          "DROP TABLE IF EXISTS %s.hdfs_%s", database, projection);
-                  LOG.info("Clickhouse - executing SQL: {}", sql);
-                  client.execute(sql).get(1, TimeUnit.HOURS);
-                } catch (Exception e) {
-                  LOG.error("Failed to drop temp hdfs table for projection {}", projection, e);
-                }
-              });
+        .forEach(
+          projection -> {
+            try {
+              String sql =
+                String.format(
+                  "DROP TABLE IF EXISTS %s.hdfs_%s", database, projection);
+              LOG.info("Clickhouse - executing SQL: {}", sql);
+              client.execute(sql).get(1, TimeUnit.HOURS);
+            } catch (Exception e) {
+              LOG.error("Failed to drop temp hdfs table for projection {}", projection, e);
+            }
+          });
       return database;
     }
   }
@@ -268,8 +275,8 @@ public class ClickhouseMapBuilder implements Serializable {
    * warehouse and doing a copy.
    */
   private void replaceClickhouseTable(
-      Client client, String projection, String createHive, String createLocal, String clickhouseDB)
-      throws Exception {
+    Client client, String projection, String createHive, String createLocal, String clickhouseDB)
+    throws Exception {
 
     LOG.info("Starting table preparation for {}", projection);
     // TODO: review how completable futures are used here. Seems odd...
@@ -283,7 +290,7 @@ public class ClickhouseMapBuilder implements Serializable {
     client.execute(createHiveSQL).get(1, TimeUnit.HOURS);
 
     String dropCHTable =
-        String.format("DROP TABLE IF EXISTS %s.occurrence_%s;", clickhouseDB, projection);
+      String.format("DROP TABLE IF EXISTS %s.occurrence_%s;", clickhouseDB, projection);
     LOG.info("Clickhouse - executing SQL: {}", dropCHTable);
     client.execute(dropCHTable).get(1, TimeUnit.HOURS);
 
@@ -292,11 +299,42 @@ public class ClickhouseMapBuilder implements Serializable {
     client.execute(createCHTable).get(1, TimeUnit.HOURS);
 
     String grant =
-        String.format(
-            "GRANT SELECT ON %s.occurrence_%s TO %s",
-            clickhouseDB, projection, clickhouseReadOnlyUser);
+      String.format(
+        "GRANT SELECT ON %s.occurrence_%s TO %s",
+        clickhouseDB, projection, clickhouseReadOnlyUser);
 
     LOG.info("Clickhouse - executing SQL: {}", grant);
     client.execute(grant).get(1, TimeUnit.HOURS);
+  }
+
+  public void cleanupDatabases(String databaseNamePrefix, List<String> referencedDatabases) {
+    try (Client client =
+           new Client.Builder()
+             .addEndpoint(clickhouseEndpoint)
+             .setUsername(clickhouseUsername)
+             .setPassword(clickhousePassword)
+             .enableConnectionPool(clickhouseEnableConnectionPool)
+             .setSocketTimeout(clickhouseSocketTimeout)
+             .setConnectTimeout(clickhouseConnectTimeout)
+             .build()) {
+
+      QueryResponse response = client.query("SHOW DATABASES").get(10, TimeUnit.SECONDS);
+      ClickHouseBinaryFormatReader reader = client.newBinaryFormatReader(response);
+      while (reader.hasNext()) {
+        reader.next();
+        String databaseName = reader.getString("name");
+        if (databaseName.startsWith(databaseNamePrefix + "_")
+          && !referencedDatabases.contains(databaseName)) {
+          LOG.info("Dropping database {}", databaseName);
+          client.execute(String.format("DROP DATABASE %s", databaseName)).get(1, TimeUnit.HOURS);
+        }
+      }
+    } catch (ExecutionException e) {
+      throw new RuntimeException(e);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    } catch (TimeoutException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

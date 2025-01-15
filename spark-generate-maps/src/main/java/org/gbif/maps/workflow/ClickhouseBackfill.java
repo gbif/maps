@@ -16,6 +16,7 @@ package org.gbif.maps.workflow;
 import org.gbif.maps.ClickhouseMapBuilder;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.curator.framework.CuratorFramework;
@@ -62,7 +63,7 @@ public class ClickhouseBackfill {
       ClickhouseMapBuilder builder =
           ClickhouseMapBuilder.builder()
               .sourceDir(snapshotSource)
-               .timestamp(config.getTimestamp())
+              .timestamp(config.getTimestamp())
               .hiveDB(config.getHiveDB())
               .hivePrefix(config.getClickhouse().getHivePrefix())
               .tileSize(config.getClickhouse().getTileSize())
@@ -82,7 +83,9 @@ public class ClickhouseBackfill {
       log.info("Creating Clickhouse database");
       String createdDatabase = builder.createClickhouseDB();
       log.info("Updating Clickhouse database metadata");
-      updateZookeeperMeta(config, createdDatabase, hadoopConfiguration);
+      List<String> dbsToKeep = updateZookeeperMeta(config, createdDatabase, hadoopConfiguration);
+      log.info("Clean up old Clickhouse database instances");
+      builder.cleanupDatabases(config.getClickhouse().getDatabase(), dbsToKeep);
 
     } finally {
       log.info("Deleting snapshot {} {}", config.getSnapshotDirectory(), snapshotName);
@@ -90,7 +93,15 @@ public class ClickhouseBackfill {
     }
   }
 
-  private static void updateZookeeperMeta(MapConfiguration config, String clickhouseDatabaseName, Configuration hadoopConfiguration) {
+  /**
+   * Updates the Zookeeper metadata with the new clickhouse database name.
+   * Returns the current and new database names.
+   * @param config
+   * @param clickhouseDatabaseName
+   * @param hadoopConfiguration
+   * @return
+   */
+  private static List<String> updateZookeeperMeta(MapConfiguration config, String clickhouseDatabaseName, Configuration hadoopConfiguration) {
 
     try (CHMetastore metastore =
            Metastores.newZookeeperCHMeta(config.getClickhouse().getZkConnectionString(),
@@ -100,6 +111,8 @@ public class ClickhouseBackfill {
       log.info("Current clickhouse DB: " + existingDB);
       log.info("Updating clickhouse DB with: " + clickhouseDatabaseName);
       metastore.setClickhouseDB(clickhouseDatabaseName);
+
+      return List.of(existingDB, clickhouseDatabaseName);
 
     } catch (IOException e) {
       throw new RuntimeException(e);
