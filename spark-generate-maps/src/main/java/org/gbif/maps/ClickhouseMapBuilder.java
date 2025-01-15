@@ -15,6 +15,8 @@ package org.gbif.maps;
 
 import com.clickhouse.client.api.data_formats.ClickHouseBinaryFormatReader;
 import com.clickhouse.client.api.query.QueryResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.hadoop.conf.Configuration;
 import org.gbif.maps.udf.ProjectUDF;
 
 import java.io.*;
@@ -25,17 +27,17 @@ import java.util.stream.Collectors;
 
 import org.apache.spark.sql.SparkSession;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.clickhouse.client.api.Client;
 import com.clickhouse.client.api.command.CommandResponse;
+
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 import lombok.Builder;
 
 @Builder(toBuilder = true)
+@Slf4j
 public class ClickhouseMapBuilder implements Serializable {
-  private static final Logger LOG = LoggerFactory.getLogger(ClickhouseMapBuilder.class);
-
   private final String sourceDir;
   private final String hiveDB;
   private final String hivePrefix;
@@ -75,27 +77,27 @@ public class ClickhouseMapBuilder implements Serializable {
         .clickhouseReadOnlyUser("tim")
         .build();
 
-    LOG.info("Preparing data in Spark");
+    log.info("Preparing data in Spark");
     builder.prepareInSpark();
-    LOG.info("Preparing and creating Clickhouse database");
+    log.info("Preparing and creating Clickhouse database");
     builder.createClickhouseDB();
   }
 
   /**
    * Establishes a Spark cluster, prepares data, and then releases resources.
    */
-  public void prepareInSpark() {
+  public void prepareInSpark() throws Exception {
     SparkSession spark =
       SparkSession.builder().appName("Clickhouse Map Builder").enableHiveSupport().getOrCreate();
 
-    LOG.info("Using Hive DB: {}", hiveDB);
+    log.info("Using Hive DB: {}", hiveDB);
     spark.sql("use " + hiveDB);
 
     spark.sparkContext().conf().set("hive.exec.compress.output", "true");
 
     // Surface the avro files as a table
     String sourceTable = String.format("%s_avro", hivePrefix);
-    LOG.info("Using source table: {}", sourceTable);
+    log.info("Using source table: {}", sourceTable);
     readAvroSource(spark, sourceTable);
 
     // Project the coordinates
@@ -118,6 +120,7 @@ public class ClickhouseMapBuilder implements Serializable {
     // mercator
     replaceTable(
       spark,
+      hiveDB,
       String.format("%s_mercator", hivePrefix),
       String.format(
         "        SELECT mercator_xy.x AS x, mercator_xy.y AS y, %1$s, sum(occCount) AS occCount "
@@ -129,6 +132,7 @@ public class ClickhouseMapBuilder implements Serializable {
     // wgs84
     replaceTable(
       spark,
+      hiveDB,
       String.format("%s_wgs84", hivePrefix),
       String.format(
         "        SELECT wgs84_xy.x AS x, wgs84_xy.y AS y, %1$s, sum(occCount) AS occCount "
@@ -139,6 +143,7 @@ public class ClickhouseMapBuilder implements Serializable {
     // arctic
     replaceTable(
       spark,
+      hiveDB,
       String.format("%s_arctic", hivePrefix),
       String.format(
         "        SELECT arctic_xy.x AS x, arctic_xy.y AS y, %1$s, sum(occCount) AS occCount "
@@ -150,6 +155,7 @@ public class ClickhouseMapBuilder implements Serializable {
     // antarctic
     replaceTable(
       spark,
+      hiveDB,
       String.format("%s_antarctic", hivePrefix),
       String.format(
         "        SELECT antarctic_xy.x AS x, antarctic_xy.y AS y, %1$s, sum(occCount) AS occCount "
@@ -167,7 +173,7 @@ public class ClickhouseMapBuilder implements Serializable {
    */
   private void readAvroSource(SparkSession spark, String targetView) {
 
-    LOG.info("Reading avro files from {}", sourceDir);
+    log.info("Reading avro files from {}", sourceDir);
     spark
       .read()
       .format("com.databricks.spark.avro")
@@ -192,8 +198,26 @@ public class ClickhouseMapBuilder implements Serializable {
   /**
    * Drop the table, execute the query and create the table stored as parquet
    */
-  private static void replaceTable(SparkSession spark, String table, String sql) {
+  private static void replaceTable(SparkSession spark, String hiveDB, String table, String sql) {
     spark.sql(String.format("DROP TABLE IF EXISTS %s", table));
+
+    // remove the files if they exist e.g. hdfs://gbif-hdfs/dev2/map_clickhouse_mercator
+    // has occurred in the past
+    String path = String.format("hdfs://gbif-hdfs/%s/%s", hiveDB, table);
+    try (FileSystem fs = FileSystem.get(new Configuration())) {
+      Path fspath = new Path(path);
+      if (fs.exists(fspath)) {
+        boolean isDeleted = fs.delete(fspath, true);
+        if (isDeleted) {
+          log.info("File deleted successfully {}", path);
+        } else {
+          log.info("File deletion failed {}", path);
+        }
+      }
+    } catch (IOException e) {
+      log.info("Error deleting file {}", path);
+    }
+
     spark.sql(sql).write().format("parquet").saveAsTable(table);
   }
 
@@ -232,7 +256,7 @@ public class ClickhouseMapBuilder implements Serializable {
       final String database = String.format("%s_%s", clickhouseDatabase, timestamp);
 
       String createDatabase = String.format("CREATE DATABASE %s;", database);
-      LOG.info("Clickhouse - executing SQL: {}", createDatabase);
+      log.info("Clickhouse - executing SQL: {}", createDatabase);
       client.execute(createDatabase).get(1, TimeUnit.HOURS);
 
       replaceClickhouseTable(client, "mercator", createHive, createLocal, database);
@@ -247,12 +271,12 @@ public class ClickhouseMapBuilder implements Serializable {
       tasks.add(() -> client.execute(String.format(loadLocal, database, "arctic")));
       tasks.add(() -> client.execute(String.format(loadLocal, database, "antarctic")));
 
-      LOG.info("Invoking concurrent load");
+      log.info("Invoking concurrent load");
       List<Future<CompletableFuture<CommandResponse>>> results = EXEC.invokeAll(tasks);
       for (Future<CompletableFuture<CommandResponse>> result : results) {
         result.get(1, TimeUnit.HOURS);
       }
-      LOG.info("Finished loading clickhouse! Cleanup HDFS temp tables...");
+      log.info("Finished loading clickhouse! Cleanup HDFS temp tables...");
       List.of("mercator", "wgs84", "arctic", "antarctic")
         .forEach(
           projection -> {
@@ -260,10 +284,10 @@ public class ClickhouseMapBuilder implements Serializable {
               String sql =
                 String.format(
                   "DROP TABLE IF EXISTS %s.hdfs_%s", database, projection);
-              LOG.info("Clickhouse - executing SQL: {}", sql);
+              log.info("Clickhouse - executing SQL: {}", sql);
               client.execute(sql).get(1, TimeUnit.HOURS);
             } catch (Exception e) {
-              LOG.error("Failed to drop temp hdfs table for projection {}", projection, e);
+              log.error("Failed to drop temp hdfs table for projection {}", projection, e);
             }
           });
       return database;
@@ -278,24 +302,24 @@ public class ClickhouseMapBuilder implements Serializable {
     Client client, String projection, String createHive, String createLocal, String clickhouseDB)
     throws Exception {
 
-    LOG.info("Starting table preparation for {}", projection);
+    log.info("Starting table preparation for {}", projection);
     // TODO: review how completable futures are used here. Seems odd...
 
     String dropHive = String.format("DROP TABLE IF EXISTS %s.hdfs_%s;", clickhouseDB, projection);
-    LOG.info("Clickhouse - executing SQL: {}", dropHive);
+    log.info("Clickhouse - executing SQL: {}", dropHive);
     client.execute(dropHive).get(1, TimeUnit.HOURS);
 
     String createHiveSQL = String.format(createHive, clickhouseDB, projection);
-    LOG.info("Clickhouse - executing SQL: {}", createHiveSQL);
+    log.info("Clickhouse - executing SQL: {}", createHiveSQL);
     client.execute(createHiveSQL).get(1, TimeUnit.HOURS);
 
     String dropCHTable =
       String.format("DROP TABLE IF EXISTS %s.occurrence_%s;", clickhouseDB, projection);
-    LOG.info("Clickhouse - executing SQL: {}", dropCHTable);
+    log.info("Clickhouse - executing SQL: {}", dropCHTable);
     client.execute(dropCHTable).get(1, TimeUnit.HOURS);
 
     String createCHTable = String.format(createLocal, clickhouseDB, projection);
-    LOG.info("Clickhouse - executing SQL: {}", createCHTable);
+    log.info("Clickhouse - executing SQL: {}", createCHTable);
     client.execute(createCHTable).get(1, TimeUnit.HOURS);
 
     String grant =
@@ -303,7 +327,7 @@ public class ClickhouseMapBuilder implements Serializable {
         "GRANT SELECT ON %s.occurrence_%s TO %s",
         clickhouseDB, projection, clickhouseReadOnlyUser);
 
-    LOG.info("Clickhouse - executing SQL: {}", grant);
+    log.info("Clickhouse - executing SQL: {}", grant);
     client.execute(grant).get(1, TimeUnit.HOURS);
   }
 
@@ -325,7 +349,7 @@ public class ClickhouseMapBuilder implements Serializable {
         String databaseName = reader.getString("name");
         if (databaseName.startsWith(databaseNamePrefix + "_")
           && !referencedDatabases.contains(databaseName)) {
-          LOG.info("Dropping database {}", databaseName);
+          log.info("Dropping database {}", databaseName);
           client.execute(String.format("DROP DATABASE %s", databaseName)).get(1, TimeUnit.HOURS);
         }
       }
