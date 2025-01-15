@@ -68,7 +68,7 @@ class ZKCHMetastore implements CHMetastore, Closeable {
 
 
   @Override
-  public String getClickhouseDB() throws Exception {
+  public String getClickhouseDB() {
     return clickhouseDB;
   }
 

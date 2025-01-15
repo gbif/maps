@@ -72,8 +72,8 @@ public class ClickhouseMapBuilder implements Serializable {
 
     LOG.info("Preparing data in Spark");
     builder.prepareInSpark();
-    LOG.info("Preparing and loading Clickhouse");
-    builder.loadClickhouse();
+    LOG.info("Preparing and creating Clickhouse database");
+    builder.createClickhouseDB();
   }
 
   /** Establishes a Spark cluster, prepares data, and then releases resources. */
@@ -188,7 +188,7 @@ public class ClickhouseMapBuilder implements Serializable {
     spark.sql(sql).write().format("parquet").saveAsTable(table);
   }
 
-  public void loadClickhouse() throws Exception {
+  public String createClickhouseDB() throws Exception {
     try (Client client =
             new Client.Builder()
                 .addEndpoint(clickhouseEndpoint)
@@ -237,6 +237,7 @@ public class ClickhouseMapBuilder implements Serializable {
       tasks.add(() -> client.execute(String.format(loadLocal, database, "wgs84")));
       tasks.add(() -> client.execute(String.format(loadLocal, database, "arctic")));
       tasks.add(() -> client.execute(String.format(loadLocal, database, "antarctic")));
+
       LOG.info("Invoking concurrent load");
       List<Future<CompletableFuture<CommandResponse>>> results = EXEC.invokeAll(tasks);
       for (Future<CompletableFuture<CommandResponse>> result : results) {
@@ -258,6 +259,7 @@ public class ClickhouseMapBuilder implements Serializable {
                   LOG.error("Failed to drop temp hdfs table for projection {}", projection, e);
                 }
               });
+      return database;
     }
   }
 

@@ -79,10 +79,10 @@ public class ClickhouseBackfill {
 
       log.info("Preparing data in Spark");
       builder.prepareInSpark();
-      log.info("Preparing and loading Clickhouse");
-      builder.loadClickhouse();
-      log.info("Updating metadata");
-      updateZookeeperMeta(config, snapshotName, hadoopConfiguration);
+      log.info("Creating Clickhouse database");
+      String createdDatabase = builder.createClickhouseDB();
+      log.info("Updating Clickhouse database metadata");
+      updateZookeeperMeta(config, createdDatabase, hadoopConfiguration);
 
     } finally {
       log.info("Deleting snapshot {} {}", config.getSnapshotDirectory(), snapshotName);

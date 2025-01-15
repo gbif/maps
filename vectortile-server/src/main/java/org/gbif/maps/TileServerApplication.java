@@ -16,6 +16,7 @@ package org.gbif.maps;
 import lombok.extern.slf4j.Slf4j;
 import org.gbif.api.model.common.search.SearchParameter;
 import org.gbif.event.search.es.EventEsField;
+import org.gbif.maps.common.meta.CHMetastore;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.resource.*;
@@ -205,24 +206,31 @@ public class TileServerApplication {
 
       if (tileServerConfiguration.getClickhouse() != null && tileServerConfiguration.getClickhouse().getEndpoint() != null) {
         log.info("Using Clickhouse for database driven tile maps");
-        return new ClickhouseMaps(tileServerConfiguration.getClickhouse());
+        if (tileServerConfiguration.getMetastore() != null) {
+          CHMetastore meta = Metastores.newZookeeperCHMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
+            tileServerConfiguration.getMetastore().getPath());
+          return new ClickhouseMaps(tileServerConfiguration.getClickhouse(), meta);
+        } else {
+          CHMetastore meta = Metastores.newStaticCHMeta(tileServerConfiguration.getClickhouse().getDatabase());
+          return new ClickhouseMaps(tileServerConfiguration.getClickhouse(), meta);
+        }
       } else {
         log.info("Using HBase for database driven tile maps");
-      // Either use Zookeeper or static config to locate tables
-      Configuration conf = HBaseConfiguration.create();
-      conf.set("hbase.zookeeper.quorum", tileServerConfiguration.getHbase().getZookeeperQuorum());
+        // Either use Zookeeper or static config to locate tables
+        Configuration conf = HBaseConfiguration.create();
+        conf.set("hbase.zookeeper.quorum", tileServerConfiguration.getHbase().getZookeeperQuorum());
 
-      if (tileServerConfiguration.getMetastore() != null) {
-        MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
-          tileServerConfiguration.getMetastore().getPath());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager, meterRegistry);
+        if (tileServerConfiguration.getMetastore() != null) {
+          MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
+            tileServerConfiguration.getMetastore().getPath());
+          return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager, meterRegistry);
 
-      } else {
-        MapMetastore meta = Metastores.newStaticMapsMeta(tileServerConfiguration.getHbase().getTilesTableName(),
-          tileServerConfiguration.getHbase().getPointsTableName());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager, meterRegistry);
+        } else {
+          MapMetastore meta = Metastores.newStaticMapsMeta(tileServerConfiguration.getHbase().getTilesTableName(),
+            tileServerConfiguration.getHbase().getPointsTableName());
+          return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager, meterRegistry);
+        }
       }
-    }
     }
 
     @Primary

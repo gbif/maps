@@ -71,6 +71,31 @@ public class Metastores {
 
   /**
    * Return a static value MapMetastore
+   * @param clickhouseDB The table name with tile data
+   * @return The metastore
+   */
+  public static CHMetastore newStaticCHMeta(String clickhouseDB) {
+    LOG.info("Static clickhouseDB[{}]", clickhouseDB);
+    final String staticClickhouseDB = clickhouseDB;
+    return new CHMetastore() {
+      @Override
+      public String getClickhouseDB() {
+        return staticClickhouseDB;
+      }
+
+      @Override
+      public void setClickhouseDB(String meta) {
+        // do nothing
+      }
+
+      @Override
+      public void close(){
+      }
+    };
+  }
+
+  /**
+   * Return a static value MapMetastore
    * @param tileTable The table name with tile data
    * @param pointTable The table name with point data
    * @return The metastore

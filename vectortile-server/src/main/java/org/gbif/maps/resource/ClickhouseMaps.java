@@ -19,6 +19,7 @@ import com.clickhouse.client.api.query.QueryResponse;
 import com.clickhouse.client.api.query.QuerySettings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import org.gbif.maps.common.meta.CHMetastore;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -41,11 +42,12 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ClickhouseMaps implements TileMaps {
   private static final Logger LOG = LoggerFactory.getLogger(ClickhouseMaps.class);
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
-
+  private final CHMetastore metastore;
   private final Client client;
 
-  public ClickhouseMaps(TileServerConfiguration.ClickhouseConfiguration config) {
-    client = new Client.Builder()
+  public ClickhouseMaps(TileServerConfiguration.ClickhouseConfiguration config, CHMetastore metastore) {
+    this.metastore = metastore;
+    this.client = new Client.Builder()
       .addEndpoint(config.getEndpoint())
       .setDefaultDatabase(config.getDatabase())
       .setUsername(config.getUsername())
@@ -112,6 +114,7 @@ private String getTileQuery(String mapKey, String epsg, Optional<Set<String>> ba
     String borSQL = basisOfRecords.map(bor -> String.format(" AND basisOfRecord IN ('%s') ", String.join("', '", bor))).orElse("");
     String yearSQL = years.isPresent() && !years.get().isUnbounded() ? yearSQL(years.get()) : "";
 
+    String database = metastore.getClickhouseDB();
     // verbose year handling into a map of "year:count", or otherwise a total sum
     String selectSQL = verbose ? "sumMap(map(year, occCount)) AS year_count" : "sum(occCount) AS occ_count";
 
@@ -131,7 +134,7 @@ private String getTileQuery(String mapKey, String epsg, Optional<Set<String>> ba
         "        FROM %s \n" +
         "        WHERE in_tile %s %s %s %s\n" +  // optionally append "where", for dateline performance
         "        GROUP BY ALL",
-      selectSQL, TABLES.get(epsg), typeSQL, borSQL, yearSQL, where);
+      selectSQL, database + "." + TABLES.get(epsg), typeSQL, borSQL, yearSQL, where);
   }
 
   private static String yearSQL(Range years) {
