@@ -26,7 +26,6 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 
 import lombok.extern.slf4j.Slf4j;
 import org.gbif.maps.common.meta.CHMetastore;
@@ -37,14 +36,13 @@ public class ClickhouseBackfill {
 
   /** Expects [tiles,points] configFile [airflowProperties] */
   public static void main(String[] args) throws Exception {
-    if (args.length != 3 && args.length != 4) {
+    if (args.length != 2 && args.length != 3) {
       throw new IllegalArgumentException(
-          "Expects [tiles,points] configFile timestamp [airflowProperties]");
+          "Expects configFile timestamp [airflowProperties]");
     }
 
-    MapConfiguration config = MapConfiguration.build(args[1]);
-    config.setTimestamp(args[2]);
-    config.setMode(args[0]);
+    MapConfiguration config = MapConfiguration.build(args[0]);
+    config.setTimestamp(args[1]);
     String snapshotName = UUID.randomUUID().toString();
     log.info("Creating snapshot {} {}", config.getSnapshotDirectory(), snapshotName);
 
@@ -55,7 +53,7 @@ public class ClickhouseBackfill {
             hadoopConfiguration,
             config.getSnapshotDirectory(),
             snapshotName,
-            config.getHdfsLockConfig());
+            config);
     String snapshotSource = snapshotPath + "/" + config.getSourceSubdirectory();
     log.info("Created snapshot source, {}", snapshotSource);
 
@@ -83,7 +81,7 @@ public class ClickhouseBackfill {
       log.info("Creating Clickhouse database");
       String createdDatabase = builder.createClickhouseDB();
       log.info("Updating Clickhouse database metadata");
-      List<String> dbsToKeep = updateZookeeperMeta(config, createdDatabase, hadoopConfiguration);
+      List<String> dbsToKeep = updateZookeeperMeta(config, createdDatabase);
       log.info("Clean up old Clickhouse database instances");
       builder.cleanupDatabases(config.getClickhouse().getDatabase(), dbsToKeep);
 
@@ -98,36 +96,33 @@ public class ClickhouseBackfill {
    * Returns the current and new database names.
    * @param config
    * @param clickhouseDatabaseName
-   * @param hadoopConfiguration
    * @return
    */
-  private static List<String> updateZookeeperMeta(MapConfiguration config, String clickhouseDatabaseName, Configuration hadoopConfiguration) {
+  private static List<String> updateZookeeperMeta(MapConfiguration config, String clickhouseDatabaseName) {
 
     try (CHMetastore metastore =
            Metastores.newZookeeperCHMeta(config.getClickhouse().getZkConnectionString(),
              1000, config.getClickhouse().getMetadataPath())) {
 
       String existingDB = metastore.getClickhouseDB(); // we update any existing values
-      log.info("Current clickhouse DB: " + existingDB);
-      log.info("Updating clickhouse DB with: " + clickhouseDatabaseName);
+      log.info("Current clickhouse DB: {}, Updating clickhouse DB with: {}", existingDB, clickhouseDatabaseName);
       metastore.setClickhouseDB(clickhouseDatabaseName);
 
       return List.of(existingDB, clickhouseDatabaseName);
 
-    } catch (IOException e) {
-      throw new RuntimeException(e);
     } catch (Exception e) {
+      log.error("Error updating Zookeeper metadata", e);
       throw new RuntimeException(e);
     }
   }
 
   /** Creates a non-started instance of {@link CuratorFramework}. */
-  private static CuratorFramework buildCurator(MapConfiguration.HdfsLockConfig config) {
-    Configuration hbaseConf = HBaseConfiguration.create();
+  private static CuratorFramework buildCurator(MapConfiguration config) {
     return CuratorFrameworkFactory.builder()
-        .namespace(config.getNamespace())
-        .retryPolicy(new ExponentialBackoffRetry(config.getSleepTimeMs(), config.getMaxRetries()))
-        .connectString(hbaseConf.get("hbase.zookeeper.quorum"))
+        .namespace(config.getHdfsLockConfig().getNamespace())
+        .retryPolicy(new ExponentialBackoffRetry(config.getHdfsLockConfig().getSleepTimeMs(),
+          config.getHdfsLockConfig().getMaxRetries()))
+        .connectString(config.getClickhouse().getZkConnectionString())
         .build();
   }
 
@@ -136,13 +131,14 @@ public class ClickhouseBackfill {
       Configuration hadoopConfiguration,
       String directory,
       String snapshotName,
-      MapConfiguration.HdfsLockConfig hdfsLockConfig)
+      MapConfiguration mapConfiguration)
       throws Exception {
 
     // barrier since crawling may be running
-    try (CuratorFramework curator = buildCurator(hdfsLockConfig)) {
+    try (CuratorFramework curator = buildCurator(mapConfiguration)) {
       curator.start();
-      String lockPath = hdfsLockConfig.getLockingPath() + hdfsLockConfig.getLockName();
+      String lockPath = mapConfiguration.getHdfsLockConfig().getLockingPath() +
+        mapConfiguration.getHdfsLockConfig().getLockName();
       DistributedBarrier barrier = new DistributedBarrier(curator, lockPath);
       log.info("Acquiring barrier {}", lockPath);
       barrier.waitOnBarrier();
