@@ -48,6 +48,7 @@ import org.springframework.boot.actuate.autoconfigure.elasticsearch.ElasticSearc
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -71,7 +72,8 @@ import io.micrometer.core.instrument.MeterRegistry;
   },
   exclude = {
     RabbitAutoConfiguration.class,
-    ElasticSearchRestHealthContributorAutoConfiguration.class
+    ElasticSearchRestHealthContributorAutoConfiguration.class,
+    ElasticsearchRestClientAutoConfiguration.class
   })
 @EnableConfigurationProperties
 public class TileServerApplication {
