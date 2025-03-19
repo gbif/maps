@@ -13,24 +13,13 @@
  */
 package org.gbif.maps;
 
-import org.gbif.api.model.common.search.SearchParameter;
-import org.gbif.event.search.es.EventEsField;
-import org.gbif.maps.common.meta.MapMetastore;
-import org.gbif.maps.common.meta.Metastores;
-import org.gbif.maps.resource.*;
-import org.gbif.occurrence.search.es.EsConfig;
-import org.gbif.occurrence.search.es.OccurrenceBaseEsFieldMapper;
-import org.gbif.occurrence.search.es.OccurrenceEsField;
-import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
-import org.gbif.occurrence.search.predicate.QueryVisitorFactory;
-import org.gbif.vocabulary.client.ConceptClient;
-import org.gbif.ws.client.ClientBuilder;
-import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.base.Strings;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.http.HttpHost;
@@ -41,6 +30,19 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.sniff.SniffOnFailureListener;
 import org.elasticsearch.client.sniff.Sniffer;
+import org.gbif.api.model.common.search.SearchParameter;
+import org.gbif.event.search.es.EventEsField;
+import org.gbif.maps.common.meta.MapMetastore;
+import org.gbif.maps.common.meta.Metastores;
+import org.gbif.maps.resource.*;
+import org.gbif.occurrence.common.json.OccurrenceSearchParameterMixin;
+import org.gbif.occurrence.search.es.EsConfig;
+import org.gbif.occurrence.search.es.OccurrenceBaseEsFieldMapper;
+import org.gbif.occurrence.search.es.OccurrenceEsField;
+import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
+import org.gbif.vocabulary.client.ConceptClient;
+import org.gbif.ws.client.ClientBuilder;
+import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -55,11 +57,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.base.Strings;
-import io.micrometer.core.instrument.MeterRegistry;
 
 /**
  * The main entry point for running the member node.
@@ -226,7 +223,7 @@ public class TileServerApplication {
     @Bean
     public ObjectMapper objectMapper() {
       return JacksonJsonObjectMapperProvider.getObjectMapperWithBuilderSupport()
-                                            .addMixIn(SearchParameter.class, QueryVisitorFactory.OccurrenceSearchParameterMixin.class)
+                                            .addMixIn(SearchParameter.class, OccurrenceSearchParameterMixin.class)
                                             .registerModule(new JavaTimeModule());
     }
 
