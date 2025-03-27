@@ -77,20 +77,22 @@ public class VectorTileFiltersTest {
     // These tiles are equivalent to what would come from HBase as a precalculated tile with no buffer
     byte[] sourceTile = encoder.encode();
 
+    int featuresBufferSize = 100;
+
     encoder = new VectorTileEncoder(512, 25, false); // New encoder with a buffer to collect into
 
     // our test uses zoom=1, x=1, y=0 which is the NE quadrant of the world
     // add all features in "layer1"
     Set<String> bors = ImmutableSet.of("observation", "specimen");
     Range years = new Range(2012, 2013);
-    VectorTileFilters.collectInVectorTile(encoder, "layer1", sourceTile, WEB_MERCATOR, 1, 1, 0, 1, 0, 512, 25, years, bors, true);
+    VectorTileFilters.collectInVectorTile(encoder, "layer1", sourceTile, WEB_MERCATOR, 1, 1, 0, 1, 0, 512, 25, years, bors, true, featuresBufferSize);
 
     // collect the data into "layer1" but this time indicating it comes from a tile that is the
     // NW quadrant of the world
-    VectorTileFilters.collectInVectorTile(encoder, "layer1", sourceTile, WEB_MERCATOR, 1, 1, 0, 0, 0, 512, 25, years, bors, true);
+    VectorTileFilters.collectInVectorTile(encoder, "layer1", sourceTile, WEB_MERCATOR, 1, 1, 0, 0, 0, 512, 25, years, bors, true, featuresBufferSize);
 
     // collect into "layer2" which should be ignored completely
-    VectorTileFilters.collectInVectorTile(encoder, "layer2", sourceTile, WEB_MERCATOR, 1, 1, 0, 1, 0, 512, 25, years, bors, true);
+    VectorTileFilters.collectInVectorTile(encoder, "layer2", sourceTile, WEB_MERCATOR, 1, 1, 0, 1, 0, 512, 25, years, bors, true, featuresBufferSize);
 
 
     // build the vector tile to test the output

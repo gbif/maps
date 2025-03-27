@@ -40,18 +40,19 @@ public class YearFilteringTest {
    */
   @Test
   public void testSingleYearFilter() throws IOException {
+    int featuresBufferSize = 100;
     // a real tile extracted using the ExportRawTile utility from HBase (9th Dec 2021)
     byte[] sourceTile = Resources.toByteArray(Resources.getResource("tiles/publishingCountry-FR-3-8-2.mvt"));
 
     // an unfiltered tile in verbose mode (has values on all the years)
     VectorTileEncoder encoder = new VectorTileEncoder(512, 25, false);
-    VectorTileFilters.collectInVectorTile(encoder, "occurrence", sourceTile, WGS84_PLATE_CAREÉ, 3, 8, 2, 8, 2, 512, 25, Range.UNBOUNDED, null, true);
+    VectorTileFilters.collectInVectorTile(encoder, "occurrence", sourceTile, WGS84_PLATE_CAREÉ, 3, 8, 2, 8, 2, 512, 25, Range.UNBOUNDED, null, true, featuresBufferSize);
     byte[] unfiltered = encoder.encode();
 
     // a tile filtered only for the 2018 data (no need for verbose)
     encoder = new VectorTileEncoder(512, 25, false);
     Range years = new Range(2018, 2018);
-    VectorTileFilters.collectInVectorTile(encoder, "occurrence", sourceTile, WGS84_PLATE_CAREÉ, 3, 8, 2, 8, 2, 512, 25, years, null, false);
+    VectorTileFilters.collectInVectorTile(encoder, "occurrence", sourceTile, WGS84_PLATE_CAREÉ, 3, 8, 2, 8, 2, 512, 25, years, null, false, featuresBufferSize);
     byte[] filtered = encoder.encode();
 
     // extract the feature and total count of 2018 from the unfiltered tile, and the one prefiltered
