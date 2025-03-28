@@ -55,6 +55,8 @@ public class TileServerConfiguration {
 
     private Integer bufferSize;
 
+    private Integer featuresBufferSize;
+
     private Integer saltModulus;
 
   }

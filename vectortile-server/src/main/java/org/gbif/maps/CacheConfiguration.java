@@ -14,6 +14,8 @@
 package org.gbif.maps;
 
 import org.gbif.api.model.predicate.Predicate;
+import org.gbif.maps.io.PointFeature;
+import org.gbif.maps.resource.HBaseMaps;
 import org.gbif.occurrence.search.cache.DefaultInMemoryPredicateCacheService;
 import org.gbif.occurrence.search.cache.PredicateCacheService;
 
@@ -32,6 +34,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 
+import java.util.Optional;
+
 @Configuration
 @EnableCaching
 public class CacheConfiguration {
@@ -39,6 +43,19 @@ public class CacheConfiguration {
   @ConfigurationProperties(prefix = "cache.predicates")
   @Bean
   public Cache2kConfig<Integer, Predicate> predicateCache2kConfig() {
+    return new Cache2kConfig<>();
+  }
+
+  @ConfigurationProperties(prefix = "cache.tiles")
+  @Bean
+  public Cache2kConfig<HBaseMaps.TileKey, Optional<byte[]>> tileCache2kConfig() {
+    return new Cache2kConfig<>();
+  }
+
+
+  @ConfigurationProperties(prefix = "cache.points")
+  @Bean
+  public  Cache2kConfig<String, Optional<PointFeature.PointFeatures>> pointsCache2kConfig() {
     return new Cache2kConfig<>();
   }
 

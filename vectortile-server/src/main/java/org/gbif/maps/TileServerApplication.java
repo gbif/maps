@@ -20,9 +20,12 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Optional;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.http.HttpHost;
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.extra.spring.SpringCache2kCacheManager;
 import org.elasticsearch.client.NodeSelector;
 import org.elasticsearch.client.RestClient;
@@ -34,6 +37,7 @@ import org.gbif.api.model.common.search.SearchParameter;
 import org.gbif.event.search.es.EventEsField;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
+import org.gbif.maps.io.PointFeature;
 import org.gbif.maps.resource.*;
 import org.gbif.occurrence.common.json.OccurrenceSearchParameterMixin;
 import org.gbif.occurrence.search.es.EsConfig;
@@ -197,7 +201,9 @@ public class TileServerApplication {
 
     @Bean
     @Profile("!es-only")
-    HBaseMaps hBaseMaps(TileServerConfiguration tileServerConfiguration, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry) throws Exception {
+    HBaseMaps hBaseMaps(TileServerConfiguration tileServerConfiguration, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry,
+                        Cache2kConfig<String, Optional<PointFeature.PointFeatures>> pointCacheConfiguration,
+                        Cache2kConfig<HBaseMaps.TileKey, Optional<byte[]>> tileCacheConfiguration) throws Exception {
       // Either use Zookeeper or static config to locate tables
       Configuration conf = HBaseConfiguration.create();
       conf.set("hbase.zookeeper.quorum", tileServerConfiguration.getHbase().getZookeeperQuorum());
@@ -206,16 +212,15 @@ public class TileServerApplication {
         conf.set("zookeeper.znode.parent", hbaseZNode);
       }
 
-
       if (tileServerConfiguration.getMetastore() != null) {
         MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
           tileServerConfiguration.getMetastore().getPath());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager, meterRegistry);
+        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager, meterRegistry, pointCacheConfiguration, tileCacheConfiguration);
 
       } else {
         MapMetastore meta = Metastores.newStaticMapsMeta(tileServerConfiguration.getHbase().getTilesTableName(),
           tileServerConfiguration.getHbase().getPointsTableName());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager, meterRegistry);
+        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager, meterRegistry, pointCacheConfiguration, tileCacheConfiguration);
       }
     }
 
