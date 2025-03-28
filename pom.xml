@@ -9,7 +9,7 @@
 
   <groupId>org.gbif.maps</groupId>
   <artifactId>maps-motherpom</artifactId>
-  <version>1.0.4-SNAPSHOT</version>
+  <version>1.0.6-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <description>GBIF Map services</description>
@@ -65,7 +65,7 @@
     <hadoop.version>3.3.4</hadoop.version>
     <hbase.version>2.5.4-hadoop3</hbase.version>
     <spark.version>3.5.2</spark.version>
-    <geotools.version>22.2</geotools.version>
+    <geotools.version>24.4.01</geotools.version>
     <cache2k.version>2.4.1.Final</cache2k.version>
     <metrics.version>4.2.7</metrics.version>
     <micrometer.version>1.12.2</micrometer.version>
