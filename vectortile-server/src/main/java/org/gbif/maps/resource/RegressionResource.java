@@ -123,7 +123,7 @@ public final class RegressionResource {
     this.tiles = tiles;
     this.esClient = esClient;
     this.esIndex = configuration.getEsOccurrenceConfiguration().getElasticsearch().getIndex();
-    this.esSearchRequestBuilder = new EsSearchRequestBuilder(OccurrenceEsField.buildFieldMapper(), conceptClient, null);
+    this.esSearchRequestBuilder = new EsSearchRequestBuilder(OccurrenceEsField.buildFieldMapper(), conceptClient);
   }
 
   /**

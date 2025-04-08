@@ -118,7 +118,7 @@ public class TileServerApplication {
     OccurrenceHeatmapsEsService heatmapsEsService(RestHighLevelClient esClient, TileServerConfiguration.EsTileConfiguration esTileConfiguration, ConceptClient conceptClient) {
       return new OccurrenceHeatmapsEsService(esClient,
         esTileConfiguration.getElasticsearch().getIndex(),
-        esFieldMapper(esTileConfiguration), conceptClient, null);
+        esFieldMapper(esTileConfiguration), conceptClient);
     }
 
     private RestHighLevelClient provideEsClient(EsConfig esConfig) {

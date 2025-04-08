@@ -42,7 +42,7 @@
     <maven.compiler.source>${jdkLevel}</maven.compiler.source>
     <maven.compiler.target>${jdkLevel}</maven.compiler.target>
 
-    <gbif-occurrence.version>1.0.28-multitaxonomy-SNAPSHOT</gbif-occurrence.version>
+    <gbif-occurrence.version>1.0.28</gbif-occurrence.version>
     <gbif-api.version>2.1.0</gbif-api.version>
     <gbif-common-ws.version>2.0.7</gbif-common-ws.version>
     <dwc-api.version>2.0.1</dwc-api.version>
@@ -78,6 +78,7 @@
     <scalatest.version>3.2.16</scalatest.version>
     <junit.version>4.13.1</junit.version>
     <curator.version>5.5.0</curator.version>
+    <curator-framework.version>5.5.0-disable-connectstr-updates</curator-framework.version>
     <curator-test.version>5.5.0</curator-test.version>
     <maven-core.version>3.3.9</maven-core.version>
     <maven-model.version>3.1.1</maven-model.version>
