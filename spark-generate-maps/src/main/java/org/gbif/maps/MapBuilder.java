@@ -13,8 +13,6 @@
  */
 package org.gbif.maps;
 
-import org.apache.spark.sql.SaveMode;
-
 import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.udf.MapKeysUDF;
 
@@ -172,7 +170,7 @@ public class MapBuilder implements Serializable {
 
     // write as table to avoid any lazy evaluation re-reading small avro input
     spark.sql(String.format("DROP TABLE IF EXISTS %s PURGE", targetHiveTable));
-    partitioned.write().mode(SaveMode.Overwrite).format("parquet").saveAsTable(targetHiveTable);
+    partitioned.write().format("parquet").saveAsTable(targetHiveTable);
   }
 
   /**
