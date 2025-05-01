@@ -88,6 +88,7 @@ function parseUrl(parsedRequest) {
  * - non-contiguous year ranges
  * - "no year" combined with a non-complete year range
  */
+const keyStructure = /^[0-9a-zA-Z_-]+$/;
 function v1ParseUrl(parsedRequest) {
   var z = parseInt(parsedRequest.query.z);
   var x = parseInt(parsedRequest.query.x);
@@ -131,6 +132,13 @@ function v1ParseUrl(parsedRequest) {
 
   var type = parsedRequest.query.type;
   var key = parsedRequest.query.key;
+
+  // Check key is expected structure
+  if (type != null) {
+    if (!keyStructure.test(key)) {
+      throw Error("Invalid map key provided.");
+    }
+  }
 
   var mapKey;
   if (type == "TAXON") mapKey = "taxonKey="+key
