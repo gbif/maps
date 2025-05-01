@@ -156,7 +156,9 @@ public class FinaliseBackfill {
               && !meta.getTileTable().equalsIgnoreCase(tables[i].getNameAsString())) {
 
             log.info("Disabling HBase table[{}]", tables[i].getNameAsString());
-            admin.disableTable(tables[i]);
+            if (!admin.isTableDisabled(tables[i])) {
+              admin.disableTable(tables[i]);
+            }
             log.info("Deleting HBase table[{}]", tables[i].getNameAsString());
             admin.deleteTable(tables[i]);
           }
