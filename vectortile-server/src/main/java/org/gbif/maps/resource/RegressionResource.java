@@ -220,7 +220,7 @@ public final class RegressionResource {
    */
   private TreeMap<String, Long> yearFacet(HttpServletRequest request, String... taxonKey)
     throws IOException {
-    OccurrenceSearchRequest searchRequest = new OccurrenceSearchRequest(0, 0);
+    OccurrenceSearchRequest searchRequest = new OccurrenceSearchRequest();
     Params.setSearchParams(searchRequest, request);
     searchRequest.setFacetLimit(300);
 

@@ -172,7 +172,7 @@ public class Params {
    */
   private static OccurrenceSearchParameter findSearchParam(String name) {
     try {
-      return VocabularyUtils.lookupEnum(name, OccurrenceSearchParameter.class);
+      return OccurrenceSearchParameter.lookup(name).orElse(null);
     } catch (IllegalArgumentException e) {
       // we have all params here, not only the enum ones, so this is ok to end up here a few times
     }
