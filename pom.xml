@@ -45,7 +45,7 @@
     <gbif-occurrence.version>1.0.28</gbif-occurrence.version>
     <gbif-api.version>2.2.0-SNAPSHOT</gbif-api.version>
     <gbif-common-ws.version>2.0.10-SNAPSHOT</gbif-common-ws.version>
-    <dwc-api.version>	2.1.0-SNAPSHOT</dwc-api.version>
+    <dwc-api.version>2.1.0-SNAPSHOT</dwc-api.version>
     <gbif-predicates.version>2.1.0-SNAPSHOT</gbif-predicates.version>
 
     <javax.mail.version>1.4.1</javax.mail.version>
