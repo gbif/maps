@@ -20,6 +20,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Duration;
 import java.util.Optional;
 
 import org.apache.hadoop.conf.Configuration;
@@ -33,6 +34,7 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.sniff.SniffOnFailureListener;
 import org.elasticsearch.client.sniff.Sniffer;
+import org.gbif.api.model.Constants;
 import org.gbif.api.model.common.search.SearchParameter;
 import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
 import org.gbif.event.search.es.EventEsField;
@@ -45,6 +47,7 @@ import org.gbif.occurrence.search.es.EsConfig;
 import org.gbif.occurrence.search.es.OccurrenceBaseEsFieldMapper;
 import org.gbif.occurrence.search.es.OccurrenceEsField;
 import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
+import org.gbif.rest.client.species.NameUsageMatchingService;
 import org.gbif.vocabulary.client.ConceptClient;
 import org.gbif.ws.client.ClientBuilder;
 import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
@@ -82,6 +85,8 @@ import javax.validation.constraints.NotNull;
   })
 @EnableConfigurationProperties
 public class TileServerApplication {
+
+
 
   public static void main(String[] args) {
     SpringApplication.run(TileServerApplication.class, args);
@@ -121,10 +126,15 @@ public class TileServerApplication {
       return provideEsClient(tileServerConfiguration.getEsEventConfiguration().getElasticsearch());
     }
 
-    OccurrenceHeatmapsEsService heatmapsEsService(RestHighLevelClient esClient, TileServerConfiguration.EsTileConfiguration esTileConfiguration, ConceptClient conceptClient) {
+    OccurrenceHeatmapsEsService heatmapsEsService(RestHighLevelClient esClient,
+                                                  TileServerConfiguration.EsTileConfiguration esTileConfiguration,
+                                                  ConceptClient conceptClient,
+                                                  NameUsageMatchingService nameUsageMatchingService,
+                                                  String defaultChecklistKey) {
       return new OccurrenceHeatmapsEsService(esClient,
         esTileConfiguration.getElasticsearch().getIndex(),
-        esFieldMapper(esTileConfiguration), conceptClient);
+        esFieldMapper(esTileConfiguration, defaultChecklistKey),
+        conceptClient, nameUsageMatchingService);
     }
 
     /**
@@ -134,6 +144,7 @@ public class TileServerApplication {
      */
     @Bean
     public BeanPostProcessor beanPostProcessor() {
+
       return new BeanPostProcessor() {
 
         @Override
@@ -214,11 +225,12 @@ public class TileServerApplication {
       return highLevelClient;
     }
 
-    OccurrenceBaseEsFieldMapper esFieldMapper(TileServerConfiguration.EsTileConfiguration esTileConfiguration) {
+    OccurrenceBaseEsFieldMapper esFieldMapper(TileServerConfiguration.EsTileConfiguration esTileConfiguration,
+                                              String defaultChecklistKey) {
       if (TileServerConfiguration.EsTileConfiguration.SearchType.EVENT == esTileConfiguration.getType() ){
         return EventEsField.buildFieldMapper();
       }
-      return OccurrenceEsField.buildFieldMapper();
+      return OccurrenceEsField.buildFieldMapper(defaultChecklistKey);
     }
 
     @Bean("occurrenceHeatmapsEsService")
@@ -226,9 +238,11 @@ public class TileServerApplication {
     OccurrenceHeatmapsEsService occurrenceHeatmapsEsService(
         @Qualifier("esOccurrenceClient") RestHighLevelClient esClient,
         TileServerConfiguration tileServerConfiguration,
-        ConceptClient conceptClient) {
+        ConceptClient conceptClient,
+        NameUsageMatchingService nameUsageMatchingService,
+        @Value("${defaultChecklistKey: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c'}") String defaultChecklistKey) {
       return heatmapsEsService(
-          esClient, tileServerConfiguration.getEsOccurrenceConfiguration(), conceptClient);
+          esClient, tileServerConfiguration.getEsOccurrenceConfiguration(), conceptClient, nameUsageMatchingService, defaultChecklistKey);
     }
 
     @Bean("eventHeatmapsEsService")
@@ -236,9 +250,11 @@ public class TileServerApplication {
     OccurrenceHeatmapsEsService eventHeatmapsEsService(
         @Qualifier("esEventClient") RestHighLevelClient esClient,
         TileServerConfiguration tileServerConfiguration,
-        ConceptClient conceptClient) {
+        ConceptClient conceptClient,
+        NameUsageMatchingService nameUsageMatchingService,
+        @Value("${defaultChecklistKey: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c'}") String defaultChecklistKey) {
       return heatmapsEsService(
-          esClient, tileServerConfiguration.getEsEventConfiguration(), conceptClient);
+          esClient, tileServerConfiguration.getEsEventConfiguration(), conceptClient, nameUsageMatchingService, defaultChecklistKey);
     }
 
     @Bean
@@ -285,5 +301,18 @@ public class TileServerApplication {
         .build(ConceptClient.class);
     }
 
+    @Bean
+    public NameUsageMatchingService nameUsageMatchingService(@Value("${api.url}") String apiUrl) {
+      if (apiUrl.endsWith("/v1/")) {
+        // remove the version from the URL
+        apiUrl = apiUrl.substring(0, apiUrl.length() - 3);
+      }
+      return new ClientBuilder()
+        .withUrl(apiUrl)
+        .withObjectMapper(JacksonJsonObjectMapperProvider.getObjectMapperWithBuilderSupport())
+        .withFormEncoder()
+        .withExponentialBackoffRetry(Duration.ofMillis(250), 1.0, 3)
+        .build(NameUsageMatchingService.class);
+    }
   }
 }

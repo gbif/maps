@@ -39,6 +39,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
+import org.gbif.rest.client.species.NameUsageMatchingService;
 import org.gbif.vocabulary.client.ConceptClient;
 
 import org.locationtech.jts.geom.Coordinate;
@@ -49,6 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
@@ -119,11 +121,14 @@ public final class RegressionResource {
   public RegressionResource(TileResource tiles,
                             @Qualifier("esOccurrenceClient") RestHighLevelClient esClient,
                             TileServerConfiguration configuration,
-                            ConceptClient conceptClient) {
+                            ConceptClient conceptClient,
+                            NameUsageMatchingService nameUsageMatchingService,
+                            @Value("${defaultChecklistKey: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c'}") String defaultChecklistKey) {
     this.tiles = tiles;
     this.esClient = esClient;
     this.esIndex = configuration.getEsOccurrenceConfiguration().getElasticsearch().getIndex();
-    this.esSearchRequestBuilder = new EsSearchRequestBuilder(OccurrenceEsField.buildFieldMapper(), conceptClient);
+    this.esSearchRequestBuilder = new EsSearchRequestBuilder(
+      OccurrenceEsField.buildFieldMapper(defaultChecklistKey), conceptClient, nameUsageMatchingService);
   }
 
   /**
