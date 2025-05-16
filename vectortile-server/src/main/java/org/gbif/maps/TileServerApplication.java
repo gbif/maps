@@ -34,6 +34,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.sniff.SniffOnFailureListener;
 import org.elasticsearch.client.sniff.Sniffer;
 import org.gbif.api.model.common.search.SearchParameter;
+import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
 import org.gbif.event.search.es.EventEsField;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
@@ -47,8 +48,10 @@ import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
 import org.gbif.vocabulary.client.ConceptClient;
 import org.gbif.ws.client.ClientBuilder;
 import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
+import org.gbif.ws.server.processor.ParamNameProcessor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.autoconfigure.elasticsearch.ElasticSearchRestHealthContributorAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -59,8 +62,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import javax.validation.constraints.NotNull;
 
 /**
  * The main entry point for running the member node.
@@ -119,6 +125,42 @@ public class TileServerApplication {
       return new OccurrenceHeatmapsEsService(esClient,
         esTileConfiguration.getElasticsearch().getIndex(),
         esFieldMapper(esTileConfiguration), conceptClient);
+    }
+
+    /**
+     * Custom {@link BeanPostProcessor} for adding {@link ParamNameProcessor}.
+     *
+     * @return BeanPostProcessor
+     */
+    @Bean
+    public BeanPostProcessor beanPostProcessor() {
+      return new BeanPostProcessor() {
+
+        @Override
+        public Object postProcessBeforeInitialization(@NotNull Object bean, String beanName) {
+          return bean;
+        }
+
+        @Override
+        public Object postProcessAfterInitialization(@NotNull Object bean, String beanName) {
+          if (bean instanceof AbstractJackson2HttpMessageConverter) {
+            AbstractJackson2HttpMessageConverter converter = (AbstractJackson2HttpMessageConverter) bean;
+            ObjectMapper objectMapper = converter.getObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+
+            objectMapper.registerModule(new com.fasterxml.jackson.databind.module.SimpleModule()
+              .addKeyDeserializer(OccurrenceSearchParameter.class,
+                new OccurrenceSearchParameter.OccurrenceSearchParameterKeyDeserializer()
+              )
+              .addDeserializer(OccurrenceSearchParameter.class,
+                new OccurrenceSearchParameter.OccurrenceSearchParameterDeserializer()
+              )
+            );
+            objectMapper.addMixIn(SearchParameter.class, OccurrenceSearchParameterMixin.class);
+          }
+          return bean;
+        }
+      };
     }
 
     private RestHighLevelClient provideEsClient(EsConfig esConfig) {
