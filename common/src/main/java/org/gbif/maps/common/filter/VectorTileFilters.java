@@ -122,10 +122,11 @@ public class VectorTileFilters {
         return existing;
       });
 
-      if (batch.size() >= featuresBufferSize) {
-        flushBatchWithCoords(encoder, layerName, batch);
-        batch.clear();
-      }
+// Hotfix: Issue #99, this is broken as it causes duplicate points
+//      if (batch.size() >= featuresBufferSize) {
+//        flushBatchWithCoords(encoder, layerName, batch);
+//        batch.clear();
+//      }
     }
 
     if (!batch.isEmpty()) {
@@ -153,10 +154,11 @@ public class VectorTileFilters {
 
       batch.merge(pixel, count, Long::sum);
 
-      if (batch.size() >= featuresBufferSize) {
-        flushSimpleBatchWithCoords(encoder, layerName, batch);
-        batch.clear();
-      }
+// Hotfix: Issue #99, this is broken as it causes duplicate points
+//      if (batch.size() >= featuresBufferSize) {
+//        flushSimpleBatchWithCoords(encoder, layerName, batch);
+//        batch.clear();
+//      }
     }
 
     if (!batch.isEmpty()) {
@@ -186,10 +188,11 @@ public class VectorTileFilters {
         return existing;
       });
 
-      if (batch.size() >= featuresBufferSize) {
-        flushBatch(encoder, layerName, batch);
-        batch.clear();
-      }
+// Hotfix: Issue #99, this is broken as it causes duplicate points
+//      if (batch.size() >= featuresBufferSize) {
+//        flushBatch(encoder, layerName, batch);
+//        batch.clear();
+//      }
     }
 
     if (!batch.isEmpty()) {
@@ -215,10 +218,11 @@ public class VectorTileFilters {
 
       batch.merge(geom, count, Long::sum);
 
-      if (batch.size() >= featuresBufferSize) {
-        flushSimpleBatch(encoder, layerName, batch);
-        batch.clear();
-      }
+// Hotfix: Issue #99, this is broken as it causes duplicate points
+//      if (batch.size() >= featuresBufferSize) {
+//        flushSimpleBatch(encoder, layerName, batch);
+//        batch.clear();
+//      }
     }
 
     if (!batch.isEmpty()) {
