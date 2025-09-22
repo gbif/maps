@@ -92,7 +92,10 @@ public class Params {
 
     for (Map.Entry<String, String[]> param : params.entrySet()) {
       if (MAP_TYPES.containsKey(param.getKey())) {
-        if (param.getValue().length!=1) {
+        if (param.getValue().length == 0 || Strings.isNullOrEmpty(param.getValue()[0])) {
+          // Ignore empty parameters, which can come with a WMTS request from GIS software.
+          continue;
+        } else if (param.getValue().length > 1) {
           throw new IllegalArgumentException("Invalid request: Only one map may be requested. Perhaps you need to use ad-hoc mapping?");
         } else {
           if (param.getKey().equals("country")) {
@@ -127,7 +130,7 @@ public class Params {
    * @throws IllegalArgumentException if the year is unparsable
    */
   static Range toMinMaxYear(String encodedYear) {
-    if (encodedYear == null) {
+    if (Strings.isNullOrEmpty(encodedYear)) {
       return new Range(null,null);
     } else if (encodedYear.contains(",")) {
       String[] years = COMMA.split(encodedYear);
@@ -146,7 +149,7 @@ public class Params {
       int year = Integer.parseInt(encodedYear);
       return new Range(year, year);
     }
-    throw new IllegalArgumentException("Year must contain a single or a comma separated minimum and maximum value.  "
+    throw new IllegalArgumentException("Year must contain a single value or a comma separated minimum and maximum value.  "
                                        + "Supplied: " + encodedYear);
   }
 

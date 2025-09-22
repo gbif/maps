@@ -86,16 +86,18 @@ import static org.gbif.maps.resource.Params.toMinMaxYear;
     // This huge chunk of Markdown/HTML isn't ideal, but I think it's important we can continue to show images
     // in the map API documentation.
     description =
-      "The mapping API is a [web map tile service](https://www.ogc.org/standard/wmts/) making it straightforward to " +
-        "visualize GBIF content on interactive maps, and overlay content from other sources.\n" +
+      "The mapping API provides [tiled web maps](https://en.wikipedia.org/wiki/Tiled_web_map) primarily intended for display on websites, making it straightforward to " +
+        "visualize GBIF content on interactive maps and overlay content from multiple sources.\n" +
         "\n" +
-        "## Feature overview\n" +
+        "**Most users looking to analyze data will need to use the [Occurrence API](./occurrence).**\n" +
         "\n" +
         "<div style='text-align: center'>\n" +
         "  <img src='https://api.gbif.org/v2/map/occurrence/density/2/3/2@1x.png?taxonKey=212&country=AU&style=orangeHeat.point' style='max-width: inherit; " +
         "background-image: url(https://tile.gbif.org/3857/omt/2/3/2@1x.png?style=gbif-dark); background-size: 256px 256px;' width='256' height='256'></a><br>\n" +
         "  Birds (<i>Aves</i>) in Australia.\n" +
         "</div>\n" +
+        "\n" +
+        "## Feature overview\n" +
         "\n" +
         "The following features are supported:\n" +
         "* Map layers are available for a **country**, **dataset**, **taxon** (including species, subspecies or higher " +
@@ -111,6 +113,10 @@ import static org.gbif.maps.resource.Params.toMinMaxYear;
         "some GIS software including [QGIS](https://www.qgis.org/). These libraries allow the GBIF layers to be " +
         "visualized with other content, such as those coming from [web map service (WMS)](https://www.ogc.org/standard/wms/) " +
         "providers. It should be noted that the mapping API is not a WMS service, nor does it support WFS capabilities.\n" +
+        "\n" +
+        "An experimental [web map tile service definition](https://gbif.link/wmts-occurrence) (see [OGC WMTS](https://www.ogc.org/standard/wmts/)) " +
+        "is available, and works to some extent with QGIS and ArcGIS.  However, our data does not fit the usual WMTS structure, so this " +
+        "is of limited use.  Another [definition for the GBIF basemaps](https://gbif.link/wmts-base) is also available." +
         "\n" +
         "## Tile formats\n" +
         "\n" +
@@ -128,6 +134,49 @@ import static org.gbif.maps.resource.Params.toMinMaxYear;
         "`total` value; that is the number of occurrences at that point or in the polygon.\n" +
         "\n" +
         "Raster tiles are provided in PNG format, and are normally 512px wide squares.\n" +
+        "\n" +
+        "## Example queries\n" +
+        "\n" +
+        "| Description | Sample | Live demo |\n" +
+        "|-------------|--------|-----------|\n" +
+        "" +
+        "| All occurrences — no additional parameters <br/> " +
+        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?style=green.point` " +
+        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?style=green.point'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?style=green.point' width='64' height='64' style='max-width: inherit;'/></a> " +
+        "| <a href='https://api.gbif.org/v2/map/demo1.html'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?style=green.point' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-dark); background-size: 64px 64px;'/></a>\n" +
+        "" +
+        "| All birds (*Aves*) by small hexagons, EPSG:4326 projection <br/> " +
+        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?srs=EPSG:4326&taxonKey=212&bin=hex&hexPerTile=117&style=green-noborder.poly` " +
+        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:4326&taxonKey=212&bin=hex&hexPerTile=117&style=green-noborder.poly'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:4326&taxonKey=212&bin=hex&hexPerTile=117&style=green-noborder.poly' width='64' height='64' style='max-width: inherit;'/></a> " +
+        "| <a href='https://api.gbif.org/v2/map/demo4.html'><img src='https://api.gbif.org/v2/map/occurrence/density/0/1/0@1x.png?srs=EPSG:4326&taxonKey=212&bin=hex&hexPerTile=117&style=green-noborder.poly' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-dark); background-size: 64px 64px;'/></a>\n" +
+        "" +
+        "| All birds observed by machine between 2015 and 2017 as squares, EPSG:4326 projection <br/> " +
+        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?srs=EPSG:4326&taxonKey=212&basisOfRecord=MACHINE_OBSERVATION&years=2015,2017&bin=square&squareSize=128&style=purpleYellow-noborder.poly` " +
+        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:4326&taxonKey=212&basisOfRecord=MACHINE_OBSERVATION&years=2015,2017&bin=square&squareSize=128&style=purpleYellow-noborder.poly'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:4326&taxonKey=212&basisOfRecord=MACHINE_OBSERVATION&years=2015,2017&bin=square&squareSize=128&style=purpleYellow-noborder.poly' width='64' height='64' style='max-width: inherit;'/></a> " +
+        "| <a href='https://api.gbif.org/v2/map/demo5.html'><img src='https://api.gbif.org/v2/map/occurrence/density/0/1/0@1x.png?srs=EPSG:4326&taxonKey=212&basisOfRecord=MACHINE_OBSERVATION&years=2015,2017&bin=square&squareSize=128&style=purpleYellow-noborder.poly' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=osm-bright); background-size: 64px 64px;'/></a>\n" +
+        "" +
+        "| All occurrences from 2000 onwards published by American publishers <br/> " +
+        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?publishingCountry=US&year=2000,2030&style=fire.point` " +
+        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?publishingCountry=US&year=2000,2030&style=fire.point'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?publishingCountry=US&year=2000,2030&style=fire.point' width='64' height='64' style='max-width: inherit;'/></a> " +
+        "| <a href='https://api.gbif.org/v2/map/demo11.html'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?publishingCountry=US&year=2000,2030&style=fire.point' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-dark); background-size: 64px 64px;'/></a>\n" +
+        "" +
+        "| *Fulmarus glacialis* (northern fulmar) observations, in Arctic projection <br/> " +
+        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?srs=EPSG:3575&taxonKey=2481433&basisOfRecord=HUMAN_OBSERVATION&basisOfRecord=MACHINE_OBSERVATION&style=classic.point` " +
+        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:3575&taxonKey=2481433&basisOfRecord=HUMAN_OBSERVATION&basisOfRecord=MACHINE_OBSERVATION&style=classic.point'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:3575&taxonKey=2481433&basisOfRecord=HUMAN_OBSERVATION&basisOfRecord=MACHINE_OBSERVATION&style=classic.point' width='64' height='64' style='max-width: inherit;'/></a> " +
+        "| <a href='https://api.gbif.org/v2/map/demo7.html'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:3575&taxonKey=2481433&basisOfRecord=HUMAN_OBSERVATION&basisOfRecord=MACHINE_OBSERVATION&style=classic.point' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/3575/omt/0/0/0@1x.png?style=gbif-classic); background-size: 64px 64px;'/></a>\n" +
+        "" +
+        "| Ad-hoc query for fungi with images, and without detected geospatial issues <br/> " +
+        "  `https://api.gbif.org/v2/map/occurrence/adhoc/{z}/{x}/{y}@1x.png?srs=EPSG:4326&mode=GEO_CENTROID&taxonKey=6&hasGeospatialIssue=false&mediaType=StillImage&style=scaled.circles` " +
+        "| <a href='https://api.gbif.org/v2/map/occurrence/adhoc/0/0/0@1x.png?srs=EPSG:4326&mode=GEO_CENTROID&taxonKey=6&hasGeospatialIssue=false&mediaType=StillImage&style=scaled.circles'><img src='https://api.gbif.org/v2/map/occurrence/adhoc/0/0/0@1x.png?srs=EPSG:4326&mode=GEO_CENTROID&taxonKey=6&hasGeospatialIssue=false&mediaType=StillImage&style=scaled.circles' width='64' height='64' style='max-width: inherit;'/></a> " +
+        "| <a href='https://api.gbif.org/v2/map/demo13.html'><img src='https://api.gbif.org/v2/map/occurrence/adhoc/0/1/0@1x.png?srs=EPSG:4326&mode=GEO_CENTROID&taxonKey=6&hasGeospatialIssue=false&mediaType=StillImage&style=scaled.circles' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-geyser); background-size: 64px 64px;'/></a>\n" +
+        "\n" +
+        "See also [further examples and demos](https://api.gbif.org/v2/map/demo.html), and an example using [CodePen](https://codepen.io/hofft/pen/GRROjmo)\n" +
+        "\n" +
+        "## Projections\n" +
+        "\n" +
+        "The projection defines how coordinates on Earth are transformed to a two-dimensional surface.\n\n" +
+        "The tile schema defines how that two dimensional surface is split into smaller square images, and how those images are addressed.\n\n" +
+        "Up to four projections are available, depending on the endpoint.  Information on the projections is available on the [GBIF base map tiles](https://tile.gbif.org/ui/) page.\n" +
         "\n" +
         "## Map styling\n" +
         "\n" +
@@ -317,49 +366,6 @@ import static org.gbif.maps.resource.Params.toMinMaxYear;
         "    <td colspan='3' style='background: radial-gradient(circle, #bd002699 30px, white 30px);'></td>\n" +
         "  </tr>\n" +
         "</table>\n" +
-        "\n" +
-        "## Example queries\n" +
-        "\n" +
-        "| Description | Sample | Live demo |\n" +
-        "|-------------|--------|-----------|\n" +
-        "" +
-        "| All occurrences — no additional parameters <br/> " +
-        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?style=green.point` " +
-        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?style=green.point'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?style=green.point' width='64' height='64' style='max-width: inherit;'/></a> " +
-        "| <a href='https://api.gbif.org/v2/map/demo1.html'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?style=green.point' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-dark); background-size: 64px 64px;'/></a>\n" +
-        "" +
-        "| All birds (*Aves*) by small hexagons, EPSG:4326 projection <br/> " +
-        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?srs=EPSG:4326&taxonKey=212&bin=hex&hexPerTile=117&style=green-noborder.poly` " +
-        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:4326&taxonKey=212&bin=hex&hexPerTile=117&style=green-noborder.poly'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:4326&taxonKey=212&bin=hex&hexPerTile=117&style=green-noborder.poly' width='64' height='64' style='max-width: inherit;'/></a> " +
-        "| <a href='https://api.gbif.org/v2/map/demo4.html'><img src='https://api.gbif.org/v2/map/occurrence/density/0/1/0@1x.png?srs=EPSG:4326&taxonKey=212&bin=hex&hexPerTile=117&style=green-noborder.poly' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-dark); background-size: 64px 64px;'/></a>\n" +
-        "" +
-        "| All birds observed by machine between 2015 and 2017 as squares, EPSG:4326 projection <br/> " +
-        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?srs=EPSG:4326&taxonKey=212&basisOfRecord=MACHINE_OBSERVATION&years=2015,2017&bin=square&squareSize=128&style=purpleYellow-noborder.poly` " +
-        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:4326&taxonKey=212&basisOfRecord=MACHINE_OBSERVATION&years=2015,2017&bin=square&squareSize=128&style=purpleYellow-noborder.poly'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:4326&taxonKey=212&basisOfRecord=MACHINE_OBSERVATION&years=2015,2017&bin=square&squareSize=128&style=purpleYellow-noborder.poly' width='64' height='64' style='max-width: inherit;'/></a> " +
-        "| <a href='https://api.gbif.org/v2/map/demo5.html'><img src='https://api.gbif.org/v2/map/occurrence/density/0/1/0@1x.png?srs=EPSG:4326&taxonKey=212&basisOfRecord=MACHINE_OBSERVATION&years=2015,2017&bin=square&squareSize=128&style=purpleYellow-noborder.poly' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=osm-bright); background-size: 64px 64px;'/></a>\n" +
-        "" +
-        "| All occurrences from 2000 onwards published by American publishers <br/> " +
-        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?publishingCountry=US&year=2000,2030&style=fire.point` " +
-        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?publishingCountry=US&year=2000,2030&style=fire.point'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?publishingCountry=US&year=2000,2030&style=fire.point' width='64' height='64' style='max-width: inherit;'/></a> " +
-        "| <a href='https://api.gbif.org/v2/map/demo11.html'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?publishingCountry=US&year=2000,2030&style=fire.point' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/3857/omt/0/0/0@1x.png?style=gbif-dark); background-size: 64px 64px;'/></a>\n" +
-        "" +
-        "| *Fulmarus glacialis* (northern fulmar) observations, in Arctic projection <br/> " +
-        "  `https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@1x.png?srs=EPSG:3575&taxonKey=2481433&basisOfRecord=HUMAN_OBSERVATION&basisOfRecord=MACHINE_OBSERVATION&style=classic.point` " +
-        "| <a href='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:3575&taxonKey=2481433&basisOfRecord=HUMAN_OBSERVATION&basisOfRecord=MACHINE_OBSERVATION&style=classic.point'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:3575&taxonKey=2481433&basisOfRecord=HUMAN_OBSERVATION&basisOfRecord=MACHINE_OBSERVATION&style=classic.point' width='64' height='64' style='max-width: inherit;'/></a> " +
-        "| <a href='https://api.gbif.org/v2/map/demo7.html'><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?srs=EPSG:3575&taxonKey=2481433&basisOfRecord=HUMAN_OBSERVATION&basisOfRecord=MACHINE_OBSERVATION&style=classic.point' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/3575/omt/0/0/0@1x.png?style=gbif-classic); background-size: 64px 64px;'/></a>\n" +
-        "" +
-        "| Ad-hoc query for fungi with images, and without detected geospatial issues <br/> " +
-        "  `https://api.gbif.org/v2/map/occurrence/adhoc/{z}/{x}/{y}@1x.png?srs=EPSG:4326&mode=GEO_CENTROID&taxonKey=6&hasGeospatialIssue=false&mediaType=StillImage&style=scaled.circles` " +
-        "| <a href='https://api.gbif.org/v2/map/occurrence/adhoc/0/0/0@1x.png?srs=EPSG:4326&mode=GEO_CENTROID&taxonKey=6&hasGeospatialIssue=false&mediaType=StillImage&style=scaled.circles'><img src='https://api.gbif.org/v2/map/occurrence/adhoc/0/0/0@1x.png?srs=EPSG:4326&mode=GEO_CENTROID&taxonKey=6&hasGeospatialIssue=false&mediaType=StillImage&style=scaled.circles' width='64' height='64' style='max-width: inherit;'/></a> " +
-        "| <a href='https://api.gbif.org/v2/map/demo13.html'><img src='https://api.gbif.org/v2/map/occurrence/adhoc/0/1/0@1x.png?srs=EPSG:4326&mode=GEO_CENTROID&taxonKey=6&hasGeospatialIssue=false&mediaType=StillImage&style=scaled.circles' width='64' height='64' style='max-width: inherit; background-image: url(https://tile.gbif.org/4326/omt/0/1/0@1x.png?style=gbif-geyser); background-size: 64px 64px;'/></a>\n" +
-        "\n" +
-        "See also [further examples and demos](https://api.gbif.org/v2/map/demo.html), and an example using [CodePen](https://codepen.io/hofft/pen/GRROjmo)\n" +
-        "\n" +
-        "## Projections\n" +
-        "\n" +
-        "The projection defines how coordinates on Earth are transformed to a two-dimensional surface.\n\n" +
-        "The tile schema defines how that two dimensional surface is split into smaller square images, and how those images are addressed.\n\n" +
-        "Up to four projections are available, depending on the endpoint.  Information on the projections is available on the [GBIF base map tiles](https://tile.gbif.org/ui/) page.\n" +
         "\n" +
         "## Base map tiles\n" +
         "\n" +
