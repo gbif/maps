@@ -128,7 +128,8 @@ public class FinaliseBackfill {
               Metastores.newZookeeperMapsMeta(
                   hbaseConfig.get("hbase.zookeeper.quorum"), 1000, config.getMetadataPath())) {
 
-        // remove all but the last 2 tables
+        // remove all but the last 2 tables, disable all but the last 1 table.
+
         // table names are suffixed with a timestamp e.g. prod_d_maps_points_20180616_1320
         String tablesPattern =
             config.getHbase().getTableName() + "_" + config.getMode() + "_\\d{8}_\\d{4}";
@@ -144,7 +145,7 @@ public class FinaliseBackfill {
         MapTables meta = metastore.read();
         log.info("Current live tables[{}]", meta);
 
-        for (int i = 0; i < tables.length - 2; i++) {
+        for (int i = 0; i < tables.length - 1; i++) {
           // Defensive coding: read the metastore each time to minimise possible misuse resulting in
           // race conditions
           meta = metastore.read();
@@ -159,8 +160,12 @@ public class FinaliseBackfill {
             if (!admin.isTableDisabled(tables[i])) {
               admin.disableTable(tables[i]);
             }
-            log.info("Deleting HBase table[{}]", tables[i].getNameAsString());
-            admin.deleteTable(tables[i]);
+
+            // Delete all but the previous table
+            if (i < tables.length - 2) {
+              log.info("Deleting HBase table[{}]", tables[i].getNameAsString());
+              admin.deleteTable(tables[i]);
+            }
           }
         }
       }
