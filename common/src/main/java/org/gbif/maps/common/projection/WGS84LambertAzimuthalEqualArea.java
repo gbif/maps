@@ -15,7 +15,7 @@ package org.gbif.maps.common.projection;
 
 import java.awt.geom.AffineTransform;
 
-import org.opengis.referencing.operation.MathTransform;
+import org.geotools.api.referencing.operation.MathTransform;
 
 
 /**
