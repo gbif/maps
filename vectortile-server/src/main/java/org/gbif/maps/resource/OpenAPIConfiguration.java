@@ -17,7 +17,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springdoc.core.customizers.OpenApiCustomiser;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
@@ -38,7 +38,7 @@ public class OpenAPIConfiguration {
    * Change ".mvt" → "{format}", so the raster API can be described in the same method.
    */
   @Bean
-  public OpenApiCustomiser customizeOpenApi() {
+  public OpenApiCustomizer customizeOpenApi() {
     return openApi -> {
       openApi.setTags(openApi.getTags()
         .stream()
