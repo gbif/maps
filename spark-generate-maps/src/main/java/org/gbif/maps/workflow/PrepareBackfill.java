@@ -47,8 +47,10 @@ public class PrepareBackfill {
       // delete the target directory (see https://github.com/gbif/maps/issues/100)
       String subPath = "points".equalsIgnoreCase(config.getMode()) ? "points" : "tiles";
       Path targetDirectory = new Path(config.getFQTargetDirectory(), new Path(subPath));
-      log.info("Deleting target directory: {}",targetDirectory);
-      getHdfsFileSystem().delete(targetDirectory, true);
+      if (getHdfsFileSystem().exists(targetDirectory)) {
+        log.info("Deleting target directory: {}",targetDirectory);
+        getHdfsFileSystem().delete(targetDirectory, true);
+      }
 
       log.info("Connecting to HBase");
       try (Connection connection = ConnectionFactory.createConnection(HBaseConfiguration.create());
