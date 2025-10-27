@@ -89,12 +89,13 @@ public class ModulusSalt implements Serializable {
    * @return the structure necessary to programmatically create HBase tables.
    */
   public byte[][] getTableRegions() {
-    byte[][] regions = new byte[modulus-1][digitCount];
-    for (int i = 0; i<modulus-1; i++) {
-      regions[i] = leftPadZeros(i+1, digitCount).getBytes(UTF8_CHARSET);
+    byte[][] regions = new byte[modulus - 1][digitCount];
+    for (int i = 1; i < modulus; i++) {
+      regions[i - 1] = leftPadZeros(i, digitCount).getBytes(UTF8_CHARSET);
     }
     return regions;
   }
+
 
   /**
    * Returns the number of digits in the number.  This will obly provide sensible results for number>0 and the input
