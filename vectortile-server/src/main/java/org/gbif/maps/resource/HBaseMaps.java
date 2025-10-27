@@ -52,26 +52,29 @@ public class HBaseMaps {
   private static final Logger LOG = LoggerFactory.getLogger(HBaseMaps.class);
   private final Connection connection;
   private final MapMetastore metastore;
-  private final ModulusSalt salt;
+  private final ModulusSalt saltPoints;
+  private final ModulusSalt saltTiles;
   private final Cache<String, Optional<PointFeature.PointFeatures>> pointCache;
   private final Cache<TileKey, Optional<byte[]>> tileCache;
 
-  public HBaseMaps(Configuration conf, String tableName, int saltModulus, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry,
+  public HBaseMaps(Configuration conf, String tableName, int saltModulusPoints, int saltModulusTiles, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry,
                    Cache2kConfig<String, Optional<PointFeature.PointFeatures>> pointCacheConfiguration,
                    Cache2kConfig<TileKey, Optional<byte[]>> tileCacheConfiguration) throws Exception {
     connection = ConnectionFactory.createConnection(conf);
     metastore = Metastores.newStaticMapsMeta(tableName, tableName); // backward compatible version
-    salt = new ModulusSalt(saltModulus);
+    saltPoints = new ModulusSalt(saltModulusPoints);
+    saltTiles = new ModulusSalt(saltModulusTiles);
     pointCache = pointCacheBuilder(cacheManager, meterRegistry, pointCacheConfiguration);
     tileCache = tileCacheBuilder(cacheManager, meterRegistry, tileCacheConfiguration);
   }
 
-  public HBaseMaps(Configuration conf, MapMetastore metastore, int saltModulus, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry,
+  public HBaseMaps(Configuration conf, MapMetastore metastore, int saltModulusPoints, int saltModulusTiles, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry,
                    Cache2kConfig<String, Optional<PointFeature.PointFeatures>> pointCacheConfiguration,
                    Cache2kConfig<TileKey, Optional<byte[]>> tileCacheConfiguration) throws Exception {
     connection = ConnectionFactory.createConnection(conf);
     this.metastore = metastore;
-    salt = new ModulusSalt(saltModulus);
+    saltPoints = new ModulusSalt(saltModulusPoints);
+    saltTiles = new ModulusSalt(saltModulusTiles);
     pointCache = pointCacheBuilder(cacheManager, meterRegistry, pointCacheConfiguration);
     tileCache = tileCacheBuilder(cacheManager, meterRegistry, tileCacheConfiguration);
   }
@@ -103,8 +106,8 @@ public class HBaseMaps {
         rowKey -> {
           LOG.info("Table {}", metastore.read().getPointTable());
           try (Table table = connection.getTable(pointTable())) {
-            LOG.info(salt.saltToString(rowKey));
-            byte[] saltedKey = salt.salt(rowKey);
+            LOG.info(saltPoints.saltToString(rowKey));
+            byte[] saltedKey = saltPoints.salt(rowKey);
             Get get = new Get(saltedKey);
             get.addColumn(Bytes.toBytes("EPSG_4326"), Bytes.toBytes("features"));
             Result result = table.get(get);
@@ -137,7 +140,7 @@ public class HBaseMaps {
         rowCell -> {
           try (Table table = connection.getTable(tileTable())) {
             String unsalted = rowCell.rowKey + ":" + rowCell.zxy();
-            byte[] saltedKey = salt.salt(unsalted);
+            byte[] saltedKey = saltTiles.salt(unsalted);
             Get get = new Get(saltedKey);
             String columnFamily = rowCell.srs.replaceAll(":", "_").toUpperCase();
             get.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("tile"));

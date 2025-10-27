@@ -273,12 +273,12 @@ public class TileServerApplication {
       if (tileServerConfiguration.getMetastore() != null) {
         MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
           tileServerConfiguration.getMetastore().getPath());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager, meterRegistry, pointCacheConfiguration, tileCacheConfiguration);
+        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulusPoints(),tileServerConfiguration.getHbase().getSaltModulusTiles(), cacheManager, meterRegistry, pointCacheConfiguration, tileCacheConfiguration);
 
       } else {
         MapMetastore meta = Metastores.newStaticMapsMeta(tileServerConfiguration.getHbase().getTilesTableName(),
           tileServerConfiguration.getHbase().getPointsTableName());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulus(), cacheManager, meterRegistry, pointCacheConfiguration, tileCacheConfiguration);
+        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulusPoints(),tileServerConfiguration.getHbase().getSaltModulusTiles(), cacheManager, meterRegistry, pointCacheConfiguration, tileCacheConfiguration);
       }
     }
 

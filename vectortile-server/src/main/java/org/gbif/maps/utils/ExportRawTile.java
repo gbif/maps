@@ -37,7 +37,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
  * Usage (params is the same format as a web request:
  * <pre>
  *   ExportRawTile zk tableName saltModulus srs zoom x y params targetFile
- *   ExportRawTile c5zk1.gbif.org prod_h_maps_tiles_20211208_1900 100 EPSG_4326 3 8 2 publishingCountry=FR /tmp/publishingCountry-FR-3-8-2.mvt
+ *   ExportRawTile c5zk1.gbif.org prod_h_maps_tiles_20211208_1900 10 100 EPSG_4326 3 8 2 publishingCountry=FR /tmp/publishingCountry-FR-3-8-2.mvt
  * </pre>
  *
  */
@@ -47,11 +47,12 @@ public class ExportRawTile {
     try {
       String zk = args[0];
       String tableName = args[1];
-      int salt = Integer.parseInt(args[2]);
-      String srs = args[3];
-      int z = Integer.parseInt(args[4]);
-      long x = Long.parseLong(args[5]);
-      long y = Long.parseLong(args[6]);
+      int saltPoints = Integer.parseInt(args[2]);
+      int saltTiles = Integer.parseInt(args[3]);
+      String srs = args[4];
+      int z = Integer.parseInt(args[5]);
+      long x = Long.parseLong(args[6]);
+      long y = Long.parseLong(args[7]);
 
       // export the map key from the provided "request parameters"
       Map<String, String[]> params = paramsFromString(args[7]);
@@ -62,7 +63,7 @@ public class ExportRawTile {
       Configuration conf = HBaseConfiguration.create();
       conf.set("hbase.zookeeper.quorum", zk);
       HBaseMaps maps = null;
-        maps = new HBaseMaps(conf, tableName, salt, new SpringCache2kCacheManager(), new SimpleMeterRegistry(), new Cache2kConfig<>(){}, new Cache2kConfig<>(){});
+        maps = new HBaseMaps(conf, tableName, saltPoints, saltTiles, new SpringCache2kCacheManager(), new SimpleMeterRegistry(), new Cache2kConfig<>(){}, new Cache2kConfig<>(){});
       Optional<byte[]> tile = maps.getTile(mapKey, srs, z, x, y);
       if (tile.isPresent()) {
         Files.write(tile.get(), targetFile);
