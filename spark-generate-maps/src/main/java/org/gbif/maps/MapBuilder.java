@@ -42,7 +42,8 @@ public class MapBuilder implements Serializable {
   private final String hiveDB;
   private final String hiveInputSuffix;
   private final String hbaseTable;
-  private final int modulo;
+  private final int moduloTiles;
+  private final int moduloPoints;
   private final int tileSize;
   private final int bufferSize;
   private final int maxZoom;
@@ -61,7 +62,7 @@ public class MapBuilder implements Serializable {
             .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
             .hiveDB("tim")
             .hbaseTable("tim")
-            .modulo(100)
+            .moduloPoints(10)
             .threshold(250000)
             .hiveInputSuffix("points")
             .targetDir("/tmp/tim-map-points/")
@@ -74,7 +75,7 @@ public class MapBuilder implements Serializable {
             .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
             .hiveDB("tim")
             .hbaseTable("tim")
-            .modulo(100)
+            .moduloTiles(100)
             .threshold(250000)
             .tileSize(512)
             .bufferSize(64)
@@ -104,7 +105,7 @@ public class MapBuilder implements Serializable {
           .spark(spark)
           .sourceTable(inputTable)
           .largeMapKeys(largeMapKeys)
-          .salter(new ModulusSalt(modulo))
+          .salter(new ModulusSalt(moduloPoints))
           .targetDir(targetDir)
           .hadoopConf(hadoopConf())
           .build()
@@ -116,7 +117,7 @@ public class MapBuilder implements Serializable {
           .spark(spark)
           .sourceTable(inputTable)
           .largeMapKeys(largeMapKeys)
-          .salter(new ModulusSalt(modulo))
+          .salter(new ModulusSalt(moduloTiles))
           .tileSize(tileSize)
           .bufferSize(bufferSize)
           .maxZoom(maxZoom)
