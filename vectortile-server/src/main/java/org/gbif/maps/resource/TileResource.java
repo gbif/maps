@@ -208,7 +208,8 @@ import static org.gbif.maps.resource.Params.toMinMaxYear;
         "    <td colspan='2' rowspan='3' style='background-color:#FFCC00'></td>\n" +
         "    <td colspan='2' rowspan='3' style='background-color:#FF9900'></td>\n" +
         "    <td colspan='2' rowspan='3' style='background-color:#FF6600'></td>\n" +
-        "    <td colspan='2' rowspan='3' style='background-color:#D60A00'></td>\n" +
+        "    <td colspan='1' rowspan='3' style='background-color:#D60A00'></td>\n" +
+        "    <td colspan='1' rowspan='3' style='background-color:#C2002D'></td>\n" +
         "  </tr>\n" +
         "  <tr>\n" +
         "    <td><img src='https://api.gbif.org/v2/map/occurrence/density/0/0/0@Hx.png?bin=hex&amp;hexPerTile=20&amp;style=classic.poly&amp;srs=EPSG:4326&amp;taxonKey=797' title='classic.point' width='128'><br>classic.poly</td>\n" +
