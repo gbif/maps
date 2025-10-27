@@ -89,8 +89,8 @@ public class ModulusSalt implements Serializable {
    * @return the structure necessary to programmatically create HBase tables.
    */
   public byte[][] getTableRegions() {
-    byte[][] regions = new byte[modulus][digitCount];
-    for (int i = 0; i<modulus; i++) {
+    byte[][] regions = new byte[modulus-1][digitCount];
+    for (int i = 1; i<modulus; i++) {
       regions[i] = leftPadZeros(i, digitCount).getBytes(UTF8_CHARSET);
     }
     return regions;
