@@ -76,7 +76,7 @@ public class PrepareBackfill {
     cf.setMaxVersions(1);
     cf.setCompressionType(Algorithm.SNAPPY);
     cf.setDataBlockEncoding(DataBlockEncoding.FAST_DIFF);
-    cf.setBloomFilterType(BloomType.NONE);
+    cf.setBloomFilterType(BloomType.ROW);
     target.setColumnFamily(cf.build());
   }
 }
