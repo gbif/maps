@@ -44,7 +44,7 @@
 
     <gbif-occurrence.version>1.1.6</gbif-occurrence.version>
     <gbif-api.version>2.1.15</gbif-api.version>
-    <gbif-common-ws.version>2.1.0</gbif-common-ws.version>
+    <gbif-common-ws.version>2.0.10-java11</gbif-common-ws.version>
     <dwc-api.version>2.1.6</dwc-api.version>
     <gbif-predicates.version>2.1.1</gbif-predicates.version>
 
