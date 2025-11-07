@@ -13,13 +13,18 @@
  */
 package org.gbif.maps.resource;
 
-import org.gbif.maps.TileServerConfiguration;
-import org.gbif.occurrence.search.cache.PredicateCacheService;
-import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
+import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
+import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
 
+import com.codahale.metrics.annotation.Timed;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
+import org.gbif.maps.TileServerConfiguration;
+import org.gbif.occurrence.search.cache.PredicateCacheService;
+import org.gbif.search.heatmap.es.event.EventHeatmapsEsService;
+import org.gbif.search.heatmap.event.EventHeatmapRequest;
+import org.gbif.search.heatmap.event.EventHeatmapRequestProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -29,55 +34,47 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.codahale.metrics.annotation.Timed;
-
-import io.swagger.v3.oas.annotations.Hidden;
-
-import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
-import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
-
 /**
- * ElasticSearch as a vector tile service.
- * Note to developers: This class could benefit from some significant refactoring and cleanup.
+ * ElasticSearch as a vector tile service. Note to developers: This class could benefit from some
+ * significant refactoring and cleanup.
  */
 @RestController
 @ConditionalOnExpression("${esEventConfiguration.enabled}")
-@RequestMapping(
-  value = "/event/adhoc"
-)
-public final class AdHocEventMapsResource extends AdHocMapsResource {
+@RequestMapping(value = "/event/adhoc")
+public final class AdHocEventMapsResource extends AdHocMapsResource<EventHeatmapRequest> {
 
   @Autowired
-  public AdHocEventMapsResource(@Qualifier("eventHeatmapsEsService") OccurrenceHeatmapsEsService searchHeatmapsService,
-                                TileServerConfiguration configuration,
-                                @Qualifier("eventPredicateCache") PredicateCacheService predicateCacheService) {
-    super(searchHeatmapsService,
-          predicateCacheService,
-          configuration.getEsEventConfiguration().getTileSize(),
-          configuration.getEsEventConfiguration().getBufferSize());
+  public AdHocEventMapsResource(
+      @Qualifier("eventHeatmapsEsService") EventHeatmapsEsService searchHeatmapsService,
+      TileServerConfiguration configuration,
+      @Qualifier("eventPredicateCache") PredicateCacheService predicateCacheService) {
+    super(
+        searchHeatmapsService,
+        new EventHeatmapRequestProvider(predicateCacheService),
+        configuration.getEsEventConfiguration().getTileSize(),
+        configuration.getEsEventConfiguration().getBufferSize());
   }
 
   // Overridden only to hide it from the OpenAPI schema.
   @Hidden
   @RequestMapping(
-    method = RequestMethod.GET,
-    value = "/{z}/{x}/{y}.mvt",
-    produces = "application/x-protobuf"
-  )
+      method = RequestMethod.GET,
+      value = "/{z}/{x}/{y}.mvt",
+      produces = "application/x-protobuf")
   @Timed
   @Override
   public byte[] all(
-    @PathVariable("z") int z,
-    @PathVariable("x") long x,
-    @PathVariable("y") long y,
-    @RequestParam(value = "srs", defaultValue = EPSG_4326) String srs,
-    @RequestParam(value = "bin", required = false) String bin,
-    @RequestParam(value = "hexPerTile", defaultValue = DEFAULT_HEX_PER_TILE) int hexPerTile,
-    @RequestParam(value = "squareSize", defaultValue = DEFAULT_SQUARE_SIZE) int squareSize,
-    @RequestParam(value = "tileBuffer", defaultValue = QUERY_BUFFER_PERCENTAGE) double tileBuffer,
-    HttpServletResponse response,
-    HttpServletRequest request
-  ) throws Exception {
+      @PathVariable("z") int z,
+      @PathVariable("x") long x,
+      @PathVariable("y") long y,
+      @RequestParam(value = "srs", defaultValue = EPSG_4326) String srs,
+      @RequestParam(value = "bin", required = false) String bin,
+      @RequestParam(value = "hexPerTile", defaultValue = DEFAULT_HEX_PER_TILE) int hexPerTile,
+      @RequestParam(value = "squareSize", defaultValue = DEFAULT_SQUARE_SIZE) int squareSize,
+      @RequestParam(value = "tileBuffer", defaultValue = QUERY_BUFFER_PERCENTAGE) double tileBuffer,
+      HttpServletResponse response,
+      HttpServletRequest request)
+      throws Exception {
     return super.all(z, x, y, srs, bin, hexPerTile, squareSize, tileBuffer, response, request);
   }
 }

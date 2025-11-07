@@ -13,6 +13,32 @@
  */
 package org.gbif.maps.resource;
 
+import static org.gbif.maps.resource.Params.BIN_MODE_HEX;
+import static org.gbif.maps.resource.Params.BIN_MODE_SQUARE;
+import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
+import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
+import static org.gbif.maps.resource.Params.HEX_TILE_SIZE;
+import static org.gbif.maps.resource.Params.SQUARE_TILE_SIZE;
+import static org.gbif.maps.resource.Params.enableCORS;
+
+import com.codahale.metrics.annotation.Timed;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import javax.validation.Valid;
+import no.ecc.vectortile.VectorTileEncoder;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
 import org.gbif.api.model.predicate.Predicate;
 import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.bin.SquareBin;
@@ -22,24 +48,15 @@ import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
 import org.gbif.occurrence.search.cache.PredicateCacheService;
-import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapRequest;
-import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapRequestProvider;
-import org.gbif.occurrence.search.heatmap.es.EsOccurrenceHeatmapResponse;
-import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-
+import org.gbif.search.heatmap.BaseHeatmapRequestProvider;
+import org.gbif.search.heatmap.HeatmapRequest;
+import org.gbif.search.heatmap.HeatmapRequestProvider;
+import org.gbif.search.heatmap.HeatmapService;
+import org.gbif.search.heatmap.es.EsHeatmapResponse;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -52,30 +69,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.codahale.metrics.annotation.Timed;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
-import org.locationtech.jts.geom.Polygon;
-
-import io.swagger.v3.oas.annotations.Hidden;
-import no.ecc.vectortile.VectorTileEncoder;
-
-import static org.gbif.maps.resource.Params.BIN_MODE_HEX;
-import static org.gbif.maps.resource.Params.BIN_MODE_SQUARE;
-import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
-import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
-import static org.gbif.maps.resource.Params.HEX_TILE_SIZE;
-import static org.gbif.maps.resource.Params.SQUARE_TILE_SIZE;
-import static org.gbif.maps.resource.Params.enableCORS;
-
 /**
  * ElasticSearch as a vector tile service.
  * Note to developers: This class could benefit from some significant refactoring and cleanup.
  */
-public class AdHocMapsResource {
+public class AdHocMapsResource<HR extends HeatmapRequest> {
 
   private static final Logger LOG = LoggerFactory.getLogger(AdHocMapsResource.class);
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
@@ -88,19 +86,19 @@ public class AdHocMapsResource {
 
   private final int tileSize;
   private final int bufferSize;
-  private final OccurrenceHeatmapsEsService searchHeatmapsService;
+  private final HeatmapService<SearchRequest, SearchResponse, HR> searchHeatmapsService;
   private final PredicateCacheService predicateCacheService;
-  private final OccurrenceHeatmapRequestProvider provider;
+  private final HeatmapRequestProvider<HR> provider;
 
-  public AdHocMapsResource(OccurrenceHeatmapsEsService searchHeatmapsService,
-                           PredicateCacheService predicateCacheService,
+  public AdHocMapsResource(HeatmapService<SearchRequest, SearchResponse, HR> searchHeatmapsService,
+                           HeatmapRequestProvider<HR> provider,
                            int tileSize,
                            int bufferSize) {
     this.tileSize = tileSize;
     this.bufferSize = bufferSize;
     this.searchHeatmapsService = searchHeatmapsService;
-    this.predicateCacheService = predicateCacheService;
-    provider = new OccurrenceHeatmapRequestProvider(predicateCacheService);
+    this.predicateCacheService = provider.getPredicateCacheService();
+    this.provider = provider;
   }
 
   @Hidden
@@ -147,7 +145,7 @@ public class AdHocMapsResource {
     TileProjection projection = Tiles.fromEPSG(srs, tileSize);
     TileSchema schema = TileSchema.fromSRS(srs);
 
-    List<OccurrenceHeatmapRequest> heatmapRequests = new ArrayList<>();
+    List<HR> heatmapRequests = new ArrayList<>();
     VectorTileEncoder encoder = new VectorTileEncoder(tileSize, bufferSize, false);
 
     if (projection.isPoleTile(z, x, y)) {
@@ -156,7 +154,7 @@ public class AdHocMapsResource {
       long topY  = (z==1) ? 0 : ((y+1)/2)*2-1;
       for (long xx = leftX; xx <= leftX+1; xx++) {
         for (long yy = topY; yy <= topY+1; yy++) {
-          OccurrenceHeatmapRequest heatmapRequest = provider.buildOccurrenceHeatmapRequest(request);
+          HR heatmapRequest = provider.buildOccurrenceHeatmapRequest(request);
           ZXY zxy = new ZXY(z, xx, yy, tileBuffer);
           Double2D[] boundary = projection.tileBoundary(zxy.z, zxy.x, zxy.y, zxy.tileBuffer);
           heatmapRequest.setGeometry(searchGeom(boundary));
@@ -166,7 +164,7 @@ public class AdHocMapsResource {
         }
       }
     } else {
-      OccurrenceHeatmapRequest heatmapRequest = provider.buildOccurrenceHeatmapRequest(request);
+      HR heatmapRequest = provider.buildOccurrenceHeatmapRequest(request);
       ZXY zxy = new ZXY(z, x, y, tileBuffer);
       Double2D[] boundary = projection.tileBoundary(zxy.z, zxy.x, zxy.y, zxy.tileBuffer);
       if (boundary[0].getX() == boundary[1].getX() || boundary[0].getY() == boundary[1].getY()) {
@@ -180,9 +178,9 @@ public class AdHocMapsResource {
     }
 
     int totalFeatures = 0;
-    if (OccurrenceHeatmapRequest.Mode.GEO_BOUNDS == heatmapRequests.get(0).getMode()) {
-      for (OccurrenceHeatmapRequest heatmapRequest : heatmapRequests) {
-        EsOccurrenceHeatmapResponse.GeoBoundsResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoBounds(heatmapRequest);
+    if (HR.Mode.GEO_BOUNDS == heatmapRequests.get(0).getMode()) {
+      for (HR heatmapRequest : heatmapRequests) {
+        EsHeatmapResponse.GeoBoundsResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoBounds(heatmapRequest);
         int[] featureCount = {0};
         occurrenceHeatmapResponse.getBuckets().stream().filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
           .forEach(geoGridBucket -> {
@@ -199,15 +197,15 @@ public class AdHocMapsResource {
             featureCount[0]++;
           });
         totalFeatures += featureCount[0];
-        if (featureCount[0] == OccurrenceHeatmapRequestProvider.DEFAULT_BUCKET_LIMIT) {
+        if (featureCount[0] == BaseHeatmapRequestProvider.DEFAULT_BUCKET_LIMIT) {
           LOG.warn("Maximum geohash feature limit ({}) reached for tile {} {}/{}/{} {}",
-            OccurrenceHeatmapRequestProvider.DEFAULT_BUCKET_LIMIT, srs, z, x, y, heatmapRequest);
+            BaseHeatmapRequestProvider.DEFAULT_BUCKET_LIMIT, srs, z, x, y, heatmapRequest);
         }
       }
 
-    } else if (OccurrenceHeatmapRequest.Mode.GEO_CENTROID == heatmapRequests.get(0).getMode()) {
-      for (OccurrenceHeatmapRequest heatmapRequest : heatmapRequests) {
-        EsOccurrenceHeatmapResponse.GeoCentroidResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoCentroid(heatmapRequest);
+    } else if (HeatmapRequest.Mode.GEO_CENTROID == heatmapRequests.get(0).getMode()) {
+      for (HR heatmapRequest : heatmapRequests) {
+        EsHeatmapResponse.GeoCentroidResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoCentroid(heatmapRequest);
         int[] featureCount = {0};
         occurrenceHeatmapResponse.getBuckets().stream()
           .filter(geoGridBucket -> geoGridBucket.getDocCount() > 0)
@@ -221,9 +219,9 @@ public class AdHocMapsResource {
             featureCount[0]++;
           });
         totalFeatures += featureCount[0];
-        if (featureCount[0] == OccurrenceHeatmapRequestProvider.DEFAULT_BUCKET_LIMIT) {
+        if (featureCount[0] == BaseHeatmapRequestProvider.DEFAULT_BUCKET_LIMIT) {
           LOG.warn("Maximum geohash feature limit ({}) reached for tile {} {}/{}/{} {}",
-            OccurrenceHeatmapRequestProvider.DEFAULT_BUCKET_LIMIT, srs, z, x, y, heatmapRequest);
+            BaseHeatmapRequestProvider.DEFAULT_BUCKET_LIMIT, srs, z, x, y, heatmapRequest);
         }
       }
     }
@@ -238,7 +236,7 @@ public class AdHocMapsResource {
   /**
    * Translates the bounds into a Bbox2D.
    */
-  private Bbox2D toBbox(EsOccurrenceHeatmapResponse.Bounds bounds, TileProjection projection, TileSchema schema, int z, long x, long y) {
+  private Bbox2D toBbox(EsHeatmapResponse.Bounds bounds, TileProjection projection, TileSchema schema, int z, long x, long y) {
     Double2D swGlobalXY = projection.toGlobalPixelXY(bounds.getTopLeft().getLat(), bounds.getTopLeft().getLon(), z);
     Long2D swTileXY = Tiles.toTileLocalXY(swGlobalXY, schema, z, x, y, tileSize, bufferSize);
 
@@ -251,7 +249,7 @@ public class AdHocMapsResource {
   /**
     * Translates the coordinate into a Point.
     */
-  private Point toPoint(EsOccurrenceHeatmapResponse.Coordinate coordinate, TileProjection projection, TileSchema schema, int z, long x, long y) {
+  private Point toPoint(EsHeatmapResponse.Coordinate coordinate, TileProjection projection, TileSchema schema, int z, long x, long y) {
     Double2D globalXY = projection.toGlobalPixelXY(coordinate.getLat(), coordinate.getLon(), z);
     Long2D tileXY = Tiles.toTileLocalXY(globalXY, schema, z, x, y, tileSize, bufferSize);
 

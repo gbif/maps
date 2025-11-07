@@ -13,14 +13,13 @@
  */
 package org.gbif.maps.workflow;
 
-import lombok.SneakyThrows;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.gbif.maps.common.hbase.ModulusSalt;
 
 import java.io.IOException;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.io.compress.Compression.Algorithm;
@@ -28,6 +27,7 @@ import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.regionserver.BloomType;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /** An Airflow step to prepare for a backfill, which creates the target table in HBase. */
@@ -47,7 +47,7 @@ public class PrepareBackfill {
       // delete the target directory (see https://github.com/gbif/maps/issues/100)
       String subPath = "points".equalsIgnoreCase(config.getMode()) ? "points" : "tiles";
       Path targetDirectory = new Path(config.getFQTargetDirectory(), new Path(subPath));
-      log.info("Deleting target directory: {}",targetDirectory);
+      log.info("Deleting target directory: {}", targetDirectory);
       getHdfsFileSystem().delete(targetDirectory, true);
 
       log.info("Connecting to HBase");
