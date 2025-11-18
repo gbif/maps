@@ -36,17 +36,19 @@ import org.elasticsearch.client.sniff.SniffOnFailureListener;
 import org.elasticsearch.client.sniff.Sniffer;
 import org.gbif.api.model.common.search.SearchParameter;
 import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
-import org.gbif.event.search.es.EventEsField;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.io.PointFeature;
 import org.gbif.maps.resource.*;
 import org.gbif.occurrence.common.json.OccurrenceSearchParameterMixin;
 import org.gbif.occurrence.search.es.EsConfig;
-import org.gbif.occurrence.search.es.OccurrenceBaseEsFieldMapper;
-import org.gbif.occurrence.search.es.OccurrenceEsField;
-import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
 import org.gbif.rest.client.species.NameUsageMatchingService;
+import org.gbif.search.es.event.EventEsField;
+import org.gbif.search.es.occurrence.OccurrenceEsField;
+import org.gbif.search.heatmap.es.event.EventEsHeatmapRequestBuilder;
+import org.gbif.search.heatmap.es.event.EventHeatmapsEsService;
+import org.gbif.search.heatmap.es.occurrence.OccurrenceEsHeatmapRequestBuilder;
+import org.gbif.search.heatmap.es.occurrence.OccurrenceHeatmapsEsService;
 import org.gbif.vocabulary.client.ConceptClient;
 import org.gbif.ws.client.ClientBuilder;
 import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
@@ -121,17 +123,6 @@ public class TileServerApplication {
     @ConditionalOnExpression("${esEventConfiguration.enabled}")
     public RestHighLevelClient provideEventEsClient(TileServerConfiguration tileServerConfiguration) {
       return provideEsClient(tileServerConfiguration.getEsEventConfiguration().getElasticsearch());
-    }
-
-    OccurrenceHeatmapsEsService heatmapsEsService(RestHighLevelClient esClient,
-                                                  TileServerConfiguration.EsTileConfiguration esTileConfiguration,
-                                                  ConceptClient conceptClient,
-                                                  NameUsageMatchingService nameUsageMatchingService,
-                                                  String defaultChecklistKey) {
-      return new OccurrenceHeatmapsEsService(esClient,
-        esTileConfiguration.getElasticsearch().getIndex(),
-        esFieldMapper(esTileConfiguration, defaultChecklistKey),
-        conceptClient, nameUsageMatchingService);
     }
 
     /**
@@ -222,14 +213,6 @@ public class TileServerApplication {
       return highLevelClient;
     }
 
-    OccurrenceBaseEsFieldMapper esFieldMapper(TileServerConfiguration.EsTileConfiguration esTileConfiguration,
-                                              String defaultChecklistKey) {
-      if (TileServerConfiguration.EsTileConfiguration.SearchType.EVENT == esTileConfiguration.getType() ){
-        return EventEsField.buildFieldMapper(defaultChecklistKey);
-      }
-      return OccurrenceEsField.buildFieldMapper(defaultChecklistKey);
-    }
-
     @Bean("occurrenceHeatmapsEsService")
     @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
     OccurrenceHeatmapsEsService occurrenceHeatmapsEsService(
@@ -238,20 +221,32 @@ public class TileServerApplication {
         ConceptClient conceptClient,
         NameUsageMatchingService nameUsageMatchingService,
         @Value("${defaultChecklistKey: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c'}") String defaultChecklistKey) {
-      return heatmapsEsService(
-          esClient, tileServerConfiguration.getEsOccurrenceConfiguration(), conceptClient, nameUsageMatchingService, defaultChecklistKey);
+      return new OccurrenceHeatmapsEsService(
+          esClient,
+          tileServerConfiguration.getEsOccurrenceConfiguration().getElasticsearch().getIndex(),
+          new OccurrenceEsHeatmapRequestBuilder(
+              OccurrenceEsField.buildFieldMapper(),
+              conceptClient,
+              nameUsageMatchingService,
+              defaultChecklistKey));
     }
 
     @Bean("eventHeatmapsEsService")
     @ConditionalOnExpression("${esEventConfiguration.enabled}")
-    OccurrenceHeatmapsEsService eventHeatmapsEsService(
+    EventHeatmapsEsService eventHeatmapsEsService(
         @Qualifier("esEventClient") RestHighLevelClient esClient,
         TileServerConfiguration tileServerConfiguration,
         ConceptClient conceptClient,
         NameUsageMatchingService nameUsageMatchingService,
         @Value("${defaultChecklistKey: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c'}") String defaultChecklistKey) {
-      return heatmapsEsService(
-          esClient, tileServerConfiguration.getEsEventConfiguration(), conceptClient, nameUsageMatchingService, defaultChecklistKey);
+      return new EventHeatmapsEsService(
+          esClient,
+          tileServerConfiguration.getEsEventConfiguration().getElasticsearch().getIndex(),
+          new EventEsHeatmapRequestBuilder(
+              EventEsField.buildFieldMapper(),
+              conceptClient,
+              nameUsageMatchingService,
+              defaultChecklistKey));
     }
 
     @Bean

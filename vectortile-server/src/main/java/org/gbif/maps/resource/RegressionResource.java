@@ -18,8 +18,6 @@ import org.gbif.api.model.occurrence.search.OccurrenceSearchRequest;
 import org.gbif.api.vocabulary.BasisOfRecord;
 import org.gbif.maps.TileServerConfiguration;
 import org.gbif.maps.common.projection.Long2D;
-import org.gbif.occurrence.search.es.EsSearchRequestBuilder;
-import org.gbif.occurrence.search.es.OccurrenceEsField;
 
 import java.io.IOException;
 import java.util.List;
@@ -39,7 +37,9 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
+import org.gbif.occurrence.search.es.OccurrenceEsSearchRequestBuilder;
 import org.gbif.rest.client.species.NameUsageMatchingService;
+import org.gbif.search.es.occurrence.OccurrenceEsField;
 import org.gbif.vocabulary.client.ConceptClient;
 
 import org.locationtech.jts.geom.Coordinate;
@@ -115,7 +115,7 @@ public final class RegressionResource {
   private final TileResource tiles;
   private final RestHighLevelClient esClient;
   private final String esIndex;
-  private final EsSearchRequestBuilder esSearchRequestBuilder;
+  private final OccurrenceEsSearchRequestBuilder esSearchRequestBuilder;
 
   @Autowired
   public RegressionResource(TileResource tiles,
@@ -127,8 +127,12 @@ public final class RegressionResource {
     this.tiles = tiles;
     this.esClient = esClient;
     this.esIndex = configuration.getEsOccurrenceConfiguration().getElasticsearch().getIndex();
-    this.esSearchRequestBuilder = new EsSearchRequestBuilder(
-      OccurrenceEsField.buildFieldMapper(defaultChecklistKey), conceptClient, nameUsageMatchingService);
+    this.esSearchRequestBuilder =
+        new OccurrenceEsSearchRequestBuilder(
+            OccurrenceEsField.buildFieldMapper(),
+            conceptClient,
+            nameUsageMatchingService,
+            defaultChecklistKey);
   }
 
   /**

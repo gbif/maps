@@ -13,14 +13,23 @@
  */
 package org.gbif.maps.resource;
 
-import org.gbif.maps.TileServerConfiguration;
-import org.gbif.occurrence.search.cache.PredicateCacheService;
-import org.gbif.occurrence.search.heatmap.OccurrenceHeatmapRequest;
-import org.gbif.occurrence.search.heatmap.es.OccurrenceHeatmapsEsService;
+import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
+import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
 
+import com.codahale.metrics.annotation.Timed;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
+import org.gbif.maps.TileServerConfiguration;
+import org.gbif.occurrence.search.cache.PredicateCacheService;
+import org.gbif.search.heatmap.HeatmapRequest;
+import org.gbif.search.heatmap.occurrence.OccurrenceHeatmapRequest;
+import org.gbif.search.heatmap.occurrence.OccurrenceHeatmapRequestProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -30,37 +39,27 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.codahale.metrics.annotation.Timed;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.tags.Tag;
-
-import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
-import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
-
 /**
- * ElasticSearch as a vector tile service.
- * Note to developers: This class could benefit from some significant refactoring and cleanup.
+ * ElasticSearch as a vector tile service. Note to developers: This class could benefit from some
+ * significant refactoring and cleanup.
  */
 @RestController
 @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
-@RequestMapping(
-  value = "/occurrence/adhoc"
-)
-public final class AdHocOccurrenceMapsResource extends AdHocMapsResource {
+@RequestMapping(value = "/occurrence/adhoc")
+public final class AdHocOccurrenceMapsResource
+    extends AdHocMapsResource<OccurrenceHeatmapRequest> {
 
   @Autowired
-  public AdHocOccurrenceMapsResource(@Qualifier("occurrenceHeatmapsEsService") OccurrenceHeatmapsEsService searchHeatmapsService,
-                                     TileServerConfiguration configuration,
-                                     @Qualifier("occurrencePredicateCache") PredicateCacheService predicateCacheService) {
-    super(searchHeatmapsService,
-          predicateCacheService,
-          configuration.getEsOccurrenceConfiguration().getTileSize(),
-          configuration.getEsOccurrenceConfiguration().getBufferSize());
+  public AdHocOccurrenceMapsResource(
+      @Qualifier("occurrenceHeatmapsEsService")
+          org.gbif.search.heatmap.es.occurrence.OccurrenceHeatmapsEsService searchHeatmapsService,
+      TileServerConfiguration configuration,
+      @Qualifier("occurrencePredicateCache") PredicateCacheService predicateCacheService) {
+    super(
+        searchHeatmapsService,
+        new OccurrenceHeatmapRequestProvider(predicateCacheService),
+        configuration.getEsOccurrenceConfiguration().getTileSize(),
+        configuration.getEsOccurrenceConfiguration().getBufferSize());
   }
 
   // Overridden only for the OpenAPI documentation.
@@ -87,7 +86,7 @@ public final class AdHocOccurrenceMapsResource extends AdHocMapsResource {
         in = ParameterIn.QUERY,
         description = "Sets the search mode.  `GEO_BOUNDS` is the default, and returns rectangles that bound all the " +
           "occurrences in each bin.  `GEO_CENTROID` instead returns a point at the weighted centroid of the bin.",
-        schema = @Schema(implementation = OccurrenceHeatmapRequest.Mode.class)
+        schema = @Schema(implementation = HeatmapRequest.Mode.class)
       )
     }
   )
