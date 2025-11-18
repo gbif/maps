@@ -51,7 +51,8 @@ public class MapConfiguration {
   @Builder
   @Jacksonized
   static class HBaseConfiguration {
-    private int keySaltModulus;
+    private int keySaltModulusPoints;
+    private int keySaltModulusTiles;
     private String tableName;
     private long maxFileSize = 10L * 1024 * 1024 * 1024; // Default to 10GB
   }

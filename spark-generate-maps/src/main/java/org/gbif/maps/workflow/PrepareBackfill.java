@@ -20,6 +20,10 @@ import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.gbif.maps.common.hbase.ModulusSalt;
+
+import java.io.IOException;
+
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.io.compress.Compression.Algorithm;
@@ -47,8 +51,10 @@ public class PrepareBackfill {
       // delete the target directory (see https://github.com/gbif/maps/issues/100)
       String subPath = "points".equalsIgnoreCase(config.getMode()) ? "points" : "tiles";
       Path targetDirectory = new Path(config.getFQTargetDirectory(), new Path(subPath));
-      log.info("Deleting target directory: {}", targetDirectory);
-      getHdfsFileSystem().delete(targetDirectory, true);
+      if (getHdfsFileSystem().exists(targetDirectory)) {
+        log.info("Deleting target directory: {}", targetDirectory);
+        getHdfsFileSystem().delete(targetDirectory, true);
+      }
 
       log.info("Connecting to HBase");
       try (Connection connection = ConnectionFactory.createConnection(HBaseConfiguration.create());
@@ -62,7 +68,10 @@ public class PrepareBackfill {
           appendColumnFamily(target, "EPSG_3575");
           appendColumnFamily(target, "EPSG_3031");
         }
-        ModulusSalt salt = new ModulusSalt(config.getHbase().getKeySaltModulus());
+        ModulusSalt salt =
+            ("tiles".equalsIgnoreCase(config.getMode()))
+                ? new ModulusSalt(config.getHbase().getKeySaltModulusTiles())
+                : new ModulusSalt(config.getHbase().getKeySaltModulusPoints());
         log.info("Creating {}", config.getFQTableName());
         admin.createTable(target.build(), salt.getTableRegions());
       }
