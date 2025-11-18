@@ -225,9 +225,10 @@ public class TileServerApplication {
           esClient,
           tileServerConfiguration.getEsOccurrenceConfiguration().getElasticsearch().getIndex(),
           new OccurrenceEsHeatmapRequestBuilder(
-              OccurrenceEsField.buildFieldMapper(defaultChecklistKey),
+              OccurrenceEsField.buildFieldMapper(),
               conceptClient,
-              nameUsageMatchingService));
+              nameUsageMatchingService,
+              defaultChecklistKey));
     }
 
     @Bean("eventHeatmapsEsService")
@@ -239,12 +240,13 @@ public class TileServerApplication {
         NameUsageMatchingService nameUsageMatchingService,
         @Value("${defaultChecklistKey: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c'}") String defaultChecklistKey) {
       return new EventHeatmapsEsService(
-        esClient,
-        tileServerConfiguration.getEsOccurrenceConfiguration().getElasticsearch().getIndex(),
-        new EventEsHeatmapRequestBuilder(
-          EventEsField.buildFieldMapper(defaultChecklistKey),
-          conceptClient,
-          nameUsageMatchingService));
+          esClient,
+          tileServerConfiguration.getEsOccurrenceConfiguration().getElasticsearch().getIndex(),
+          new EventEsHeatmapRequestBuilder(
+              EventEsField.buildFieldMapper(),
+              conceptClient,
+              nameUsageMatchingService,
+              defaultChecklistKey));
     }
 
     @Bean
