@@ -67,6 +67,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
+import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -101,6 +102,11 @@ public class TileServerApplication {
       registry.addViewController("/debug/").setViewName("forward:/debug/index.html");
       registry.addViewController("/debug/ol/").setViewName("forward:/debug/ol/index.html");
       registry.addViewController("/debug/comparison/").setViewName("forward:/debug/comparison/index.html");
+    }
+
+    @Override
+    public void configurePathMatch(PathMatchConfigurer configurer) {
+      configurer.setUseTrailingSlashMatch(true);
     }
   }
 
