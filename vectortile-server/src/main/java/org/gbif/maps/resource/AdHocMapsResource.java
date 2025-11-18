@@ -178,7 +178,7 @@ public class AdHocMapsResource<HR extends HeatmapRequest> {
     }
 
     int totalFeatures = 0;
-    if (HR.Mode.GEO_BOUNDS == heatmapRequests.get(0).getMode()) {
+    if (HeatmapRequest.Mode.GEO_BOUNDS == heatmapRequests.get(0).getMode()) {
       for (HR heatmapRequest : heatmapRequests) {
         EsHeatmapResponse.GeoBoundsResponse occurrenceHeatmapResponse = searchHeatmapsService.searchHeatMapGeoBounds(heatmapRequest);
         int[] featureCount = {0};

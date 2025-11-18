@@ -241,7 +241,7 @@ public class TileServerApplication {
         @Value("${defaultChecklistKey: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c'}") String defaultChecklistKey) {
       return new EventHeatmapsEsService(
           esClient,
-          tileServerConfiguration.getEsOccurrenceConfiguration().getElasticsearch().getIndex(),
+          tileServerConfiguration.getEsEventConfiguration().getElasticsearch().getIndex(),
           new EventEsHeatmapRequestBuilder(
               EventEsField.buildFieldMapper(),
               conceptClient,
