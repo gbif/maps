@@ -9,7 +9,7 @@
 
   <groupId>org.gbif.maps</groupId>
   <artifactId>maps-motherpom</artifactId>
-  <version>1.1.3-events-SNAPSHOT</version>
+  <version>1.1.4-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <description>GBIF Map services</description>
@@ -43,7 +43,7 @@
     <maven.compiler.target>${jdkLevel}</maven.compiler.target>
 
     <gbif-occurrence.version>1.1.7-SNAPSHOT</gbif-occurrence.version>
-    <gbif-api.version>2.2.0-events-issues-SNAPSHOT</gbif-api.version>
+    <gbif-api.version>2.2.0-SNAPSHOT</gbif-api.version>
     <gbif-common-ws.version>2.1.1-SNAPSHOT</gbif-common-ws.version>
     <dwc-api.version>2.1.7-SNAPSHOT</dwc-api.version>
     <gbif-predicates.version>2.1.2-SNAPSHOT</gbif-predicates.version>
