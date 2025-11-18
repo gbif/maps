@@ -129,9 +129,10 @@ public final class RegressionResource {
     this.esIndex = configuration.getEsOccurrenceConfiguration().getElasticsearch().getIndex();
     this.esSearchRequestBuilder =
         new OccurrenceEsSearchRequestBuilder(
-            OccurrenceEsField.buildFieldMapper(defaultChecklistKey),
+            OccurrenceEsField.buildFieldMapper(),
             conceptClient,
-            nameUsageMatchingService);
+            nameUsageMatchingService,
+            defaultChecklistKey);
   }
 
   /**
