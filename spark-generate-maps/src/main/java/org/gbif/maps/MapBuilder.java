@@ -18,6 +18,7 @@ import org.apache.spark.sql.SaveMode;
 import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.udf.MapKeysUDF;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashSet;
@@ -89,13 +90,18 @@ public class MapBuilder implements Serializable {
 
   public void run() {
     SparkSession spark =
-        SparkSession.builder().appName("Map Builder").enableHiveSupport().getOrCreate();
+        SparkSession.builder()
+          .config("spark.sql.warehouse.dir", "hdfs://gbif-hdfs/stackable/warehouse")
+          .enableHiveSupport()
+          .config("spark.sql.catalog.iceberg.type", "hive")
+          .config("spark.sql.catalog.iceberg", "org.apache.iceberg.spark.SparkCatalog")
+          .appName("Map Builder").enableHiveSupport().getOrCreate();
     spark.sql("use " + hiveDB);
     spark.sparkContext().conf().set("hive.exec.compress.output", "true");
 
     // Read the source Avro files and prepare them as performant tables
     String inputTable = String.format("maps_input_%s", hiveInputSuffix);
-    readAvroSource(spark, inputTable);
+    readSource(spark, inputTable);
 
     // Determine the mapKeys of maps that require a tile pyramid
     Set<String> largeMapKeys = mapKeyExceedingThreshold(spark, inputTable);
@@ -134,37 +140,36 @@ public class MapBuilder implements Serializable {
    * Hive table to defend against lazy evaluation that may cause the input avro files to be read
    * multiple times.
    */
-  private void readAvroSource(SparkSession spark, String targetHiveTable) {
+  private void readSource(SparkSession spark, String targetHiveTable) {
+
+    spark.sql("use " + hiveDB);
+
     Dataset<Row> source =
-        spark
-            .read()
-            .format("avro")
-            .load(sourceDir)
-            .select(
-                "datasetKey",
-                "publishingOrgKey",
-                "publishingCountry",
-                "networkKey",
-                "countryCode",
-                "basisOfRecord",
-                "decimalLatitude",
-                "decimalLongitude",
-                "kingdomKey",
-                "phylumKey",
-                "classKey",
-                "orderKey",
-                "familyKey",
-                "genusKey",
-                "speciesKey",
-                "taxonKey",
-                "year",
-                "occurrenceStatus",
-                "hasGeospatialIssues")
-            .filter(
-                "decimalLatitude IS NOT NULL AND "
-                    + "decimalLongitude IS NOT NULL AND "
-                    + "hasGeospatialIssues = false AND "
-                    + "occurrenceStatus='PRESENT' ");
+        spark.sql("SELECT "
+                + "datasetKey, "
+                + "publishingOrgKey, "
+                + "publishingCountry, "
+                + "networkKey, "
+                + "countryCode, "
+                + "basisOfRecord, "
+                + "decimalLatitude, "
+                + "decimalLongitude, "
+                + "kingdomKey, "
+                + "phylumKey, "
+                + "classKey, "
+                + "orderKey, "
+                + "familyKey, "
+                + "genusKey, "
+                + "speciesKey, "
+                + "taxonKey, "
+                + "year, "
+                + "occurrenceStatus, "
+                + "hasGeospatialIssues "
+                + "FROM occurrence WHERE "
+                + "decimalLatitude IS NOT NULL AND "
+                + "decimalLongitude IS NOT NULL AND "
+                + "hasGeospatialIssues = false AND "
+                + "occurrenceStatus='PRESENT'");
 
     // Default of 1200 yields 100MB files from 2.5B input
     Dataset<Row> partitioned =
