@@ -116,12 +116,20 @@ public class MapBuilder implements Serializable {
   public void run() {
     SparkSession spark =
         SparkSession.builder()
+            .enableHiveSupport()
             .config("spark.sql.warehouse.dir", "hdfs://gbif-hdfs/stackable/warehouse")
-            .enableHiveSupport()
-            .config("spark.sql.catalog.iceberg.type", "hive")
+            .config(
+                "spark.jars.packages", "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.6.0")
             .config("spark.sql.catalog.iceberg", "org.apache.iceberg.spark.SparkCatalog")
+            .config("spark.sql.catalog.iceberg.type", "hive")
+            .config("spark.sql.catalog.local", "org.apache.iceberg.spark.SparkCatalog")
+            .config("spark.sql.catalog.local.type", "hadoop")
+            .config(
+                "spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
+            .config(
+                "spark.hadoop.hive.metastore.uris",
+                "thrift://gbif-hive-metastore-metastore-default-0.gbif-hive-metastore-metastore-default.test.svc.cluster.local:9083")
             .appName("Map Builder")
-            .enableHiveSupport()
             .getOrCreate();
     spark.sql("use " + hiveDB);
     spark.sparkContext().conf().set("hive.exec.compress.output", "true");
