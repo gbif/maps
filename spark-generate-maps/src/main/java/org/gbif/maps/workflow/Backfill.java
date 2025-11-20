@@ -48,20 +48,19 @@ public class Backfill {
 
     Configuration hadoopConfiguration = new Configuration();
 
-    Path snapshotPath =
-        createHdfsSnapshot(
-            hadoopConfiguration,
-            config.getSnapshotDirectory(),
-            snapshotName,
-            config.getHdfsLockConfig());
-    String snapshotSource = snapshotPath + "/" + config.getSourceSubdirectory();
-    log.info("Created snapshot, {}", snapshotPath);
+//    Path snapshotPath =
+//        createHdfsSnapshot(
+//            hadoopConfiguration,
+//            config.getSnapshotDirectory(),
+//            snapshotName,
+//            config.getHdfsLockConfig());
+//    String snapshotSource = snapshotPath + "/" + config.getSourceSubdirectory();
+//    log.info("Created snapshot, {}", snapshotPath);
 
     try {
       String mode = args[0].toLowerCase(); // tiles or points
       MapBuilder mapBuilder =
           MapBuilder.builder()
-              .sourceDir(snapshotSource)
               .hiveDB(config.getHiveDB())
               .hiveInputSuffix(mode)
               .hbaseTable(config.getFQTableName())

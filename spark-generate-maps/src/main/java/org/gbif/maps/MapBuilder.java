@@ -39,7 +39,6 @@ import lombok.Builder;
 
 @Builder(toBuilder = true)
 public class MapBuilder implements Serializable {
-  private final String sourceDir;
   private final String hiveDB;
   private final String hiveInputSuffix;
   private final String hbaseTable;
@@ -60,7 +59,7 @@ public class MapBuilder implements Serializable {
 
     MapBuilder points =
         MapBuilder.builder()
-            .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
+//            .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
             .hiveDB("tim")
             .hbaseTable("tim")
             .moduloPoints(10)
@@ -73,7 +72,7 @@ public class MapBuilder implements Serializable {
 
     MapBuilder tiles =
         MapBuilder.builder()
-            .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
+//            .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
             .hiveDB("tim")
             .hbaseTable("tim")
             .moduloTiles(100)
