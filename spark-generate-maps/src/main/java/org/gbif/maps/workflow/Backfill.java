@@ -14,19 +14,6 @@
 package org.gbif.maps.workflow;
 
 import org.gbif.maps.MapBuilder;
-
-import java.io.IOException;
-import java.util.UUID;
-
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.framework.recipes.barriers.DistributedBarrier;
-import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-
 import lombok.extern.slf4j.Slf4j;
 
 /** The driver for back-filling the map tables from Airflow. */
@@ -43,90 +30,25 @@ public class Backfill {
     MapConfiguration config = MapConfiguration.build(args[1]);
     config.setTimestamp(args[2]);
     config.setMode(args[0]);
-    String snapshotName = UUID.randomUUID().toString();
-    log.info("Creating snapshot {} {}", config.getSnapshotDirectory(), snapshotName);
 
-    Configuration hadoopConfiguration = new Configuration();
-
-//    Path snapshotPath =
-//        createHdfsSnapshot(
-//            hadoopConfiguration,
-//            config.getSnapshotDirectory(),
-//            snapshotName,
-//            config.getHdfsLockConfig());
-//    String snapshotSource = snapshotPath + "/" + config.getSourceSubdirectory();
-//    log.info("Created snapshot, {}", snapshotPath);
-
-    try {
-      String mode = args[0].toLowerCase(); // tiles or points
-      MapBuilder mapBuilder =
-          MapBuilder.builder()
-              .hiveDB(config.getHiveDB())
-              .hiveInputSuffix(mode)
-              .hbaseTable(config.getFQTableName())
-              .targetDir(config.getFQTargetDirectory())
-              .moduloPoints(config.getHbase().getKeySaltModulusPoints())
-              .moduloTiles(config.getHbase().getKeySaltModulusTiles())
-              .threshold(config.getTilesThreshold())
-              .tileSize(config.getTileSize())
-              .bufferSize(config.getTileBufferSize())
-              .maxZoom(config.getMaxZoom())
-              .projectionParallelism(config.getProjectionParallelism())
-              .buildPoints(mode.equalsIgnoreCase("points"))
-              .buildTiles(mode.equalsIgnoreCase("tiles"))
-              .build();
-      log.info("Launching map build with config: {}", mapBuilder);
-      mapBuilder.run();
-
-    } finally {
-      log.info("Deleting snapshot {} {}", config.getSnapshotDirectory(), snapshotName);
-//      deleteHdfsSnapshot(hadoopConfiguration, config.getSnapshotDirectory(), snapshotName);
-    }
-  }
-
-  /** Creates a non-started instance of {@link CuratorFramework}. */
-  private static CuratorFramework buildCurator(MapConfiguration.HdfsLockConfig config) {
-    Configuration hbaseConf = HBaseConfiguration.create();
-    return CuratorFrameworkFactory.builder()
-        .namespace(config.getNamespace())
-        .retryPolicy(new ExponentialBackoffRetry(config.getSleepTimeMs(), config.getMaxRetries()))
-        .connectString(hbaseConf.get("hbase.zookeeper.quorum"))
-        .build();
-  }
-
-  /** Create a HDFS Snapshot to the input directory. */
-  private static Path createHdfsSnapshot(
-      Configuration hadoopConfiguration,
-      String directory,
-      String snapshotName,
-      MapConfiguration.HdfsLockConfig hdfsLockConfig)
-      throws Exception {
-
-    // barrier since crawling may be running
-    try (CuratorFramework curator = buildCurator(hdfsLockConfig)) {
-      curator.start();
-      String lockPath = hdfsLockConfig.getLockingPath() + hdfsLockConfig.getLockName();
-      DistributedBarrier barrier = new DistributedBarrier(curator, lockPath);
-      log.info("Acquiring barrier {}", lockPath);
-      barrier.waitOnBarrier();
-      log.info("Setting barrier {}", lockPath);
-      barrier.setBarrier();
-
-      // the actual task
-      FileSystem fs = FileSystem.get(hadoopConfiguration);
-      Path result = fs.createSnapshot(new Path(directory), snapshotName);
-
-      log.info("Removing barrier {}", lockPath);
-      barrier.removeBarrier();
-
-      return result;
-    }
-  }
-
-  /** Deletes a HDFS Snapshot to the input directory. */
-  private static void deleteHdfsSnapshot(
-      Configuration hadoopConfiguration, String directory, String snapshotName) throws IOException {
-    FileSystem fs = FileSystem.get(hadoopConfiguration);
-    fs.deleteSnapshot(new Path(directory), snapshotName);
+    String mode = args[0].toLowerCase(); // tiles or points
+    MapBuilder mapBuilder =
+        MapBuilder.builder()
+            .hiveDB(config.getHiveDB())
+            .hiveInputSuffix(mode)
+            .hbaseTable(config.getFQTableName())
+            .targetDir(config.getFQTargetDirectory())
+            .moduloPoints(config.getHbase().getKeySaltModulusPoints())
+            .moduloTiles(config.getHbase().getKeySaltModulusTiles())
+            .threshold(config.getTilesThreshold())
+            .tileSize(config.getTileSize())
+            .bufferSize(config.getTileBufferSize())
+            .maxZoom(config.getMaxZoom())
+            .projectionParallelism(config.getProjectionParallelism())
+            .buildPoints(mode.equalsIgnoreCase("points"))
+            .buildTiles(mode.equalsIgnoreCase("tiles"))
+            .build();
+    log.info("Launching map build with config: {}", mapBuilder);
+    mapBuilder.run();
   }
 }
