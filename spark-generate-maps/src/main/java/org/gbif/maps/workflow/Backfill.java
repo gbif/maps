@@ -14,6 +14,7 @@
 package org.gbif.maps.workflow;
 
 import org.gbif.maps.MapBuilder;
+
 import lombok.extern.slf4j.Slf4j;
 
 /** The driver for back-filling the map tables from Airflow. */

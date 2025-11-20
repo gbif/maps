@@ -13,12 +13,9 @@
  */
 package org.gbif.maps;
 
-import org.apache.spark.sql.SaveMode;
-
 import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.udf.MapKeysUDF;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashSet;
@@ -33,12 +30,39 @@ import org.apache.hadoop.io.compress.SnappyCodec;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
 
 import lombok.Builder;
 
 @Builder(toBuilder = true)
 public class MapBuilder implements Serializable {
+  public static final String SQL_TEXT =
+      "SELECT "
+          + "datasetKey, "
+          + "publishingOrgKey, "
+          + "publishingCountry, "
+          + "networkKey, "
+          + "countryCode, "
+          + "basisOfRecord, "
+          + "decimalLatitude, "
+          + "decimalLongitude, "
+          + "kingdomKey, "
+          + "phylumKey, "
+          + "classKey, "
+          + "orderKey, "
+          + "familyKey, "
+          + "genusKey, "
+          + "speciesKey, "
+          + "taxonKey, "
+          + "year, "
+          + "occurrenceStatus, "
+          + "hasGeospatialIssues "
+          + "FROM occurrence WHERE "
+          + "decimalLatitude IS NOT NULL  "
+          + "AND decimalLongitude IS NOT NULL "
+          + "AND hasGeospatialIssues = false "
+          + "AND occurrenceStatus='PRESENT'";
   private final String hiveDB;
   private final String hiveInputSuffix;
   private final String hbaseTable;
@@ -59,7 +83,8 @@ public class MapBuilder implements Serializable {
 
     MapBuilder points =
         MapBuilder.builder()
-//            .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
+            //
+            // .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
             .hiveDB("tim")
             .hbaseTable("tim")
             .moduloPoints(10)
@@ -72,7 +97,8 @@ public class MapBuilder implements Serializable {
 
     MapBuilder tiles =
         MapBuilder.builder()
-//            .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
+            //
+            // .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
             .hiveDB("tim")
             .hbaseTable("tim")
             .moduloTiles(100)
@@ -90,17 +116,19 @@ public class MapBuilder implements Serializable {
   public void run() {
     SparkSession spark =
         SparkSession.builder()
-          .config("spark.sql.warehouse.dir", "hdfs://gbif-hdfs/stackable/warehouse")
-          .enableHiveSupport()
-          .config("spark.sql.catalog.iceberg.type", "hive")
-          .config("spark.sql.catalog.iceberg", "org.apache.iceberg.spark.SparkCatalog")
-          .appName("Map Builder").enableHiveSupport().getOrCreate();
+            .config("spark.sql.warehouse.dir", "hdfs://gbif-hdfs/stackable/warehouse")
+            .enableHiveSupport()
+            .config("spark.sql.catalog.iceberg.type", "hive")
+            .config("spark.sql.catalog.iceberg", "org.apache.iceberg.spark.SparkCatalog")
+            .appName("Map Builder")
+            .enableHiveSupport()
+            .getOrCreate();
     spark.sql("use " + hiveDB);
     spark.sparkContext().conf().set("hive.exec.compress.output", "true");
 
     // Read the source Avro files and prepare them as performant tables
     String inputTable = String.format("maps_input_%s", hiveInputSuffix);
-    readSource(spark, inputTable);
+    readSourceTable(spark, inputTable);
 
     // Determine the mapKeys of maps that require a tile pyramid
     Set<String> largeMapKeys = mapKeyExceedingThreshold(spark, inputTable);
@@ -139,41 +167,20 @@ public class MapBuilder implements Serializable {
    * Hive table to defend against lazy evaluation that may cause the input avro files to be read
    * multiple times.
    */
-  private void readSource(SparkSession spark, String targetHiveTable) {
+  private void readSourceTable(SparkSession spark, String targetHiveTable) {
 
     spark.sql("use " + hiveDB);
+    System.out.println("### Executing: " + SQL_TEXT);
+    Dataset<Row> source = spark.sql(SQL_TEXT);
 
-    Dataset<Row> source =
-        spark.sql("SELECT "
-                + "datasetKey, "
-                + "publishingOrgKey, "
-                + "publishingCountry, "
-                + "networkKey, "
-                + "countryCode, "
-                + "basisOfRecord, "
-                + "decimalLatitude, "
-                + "decimalLongitude, "
-                + "kingdomKey, "
-                + "phylumKey, "
-                + "classKey, "
-                + "orderKey, "
-                + "familyKey, "
-                + "genusKey, "
-                + "speciesKey, "
-                + "taxonKey, "
-                + "year, "
-                + "occurrenceStatus, "
-                + "hasGeospatialIssues "
-                + "FROM occurrence WHERE "
-                + "decimalLatitude IS NOT NULL AND "
-                + "decimalLongitude IS NOT NULL AND "
-                + "hasGeospatialIssues = false AND "
-                + "occurrenceStatus='PRESENT'");
+    System.out.println("### Source count: " + source.count());
 
     // Default of 1200 yields 100MB files from 2.5B input
     Dataset<Row> partitioned =
         source.repartition(
             spark.sparkContext().conf().getInt("spark.sql.shuffle.partitions", 1200));
+
+    System.out.println("### Partitioned count: " + partitioned.count());
 
     // write as table to avoid any lazy evaluation re-reading small avro input
     spark.sql(String.format("DROP TABLE IF EXISTS %s PURGE", targetHiveTable));
