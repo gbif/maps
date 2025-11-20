@@ -80,7 +80,7 @@ public class Backfill {
 
     } finally {
       log.info("Deleting snapshot {} {}", config.getSnapshotDirectory(), snapshotName);
-      deleteHdfsSnapshot(hadoopConfiguration, config.getSnapshotDirectory(), snapshotName);
+//      deleteHdfsSnapshot(hadoopConfiguration, config.getSnapshotDirectory(), snapshotName);
     }
   }
 
