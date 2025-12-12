@@ -15,7 +15,7 @@
       <plugin>
         <groupId>io.fabric8</groupId>
         <artifactId>docker-maven-plugin</artifactId>
-        <version>0.45.0</version>
+        <version>${docker-maven-plugin.version}</version>
         <configuration>
           <images>
             <image>
@@ -44,7 +44,7 @@
       <!-- Don't create the normal JARs -->
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>2.6</version>
+        <version>${maven-jar-plugin.version}</version>
         <configuration>
           <skipIfEmpty>true</skipIfEmpty>
         </configuration>

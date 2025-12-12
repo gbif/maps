@@ -14,6 +14,7 @@
 package org.gbif.maps;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Strings;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -40,7 +41,6 @@ import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.io.PointFeature;
 import org.gbif.maps.resource.*;
-import org.gbif.occurrence.common.json.OccurrenceSearchParameterMixin;
 import org.gbif.occurrence.search.es.EsConfig;
 import org.gbif.rest.client.species.NameUsageMatchingService;
 import org.gbif.search.es.event.EventEsField;
@@ -85,8 +85,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
   })
 @EnableConfigurationProperties
 public class TileServerApplication {
-
-
 
   public static void main(String[] args) {
     SpringApplication.run(TileServerApplication.class, args);
@@ -153,15 +151,7 @@ public class TileServerApplication {
             ObjectMapper objectMapper = converter.getObjectMapper();
             objectMapper.registerModule(new JavaTimeModule());
 
-            objectMapper.registerModule(new com.fasterxml.jackson.databind.module.SimpleModule()
-              .addKeyDeserializer(OccurrenceSearchParameter.class,
-                new OccurrenceSearchParameter.OccurrenceSearchParameterKeyDeserializer()
-              )
-              .addDeserializer(OccurrenceSearchParameter.class,
-                new OccurrenceSearchParameter.OccurrenceSearchParameterDeserializer()
-              )
-            );
-            objectMapper.addMixIn(SearchParameter.class, OccurrenceSearchParameterMixin.class);
+            objectMapper.registerModule(getGbifSearchModule());
           }
           return bean;
         }
@@ -284,7 +274,7 @@ public class TileServerApplication {
     @Bean
     public ObjectMapper objectMapper() {
       return JacksonJsonObjectMapperProvider.getObjectMapperWithBuilderSupport()
-                                            .addMixIn(SearchParameter.class, OccurrenceSearchParameterMixin.class)
+                                            .registerModule(getGbifSearchModule())
                                             .registerModule(new JavaTimeModule());
     }
 
@@ -312,5 +302,22 @@ public class TileServerApplication {
         .withExponentialBackoffRetry(Duration.ofMillis(250), 1.0, 3)
         .build(NameUsageMatchingService.class);
     }
+  }
+
+  /** GBIF Search module for Jackson ObjectMapper */
+  private static SimpleModule getGbifSearchModule() {
+    return new SimpleModule()
+      .addKeyDeserializer(
+        SearchParameter.class,
+        new OccurrenceSearchParameter.OccurrenceSearchParameterKeyDeserializer())
+      .addDeserializer(
+        SearchParameter.class,
+        new OccurrenceSearchParameter.OccurrenceSearchParameterDeserializer())
+      .addKeyDeserializer(
+        OccurrenceSearchParameter.class,
+        new OccurrenceSearchParameter.OccurrenceSearchParameterKeyDeserializer())
+      .addDeserializer(
+        OccurrenceSearchParameter.class,
+        new OccurrenceSearchParameter.OccurrenceSearchParameterDeserializer());
   }
 }
