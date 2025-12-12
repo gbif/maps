@@ -41,8 +41,15 @@ sudo mv /tmp/protoc33/bin/protoc /usr/local/bin/protoc_33.2
 sudo mv /tmp/protoc33/include/* /usr/local/include/
 sudo chmod +x /usr/local/bin/protoc_33.2
 /usr/local/bin/protoc_33.2
-protoc
+```
+Note: download the zip according to your OS and architecture (protoc-33.2-osx-aarch_64.zip for MacOS X).
+
+Create a symbolic link to make protoc_33.2 the default protoc:
+```
 sudo ln -sf /usr/local/bin/protoc_33.2 /usr/local/bin/protoc
+```
+Verify installation by running:
+```
 protoc --version
 file /usr/local/bin/protoc_33.2
 ```
