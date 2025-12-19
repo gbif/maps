@@ -45,7 +45,7 @@ public class CacheConfiguration {
   }
 
   @Bean("occurrencePredicateCache")
-  @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
+  @ConditionalOnExpression("${esEventConfiguration.enabled}")
   public PredicateCacheService occurrencePredicateCacheService(ObjectMapper objectMapper, Cache2kConfig<Integer, Predicate> cache2kConfig, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry) {
     cacheManager.addCaches(b -> cache2kConfig.builder().manager(cacheManager.getNativeCacheManager()).name("occurrencePredicateCache"));
     Cache<Integer, Predicate> cache = cacheManager.getNativeCacheManager().getCache("occurrencePredicateCache");
