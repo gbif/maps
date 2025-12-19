@@ -36,6 +36,4 @@ spring:
     static-locations: classpath:/static/
   liquibase:
     enabled: false
-  mvc:
-    static-path-pattern: /debug/**
 
