@@ -40,7 +40,7 @@ import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.resource.HBaseMaps;
-import org.gbif.maps.resource.io.PointFeature;
+import org.gbif.maps.io.PointFeature;
 import org.gbif.occurrence.search.es.EsConfig;
 import org.gbif.rest.client.species.NameUsageMatchingService;
 import org.gbif.search.es.occurrence.OccurrenceEsField;

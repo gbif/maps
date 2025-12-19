@@ -13,6 +13,11 @@
  */
 package org.gbif.maps.resource.udf;
 
+import org.gbif.maps.common.projection.Double2D;
+import org.gbif.maps.common.projection.Long2D;
+import org.gbif.maps.common.projection.TileSchema;
+import org.gbif.maps.common.projection.Tiles;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -26,10 +31,6 @@ import org.apache.spark.sql.types.StructField;
 import com.google.common.collect.Lists;
 
 import lombok.AllArgsConstructor;
-import org.gbif.maps.common.projection.Double2D;
-import org.gbif.maps.common.projection.Long2D;
-import org.gbif.maps.common.projection.TileSchema;
-import org.gbif.maps.common.projection.Tiles;
 
 /**
  * Returns the tiles addresses for the given global coordinate. Tiles have a buffer size, and so a

@@ -22,8 +22,8 @@ import org.apache.spark.sql.Row;
 
 import lombok.AllArgsConstructor;
 
-import static org.gbif.maps.resource.io.PointFeature.*;
-import static org.gbif.maps.resource.io.PointFeature.PointFeatures.*;
+import static org.gbif.maps.io.PointFeature.*;
+import static org.gbif.maps.io.PointFeature.PointFeatures.*;
 
 /** Generates a GBIF protobuf tile from the structured input. */
 @AllArgsConstructor

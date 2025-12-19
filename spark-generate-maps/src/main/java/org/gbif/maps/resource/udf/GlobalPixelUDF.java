@@ -13,6 +13,10 @@
  */
 package org.gbif.maps.resource.udf;
 
+import org.gbif.maps.common.projection.Double2D;
+import org.gbif.maps.common.projection.TileProjection;
+import org.gbif.maps.common.projection.Tiles;
+
 import java.io.Serializable;
 
 import org.apache.spark.sql.Row;
@@ -23,9 +27,6 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 
 import lombok.AllArgsConstructor;
-import org.gbif.maps.common.projection.Double2D;
-import org.gbif.maps.common.projection.TileProjection;
-import org.gbif.maps.common.projection.Tiles;
 
 /** Converts a lat,lng into the global pixel space for a given projection and zoom level. */
 @AllArgsConstructor

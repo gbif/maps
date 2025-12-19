@@ -23,7 +23,7 @@ import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
-import org.gbif.maps.resource.io.PointFeature;
+import org.gbif.maps.io.PointFeature;
 
 import java.io.IOException;
 import java.util.List;

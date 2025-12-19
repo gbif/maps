@@ -15,7 +15,7 @@ package org.gbif.maps;
 
 import org.gbif.api.model.predicate.Predicate;
 import org.gbif.maps.resource.HBaseMaps;
-import org.gbif.maps.resource.io.PointFeature;
+import org.gbif.maps.io.PointFeature;
 import org.gbif.occurrence.search.cache.DefaultInMemoryPredicateCacheService;
 import org.gbif.occurrence.search.cache.PredicateCacheService;
 

@@ -144,7 +144,7 @@ public class Capabilities {
   /**
    * A builder of the capabilities produced by inspecting vector tile data.
    */
-  static class CapabilitiesBuilder {
+  public static class CapabilitiesBuilder {
     private static final VectorTileDecoder DECODER = new VectorTileDecoder();
     private static final int CURRENT_YEAR = Year.now().getValue();
     private static final int MIN_YEAR = 1600; // reasonable limit on sliders
@@ -162,11 +162,11 @@ public class Capabilities {
       DECODER.setAutoScale(false); // important to avoid auto scaling to 256 tiles
     }
 
-    static CapabilitiesBuilder newBuilder() {
+    public static CapabilitiesBuilder newBuilder() {
       return new CapabilitiesBuilder();
     }
 
-    Capabilities build() {
+    public Capabilities build() {
       int[] spread = centredSpread(longitudes.toArray(), 360*spreadMultiplier);
       int offset = Double.isNaN(minLat) ? 0 : (spread[0] > spread[1]) ? 360*spreadMultiplier : 0;
 
@@ -191,7 +191,7 @@ public class Capabilities {
      * @param tileSE The lat,lng of the tile's South East
      * @throws IOException On encoding issues only
      */
-    void collect(byte[] tile, Double2D tileNW, Double2D tileSE, String date) throws IOException {
+    public void collect(byte[] tile, Double2D tileNW, Double2D tileSE, String date) throws IOException {
       if (tile != null) { // defensive coding
 
         double minX = Double.MAX_VALUE,  minY = Double.MAX_VALUE;
@@ -285,7 +285,7 @@ public class Capabilities {
      * @param maxValue  wrap value
      */
     @VisibleForTesting
-    protected static int[] centredSpread(int[] values, int maxValue) {
+    public static int[] centredSpread(int[] values, int maxValue) {
       if (values == null || values.length == 0) {
         return null;
       }

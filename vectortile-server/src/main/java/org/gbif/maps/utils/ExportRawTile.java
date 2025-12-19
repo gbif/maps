@@ -15,7 +15,7 @@ package org.gbif.maps.utils;
 
 import org.cache2k.config.Cache2kConfig;
 import org.gbif.maps.resource.HBaseMaps;
-import org.gbif.maps.resource.resource.Params;
+import org.gbif.maps.resource.Params;
 
 import java.io.File;
 import java.util.Arrays;
