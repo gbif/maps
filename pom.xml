@@ -294,8 +294,10 @@
   <modules>
     <module>common</module>
     <module>vectortile-server</module>
+    <module>event-vectortile-server</module>
     <module>spark-generate-maps</module>
     <module>mapnik-server</module>
+    <module>vectortile-common</module>
   </modules>
 
   <dependencyManagement>
@@ -314,6 +316,11 @@
       <dependency>
         <groupId>org.gbif.maps</groupId>
         <artifactId>common</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.gbif.maps</groupId>
+        <artifactId>vectortile-common</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

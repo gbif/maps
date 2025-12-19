@@ -16,7 +16,7 @@ package org.gbif.maps.common.filter;
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.Tiles;
-import org.gbif.maps.io.PointFeature;
+import org.gbif.maps.resource.io.PointFeature;
 
 import java.io.IOException;
 import java.util.List;
@@ -35,7 +35,7 @@ import no.ecc.vectortile.VectorTileEncoder;
 
 import static org.gbif.maps.common.projection.TileSchema.WEB_MERCATOR;
 import static org.gbif.maps.common.projection.TileSchema.WGS84_PLATE_CAREÉ;
-import static org.gbif.maps.io.PointFeature.PointFeatures.Feature.BasisOfRecord;
+import static org.gbif.maps.resource.io.PointFeature.PointFeatures.Feature.BasisOfRecord;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertTrue;
 

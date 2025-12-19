@@ -129,30 +129,8 @@
       <artifactId>lombok</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <!--
-        Important (!) Fix to HBase client.
-      -->
-      <version>12.0</version>
-    </dependency>
-    <dependency>
       <groupId>org.gbif.maps</groupId>
-      <artifactId>common</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>log4j-over-slf4j</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.gbif.occurrence</groupId>
-      <artifactId>occurrence-heatmaps</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.gbif.occurrence</groupId>
-      <artifactId>occurrence-common</artifactId>
+      <artifactId>vectortile-common</artifactId>
     </dependency>
     <dependency>
       <groupId>org.gbif</groupId>

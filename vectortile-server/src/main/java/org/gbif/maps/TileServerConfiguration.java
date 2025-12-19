@@ -24,7 +24,6 @@ import lombok.Data;
 public class TileServerConfiguration {
   private HBaseConfiguration hbase;
   private EsTileConfiguration esOccurrenceConfiguration;
-  private EsTileConfiguration esEventConfiguration;
   private Metastore metastore;
 
   @Data
@@ -48,11 +47,9 @@ public class TileServerConfiguration {
 
   @Data
   public static class EsTileConfiguration {
-    public enum SearchType { EVENT, OCCURRENCE}
     private EsConfig elasticsearch;
     private Integer tileSize;
     private Integer bufferSize;
-    private SearchType type;
     private boolean nestedIndex;
     private boolean enabled;
   }

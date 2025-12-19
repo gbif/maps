@@ -1,0 +1,22 @@
+<configuration>
+  <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+    <resetJUL>true</resetJUL>
+  </contextListener>
+
+  <property name="defaultPattern" value="%-5level [%date{'HH:mm:ss,SSSZ'}] %logger: %msg%n%xEx"/>
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <layout>
+      <pattern>${defaultPattern}</pattern>
+    </layout>
+  </appender>
+
+  <logger name="org.gbif" level="DEBUG"/>
+  <logger name="org.gbif.maps.common.bin.HexBin" level="INFO"/>
+  <!--logger name="org.gbif.maps.common.projection" level="TRACE"/-->
+
+  <root level="INFO">
+    <appender-ref ref="CONSOLE"/>
+  </root>
+
+</configuration>

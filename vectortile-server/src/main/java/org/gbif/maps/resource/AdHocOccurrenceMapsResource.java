@@ -25,6 +25,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import org.gbif.maps.TileServerConfiguration;
 import org.gbif.occurrence.search.cache.PredicateCacheService;
 import org.gbif.search.heatmap.HeatmapRequest;

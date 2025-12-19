@@ -37,7 +37,7 @@ import com.google.common.collect.Maps;
 
 import no.ecc.vectortile.VectorTileEncoder;
 
-import static org.gbif.maps.io.PointFeature.PointFeatures.Feature;
+import static org.gbif.maps.resource.io.PointFeature.PointFeatures.Feature;
 
 /**
  * Filters and converters for PointFeature based tiles.

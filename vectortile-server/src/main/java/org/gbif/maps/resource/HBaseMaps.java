@@ -14,12 +14,13 @@
 package org.gbif.maps.resource;
 
 import org.cache2k.config.Cache2kConfig;
+
 import org.gbif.maps.CacheConfiguration;
 import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.MapTables;
 import org.gbif.maps.common.meta.Metastores;
-import org.gbif.maps.io.PointFeature;
+import org.gbif.maps.resource.io.PointFeature;
 
 import java.util.Optional;
 
