@@ -248,9 +248,9 @@ public class TileServerApplication {
         .addKeyDeserializer(
             SearchParameter.class, new EventSearchParameter.EventSearchParameterKeyDeserializer())
         .addDeserializer(
-            EventSearchParameter.class, new EventSearchParameter.EventSearchParameterDeserializer())
+            SearchParameter.class, new EventSearchParameter.EventSearchParameterDeserializer())
         .addKeyDeserializer(
-            OccurrenceSearchParameter.class,
+            EventSearchParameter.class,
             new EventSearchParameter.EventSearchParameterKeyDeserializer())
         .addDeserializer(
             EventSearchParameter.class,

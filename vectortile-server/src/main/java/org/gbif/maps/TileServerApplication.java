@@ -282,17 +282,17 @@ public class TileServerApplication {
   /** GBIF Search module for Jackson ObjectMapper */
   private static SimpleModule getGbifSearchModule() {
     return new SimpleModule()
-      .addKeyDeserializer(
-        SearchParameter.class,
-        new OccurrenceSearchParameter.OccurrenceSearchParameterKeyDeserializer())
-      .addDeserializer(
-        SearchParameter.class,
-        new OccurrenceSearchParameter.OccurrenceSearchParameterDeserializer())
-      .addKeyDeserializer(
-        OccurrenceSearchParameter.class,
-        new OccurrenceSearchParameter.OccurrenceSearchParameterKeyDeserializer())
-      .addDeserializer(
-        OccurrenceSearchParameter.class,
-        new OccurrenceSearchParameter.OccurrenceSearchParameterDeserializer());
+        .addKeyDeserializer(
+            SearchParameter.class,
+            new OccurrenceSearchParameter.OccurrenceSearchParameterKeyDeserializer())
+        .addDeserializer(
+            SearchParameter.class,
+            new OccurrenceSearchParameter.OccurrenceSearchParameterDeserializer())
+        .addKeyDeserializer(
+            OccurrenceSearchParameter.class,
+            new OccurrenceSearchParameter.OccurrenceSearchParameterKeyDeserializer())
+        .addDeserializer(
+            OccurrenceSearchParameter.class,
+            new OccurrenceSearchParameter.OccurrenceSearchParameterDeserializer());
   }
 }
