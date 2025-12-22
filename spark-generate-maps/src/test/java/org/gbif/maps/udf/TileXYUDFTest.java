@@ -11,11 +11,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.gbif.maps.resource.udf;
+package org.gbif.maps.udf;
 
 import org.gbif.maps.common.projection.Long2D;
 import org.gbif.maps.common.projection.TileSchema;
-import org.gbif.maps.udf.TileXYUDF;
 import org.gbif.maps.udf.TileXYUDF.Direction;
 
 import java.util.List;
@@ -24,6 +23,7 @@ import org.junit.Test;
 
 import com.google.common.collect.Lists;
 
+import static org.gbif.maps.udf.TileXYUDF.Direction.*;
 import static org.junit.Assert.assertEquals;
 
 public class TileXYUDFTest {
