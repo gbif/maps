@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.gbif.maps</groupId>
     <artifactId>maps-motherpom</artifactId>
-    <version>1.1.4-events-SNAPSHOT</version>
+    <version>1.1.4-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>vectortile-common</artifactId>
@@ -156,6 +156,16 @@
     <dependency>
       <groupId>org.springdoc</groupId>
       <artifactId>springdoc-openapi-starter-common</artifactId>
+    </dependency>
+
+    <!-- Cache2k -->
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-spring</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.cache2k</groupId>
+      <artifactId>cache2k-jmx</artifactId>
     </dependency>
   </dependencies>
 

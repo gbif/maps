@@ -13,6 +13,7 @@
  */
 package org.gbif.maps;
 
+import org.gbif.maps.config.Config;
 import org.gbif.occurrence.search.es.EsConfig;
 
 import lombok.Data;
@@ -22,35 +23,7 @@ import lombok.Data;
  */
 @Data
 public class TileServerConfiguration {
-  private HBaseConfiguration hbase;
-  private EsTileConfiguration esOccurrenceConfiguration;
-  private Metastore metastore;
-
-  @Data
-  public static class Metastore {
-    private String zookeeperQuorum;
-    private String path;
-  }
-
-  @Data
-  public static class HBaseConfiguration  {
-    private String zookeeperQuorum;
-    private String hbaseZnode;
-    private String tilesTableName;
-    private String pointsTableName;
-    private Integer tileSize;
-    private Integer bufferSize;
-    private Integer featuresBufferSize;
-    private Integer saltModulusPoints;
-    private Integer saltModulusTiles;
-  }
-
-  @Data
-  public static class EsTileConfiguration {
-    private EsConfig elasticsearch;
-    private Integer tileSize;
-    private Integer bufferSize;
-    private boolean nestedIndex;
-    private boolean enabled;
-  }
+  private Config.HBaseConfiguration hbase;
+  private Config.EsTileConfiguration esOccurrenceConfiguration;
+  private Config.Metastore metastore;
 }
