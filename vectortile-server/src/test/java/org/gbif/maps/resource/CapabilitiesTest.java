@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.gbif.maps.resource.resource;
+package org.gbif.maps.resource;
 
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.Long2D;
@@ -22,8 +22,6 @@ import org.gbif.maps.common.projection.Tiles;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
-
-import org.gbif.maps.resource.Capabilities;
 
 import org.junit.Test;
 import org.locationtech.jts.geom.Coordinate;
