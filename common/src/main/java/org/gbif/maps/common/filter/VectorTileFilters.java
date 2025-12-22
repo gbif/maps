@@ -13,7 +13,6 @@
  */
 package org.gbif.maps.common.filter;
 
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.Long2D;

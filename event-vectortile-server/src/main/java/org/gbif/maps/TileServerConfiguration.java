@@ -23,7 +23,6 @@ import lombok.Data;
  */
 @Data
 public class TileServerConfiguration {
-  private Config.HBaseConfiguration hbase;
-  private Config.EsTileConfiguration esOccurrenceConfiguration;
+  private Config.EsTileConfiguration esEventConfiguration;
   private Config.Metastore metastore;
 }

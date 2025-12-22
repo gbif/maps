@@ -80,9 +80,9 @@ public class AdHocMapsResource<HR extends HeatmapRequest> {
   private static final String LAYER_NAME = "occurrence";
 
   @VisibleForTesting
-  static final String QUERY_BUFFER_PERCENTAGE = "0.125";  // 1/8th tile buffer all around, similar to the HBase maps
+  protected static final String QUERY_BUFFER_PERCENTAGE = "0.125";  // 1/8th tile buffer all around, similar to the HBase maps
   @VisibleForTesting
-  static final String EPSG_4326 = "EPSG:4326";
+  protected static final String EPSG_4326 = "EPSG:4326";
 
   private final int tileSize;
   private final int bufferSize;

@@ -16,19 +16,12 @@ package org.gbif.maps;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.base.Strings;
-import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
-import java.util.Optional;
 import javax.validation.constraints.NotNull;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.http.HttpHost;
-import org.cache2k.config.Cache2kConfig;
-import org.cache2k.extra.spring.SpringCache2kCacheManager;
 import org.elasticsearch.client.NodeSelector;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
@@ -36,16 +29,13 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.sniff.SniffOnFailureListener;
 import org.elasticsearch.client.sniff.Sniffer;
 import org.gbif.api.model.common.search.SearchParameter;
+import org.gbif.api.model.event.search.EventSearchParameter;
 import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
-import org.gbif.maps.common.meta.MapMetastore;
-import org.gbif.maps.common.meta.Metastores;
-import org.gbif.maps.resource.HBaseMaps;
-import org.gbif.maps.io.PointFeature;
 import org.gbif.occurrence.search.es.EsConfig;
 import org.gbif.rest.client.species.NameUsageMatchingService;
-import org.gbif.search.es.occurrence.OccurrenceEsField;
-import org.gbif.search.heatmap.es.occurrence.OccurrenceEsHeatmapRequestBuilder;
-import org.gbif.search.heatmap.es.occurrence.OccurrenceHeatmapsEsService;
+import org.gbif.search.es.event.EventEsField;
+import org.gbif.search.heatmap.es.event.EventEsHeatmapRequestBuilder;
+import org.gbif.search.heatmap.es.event.EventHeatmapsEsService;
 import org.gbif.vocabulary.client.ConceptClient;
 import org.gbif.ws.client.ClientBuilder;
 import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
@@ -62,7 +52,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
@@ -114,10 +103,10 @@ public class TileServerApplication {
       return new TileServerConfiguration();
     }
 
-    @Bean("esOccurrenceClient")
-    @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
-    public RestHighLevelClient provideOccurrenceEsClient(TileServerConfiguration tileServerConfiguration) {
-      return provideEsClient(tileServerConfiguration.getEsOccurrenceConfiguration().getElasticsearch());
+    @Bean("esEventClient")
+    @ConditionalOnExpression("${esEventConfiguration.enabled}")
+    public RestHighLevelClient provideEventEsClient(TileServerConfiguration tileServerConfiguration) {
+      return provideEsClient(tileServerConfiguration.getEsEventConfiguration().getElasticsearch());
     }
 
     /**
@@ -200,48 +189,22 @@ public class TileServerApplication {
       return highLevelClient;
     }
 
-    @Bean("occurrenceHeatmapsEsService")
-    @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
-    OccurrenceHeatmapsEsService occurrenceHeatmapsEsService(
-        @Qualifier("esOccurrenceClient") RestHighLevelClient esClient,
+    @Bean("eventHeatmapsEsService")
+    @ConditionalOnExpression("${esEventConfiguration.enabled}")
+    EventHeatmapsEsService eventHeatmapsEsService(
+        @Qualifier("esEventClient") RestHighLevelClient esClient,
         TileServerConfiguration tileServerConfiguration,
         ConceptClient conceptClient,
         NameUsageMatchingService nameUsageMatchingService,
         @Value("${defaultChecklistKey: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c'}") String defaultChecklistKey) {
-      return new OccurrenceHeatmapsEsService(
+      return new EventHeatmapsEsService(
           esClient,
-          tileServerConfiguration.getEsOccurrenceConfiguration().getElasticsearch().getIndex(),
-          new OccurrenceEsHeatmapRequestBuilder(
-              OccurrenceEsField.buildFieldMapper(),
+          tileServerConfiguration.getEsEventConfiguration().getElasticsearch().getIndex(),
+          new EventEsHeatmapRequestBuilder(
+              EventEsField.buildFieldMapper(),
               conceptClient,
               nameUsageMatchingService,
               defaultChecklistKey));
-    }
-
-
-    @Bean
-    @Profile("!es-only")
-    HBaseMaps hBaseMaps(TileServerConfiguration tileServerConfiguration, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry,
-                        Cache2kConfig<String, Optional<PointFeature.PointFeatures>> pointCacheConfiguration,
-                        Cache2kConfig<HBaseMaps.TileKey, Optional<byte[]>> tileCacheConfiguration) throws Exception {
-      // Either use Zookeeper or static config to locate tables
-      Configuration conf = HBaseConfiguration.create();
-      conf.set("hbase.zookeeper.quorum", tileServerConfiguration.getHbase().getZookeeperQuorum());
-      String hbaseZNode = tileServerConfiguration.getHbase().getHbaseZnode();
-      if (!Strings.isNullOrEmpty(hbaseZNode)) {
-        conf.set("zookeeper.znode.parent", hbaseZNode);
-      }
-
-      if (tileServerConfiguration.getMetastore() != null) {
-        MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
-          tileServerConfiguration.getMetastore().getPath());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulusPoints(),tileServerConfiguration.getHbase().getSaltModulusTiles(), cacheManager, meterRegistry, pointCacheConfiguration, tileCacheConfiguration);
-
-      } else {
-        MapMetastore meta = Metastores.newStaticMapsMeta(tileServerConfiguration.getHbase().getTilesTableName(),
-          tileServerConfiguration.getHbase().getPointsTableName());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulusPoints(),tileServerConfiguration.getHbase().getSaltModulusTiles(), cacheManager, meterRegistry, pointCacheConfiguration, tileCacheConfiguration);
-      }
     }
 
     @Primary
@@ -253,7 +216,7 @@ public class TileServerApplication {
     }
 
     @Bean
-    @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
+    @ConditionalOnExpression("${esEventConfiguration.enabled}")
     public ConceptClient conceptClient(@Value("${api.url}") String apiUrl) {
       return new ClientBuilder()
         .withObjectMapper(
@@ -264,7 +227,7 @@ public class TileServerApplication {
     }
 
     @Bean
-    @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
+    @ConditionalOnExpression("${esEventConfiguration.enabled}")
     public NameUsageMatchingService nameUsageMatchingService(@Value("${api.url}") String apiUrl) {
       if (apiUrl.endsWith("/v1/")) {
         // remove the version from the URL
@@ -283,16 +246,14 @@ public class TileServerApplication {
   private static SimpleModule getGbifSearchModule() {
     return new SimpleModule()
         .addKeyDeserializer(
-            SearchParameter.class,
-            new OccurrenceSearchParameter.OccurrenceSearchParameterKeyDeserializer())
+            SearchParameter.class, new EventSearchParameter.EventSearchParameterKeyDeserializer())
         .addDeserializer(
-            SearchParameter.class,
-            new OccurrenceSearchParameter.OccurrenceSearchParameterDeserializer())
+            SearchParameter.class, new EventSearchParameter.EventSearchParameterDeserializer())
         .addKeyDeserializer(
-            OccurrenceSearchParameter.class,
-            new OccurrenceSearchParameter.OccurrenceSearchParameterKeyDeserializer())
+            EventSearchParameter.class,
+            new EventSearchParameter.EventSearchParameterKeyDeserializer())
         .addDeserializer(
-            OccurrenceSearchParameter.class,
-            new OccurrenceSearchParameter.OccurrenceSearchParameterDeserializer());
+            EventSearchParameter.class,
+            new EventSearchParameter.EventSearchParameterDeserializer());
   }
 }

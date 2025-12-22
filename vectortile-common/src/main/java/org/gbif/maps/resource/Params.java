@@ -13,22 +13,18 @@
  */
 package org.gbif.maps.resource;
 
-import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
-import org.gbif.api.model.occurrence.search.OccurrenceSearchRequest;
-import org.gbif.api.util.SearchTypeValidator;
-import org.gbif.api.util.VocabularyUtils;
-import org.gbif.maps.common.filter.Range;
-
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
+import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
+import org.gbif.api.model.occurrence.search.OccurrenceSearchRequest;
+import org.gbif.api.util.SearchTypeValidator;
+import org.gbif.maps.common.filter.Range;
 
 /**
  * Utilities for dealing with the parameters and mappings.
@@ -39,12 +35,12 @@ public class Params {
   static final Pattern PIPE = Pattern.compile("[|]");
 
   // Parameters for dealing with hexagon binning
-  static final String BIN_MODE_HEX = "hex";
-  static final String BIN_MODE_SQUARE = "square";
-  static final int HEX_TILE_SIZE = 4096;
-  static final int SQUARE_TILE_SIZE = 4096;
-  static final String DEFAULT_HEX_PER_TILE = "51";
-  static final String DEFAULT_SQUARE_SIZE = "16";
+  public static final String BIN_MODE_HEX = "hex";
+  public static final String BIN_MODE_SQUARE = "square";
+  public static final int HEX_TILE_SIZE = 4096;
+  public static final int SQUARE_TILE_SIZE = 4096;
+  public static final String DEFAULT_HEX_PER_TILE = "51";
+  public static final String DEFAULT_SQUARE_SIZE = "16";
 
   // Maps the HTTP parameter for the type to the HBase row key prefix for that map.
   // This aligns with the Spark processing that populates HBase of course, but maps the internal key to the
@@ -65,7 +61,7 @@ public class Params {
    * Open the tiles to the world (especially your friendly localhost developer!)
    * @param response
    */
-  static void enableCORS(HttpServletResponse response) {
+  public static void enableCORS(HttpServletResponse response) {
     response.addHeader("Allow-Control-Allow-Methods", "GET,HEAD,OPTIONS");
     response.addHeader("Access-Control-Allow-Origin", "*");
   }
@@ -77,7 +73,7 @@ public class Params {
    *
    * @return The main map key, and an optional country mask key
    */
-  static String[] mapKeys(HttpServletRequest request) {
+  public static String[] mapKeys(HttpServletRequest request) {
     return mapKeys(request.getParameterMap());
   }
 

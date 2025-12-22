@@ -8,7 +8,7 @@
     <version>1.1.4-SNAPSHOT</version>
   </parent>
 
-  <artifactId>vectortile-server</artifactId>
+  <artifactId>event-vectortile-server</artifactId>
   <packaging>jar</packaging>
 
   <properties>

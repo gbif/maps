@@ -20,6 +20,7 @@ import com.codahale.metrics.annotation.Timed;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import org.gbif.maps.TileServerConfiguration;
 import org.gbif.occurrence.search.cache.PredicateCacheService;
 import org.gbif.search.heatmap.es.event.EventHeatmapsEsService;
@@ -27,7 +28,6 @@ import org.gbif.search.heatmap.event.EventHeatmapRequest;
 import org.gbif.search.heatmap.event.EventHeatmapRequestProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -39,7 +39,6 @@ import org.springframework.web.bind.annotation.RestController;
  * significant refactoring and cleanup.
  */
 @RestController
-@ConditionalOnExpression("${esEventConfiguration.enabled}")
 @RequestMapping(value = "/event/adhoc")
 public final class AdHocEventMapsResource extends AdHocMapsResource<EventHeatmapRequest> {
 
@@ -56,6 +55,7 @@ public final class AdHocEventMapsResource extends AdHocMapsResource<EventHeatmap
   }
 
   // Overridden only to hide it from the OpenAPI schema.
+  // TODO: create documentation page for event maps?
   @Hidden
   @RequestMapping(
       method = RequestMethod.GET,
