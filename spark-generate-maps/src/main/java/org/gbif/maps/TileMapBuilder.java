@@ -14,7 +14,6 @@
 package org.gbif.maps;
 
 import org.gbif.maps.common.hbase.ModulusSalt;
-import org.gbif.maps.resource.udf.*;
 
 import java.io.Serializable;
 import java.util.List;

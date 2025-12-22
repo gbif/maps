@@ -13,10 +13,7 @@
  */
 package org.gbif.maps.udf;
 
-import org.gbif.maps.common.projection.Double2D;
-import org.gbif.maps.common.projection.Long2D;
-import org.gbif.maps.common.projection.TileSchema;
-import org.gbif.maps.common.projection.Tiles;
+import org.gbif.maps.common.projection.*;
 
 import java.io.Serializable;
 import java.util.List;
