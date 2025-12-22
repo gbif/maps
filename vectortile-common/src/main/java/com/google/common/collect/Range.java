@@ -13,13 +13,6 @@
  */
 package com.google.common.collect;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import com.google.common.annotations.Beta;
-import com.google.common.annotations.GwtCompatible;
-import com.google.common.base.Equivalence;
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
@@ -27,7 +20,16 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedSet;
+
 import javax.annotation.Nullable;
+
+import com.google.common.annotations.Beta;
+import com.google.common.annotations.GwtCompatible;
+import com.google.common.base.Equivalence;
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A range (or "interval") defines the <i>boundaries</i> around a contiguous span of values of some
