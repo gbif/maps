@@ -27,11 +27,9 @@ public class Config {
 
   @Data
   public static class EsTileConfiguration {
-    public enum SearchType { EVENT, OCCURRENCE}
     private EsConfig elasticsearch;
     private Integer tileSize;
     private Integer bufferSize;
-    private SearchType type;
     private boolean nestedIndex;
     private boolean enabled;
   }

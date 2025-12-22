@@ -20,6 +20,7 @@ import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.MapTables;
 import org.gbif.maps.common.meta.Metastores;
+import org.gbif.maps.config.ConfigUtils;
 import org.gbif.maps.io.PointFeature;
 
 import java.util.Optional;
@@ -128,7 +129,7 @@ public class HBaseMaps {
         }
       ));
     Cache<String, Optional<PointFeature.PointFeatures>> cache = manager.getNativeCacheManager().getCache("pointCache");
-    CacheConfiguration.registerCacheMetrics(cache, meterRegistry);
+    ConfigUtils.registerCacheMetrics(cache, meterRegistry);
     return cache;
   }
 
@@ -157,7 +158,7 @@ public class HBaseMaps {
       ));
 
     Cache<TileKey, Optional<byte[]>> cache = manager.getNativeCacheManager().getCache("tileCache");
-    CacheConfiguration.registerCacheMetrics(cache, meterRegistry);
+    ConfigUtils.registerCacheMetrics(cache, meterRegistry);
     return cache;
   }
 
