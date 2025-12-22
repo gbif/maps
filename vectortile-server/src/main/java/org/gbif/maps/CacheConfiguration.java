@@ -67,13 +67,4 @@ public class CacheConfiguration {
     ConfigUtils.registerCacheMetrics(cache, meterRegistry);
     return new DefaultInMemoryPredicateCacheService(objectMapper, cache);
   }
-
-  @Bean("eventPredicateCache")
-  @ConditionalOnExpression("${esEventConfiguration.enabled}")
-  public PredicateCacheService eventPredicateCacheService(ObjectMapper objectMapper, Cache2kConfig<Integer, Predicate> cache2kConfig, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry) {
-    cacheManager.addCaches(b -> cache2kConfig.builder().manager(cacheManager.getNativeCacheManager()).name("eventPredicateCache"));
-    Cache<Integer, Predicate> cache = cacheManager.getNativeCacheManager().getCache("eventPredicateCache");
-    ConfigUtils.registerCacheMetrics(cache,  meterRegistry);
-    return new DefaultInMemoryPredicateCacheService(objectMapper, cache);
-  }
 }
