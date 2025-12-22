@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.gbif.maps.resource.workflow;
+package org.gbif.maps.workflow;
 
 import java.io.IOException;
 import java.net.URL;

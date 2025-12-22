@@ -11,10 +11,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.gbif.maps.resource;
+package org.gbif.maps;
 
 import org.gbif.maps.common.hbase.ModulusSalt;
-import org.gbif.maps.resource.udf.MapKeysUDF;
+import org.gbif.maps.udf.MapKeysUDF;
 
 import java.io.IOException;
 import java.io.Serializable;

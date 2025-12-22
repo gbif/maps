@@ -15,7 +15,8 @@ package org.gbif.maps.resource.udf;
 
 import org.gbif.maps.common.projection.Long2D;
 import org.gbif.maps.common.projection.TileSchema;
-import org.gbif.maps.resource.udf.TileXYUDF.Direction;
+import org.gbif.maps.udf.TileXYUDF;
+import org.gbif.maps.udf.TileXYUDF.Direction;
 
 import java.util.List;
 
@@ -23,7 +24,6 @@ import org.junit.Test;
 
 import com.google.common.collect.Lists;
 
-import static org.gbif.maps.resource.udf.TileXYUDF.Direction.*;
 import static org.junit.Assert.assertEquals;
 
 public class TileXYUDFTest {

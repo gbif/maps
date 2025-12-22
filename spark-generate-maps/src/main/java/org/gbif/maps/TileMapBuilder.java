@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.gbif.maps.resource;
+package org.gbif.maps;
 
 import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.resource.udf.*;
@@ -34,6 +34,13 @@ import org.apache.spark.sql.SparkSession;
 import lombok.Builder;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+
+import org.gbif.maps.udf.EncodeBorYearUDF;
+import org.gbif.maps.udf.GlobalPixelUDF;
+import org.gbif.maps.udf.HBaseKeyUDF;
+import org.gbif.maps.udf.MapKeysUDF;
+import org.gbif.maps.udf.TileXYUDF;
+
 import scala.Tuple2;
 
 /** Builds HFiles for the pyramid of map tiles. */
