@@ -23,6 +23,8 @@ import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.TileProjection;
 import org.gbif.maps.common.projection.TileSchema;
 import org.gbif.maps.common.projection.Tiles;
+import org.gbif.maps.docs.CommonOpenAPI;
+import org.gbif.maps.docs.OpenAPIDocs;
 import org.gbif.maps.io.PointFeature;
 
 import java.io.IOException;
@@ -460,8 +462,8 @@ public final class TileResource {
   )
   @CommonOpenAPI.TileProjectionAndStyleParameters
   @CommonOpenAPI.BinningParameters
-  @CommonOpenAPI.DensitySearchParameters
-  @CommonOpenAPI.TileResponses
+  @OpenAPIDocs.DensitySearchParameters
+  @OpenAPIDocs.TileResponses
   @RequestMapping(
     method = RequestMethod.GET,
     value = "/{z}/{x}/{y}.mvt",
@@ -505,7 +507,7 @@ public final class TileResource {
       "\n" +
       "It accepts the same search parameters as the density tile query."
   )
-  @CommonOpenAPI.DensitySearchParameters
+  @OpenAPIDocs.DensitySearchParameters
   @ApiResponses(
     value = {
       @ApiResponse(

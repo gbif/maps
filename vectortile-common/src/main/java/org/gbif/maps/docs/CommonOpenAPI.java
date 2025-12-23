@@ -11,16 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.gbif.maps.resource;
+package org.gbif.maps.docs;
 
-import org.gbif.api.vocabulary.BasisOfRecord;
-import org.gbif.api.vocabulary.Country;
-
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.util.UUID;
+import static java.lang.annotation.ElementType.METHOD;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -32,8 +25,13 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
-import static java.lang.annotation.ElementType.METHOD;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.UUID;
+import org.gbif.api.vocabulary.BasisOfRecord;
+import org.gbif.api.vocabulary.Country;
 
 public class CommonOpenAPI {
 
@@ -130,7 +128,7 @@ public class CommonOpenAPI {
       )
     }
   )
-  @interface TileProjectionAndStyleParameters {}
+  public @interface TileProjectionAndStyleParameters {}
 
   @Target({METHOD})
   @Retention(RetentionPolicy.RUNTIME)
@@ -158,7 +156,7 @@ public class CommonOpenAPI {
       )
     }
   )
-  @interface BinningParameters {};
+  public @interface BinningParameters {};
 
   // These parameters are used for the density tile and capabilities request.
   @Target({METHOD})
@@ -219,7 +217,7 @@ public class CommonOpenAPI {
       )
     }
   )
-  @interface DensitySearchParameters {}
+  public @interface DensitySearchParameters {}
 
   // Standard vector and raster tile responses
   @Target({METHOD})
@@ -246,6 +244,6 @@ public class CommonOpenAPI {
       )
     }
   )
-  @interface TileResponses {}
+  public @interface TileResponses {}
 
 }

@@ -18,11 +18,20 @@ import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
 
 import com.codahale.metrics.annotation.Timed;
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.gbif.maps.TileServerConfiguration;
+import org.gbif.maps.docs.CommonOpenAPI;
+import org.gbif.maps.docs.OpenAPIDocs;
 import org.gbif.occurrence.search.cache.PredicateCacheService;
+import org.gbif.search.heatmap.HeatmapRequest;
 import org.gbif.search.heatmap.es.event.EventHeatmapsEsService;
 import org.gbif.search.heatmap.event.EventHeatmapRequest;
 import org.gbif.search.heatmap.event.EventHeatmapRequestProvider;
@@ -54,9 +63,38 @@ public final class AdHocEventMapsResource extends AdHocMapsResource<EventHeatmap
         configuration.getEsEventConfiguration().getBufferSize());
   }
 
-  // Overridden only to hide it from the OpenAPI schema.
-  // TODO: create documentation page for event maps?
-  @Hidden
+  // Overridden only for the OpenAPI documentation.
+  @Operation(
+    operationId = "getAdHocTile",
+    summary = "Ad-hoc search tile",
+    description = "Retrieves a tile showing event locations in [Mapbox Vector Tile format](https://www.mapbox.com/vector-tiles/)\n" +
+      "\n" +
+      "Tiles contain a single layer `event`. Features in that layer are either points (default) or polygons " +
+      "(if chosen). Each feature has a `total` value; that is the number of events at that point or in the polygon.\n" +
+      "\n" +
+      "Any search parameter allowed by the [event search](/en/openapi/v1/event#/Events/searchEvent) is supported."
+  )
+  @Tag(name = "Event maps")
+  @Parameters(
+    value = {
+      @Parameter(
+        name = "tileBuffer",
+        in = ParameterIn.QUERY,
+        hidden = true
+      ),
+      @Parameter(
+        name = "mode",
+        in = ParameterIn.QUERY,
+        description = "Sets the search mode.  `GEO_BOUNDS` is the default, and returns rectangles that bound all the " +
+          "events in each bin.  `GEO_CENTROID` instead returns a point at the weighted centroid of the bin.",
+        schema = @Schema(implementation = HeatmapRequest.Mode.class)
+      )
+    }
+  )
+  @CommonOpenAPI.TileProjectionAndStyleParameters
+  @CommonOpenAPI.BinningParameters
+  @OpenAPIDocs.DensitySearchParameters
+  @OpenAPIDocs.TileResponses
   @RequestMapping(
       method = RequestMethod.GET,
       value = "/{z}/{x}/{y}.mvt",

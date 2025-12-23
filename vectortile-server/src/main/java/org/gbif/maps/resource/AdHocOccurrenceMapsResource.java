@@ -27,6 +27,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.gbif.maps.TileServerConfiguration;
+import org.gbif.maps.docs.CommonOpenAPI;
+import org.gbif.maps.docs.OpenAPIDocs;
 import org.gbif.occurrence.search.cache.PredicateCacheService;
 import org.gbif.search.heatmap.HeatmapRequest;
 import org.gbif.search.heatmap.occurrence.OccurrenceHeatmapRequest;
@@ -93,8 +95,8 @@ public final class AdHocOccurrenceMapsResource
   )
   @CommonOpenAPI.TileProjectionAndStyleParameters
   @CommonOpenAPI.BinningParameters
-  @CommonOpenAPI.DensitySearchParameters
-  @CommonOpenAPI.TileResponses
+  @OpenAPIDocs.DensitySearchParameters
+  @OpenAPIDocs.TileResponses
   @RequestMapping(
     method = RequestMethod.GET,
     value = "/{z}/{x}/{y}.mvt",
