@@ -129,6 +129,14 @@
           <groupId>io.netty</groupId>
           <artifactId>*</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.hbase</groupId>
+          <artifactId>hbase-hadoop-compat</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.hbase</groupId>
+          <artifactId>hbase-hadoop2-compat</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
