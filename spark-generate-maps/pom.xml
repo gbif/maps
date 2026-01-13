@@ -49,6 +49,10 @@
                   <pattern>org.apache.curator</pattern>
                   <shadedPattern>shared.org.apache.curator</shadedPattern>
                 </relocation>
+                <relocation>
+                  <pattern>org.apache.hadoop.metrics2</pattern>
+                  <shadedPattern>shared.org.apache.hadoop.metrics2</shadedPattern>
+                </relocation>
               </relocations>
             </configuration>
           </execution>
