@@ -49,10 +49,6 @@
                   <pattern>org.apache.curator</pattern>
                   <shadedPattern>shared.org.apache.curator</shadedPattern>
                 </relocation>
-                <relocation>
-                  <pattern>org.apache.hadoop.metrics2</pattern>
-                  <shadedPattern>shared.org.apache.hadoop.metrics2</shadedPattern>
-                </relocation>
               </relocations>
             </configuration>
           </execution>
@@ -189,6 +185,11 @@
       <artifactId>spark-avro_${scala.tools.version}</artifactId>
       <version>${spark.version}</version>
       <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <!-- Jackson and Yaml-->
