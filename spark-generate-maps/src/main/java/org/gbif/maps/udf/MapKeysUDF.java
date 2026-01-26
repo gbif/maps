@@ -14,14 +14,10 @@
 package org.gbif.maps.udf;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.api.java.UDF13;
+import org.apache.spark.sql.api.java.UDF6;
 import org.apache.spark.sql.types.DataTypes;
 
 import com.google.common.collect.Sets;
@@ -33,21 +29,14 @@ import scala.collection.mutable.WrappedArray;
 /** Returns the map keys for the record. */
 @AllArgsConstructor
 public class MapKeysUDF
-    implements UDF13<
-            String,
-            String,
-            String,
-            String,
-            String,
-            String,
-            String,
-            String,
+    implements UDF6<
+            Map<String, List<String>>,
             String,
             String,
             String,
             String,
             WrappedArray<String>,
-            String[]>,
+            List<String>>,
         Serializable {
 
   private Set<String> denyOrApproveKeys;
@@ -65,7 +54,7 @@ public class MapKeysUDF
 
   // Maintain backwards compatible keys
   private static final Map<String, Integer> MAPS_TYPES =
-      new HashMap<String, Integer>() {
+      new HashMap<>() {
         {
           put("ALL", 0);
           put("TAXON", 1);
@@ -77,33 +66,9 @@ public class MapKeysUDF
         }
       };
 
-  public String[] call(Row row) {
-    return call(
-        row.getAs("kingdomKey"),
-        row.getAs("phylumKey"),
-        row.getAs("classKey"),
-        row.getAs("orderKey"),
-        row.getAs("familyKey"),
-        row.getAs("genusKey"),
-        row.getAs("speciesKey"),
-        row.getAs("taxonKey"),
-        row.getAs("datasetKey"),
-        row.getAs("publishingOrgKey"),
-        row.getAs("countryCode"),
-        row.getAs("publishingCountry"),
-        row.getAs("networkKey"));
-  }
-
   @Override
-  public String[] call(
-      String kingdomKey,
-      String phylumKey,
-      String classKey,
-      String orderKey,
-      String familyKey,
-      String genusKey,
-      String speciesKey,
-      String taxonKey,
+  public List<String> call(
+      Map<String, List<String>> classifications,
       String datasetKey,
       String publishingOrgKey,
       String countryCode,
@@ -111,40 +76,56 @@ public class MapKeysUDF
       WrappedArray<String> networkKeys) {
 
     Set<String> keys = Sets.newHashSet();
+
     appendNonNull(keys, "ALL", 0);
-    appendNonNull(keys, "TAXON", kingdomKey);
-    appendNonNull(keys, "TAXON", phylumKey);
-    appendNonNull(keys, "TAXON", classKey);
-    appendNonNull(keys, "TAXON", orderKey);
-    appendNonNull(keys, "TAXON", familyKey);
-    appendNonNull(keys, "TAXON", genusKey);
-    appendNonNull(keys, "TAXON", speciesKey);
-    appendNonNull(keys, "TAXON", taxonKey);
     appendNonNull(keys, "DATASET", datasetKey);
     appendNonNull(keys, "PUBLISHER", publishingOrgKey);
     appendNonNull(keys, "COUNTRY", countryCode);
     appendNonNull(keys, "PUBLISHING_COUNTRY", publishingCountry);
+
     if (networkKeys != null && !networkKeys.isEmpty()) {
       for (String n : JavaConverters.seqAsJavaList(networkKeys)) {
         appendNonNull(keys, "NETWORK", n);
       }
     }
 
-    if (!denyOrApproveKeys.isEmpty()) {
-      return keys.stream()
-          .filter(
-              s -> {
-                if (isApprove) return denyOrApproveKeys.contains(s);
-                else return !denyOrApproveKeys.contains(s);
-              })
-          .distinct()
-          .toArray(String[]::new);
+    if (classifications != null) {
+      // for each classification, encode keys as "<classificationKey>|<taxonID>"
+      for (Map.Entry<String, List<String>> entry : classifications.entrySet()) {
+        String key = entry.getKey();
+        List<String> taxa = entry.getValue();
+
+        if (taxa == null) {
+          continue;
+        }
+
+        for (String taxonId : taxa) {
+          if (taxonId != null) {
+            keys.add(key + "|" + taxonId);
+          }
+        }
+      }
     }
 
-    return keys.toArray(new String[0]);
+    if (!denyOrApproveKeys.isEmpty()) {
+      List<String> filtered = new ArrayList<>();
+      for (String k : keys) {
+        if (isApprove == denyOrApproveKeys.contains(k)) {
+          filtered.add(k);
+        }
+      }
+      return filtered;
+    }
+
+    return new ArrayList<>(keys);
   }
 
   public static void appendNonNull(Set<String> target, String prefix, Object l) {
-    if (l != null) target.add(MAPS_TYPES.get(prefix) + ":" + l);
+    if (l != null) {
+      Integer type = MAPS_TYPES.get(prefix);
+      if (type != null) {
+        target.add(type + ":" + l);
+      }
+    }
   }
 }

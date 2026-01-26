@@ -36,6 +36,9 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import scala.Tuple2;
 
+import static org.apache.spark.sql.functions.col;
+import static org.apache.spark.sql.functions.collect_list;
+
 /** Builds HFiles for the pyramid of map tiles. */
 @Slf4j
 @Builder
@@ -107,12 +110,10 @@ class TileMapBuilder implements Serializable {
                 + "  %s "
                 + "  LATERAL VIEW explode(  "
                 + "    mapKeys("
-                + "      kingdomKey, phylumKey, classKey, orderKey, familyKey, genusKey, speciesKey, taxonKey,"
-                + "      datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
+                + "      classifications, datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
                 + "    ) "
                 + "  ) m AS mapKey "
-                + "GROUP BY mapKey, lat, lng, borYear "
-                + "ORDER BY mapKey, borYear",
+                + "GROUP BY mapKey, lat, lng, borYear ",
             targetTable, sourceTable));
     return targetTable;
   }
@@ -136,15 +137,12 @@ class TileMapBuilder implements Serializable {
                     + "FROM %s "
                     + "GROUP BY mapKey, xy, borYear",
                 zoom, table));
-    t1.createOrReplaceTempView("t1");
 
-    // collect counts into a feature at the global pixel address
+    // collect counts into a feature at the global pixel address (avoid SQL for performance)
     Dataset<Row> t2 =
-        spark.sql(
-            "SELECT mapKey, xy, collect_list(borYearCount) as features"
-                + "  FROM t1 "
-                + "  WHERE xy IS NOT NULL"
-                + "  GROUP BY mapKey, xy");
+        t1.filter(col("xy").isNotNull())
+            .groupBy(col("mapKey"), col("xy"))
+            .agg(collect_list(col("borYearCount")).as("features"));
     t2.createOrReplaceTempView("t2");
 
     // readdress pixels onto tiles noting that addresses in buffer zones fall on multiple tiles

@@ -190,8 +190,7 @@ public class MapBuilder implements Serializable {
                         + "  %s "
                         + "  LATERAL VIEW explode(  "
                         + "    mapKeys("
-                        + "      kingdomKey, phylumKey, classKey, orderKey, familyKey, genusKey, speciesKey, taxonKey,"
-                        + "      datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
+                        + "      classifications, datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
                         + "    ) "
                         + "  ) m AS mapKey "
                         + "GROUP BY mapKey",
