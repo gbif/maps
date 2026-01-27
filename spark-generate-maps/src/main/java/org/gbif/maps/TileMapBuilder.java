@@ -37,7 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 import scala.Tuple2;
 
 import static org.apache.spark.sql.functions.col;
-import static org.apache.spark.sql.functions.collect_list;
 
 /** Builds HFiles for the pyramid of map tiles. */
 @Slf4j
@@ -137,12 +136,15 @@ class TileMapBuilder implements Serializable {
                     + "FROM %s "
                     + "GROUP BY mapKey, xy, borYear",
                 zoom, table));
+    t1.createOrReplaceTempView("t1");
 
-    // collect counts into a feature at the global pixel address (avoid SQL for performance)
+    // collect counts into a feature at the global pixel address
     Dataset<Row> t2 =
-        t1.filter(col("xy").isNotNull())
-            .groupBy(col("mapKey"), col("xy"))
-            .agg(collect_list(col("borYearCount")).as("features"));
+        spark.sql(
+            "SELECT mapKey, xy, collect_list(borYearCount) as features"
+                + "  FROM t1 "
+                + "  WHERE xy IS NOT NULL"
+                + "  GROUP BY mapKey, xy");
     t2.createOrReplaceTempView("t2");
 
     // readdress pixels onto tiles noting that addresses in buffer zones fall on multiple tiles

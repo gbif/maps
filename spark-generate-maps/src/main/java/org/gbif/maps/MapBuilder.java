@@ -67,7 +67,7 @@ public class MapBuilder implements Serializable {
             .targetDir("/tmp/tim-map-points/")
             .buildPoints(true)
             .build();
-    points.run();
+    // points.run();
 
     MapBuilder tiles =
         MapBuilder.builder()
@@ -134,6 +134,7 @@ public class MapBuilder implements Serializable {
    * multiple times.
    */
   private void readAvroSource(SparkSession spark, String targetHiveTable) {
+
     Dataset<Row> source =
         spark
             .read()
@@ -145,17 +146,10 @@ public class MapBuilder implements Serializable {
                 "publishingCountry",
                 "networkKey",
                 "countryCode",
+                "classifications",
                 "basisOfRecord",
                 "decimalLatitude",
                 "decimalLongitude",
-                "kingdomKey",
-                "phylumKey",
-                "classKey",
-                "orderKey",
-                "familyKey",
-                "genusKey",
-                "speciesKey",
-                "taxonKey",
                 "year",
                 "occurrenceStatus",
                 "hasGeospatialIssues")
@@ -166,13 +160,16 @@ public class MapBuilder implements Serializable {
                     + "occurrenceStatus='PRESENT' ");
 
     // Default of 1200 yields 100MB files from 2.5B input
-    Dataset<Row> partitioned =
-        source.repartition(
-            spark.sparkContext().conf().getInt("spark.sql.shuffle.partitions", 1200));
+    int partitions = spark.sparkContext().conf().getInt("spark.sql.shuffle.partitions", 1200);
 
     // write as table to avoid any lazy evaluation re-reading small avro input
-    spark.sql(String.format("DROP TABLE IF EXISTS %s PURGE", targetHiveTable));
-    partitioned.write().mode(SaveMode.Overwrite).format("parquet").saveAsTable(targetHiveTable);
+    source
+        .coalesce(partitions)
+        .write()
+        .mode(SaveMode.Overwrite)
+        .option("maxRecordsPerFile", 10_000_000)
+        .format("parquet")
+        .saveAsTable(targetHiveTable);
   }
 
   /**

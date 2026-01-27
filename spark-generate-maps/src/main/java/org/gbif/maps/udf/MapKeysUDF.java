@@ -30,13 +30,13 @@ import scala.collection.mutable.WrappedArray;
 @AllArgsConstructor
 public class MapKeysUDF
     implements UDF6<
-            Map<String, List<String>>,
+            scala.collection.Map<String, WrappedArray<String>>,
             String,
             String,
             String,
             String,
             WrappedArray<String>,
-            List<String>>,
+            String[]>,
         Serializable {
 
   private Set<String> denyOrApproveKeys;
@@ -67,8 +67,8 @@ public class MapKeysUDF
       };
 
   @Override
-  public List<String> call(
-      Map<String, List<String>> classifications,
+  public String[] call(
+      scala.collection.Map<String, WrappedArray<String>> classifications,
       String datasetKey,
       String publishingOrgKey,
       String countryCode,
@@ -90,10 +90,13 @@ public class MapKeysUDF
     }
 
     if (classifications != null) {
+      java.util.Map<String, WrappedArray<String>> javaMap =
+          JavaConverters.mapAsJavaMap(classifications);
+
       // for each classification, encode keys as "<classificationKey>|<taxonID>"
-      for (Map.Entry<String, List<String>> entry : classifications.entrySet()) {
+      for (Map.Entry<String, WrappedArray<String>> entry : javaMap.entrySet()) {
         String key = entry.getKey();
-        List<String> taxa = entry.getValue();
+        List<String> taxa = JavaConverters.seqAsJavaList(entry.getValue());
 
         if (taxa == null) {
           continue;
@@ -108,16 +111,16 @@ public class MapKeysUDF
     }
 
     if (!denyOrApproveKeys.isEmpty()) {
-      List<String> filtered = new ArrayList<>();
-      for (String k : keys) {
-        if (isApprove == denyOrApproveKeys.contains(k)) {
-          filtered.add(k);
-        }
-      }
-      return filtered;
+      return keys.stream()
+          .filter(
+              s -> {
+                if (isApprove) return denyOrApproveKeys.contains(s);
+                else return !denyOrApproveKeys.contains(s);
+              })
+          .toArray(String[]::new);
     }
 
-    return new ArrayList<>(keys);
+    return keys.toArray(new String[0]);
   }
 
   public static void appendNonNull(Set<String> target, String prefix, Object l) {
