@@ -118,24 +118,27 @@ class TileMapBuilder implements Serializable {
                targetTable, sourceTable));
 
     */
+
+    GlobalPixelUDF.register(spark, "project1", "EPSG:3857", tileSize);
+    GlobalPixelUDF.register(spark, "project2", "EPSG:4326", tileSize);
+    GlobalPixelUDF.register(spark, "project3", "EPSG:3575", tileSize);
+    GlobalPixelUDF.register(spark, "project4", "EPSG:3031", tileSize);
+
     Dataset<Row> prepared =
         spark.sql(
             String.format(
                 "SELECT "
-                    + "  mapKey, "
-                    + "  decimalLatitude AS lat, "
-                    + "  decimalLongitude AS lng, "
-                    + "  encodeBorYear(basisOfRecord, year) AS borYear, " // improves performance
-                    + "  count(*) AS occCount "
+                    + "  mapKeys("
+                    + "    classifications, datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
+                    + "  ) AS mapKeys, "
+                    + "  project1(%d, decimalLatitude, decimalLongitude) AS xy1, "
+                    + "  project2(%d, decimalLatitude, decimalLongitude) AS xy2, "
+                    + "  project3(%d, decimalLatitude, decimalLongitude) AS xy3, "
+                    + "  project4(%d, decimalLatitude, decimalLongitude) AS xy4, "
+                    + "  encodeBorYear(basisOfRecord, year) AS borYear " // improves performance
                     + "FROM "
-                    + "  %s "
-                    + "  LATERAL VIEW explode(  "
-                    + "    mapKeys("
-                    + "      classifications, datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
-                    + "    ) "
-                    + "  ) m AS mapKey "
-                    + "GROUP BY mapKey, lat, lng, borYear ",
-                sourceTable));
+                    + "  %s ",
+                maxZoom, maxZoom, maxZoom, maxZoom, sourceTable));
 
     prepared.write().mode(SaveMode.Overwrite).format("parquet").saveAsTable(targetTable);
 
@@ -156,12 +159,14 @@ class TileMapBuilder implements Serializable {
             String.format(
                 "      SELECT "
                     + "  mapKey, "
-                    + "  project(%d, lat, lng) AS xy, "
-                    + "  struct(borYear AS borYear, sum(occCount) AS occCount) AS borYearCount "
+                    + "  xy1 AS xy, " // TODO: add shift here, pick correct EPSG
+                    + "  struct(borYear AS borYear, count(*) AS occCount) AS borYearCount "
                     + "FROM %s "
+                    + "LATERAL VIEW explode(mapKeys) m AS mapKey "
                     + "GROUP BY mapKey, xy, borYear",
-                zoom, table));
-    t1.createOrReplaceTempView("t1");
+                table));
+    // t1.createOrReplaceTempView("t1");
+    t1.write().mode(SaveMode.Overwrite).format("parquet").saveAsTable("t1");
 
     // collect counts into a feature at the global pixel address
     Dataset<Row> t2 =
@@ -170,7 +175,8 @@ class TileMapBuilder implements Serializable {
                 + "  FROM t1 "
                 + "  WHERE xy IS NOT NULL"
                 + "  GROUP BY mapKey, xy");
-    t2.createOrReplaceTempView("t2");
+    // t2.createOrReplaceTempView("t2");
+    t2.write().mode(SaveMode.Overwrite).format("parquet").saveAsTable("t2");
 
     // readdress pixels onto tiles noting that addresses in buffer zones fall on multiple tiles
     HBaseKeyUDF.registerTileKey(spark, "hbaseKey", salter);

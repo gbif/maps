@@ -74,7 +74,7 @@ public class MapBuilder implements Serializable {
             .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
             .hiveDB("tim")
             .hbaseTable("tim")
-            .moduloTiles(100)
+            .moduloTiles(1000)
             .threshold(250000)
             .tileSize(512)
             .bufferSize(64)
