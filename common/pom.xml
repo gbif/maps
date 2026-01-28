@@ -16,7 +16,7 @@
         <artifactId>maven-protoc-plugin</artifactId>
         <version>${maven-protoc-plugin.version}</version>
         <configuration>
-          <protocExecutable>/opt/homebrew/bin/protoc</protocExecutable>
+          <protocExecutable>/usr/local/opt/protobuf@3/bin/protoc</protocExecutable>
           <outputDirectory>${project.basedir}/src/main/java-generated/</outputDirectory>
         </configuration>
         <executions>

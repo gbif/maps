@@ -52,7 +52,7 @@ public class MapBuilder implements Serializable {
   private boolean buildPoints;
   private boolean buildTiles;
 
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) throws IOException, InterruptedException {
     // This method intentionally left in for development. Start by creating the HDFS snapshot and
     // then generate the HFiles.
 
@@ -86,7 +86,7 @@ public class MapBuilder implements Serializable {
     tiles.run();
   }
 
-  public void run() {
+  public void run() throws InterruptedException {
     SparkSession spark =
         SparkSession.builder().appName("Map Builder").enableHiveSupport().getOrCreate();
     spark.sql("use " + hiveDB);
@@ -94,7 +94,7 @@ public class MapBuilder implements Serializable {
 
     // Read the source Avro files and prepare them as performant tables
     String inputTable = String.format("maps_input_%s", hiveInputSuffix);
-    readAvroSource(spark, inputTable);
+    // readAvroSource(spark, inputTable);
 
     // Determine the mapKeys of maps that require a tile pyramid
     Set<String> largeMapKeys = mapKeyExceedingThreshold(spark, inputTable);
@@ -179,20 +179,19 @@ public class MapBuilder implements Serializable {
   private Set<String> mapKeyExceedingThreshold(SparkSession spark, String source) {
     MapKeysUDF.register(spark, "mapKeys");
     Dataset<Row> stats =
-        spark
-            .sql(
-                String.format(
-                    "SELECT mapKey, count(*) AS occCount "
-                        + "FROM "
-                        + "  %s "
-                        + "  LATERAL VIEW explode(  "
-                        + "    mapKeys("
-                        + "      classifications, datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
-                        + "    ) "
-                        + "  ) m AS mapKey "
-                        + "GROUP BY mapKey",
-                    source))
-            .filter(String.format("occCount>=%d", threshold));
+        spark.sql(
+            String.format(
+                "SELECT mapKey, count(*) AS occCount "
+                    + "FROM "
+                    + "  %s "
+                    + "  LATERAL VIEW explode(  "
+                    + "    mapKeys("
+                    + "      classifications, datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
+                    + "    ) "
+                    + "  ) m AS mapKey "
+                    + "GROUP BY mapKey "
+                    + "HAVING count(*)>=%d",
+                source, threshold));
     Set<String> mapsToPyramid = new HashSet<>();
     if (!stats.isEmpty()) {
       List<Row> statsList = stats.collectAsList();

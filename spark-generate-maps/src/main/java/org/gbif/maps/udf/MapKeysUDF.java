@@ -95,7 +95,7 @@ public class MapKeysUDF
 
       // for each classification, encode keys as "<classificationKey>|<taxonID>"
       for (Map.Entry<String, WrappedArray<String>> entry : javaMap.entrySet()) {
-        String key = entry.getKey();
+        String checklistKey = entry.getKey();
         List<String> taxa = JavaConverters.seqAsJavaList(entry.getValue());
 
         if (taxa == null) {
@@ -104,7 +104,8 @@ public class MapKeysUDF
 
         for (String taxonId : taxa) {
           if (taxonId != null) {
-            keys.add(key + "|" + taxonId);
+            // encode the taxon key as "checklist|id"
+            appendNonNull(keys, "TAXON", checklistKey + "|" + taxonId);
           }
         }
       }

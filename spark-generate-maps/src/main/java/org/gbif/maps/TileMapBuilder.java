@@ -29,6 +29,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
 
 import lombok.Builder;
@@ -51,7 +52,7 @@ class TileMapBuilder implements Serializable {
   private final int tileSize;
   private final int bufferSize;
   private final int maxZoom;
-  private final int projectionParallelism;
+  @Deprecated private final int projectionParallelism; // no longer supported
 
   /** Generates the tile pyramid. */
   void generate() {
@@ -96,24 +97,48 @@ class TileMapBuilder implements Serializable {
     EncodeBorYearUDF.register(spark, "encodeBorYear");
 
     String targetTable = String.format("%s_filtered", sourceTable);
-    spark.sql(
-        String.format(
-            "CACHE TABLE %s AS "
-                + "SELECT "
-                + "  mapKey, "
-                + "  decimalLatitude AS lat, "
-                + "  decimalLongitude AS lng, "
-                + "  encodeBorYear(basisOfRecord, year) AS borYear, " // improves performance
-                + "  count(*) AS occCount "
-                + "FROM "
-                + "  %s "
-                + "  LATERAL VIEW explode(  "
-                + "    mapKeys("
-                + "      classifications, datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
-                + "    ) "
-                + "  ) m AS mapKey "
-                + "GROUP BY mapKey, lat, lng, borYear ",
-            targetTable, sourceTable));
+    /*
+       spark.sql(
+           String.format(
+               "CACHE TABLE %s AS "
+                   + "SELECT "
+                   + "  mapKey, "
+                   + "  decimalLatitude AS lat, "
+                   + "  decimalLongitude AS lng, "
+                   + "  encodeBorYear(basisOfRecord, year) AS borYear, " // improves performance
+                   + "  count(*) AS occCount "
+                   + "FROM "
+                   + "  %s "
+                   + "  LATERAL VIEW explode(  "
+                   + "    mapKeys("
+                   + "      classifications, datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
+                   + "    ) "
+                   + "  ) m AS mapKey "
+                   + "GROUP BY mapKey, lat, lng, borYear ",
+               targetTable, sourceTable));
+
+    */
+    Dataset<Row> prepared =
+        spark.sql(
+            String.format(
+                "SELECT "
+                    + "  mapKey, "
+                    + "  decimalLatitude AS lat, "
+                    + "  decimalLongitude AS lng, "
+                    + "  encodeBorYear(basisOfRecord, year) AS borYear, " // improves performance
+                    + "  count(*) AS occCount "
+                    + "FROM "
+                    + "  %s "
+                    + "  LATERAL VIEW explode(  "
+                    + "    mapKeys("
+                    + "      classifications, datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
+                    + "    ) "
+                    + "  ) m AS mapKey "
+                    + "GROUP BY mapKey, lat, lng, borYear ",
+                sourceTable));
+
+    prepared.write().mode(SaveMode.Overwrite).format("parquet").saveAsTable(targetTable);
+
     return targetTable;
   }
 
