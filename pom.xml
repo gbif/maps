@@ -120,10 +120,6 @@
 
   <repositories>
     <repository>
-      <id>gbif-central</id>
-      <url>https://repository.gbif.org/repository/central/</url>
-    </repository>
-    <repository>
       <id>gbif-release</id>
       <url>https://repository.gbif.org/repository/releases/</url>
     </repository>
