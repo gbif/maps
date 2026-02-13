@@ -30,6 +30,7 @@ import org.gbif.maps.common.filter.Range;
  * Utilities for dealing with the parameters and mappings.
  */
 public class Params {
+  private static final String GBIF_BACKBONE_UUID = "d7dddbf4-2cf0-4f39-9b2a-bb099caae36c";
   // Patterns used in splitting strings
   static final Pattern COMMA = Pattern.compile(",");
   static final Pattern PIPE = Pattern.compile("[|]");
@@ -86,7 +87,11 @@ public class Params {
     String mapKey = null,
     countryMaskKey = null;
 
+    // backwards compatible default
+    String checklistKey = params.containsKey("checklistKey") ? params.get("checklistKey")[0] : GBIF_BACKBONE_UUID;
+
     for (Map.Entry<String, String[]> param : params.entrySet()) {
+
       if (MAP_TYPES.containsKey(param.getKey())) {
         if (param.getValue().length == 0 || Strings.isNullOrEmpty(param.getValue()[0])) {
           // Ignore empty parameters, which can come with a WMTS request from GIS software.
@@ -99,8 +104,12 @@ public class Params {
           } else {
             if (mapKey != null) {
               throw new IllegalArgumentException("Invalid request: Only one type of map may be requested. Perhaps you need to use ad-hoc mapping?");
+            } else if (param.getKey().equals("taxonKey")) {
+              // support for multi-taxa keys
+              mapKey = MAP_TYPES.get(param.getKey()) + ":" + checklistKey + "|" + param.getValue()[0];
+            } else {
+              mapKey = MAP_TYPES.get(param.getKey()) + ":" + param.getValue()[0];
             }
-            mapKey = MAP_TYPES.get(param.getKey()) + ":" + param.getValue()[0];
           }
         }
       }

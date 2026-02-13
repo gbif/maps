@@ -14,58 +14,25 @@
 package org.gbif.maps.udf;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.api.java.UDF13;
+import org.apache.spark.sql.api.java.UDF2;
+import org.apache.spark.sql.api.java.UDF5;
+import org.apache.spark.sql.api.java.UDF6;
 import org.apache.spark.sql.types.DataTypes;
-
-import com.google.common.collect.Sets;
 
 import lombok.AllArgsConstructor;
 import scala.collection.JavaConverters;
 import scala.collection.mutable.WrappedArray;
 
-/** Returns the map keys for the record. */
+/** A collection of UDFs suitable for generating map keys. */
 @AllArgsConstructor
-public class MapKeysUDF
-    implements UDF13<
-            String,
-            String,
-            String,
-            String,
-            String,
-            String,
-            String,
-            String,
-            String,
-            String,
-            String,
-            String,
-            WrappedArray<String>,
-            String[]>,
-        Serializable {
-
-  private Set<String> denyOrApproveKeys;
-  private boolean isApprove;
-
-  public static void register(SparkSession spark, String name) {
-    register(spark, name, new HashSet<>(), true);
-  }
-
-  public static void register(
-      SparkSession spark, String name, Set<String> denyOrApproveKeys, boolean isApprove) {
-    MapKeysUDF udf = new MapKeysUDF(denyOrApproveKeys, isApprove);
-    spark.udf().register(name, udf, DataTypes.createArrayType(DataTypes.StringType));
-  }
+public class MapKeysUDF {
 
   // Maintain backwards compatible keys
   private static final Map<String, Integer> MAPS_TYPES =
-      new HashMap<String, Integer>() {
+      new HashMap<>() {
         {
           put("ALL", 0);
           put("TAXON", 1);
@@ -77,74 +44,212 @@ public class MapKeysUDF
         }
       };
 
-  public String[] call(Row row) {
-    return call(
-        row.getAs("kingdomKey"),
-        row.getAs("phylumKey"),
-        row.getAs("classKey"),
-        row.getAs("orderKey"),
-        row.getAs("familyKey"),
-        row.getAs("genusKey"),
-        row.getAs("speciesKey"),
-        row.getAs("taxonKey"),
-        row.getAs("datasetKey"),
-        row.getAs("publishingOrgKey"),
-        row.getAs("countryCode"),
-        row.getAs("publishingCountry"),
-        row.getAs("networkKey"));
+  /** Register a UDF that will generate all possible keys for a record. */
+  public static void registerAllKeysUDF(SparkSession spark, String name) {
+    registerAllKeysUDF(spark, name, new TreeSet<>(), true);
   }
 
-  @Override
-  public String[] call(
-      String kingdomKey,
-      String phylumKey,
-      String classKey,
-      String orderKey,
-      String familyKey,
-      String genusKey,
-      String speciesKey,
-      String taxonKey,
+  /**
+   * Register a UDF that will generate all possible keys for a record filtered to those either
+   * within or not within the options provided.
+   */
+  public static void registerAllKeysUDF(
+      SparkSession spark, String name, TreeSet<String> denyOrApproveKeys, boolean isApprove) {
+    spark
+        .udf()
+        .register(
+            name,
+            new AllKeysUDF(denyOrApproveKeys, isApprove),
+            DataTypes.createArrayType(DataTypes.StringType));
+  }
+
+  /**
+   * Registers a UDF that generates dictionary-encoded map keys for taxa in the classification,
+   * restricted to values in the given dictionary.
+   */
+  public static void registerTaxonKeysUDF(
+      SparkSession spark, String name, Map<String, Integer> dictionary) {
+    spark
+        .udf()
+        .register(
+            name,
+            new TaxonMapKeysUDF(dictionary),
+            DataTypes.createArrayType(DataTypes.IntegerType));
+  }
+
+  /**
+   * Register a UDF that generates dictionary-encoded map keys for non-taxa fields, restricted to
+   * values in the given dictionary.
+   */
+  public static void registerNonTaxonMapKeysUDF(
+      SparkSession spark, String name, Map<String, Integer> dictionary) {
+    spark
+        .udf()
+        .register(
+            name,
+            new NonTaxonMapKeysUDF(dictionary),
+            DataTypes.createArrayType(DataTypes.IntegerType));
+  }
+
+  /**
+   * Extracts all possible keys from the source record, optionally filtered to those either within,
+   * or not within, a provided set of options.
+   */
+  @AllArgsConstructor
+  public static class AllKeysUDF
+      implements UDF6<
+              scala.collection.Map<String, WrappedArray<String>>,
+              String,
+              String,
+              String,
+              String,
+              WrappedArray<String>,
+              String[]>,
+          Serializable {
+    private TreeSet<String> denyOrApproveKeys;
+    private boolean isApprove;
+
+    @Override
+    public String[] call(
+        scala.collection.Map<String, WrappedArray<String>> classifications,
+        String datasetKey,
+        String publishingOrgKey,
+        String countryCode,
+        String publishingCountry,
+        WrappedArray<String> networkKeys) {
+
+      Set<String> keys = new TreeSet<>(); // sorted, as we group by
+      encodeToMapKey(
+          keys, datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKeys);
+
+      // for each classification, encode keys as "...<classificationKey>|<taxonID>"
+      if (classifications != null) {
+        Map<String, WrappedArray<String>> javaMap = JavaConverters.mapAsJavaMap(classifications);
+
+        for (Map.Entry<String, WrappedArray<String>> entry : javaMap.entrySet()) {
+          encodeClassificationToMapKeys(keys, entry.getValue(), entry.getKey());
+        }
+      }
+
+      // Optionally filter include either those denied or allowed
+      if (!denyOrApproveKeys.isEmpty()) {
+        return keys.stream()
+            .filter(
+                s -> {
+                  if (isApprove) return denyOrApproveKeys.contains(s);
+                  else return !denyOrApproveKeys.contains(s);
+                })
+            .toArray(String[]::new);
+      }
+
+      return keys.toArray(new String[0]);
+    }
+  }
+
+  /**
+   * Generates map keys for the taxa in the classification and checklist provided. The keys will be
+   * created in the form "1:<checklistKey>|<taxoiD" but will then be dictionary encoded using the
+   * given dictionary. Any generated key not found in the dictionary will be dropped.
+   */
+  @AllArgsConstructor
+  public static class TaxonMapKeysUDF
+      implements UDF2<WrappedArray<String>, String, Integer[]>, Serializable {
+
+    private Map<String, Integer> dictionary;
+
+    @Override
+    public Integer[] call(WrappedArray<String> classification, String checklistKey) {
+      Set<String> keys = new TreeSet<>(); // sorted, as we group by
+      encodeClassificationToMapKeys(keys, classification, checklistKey);
+
+      if (classification != null && !classification.isEmpty()) {
+        for (String n : JavaConverters.seqAsJavaList(classification)) {
+          appendNonNull(keys, "TAXON", checklistKey + "|" + n);
+        }
+      }
+
+      return keys.stream().map(dictionary::get).filter(Objects::nonNull).toArray(Integer[]::new);
+    }
+  }
+
+  /**
+   * Generates map keys for the fields provided followed by a dictionary encoding based on the
+   * provided dictionary. Any generated key not found in the dictionary will be dropped.
+   */
+  @AllArgsConstructor
+  public static class NonTaxonMapKeysUDF
+      implements UDF5<String, String, String, String, WrappedArray<String>, Integer[]>,
+          Serializable {
+    private Map<String, Integer> dictionary;
+
+    @Override
+    public Integer[] call(
+        String datasetKey,
+        String publishingOrgKey,
+        String countryCode,
+        String publishingCountry,
+        WrappedArray<String> networkKeys) {
+
+      Set<String> keys = new TreeSet<>(); // sorted, as we group by
+      encodeToMapKey(
+          keys, datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKeys);
+      return keys.stream().map(dictionary::get).filter(Objects::nonNull).toArray(Integer[]::new);
+    }
+
+    public static void appendNonNull(Set<String> target, String prefix, Object l) {
+      if (l != null) {
+        Integer type = MAPS_TYPES.get(prefix);
+        if (type != null) {
+          target.add(type + ":" + l);
+        }
+      }
+    }
+  }
+
+  /** Generate encoded map keys and add them to target if the provided values are not null. */
+  private static void encodeToMapKey(
+      Set<String> target,
       String datasetKey,
       String publishingOrgKey,
       String countryCode,
       String publishingCountry,
       WrappedArray<String> networkKeys) {
+    appendNonNull(target, "ALL", 0);
+    appendNonNull(target, "DATASET", datasetKey);
+    appendNonNull(target, "PUBLISHER", publishingOrgKey);
+    appendNonNull(target, "COUNTRY", countryCode);
+    appendNonNull(target, "PUBLISHING_COUNTRY", publishingCountry);
 
-    Set<String> keys = Sets.newHashSet();
-    appendNonNull(keys, "ALL", 0);
-    appendNonNull(keys, "TAXON", kingdomKey);
-    appendNonNull(keys, "TAXON", phylumKey);
-    appendNonNull(keys, "TAXON", classKey);
-    appendNonNull(keys, "TAXON", orderKey);
-    appendNonNull(keys, "TAXON", familyKey);
-    appendNonNull(keys, "TAXON", genusKey);
-    appendNonNull(keys, "TAXON", speciesKey);
-    appendNonNull(keys, "TAXON", taxonKey);
-    appendNonNull(keys, "DATASET", datasetKey);
-    appendNonNull(keys, "PUBLISHER", publishingOrgKey);
-    appendNonNull(keys, "COUNTRY", countryCode);
-    appendNonNull(keys, "PUBLISHING_COUNTRY", publishingCountry);
     if (networkKeys != null && !networkKeys.isEmpty()) {
       for (String n : JavaConverters.seqAsJavaList(networkKeys)) {
-        appendNonNull(keys, "NETWORK", n);
+        appendNonNull(target, "NETWORK", n);
       }
     }
-
-    if (!denyOrApproveKeys.isEmpty()) {
-      return keys.stream()
-          .filter(
-              s -> {
-                if (isApprove) return denyOrApproveKeys.contains(s);
-                else return !denyOrApproveKeys.contains(s);
-              })
-          .distinct()
-          .toArray(String[]::new);
-    }
-
-    return keys.toArray(new String[0]);
   }
 
-  public static void appendNonNull(Set<String> target, String prefix, Object l) {
-    if (l != null) target.add(MAPS_TYPES.get(prefix) + ":" + l);
+  /**
+   * Generate the encoded map keys for taxa provided from the given checklist key. Keys are of the
+   * structure 1:<checklistKey>|<taxonID>.
+   */
+  private static void encodeClassificationToMapKeys(
+      Set<String> target, WrappedArray<String> classification, String checklistKey) {
+    if (classification == null) return;
+
+    for (String taxonId : JavaConverters.seqAsJavaList(classification)) {
+      if (taxonId != null) {
+        // encode the taxon key as "checklist|id"
+        appendNonNull(target, "TAXON", checklistKey + "|" + taxonId);
+      }
+    }
+  }
+
+  /** Encodes the value into a map key provided it is not null */
+  static void appendNonNull(Set<String> target, String prefix, Object value) {
+    if (value != null) {
+      Integer type = MAPS_TYPES.get(prefix);
+      if (type != null) {
+        target.add(type + ":" + value);
+      }
+    }
   }
 }

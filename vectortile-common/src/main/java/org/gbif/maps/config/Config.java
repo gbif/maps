@@ -4,6 +4,8 @@ import lombok.Data;
 
 import org.gbif.occurrence.search.es.EsConfig;
 
+import java.util.Map;
+
 public class Config {
 
   @Data
@@ -16,8 +18,9 @@ public class Config {
   public static class HBaseConfiguration  {
     private String zookeeperQuorum;
     private String hbaseZnode;
-    private String tilesTableName;
     private String pointsTableName;
+    private String tilesTableName;
+    private Map<String, String> taxonomyTilesTableNames;
     private Integer tileSize;
     private Integer bufferSize;
     private Integer featuresBufferSize;

@@ -72,7 +72,6 @@ public class Backfill {
               .tileSize(config.getTileSize())
               .bufferSize(config.getTileBufferSize())
               .maxZoom(config.getMaxZoom())
-              .projectionParallelism(config.getProjectionParallelism())
               .buildPoints(mode.equalsIgnoreCase("points"))
               .buildTiles(mode.equalsIgnoreCase("tiles"))
               .build();

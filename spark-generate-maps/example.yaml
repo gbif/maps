@@ -1,0 +1,268 @@
+apiVersion: spark.stackable.tech/v1alpha1
+kind: SparkApplication
+metadata:
+  name: tim-generate-map-tiles-multi-taxonomy
+spec:
+  image: docker.gbif.org/spark-generate-maps:1.1.5
+  sparkImage:
+    productVersion: 3.5.1
+    stackableVersion: 24.7.0
+    repo: stackable-docker.gbif.org/stackable
+  mode: cluster
+  mainApplicationFile: hdfs://gbif-hdfs/user/tim/spark-generate-maps-1.1.6-SNAPSHOT.jar
+  mainClass: org.gbif.maps.MapBuilder
+  vectorAggregatorConfigMapName: gbif-vector-aggregator-discovery
+  s3connection:
+    inline:
+      host: minio
+      port: 9000
+      accessStyle: Path
+      credentials:
+        secretClass: gbif-spark-history-production-credentials-class
+  logFileDirectory:
+    s3:
+      prefix: /
+      bucket:
+        inline:
+          bucketName: spark-history-prod-bucket
+  args:
+    - "no used"
+  sparkConf:
+    "spark.driver.extraJavaOptions": "-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35"
+    "spark.executor.extraJavaOptions": "-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35 -XX:ConcGCThread=20"
+    "spark.shuffle.readHostLocalDisk": "true"
+    "spark.shuffle.file.buffer": "1MB"
+    "spark.shuffle.spill.diskWriteBufferSize": "1MB"
+    "spark.shuffle.unsafe.file.output.buffer": "1MB"
+    "spark.shuffle.io.maxRetries": "15"
+    "spark.shuffle.io.retryWait": "300s"
+    "spark.shuffle.io.connectionTimeout": "600s"
+    "spark.files.fetchTimeout": "300s"
+    "spark.reducer.maxSizeInFlight": "96m"
+    "spark.reducer.maxBlocksInFlightPerAddress": "30"
+    "spark.jars.ivy": "/tmp"
+    "spark.jars.ivySettings": "/tmp/ivy-settings.xml"
+    "spark.broadcast.compress": "true"
+    "spark.checkpoint.compress": "true"
+    "spark.executor.heartbeatInterval": "30s"
+    "spark.network.timeout": "900s"
+    "spark.rpc.lookupTimeout": "300s"
+    #"spark.io.compression.codec": "snappy"
+    "spark.scheduler.blacklist.timeout": "5m"
+    "spark.rdd.compress": "true"
+    "spark.sql.hive.dropTableInPurge": "true"
+    "spark.driver.extraClassPath": "/etc/hadoop/conf/:/etc/gbif/:/stackable/spark/extra-jars/*:/stackable/spark/jobs/"
+    "spark.executor.extraClassPath": "/etc/hadoop/conf/:/etc/gbif/:/stackable/spark/extra-jars/*:/stackable/spark/jobs/"
+    "spark.kubernetes.scheduler.name": "yunikorn"
+    "spark.kubernetes.executor.label.queue": "root.uat2.batch"
+    "spark.kubernetes.submit.label.queue": "root.uat2.batch"
+    "spark.driver.memoryOverheadFactor": "0.10"
+    "spark.driver.cores": "4"
+    "spark.kubernetes.driver.ownPersistentVolumeClaim": "true"
+    "spark.kubernetes.driver.reusePersistentVolumeClaim": "true"
+    "spark.kubernetes.driver.waitToReusePersistentVolumeClaim": "true"
+    "spark.shuffle.sort.io.plugin.class": "org.apache.spark.shuffle.KubernetesLocalDiskShuffleDataIO"
+    "spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.options.claimName": "OnDemand"
+    "spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.options.storageClass": "local-path-delete"
+    "spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.options.sizeLimit": "36Gi"
+    "spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.mount.readOnly": "false"
+    "spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.mount.path": "/data/spark-1/executor"
+    "spark.kubernetes.driver.volumes.persistentVolumeClaim.checkpoint.options.claimName": "OnDemand"
+    "spark.kubernetes.driver.volumes.persistentVolumeClaim.checkpoint.options.storageClass": "local-path-delete"
+    "spark.kubernetes.driver.volumes.persistentVolumeClaim.checkpoint.mount.readOnly": "false"
+    "spark.kubernetes.driver.volumes.persistentVolumeClaim.checkpoint.mount.path": "/data"
+    "spark.kubernetes.driver.volumes.persistentVolumeClaim.checkpoint.options.sizeLimit": "10Gi"
+    "spark.local.dir": "/data/spark-1/executor"
+    "spark.default.parallelism": "3000"
+    "spark.executor.cores": "8"
+    "spark.executor.memory": "32G"
+    "spark.executor.memoryOverhead": "12G"
+    #"spark.executor.memoryOverheadFactor": "0.5"
+    #"spark.scheduler.mode": "FAIR"
+    "spark.sql.adaptive.enabled": "true"
+    # Deprecated
+    #"spark.sql.adaptive.shuffle.targetPostShuffleInputSize": "128MB"
+    "spark.sql.adaptive.advisoryPartitionSizeInBytes": "128MB"
+
+    # We are doing GROUP BYs into Millions of buckets.
+    #"spark.sql.objectHashAggregate.sortBased.fallbackThreshold": "4096"
+    "spark.sql.execution.useObjectHashAggregateExec": "false"
+    "spark.sql.execution.useHashAggregateExec": "false"
+
+    # should be defaults but in case...
+    "spark.shuffle.compress": "true"
+    "spark.shuffle.spill.compress": "true"
+
+    # TEST - replaced SNAPPY above
+    "spark.io.compression.codec": "lz4"
+
+    "spark.sql.adaptive.skewJoin.enabled": "true"
+    "spark.sql.shuffle.partitions": "10000"
+    "spark.sql.autoBroadcastJoinThreshold": "50MB"
+    "spark.kubernetes.allocation.batch.size": "20"
+    "spark.kubernetes.scheduler.maxConcurrentPodCreation": "20"
+    "spark.kubernetes.authenticate.driver.serviceAccountName": "cli-account"
+
+
+    # We don't cache anything, so reduced to free memory for all the wide shuffles (GROUP BY)
+    "spark.memory.storageFraction": "0.1"
+
+    "spark.cleaner.periodicGC.interval": "1min"
+
+
+
+
+  volumes:
+    - name: ivy-settings
+      configMap:
+        name: gbif-airflow-ivy
+        items:
+          - key: ivy-settings.xml
+            path: ivy-settings.xml
+    - name: gbif-config
+      configMap:
+        name: spark-generate-maps-conf
+    - name: hdfs-env
+      configMap:
+        name: gbif-hdfs
+        items:
+          - key: core-site.xml
+            path: core-site.xml
+          - key: hdfs-site.xml
+            path: hdfs-site.xml
+    - name: hive-env
+      configMap:
+        name: gbif-hive-metastore-custom
+        items:
+          - key: hive-site.xml
+            path: hive-site.xml
+    - name: hbase-env
+      configMap:
+        name: gbif-hbase
+        items:
+          - key: hbase-site.xml
+            path: hbase-site.xml
+  job:
+    podOverrides:
+      metadata:
+        labels:
+          queue: "root.uat2.batch"
+          applicationId: generate-map-tiles-20260125t040000
+    config:
+      volumeMounts:
+        - name: ivy-settings
+          mountPath: /tmp/ivy-settings.xml
+          subPath: ivy-settings.xml
+  driver:
+    podOverrides:
+      metadata:
+        labels:
+          queue: "root.uat2.batch"
+          applicationId: generate-map-tiles-20260125t040000
+      spec:
+        initContainers:
+          - name: job
+            resources:
+              limits:
+                cpu: 500m
+                memory: 256Mi
+              requests:
+                cpu: 250m
+                memory: 128Mi
+    config:
+      resources:
+        cpu:
+          min: "4"
+          max: "4"
+        memory:
+          limit: "4Gi"
+      logging:
+        enableVectorAgent: true
+        containers:
+          vector:
+            file:
+              level: "WARN"
+          spark:
+            console:
+              level: "INFO"
+            file:
+              level: "INFO"
+            loggers:
+              ROOT:
+                level: "INFO"
+      volumeMounts:
+        - name: ivy-settings
+          mountPath: /tmp/ivy-settings.xml
+          subPath: ivy-settings.xml
+        - name: gbif-config
+          mountPath: /etc/gbif/config.yaml
+          subPath: config.yaml
+        - name: hdfs-env
+          mountPath: /etc/hadoop/conf/core-site.xml
+          subPath: core-site.xml
+        - name: hdfs-env
+          mountPath: /etc/hadoop/conf/hdfs-site.xml
+          subPath: hdfs-site.xml
+        - name: hive-env
+          mountPath: /etc/hadoop/conf/hive-site.xml
+          subPath: hive-site.xml
+        - name: hbase-env
+          mountPath: /etc/hadoop/conf/hbase-site.xml
+          subPath: hbase-site.xml
+  executor:
+    podOverrides:
+      metadata:
+        labels:
+          queue: "root.uat2.batch"
+          applicationId: generate-map-tiles-20260125t040000
+      spec:
+        initContainers:
+          - name: job
+            resources:
+              limits:
+                cpu: 500m
+                memory: 256Mi
+              requests:
+                cpu: 250m
+                memory: 128Mi
+    replicas: 80
+    config:
+      resources:
+        cpu:
+          min: "8"
+          max: "8"
+        memory:
+          limit: "42Gi"
+      logging:
+        enableVectorAgent: true
+        containers:
+          vector:
+            file:
+              level: "WARN"
+          spark:
+            console:
+              level: "INFO"
+            file:
+              level: "INFO"
+            loggers:
+              ROOT:
+                level: "INFO"
+      volumeMounts:
+        - name: ivy-settings
+          mountPath: /tmp/ivy-settings.xml
+          subPath: ivy-settings.xml
+        - name: gbif-config
+          mountPath: /etc/gbif/config.yaml
+          subPath: config.yaml
+        - name: hdfs-env
+          mountPath: /etc/hadoop/conf/core-site.xml
+          subPath: core-site.xml
+        - name: hdfs-env
+          mountPath: /etc/hadoop/conf/hdfs-site.xml
+          subPath: hdfs-site.xml
+        - name: hive-env
+          mountPath: /etc/hadoop/conf/hive-site.xml
+          subPath: hive-site.xml
+        - name: hbase-env
+          mountPath: /etc/hadoop/conf/hbase-site.xml
+          subPath: hbase-site.xml

@@ -16,6 +16,7 @@ package org.gbif.maps.udf;
 import org.gbif.maps.common.hbase.ModulusSalt;
 
 import java.io.Serializable;
+import java.util.Map;
 
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.api.java.UDF1;
@@ -27,8 +28,9 @@ import lombok.AllArgsConstructor;
 /** Generates a salted HBase key for the given map tile coordinates. */
 public class HBaseKeyUDF implements Serializable {
 
-  public static void registerTileKey(SparkSession spark, String name, ModulusSalt salter) {
-    spark.udf().register(name, new HBaseTileKey(salter), DataTypes.StringType);
+  public static void registerTileKey(
+      SparkSession spark, String name, ModulusSalt salter, Map<Integer, String> dictionary) {
+    spark.udf().register(name, new HBaseTileKey(salter, dictionary), DataTypes.StringType);
   }
 
   public static void registerPointKey(SparkSession spark, String name, ModulusSalt salter) {
@@ -38,11 +40,13 @@ public class HBaseKeyUDF implements Serializable {
   /** Generates keys for the tile pyramid table */
   @AllArgsConstructor
   static class HBaseTileKey
-      implements UDF4<String, Integer, Integer, Integer, String>, Serializable {
+      implements UDF4<Integer, Integer, Integer, Integer, String>, Serializable {
     final ModulusSalt salter;
+    final Map<Integer, String> dictionary;
 
     @Override
-    public String call(String mapKey, Integer z, Integer x, Integer y) {
+    public String call(Integer mapKeyEncoded, Integer z, Integer x, Integer y) {
+      String mapKey = dictionary.get(mapKeyEncoded);
       return salter.saltToString(String.format("%s:%d:%d:%d", mapKey, z, x, y));
     }
   }

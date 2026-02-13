@@ -55,21 +55,14 @@ public class PrepareBackfill {
       log.info("Connecting to HBase");
       try (Connection connection = ConnectionFactory.createConnection(HBaseConfiguration.create());
           Admin admin = connection.getAdmin()) {
-        TableDescriptorBuilder target =
-            TableDescriptorBuilder.newBuilder(TableName.valueOf(config.getFQTableName()));
-        target.setMaxFileSize(config.getHbase().getMaxFileSize());
-        appendColumnFamily(target, "EPSG_4326"); // points and tiles both have this CF
+
+        createHBasetTable(config, admin, config.getFQTableName()); // the tile or point table
         if ("tiles".equalsIgnoreCase(config.getMode())) {
-          appendColumnFamily(target, "EPSG_3857");
-          appendColumnFamily(target, "EPSG_3575");
-          appendColumnFamily(target, "EPSG_3031");
+          for (String alias : config.getChecklistsToProcess().keySet()) {
+            String name = config.getFQChecklistTableName(alias);
+            createHBasetTable(config, admin, name); // table per checklist
+          }
         }
-        ModulusSalt salt =
-            ("tiles".equalsIgnoreCase(config.getMode()))
-                ? new ModulusSalt(config.getHbase().getKeySaltModulusTiles())
-                : new ModulusSalt(config.getHbase().getKeySaltModulusPoints());
-        log.info("Creating {}", config.getFQTableName());
-        admin.createTable(target.build(), salt.getTableRegions());
       }
 
     } catch (TableExistsException e) {
@@ -79,6 +72,25 @@ public class PrepareBackfill {
       throw e; // deliberate log and throw to keep logs together
     }
   }
+
+  private static void createHBasetTable(MapConfiguration config, Admin admin, String name)
+      throws IOException {
+    TableDescriptorBuilder target = TableDescriptorBuilder.newBuilder(TableName.valueOf(name));
+    target.setMaxFileSize(config.getHbase().getMaxFileSize());
+    appendColumnFamily(target, "EPSG_4326"); // points and tiles both have this CF
+    if ("tiles".equalsIgnoreCase(config.getMode())) {
+      appendColumnFamily(target, "EPSG_3857");
+      appendColumnFamily(target, "EPSG_3575");
+      appendColumnFamily(target, "EPSG_3031");
+    }
+    ModulusSalt salt =
+        ("tiles".equalsIgnoreCase(config.getMode()))
+            ? new ModulusSalt(config.getHbase().getKeySaltModulusTiles())
+            : new ModulusSalt(config.getHbase().getKeySaltModulusPoints());
+    log.info("Creating {}", config.getFQTableName());
+    admin.createTable(target.build(), salt.getTableRegions());
+  }
+
   /**
    * Sets the column family for the table as per
    * https://github.com/gbif/maps/blob/master/spark-process/README.md

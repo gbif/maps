@@ -20,6 +20,7 @@ import org.gbif.maps.common.meta.Metastores;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.hadoop.conf.Configuration;
@@ -56,7 +57,7 @@ public class FinaliseBackfill {
     MapConfiguration config = MapConfiguration.build(args[1]);
     config.setTimestamp(args[2]);
     config.setMode(args[0]);
-    loadTable(config); // load HBase (throws exception on error)
+    // loadTable(config); // load HBase (throws exception on error)
     updateMeta(config); // update the metastore in ZK
     cleanup(config);
   }
@@ -69,10 +70,6 @@ public class FinaliseBackfill {
             hbaseConfig.get("hbase.zookeeper.quorum"), 1000, config.getMetadataPath())) {
 
       MapTables existingMeta = metastore.read(); // we update any existing values
-
-      // NOTE: there is the possibility of a race condition here if 2 instances are updating
-      // different
-      // modes simultaneously
       MapTables newMeta = getNewMeta(config, existingMeta);
       log.info("Updating metadata with: " + newMeta);
       metastore.update(newMeta);
@@ -81,13 +78,21 @@ public class FinaliseBackfill {
 
   @NotNull
   private static MapTables getNewMeta(MapConfiguration config, MapTables existingMeta) {
-    MapTables.MapTablesBuilder newMeta = MapTables.builder(existingMeta);
     if ("points".equalsIgnoreCase(config.getMode())) {
-      newMeta.pointTable(config.getFQTableName());
+      return existingMeta.copyWithNewPoint(config.getFQTableName());
+
     } else {
-      newMeta.tileTable(config.getFQTableName());
+      // replace all tables generated in our configuration
+      MapTables newMeta = existingMeta.copyWithNewTile(config.getFQTableName());
+      for (Map.Entry<String, String> e : config.getChecklistsToProcess().entrySet()) {
+        // keyed on UUID to make it easy to integrate with the HTTP param (&checklistKey=<uuid>)
+        // alias in the HBase table name to make it easier for HBase admins
+        newMeta =
+            newMeta.copyWithNewChecklistTable(
+                e.getValue(), config.getFQChecklistTableName(e.getKey()));
+      }
+      return newMeta;
     }
-    return newMeta.build();
   }
 
   private static void loadTable(MapConfiguration config) throws Exception {
@@ -102,6 +107,7 @@ public class FinaliseBackfill {
       loader.bulkLoad(table, hfiles);
 
     } else {
+
       for (String projection : PROJECTIONS) {
         for (int zoom = 0; zoom <= MAX_ZOOM; zoom++) {
           Path hfiles =

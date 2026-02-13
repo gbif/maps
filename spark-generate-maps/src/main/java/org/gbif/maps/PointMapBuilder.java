@@ -19,7 +19,7 @@ import org.gbif.maps.udf.HBaseKeyUDF;
 import org.gbif.maps.udf.MapKeysUDF;
 
 import java.io.Serializable;
-import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
@@ -39,14 +39,14 @@ import scala.Tuple2;
 @Builder
 class PointMapBuilder implements Serializable {
   private final SparkSession spark;
-  private final Set<String> largeMapKeys;
+  private final TreeSet<String> largeMapKeys;
   private final ModulusSalt salter;
   private final String sourceTable;
   private final String targetDir;
   private final Configuration hadoopConf;
 
   void generate() {
-    MapKeysUDF.register(spark, "mapKeys", largeMapKeys, false);
+    MapKeysUDF.registerAllKeysUDF(spark, "mapKeys", largeMapKeys, false);
     HBaseKeyUDF.registerPointKey(spark, "hbaseKey", salter);
     EncodeBorYearUDF.register(spark, "encodeBorYear");
 
@@ -63,8 +63,7 @@ class PointMapBuilder implements Serializable {
                     + "    %s m "
                     + "    LATERAL VIEW explode(  "
                     + "      mapKeys("
-                    + "        kingdomKey, phylumKey, classKey, orderKey, familyKey, genusKey, speciesKey, taxonKey,"
-                    + "        datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
+                    + "        classifications, datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
                     + "      ) "
                     + "    ) m AS mapKey "
                     + "  GROUP BY mapKey, lat, lng, borYear",

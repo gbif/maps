@@ -16,32 +16,13 @@ package org.gbif.maps.common.meta;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 /**
  * Suppliers of the MapMetastore implementations.
  */
 public class Metastores {
   private static final Logger LOG = LoggerFactory.getLogger(Metastores.class);
-
-  public static void main(String[] args) throws Exception {
-    if (args.length == 2 || args.length == 4) {
-      String zkQuorum = args[0];
-      String zkPath = args[1];
-      LOG.info("Reading ZK[{}], path[{}]", zkQuorum, zkPath);
-      try(MapMetastore meta = newZookeeperMapsMeta(zkQuorum, 1000, zkPath)) {
-        LOG.info("{}", meta.read());
-
-        if (args.length == 4) {
-          String tileTable = args[2];
-          String pointTable = args[3];
-          LOG.info("Update tileTable[{}], pointTable[{}]", tileTable, pointTable);
-          meta.update(new MapTables(tileTable, pointTable));
-          LOG.info("Done.");
-        }
-      }
-    } else {
-      LOG.error("Usage (supply table names to issue update): Metastores zkQuorum path [pointTable tileTable]");
-    }
-  }
 
   /**
    * Creates a new ZK backed MapMetastore that will reflect external changes.
@@ -57,14 +38,11 @@ public class Metastores {
   }
 
   /**
-   * Return a static value MapMetastore
-   * @param tileTable The table name with tile data
-   * @param pointTable The table name with point data
-   * @return The metastore
+   * Return a static value MapMetastore.
    */
-  public static MapMetastore newStaticMapsMeta(String tileTable, String pointTable) {
-    LOG.info("Static tileTable[{}], pointTable[{}]", tileTable, pointTable);
-    final MapTables data = new MapTables(tileTable, pointTable);
+  public static MapMetastore newStaticMapsMeta(String pointTable, String tileTable, Map<String, String> taxonomyTileTables) {
+    LOG.info("Static pointTable[{}], tileTable[{}], taxonomyTileTables[{}] ", pointTable, tileTable, taxonomyTileTables);
+    final MapTables data = new MapTables(pointTable, tileTable, taxonomyTileTables);
     return new MapMetastore() {
       @Override
       public MapTables read() {
