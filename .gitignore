@@ -1,9 +1,12 @@
 .DS_Store
 
+run.sh
+
 *.class
 *.iml
 .idea/
 
+**/*-ignore.yaml
 **/target/
 **/logs/
 **/dependency-reduced-pom.xml

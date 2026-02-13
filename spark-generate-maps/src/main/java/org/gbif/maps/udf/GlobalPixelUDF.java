@@ -20,7 +20,7 @@ import java.io.Serializable;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.api.java.UDF3;
+import org.apache.spark.sql.api.java.UDF4;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 
@@ -28,16 +28,15 @@ import lombok.AllArgsConstructor;
 
 /** Converts a lat,lng into the global pixel space for a given projection and zoom level. */
 @AllArgsConstructor
-public class GlobalPixelUDF implements UDF3<Integer, Double, Double, Row>, Serializable {
-  final String epsg;
+public class GlobalPixelUDF implements UDF4<String, Integer, Double, Double, Row>, Serializable {
   final int tileSize;
 
-  public static void register(SparkSession spark, String name, String epsg, int tileSize) {
+  public static void register(SparkSession spark, String name, int tileSize) {
     spark
         .udf()
         .register(
             name,
-            new GlobalPixelUDF(epsg, tileSize),
+            new GlobalPixelUDF(tileSize),
             DataTypes.createStructType(
                 new StructField[] {
                   DataTypes.createStructField("x", DataTypes.IntegerType, false),
@@ -46,7 +45,7 @@ public class GlobalPixelUDF implements UDF3<Integer, Double, Double, Row>, Seria
   }
 
   @Override
-  public Row call(Integer zoom, Double lat, Double lng) {
+  public Row call(String epsg, Integer zoom, Double lat, Double lng) {
     TileProjection projection = Tiles.fromEPSG(epsg, tileSize);
     if (projection.isPlottable(lat, lng)) {
       Double2D globalXY = projection.toGlobalPixelXY(lat, lng, zoom);

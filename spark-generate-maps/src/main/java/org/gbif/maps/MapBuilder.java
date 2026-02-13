@@ -16,11 +16,11 @@ package org.gbif.maps;
 import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.udf.MapKeysUDF;
 
-import java.io.IOException;
 import java.io.Serializable;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import org.apache.hadoop.conf.Configuration;
@@ -46,16 +46,20 @@ public class MapBuilder implements Serializable {
   private final int tileSize;
   private final int bufferSize;
   private final int maxZoom;
-  private final int projectionParallelism;
   private final String targetDir;
   private final int threshold;
   private boolean buildPoints;
   private boolean buildTiles;
+  private boolean buildNonTaxonTiles;
+  private LinkedHashMap<String, String> checklistsToTile; // alias : uuid
 
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) {
+    LinkedHashMap<String, String> checklists = new LinkedHashMap<>();
+    checklists.put("gbif", "d7dddbf4-2cf0-4f39-9b2a-bb099caae36c");
+    checklists.put("col", "7ddf754f-d193-4cc9-b351-99906754a03b");
+
     // This method intentionally left in for development. Start by creating the HDFS snapshot and
     // then generate the HFiles.
-
     MapBuilder points =
         MapBuilder.builder()
             .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
@@ -67,7 +71,7 @@ public class MapBuilder implements Serializable {
             .targetDir("/tmp/tim-map-points/")
             .buildPoints(true)
             .build();
-    points.run();
+    // points.run();
 
     MapBuilder tiles =
         MapBuilder.builder()
@@ -82,22 +86,24 @@ public class MapBuilder implements Serializable {
             .hiveInputSuffix("tiles")
             .targetDir("/tmp/tim-map-tiles/")
             .buildTiles(true)
+            .buildNonTaxonTiles(true)
+            .checklistsToTile(checklists)
             .build();
     tiles.run();
   }
 
   public void run() {
-    SparkSession spark =
+    final SparkSession spark =
         SparkSession.builder().appName("Map Builder").enableHiveSupport().getOrCreate();
     spark.sql("use " + hiveDB);
     spark.sparkContext().conf().set("hive.exec.compress.output", "true");
 
     // Read the source Avro files and prepare them as performant tables
-    String inputTable = String.format("maps_input_%s", hiveInputSuffix);
+    final String inputTable = String.format("maps_input_%s", hiveInputSuffix);
     readAvroSource(spark, inputTable);
 
     // Determine the mapKeys of maps that require a tile pyramid
-    Set<String> largeMapKeys = mapKeyExceedingThreshold(spark, inputTable);
+    final TreeSet<String> largeMapKeys = mapKeyExceedingThreshold(spark, inputTable);
 
     if (buildPoints) {
       PointMapBuilder.builder()
@@ -112,6 +118,7 @@ public class MapBuilder implements Serializable {
     }
 
     if (buildTiles) {
+
       TileMapBuilder.builder()
           .spark(spark)
           .sourceTable(inputTable)
@@ -120,9 +127,10 @@ public class MapBuilder implements Serializable {
           .tileSize(tileSize)
           .bufferSize(bufferSize)
           .maxZoom(maxZoom)
-          .projectionParallelism(projectionParallelism)
           .targetDir(targetDir)
           .hadoopConf(hadoopConf())
+          .nonTaxa(buildNonTaxonTiles)
+          .checklists(checklistsToTile)
           .build()
           .generate();
     }
@@ -145,17 +153,10 @@ public class MapBuilder implements Serializable {
                 "publishingCountry",
                 "networkKey",
                 "countryCode",
+                "classifications",
                 "basisOfRecord",
                 "decimalLatitude",
                 "decimalLongitude",
-                "kingdomKey",
-                "phylumKey",
-                "classKey",
-                "orderKey",
-                "familyKey",
-                "genusKey",
-                "speciesKey",
-                "taxonKey",
                 "year",
                 "occurrenceStatus",
                 "hasGeospatialIssues")
@@ -166,42 +167,47 @@ public class MapBuilder implements Serializable {
                     + "occurrenceStatus='PRESENT' ");
 
     // Default of 1200 yields 100MB files from 2.5B input
-    Dataset<Row> partitioned =
-        source.repartition(
-            spark.sparkContext().conf().getInt("spark.sql.shuffle.partitions", 1200));
+    int partitions = spark.sparkContext().conf().getInt("spark.sql.shuffle.partitions", 1200);
 
     // write as table to avoid any lazy evaluation re-reading small avro input
     spark.sql(String.format("DROP TABLE IF EXISTS %s PURGE", targetHiveTable));
-    partitioned.write().mode(SaveMode.Overwrite).format("parquet").saveAsTable(targetHiveTable);
+    source
+        .coalesce(partitions)
+        .write()
+        .mode(SaveMode.Overwrite)
+        .option("maxRecordsPerFile", 10_000_000)
+        .format("parquet")
+        .saveAsTable(targetHiveTable);
   }
 
   /**
    * Extracts only those map keys that exceed the threshold of occurrence count, collected to the
-   * Spark Driver
+   * Spark Driver. Fixed ordering is used to allow for potential use of "GROUP BY mapkeys".
    */
-  private Set<String> mapKeyExceedingThreshold(SparkSession spark, String source) {
-    MapKeysUDF.register(spark, "mapKeys");
+  private TreeSet<String> mapKeyExceedingThreshold(SparkSession spark, String source) {
+    MapKeysUDF.registerAllKeysUDF(spark, "mapKeys");
     Dataset<Row> stats =
-        spark
-            .sql(
-                String.format(
-                    "SELECT mapKey, count(*) AS occCount "
-                        + "FROM "
-                        + "  %s "
-                        + "  LATERAL VIEW explode(  "
-                        + "    mapKeys("
-                        + "      kingdomKey, phylumKey, classKey, orderKey, familyKey, genusKey, speciesKey, taxonKey,"
-                        + "      datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
-                        + "    ) "
-                        + "  ) m AS mapKey "
-                        + "GROUP BY mapKey",
-                    source))
-            .filter(String.format("occCount>=%d", threshold));
-    Set<String> mapsToPyramid = new HashSet<>();
+        spark.sql(
+            String.format(
+                "SELECT mapKey, count(*) AS occCount "
+                    + "FROM "
+                    + "  %s "
+                    + "  LATERAL VIEW explode(  "
+                    + "    mapKeys("
+                    + "      classifications, datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKey"
+                    + "    ) "
+                    + "  ) m AS mapKey "
+                    + "GROUP BY mapKey "
+                    + "HAVING count(*)>=%d",
+                source, threshold));
+
+    TreeSet<String> mapsToPyramid = new TreeSet<>();
     if (!stats.isEmpty()) {
       List<Row> statsList = stats.collectAsList();
       mapsToPyramid =
-          statsList.stream().map(s -> (String) s.getAs("mapKey")).collect(Collectors.toSet());
+          statsList.stream()
+              .map(s -> (String) s.getAs("mapKey"))
+              .collect(Collectors.toCollection(TreeSet::new));
       System.out.printf("Map views that require tile pyramid %d%n", mapsToPyramid.size());
     }
     return mapsToPyramid;

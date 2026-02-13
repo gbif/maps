@@ -23,6 +23,8 @@ import org.gbif.maps.common.meta.Metastores;
 import org.gbif.maps.config.ConfigUtils;
 import org.gbif.maps.io.PointFeature;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import org.apache.hadoop.conf.Configuration;
@@ -51,6 +53,7 @@ import lombok.Data;
  * This implements a small cache since we recognise that map use often results in similar requests.
  */
 public class HBaseMaps {
+  private static final String BACKBONE_UUID = "d7dddbf4-2cf0-4f39-9b2a-bb099caae36c";
   private static final Logger LOG = LoggerFactory.getLogger(HBaseMaps.class);
   private final Connection connection;
   private final MapMetastore metastore;
@@ -63,7 +66,9 @@ public class HBaseMaps {
                    Cache2kConfig<String, Optional<PointFeature.PointFeatures>> pointCacheConfiguration,
                    Cache2kConfig<TileKey, Optional<byte[]>> tileCacheConfiguration) throws Exception {
     connection = ConnectionFactory.createConnection(conf);
-    metastore = Metastores.newStaticMapsMeta(tableName, tableName); // backward compatible version
+    // Mounted as backbone to enable diagnostics for the single table use.
+    Map<String, String> checklists = new HashMap<>() {{ put(BACKBONE_UUID, tableName);}};
+    metastore = Metastores.newStaticMapsMeta(tableName, tableName, checklists); // checklist maps won't work
     saltPoints = new ModulusSalt(saltModulusPoints);
     saltTiles = new ModulusSalt(saltModulusTiles);
     pointCache = pointCacheBuilder(cacheManager, meterRegistry, pointCacheConfiguration);
@@ -98,6 +103,16 @@ public class HBaseMaps {
     }
     return TableName.valueOf(meta.getTileTable());
   }
+
+  private TableName tileTableForChecklist(String checklistKey) throws Exception {
+    MapTables meta = metastore.read();
+    if (meta == null) {
+      LOG.error("No tile metadata exists");
+      throw new IllegalStateException("Unable to read tile metadata to locate table");
+    }
+    return TableName.valueOf(meta.getTileTable(checklistKey));
+  }
+
 
   private Cache<String, Optional<PointFeature.PointFeatures>> pointCacheBuilder(SpringCache2kCacheManager manager, MeterRegistry meterRegistry, Cache2kConfig<String, Optional<PointFeature.PointFeatures>> pointCacheConfiguration) {
     manager.addCaches( b->
@@ -140,7 +155,8 @@ public class HBaseMaps {
       .name("tileCache")
       .loader(
         rowCell -> {
-          try (Table table = connection.getTable(tileTable())) {
+
+          try (Table table = connection.getTable(tileTableName(rowCell.rowKey))) {
             String unsalted = rowCell.rowKey + ":" + rowCell.zxy();
             byte[] saltedKey = saltTiles.salt(unsalted);
             Get get = new Get(saltedKey);
@@ -163,6 +179,18 @@ public class HBaseMaps {
   }
 
   /**
+   * Returns the default tile table or the one for the checklist.
+   */
+  private TableName tileTableName(String rowKey) throws Exception {
+    if (rowKey != null && rowKey.startsWith("1:")) {
+      int pipeIndex = rowKey.indexOf('|');
+      return tileTableForChecklist(rowKey.substring(rowKey.indexOf(':') + 1, pipeIndex));
+    } else {
+      return tileTable();
+    }
+  }
+
+  /**
    * Returns a tile from HBase if one exists.
    */
   public Optional<byte[]> getTile(String mapKey, String srs, int z, long x, long y) {
@@ -182,8 +210,7 @@ public class HBaseMaps {
   Optional<byte[]> getTileNoCache(String mapKey, String srs, int z, long x, long y) {
     Stopwatch timer = new Stopwatch().start();
     try {
-
-      try (Table table = connection.getTable(tileTable())) {
+      try (Table table = connection.getTable(tileTableName(mapKey))) {
         Get get = new Get(Bytes.toBytes(mapKey));
         String columnFamily = srs.replaceAll(":", "_").toUpperCase();
         get.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(z + ":" + x + ":" + y));

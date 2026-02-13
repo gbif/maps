@@ -14,6 +14,7 @@
 package org.gbif.maps.common.meta;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -53,7 +54,7 @@ public class ZKMapMetastoreTest {
       MapTables initial = metastore.read();
       assertNull(initial);
 
-      MapTables t1 = new MapTables("prod_tile", "prod_point");
+      MapTables t1 = new MapTables("prod_point", "prod_tile", new HashMap<>());
       metastore.update(t1);
 
       // Double check: read ZK data directly forcing a sync to avoid latencies

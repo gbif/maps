@@ -39,6 +39,7 @@ import org.gbif.api.model.common.search.SearchParameter;
 import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.Metastores;
+import org.gbif.maps.config.Config;
 import org.gbif.maps.resource.HBaseMaps;
 import org.gbif.maps.io.PointFeature;
 import org.gbif.occurrence.search.es.EsConfig;
@@ -238,8 +239,8 @@ public class TileServerApplication {
         return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulusPoints(),tileServerConfiguration.getHbase().getSaltModulusTiles(), cacheManager, meterRegistry, pointCacheConfiguration, tileCacheConfiguration);
 
       } else {
-        MapMetastore meta = Metastores.newStaticMapsMeta(tileServerConfiguration.getHbase().getTilesTableName(),
-          tileServerConfiguration.getHbase().getPointsTableName());
+        Config.HBaseConfiguration hbase = tileServerConfiguration.getHbase();
+        MapMetastore meta = Metastores.newStaticMapsMeta(hbase.getPointsTableName(), hbase.getTilesTableName(), hbase.getTaxonomyTilesTableNames());
         return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulusPoints(),tileServerConfiguration.getHbase().getSaltModulusTiles(), cacheManager, meterRegistry, pointCacheConfiguration, tileCacheConfiguration);
       }
     }

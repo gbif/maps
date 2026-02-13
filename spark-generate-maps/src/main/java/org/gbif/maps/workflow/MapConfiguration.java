@@ -15,6 +15,7 @@ package org.gbif.maps.workflow;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -42,8 +43,12 @@ public class MapConfiguration {
   private int tilesThreshold;
   private int tileSize;
   private int maxZoom;
-  private int projectionParallelism;
   private int tileBufferSize;
+
+  // These only apply when TILES are run
+  private boolean processNonChecklistTiles;
+  private Map<String, String> checklistsToProcess;
+
   private HBaseConfiguration hbase;
   private HdfsLockConfig hdfsLockConfig;
 
@@ -77,6 +82,10 @@ public class MapConfiguration {
 
   public String getFQTableName() {
     return String.format("%s_%s_%s", hbase.tableName, mode, timestamp);
+  }
+
+  public String getFQChecklistTableName(String checklist) {
+    return String.format("%s_%s_%s_%s", hbase.tableName, mode, checklist, timestamp);
   }
 
   public String getFQTargetDirectory() {

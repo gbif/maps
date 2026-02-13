@@ -21,7 +21,7 @@ import java.util.List;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.api.java.UDF3;
+import org.apache.spark.sql.api.java.UDF4;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 
@@ -34,7 +34,7 @@ import lombok.AllArgsConstructor;
  * point can fall on up to four tiles in corner regions.
  */
 @AllArgsConstructor
-public class TileXYUDF implements UDF3<Integer, Integer, Integer, Row[]>, Serializable {
+public class TileXYUDF implements UDF4<String, Integer, Integer, Integer, Row[]>, Serializable {
   enum Direction {
     N,
     S,
@@ -46,17 +46,15 @@ public class TileXYUDF implements UDF3<Integer, Integer, Integer, Row[]>, Serial
     SW
   }
 
-  final String epsg;
   final int tileSize;
   final int bufferSize;
 
-  public static void register(
-      SparkSession spark, String name, String epsg, int tileSize, int bufferSize) {
+  public static void register(SparkSession spark, String name, int tileSize, int bufferSize) {
     spark
         .udf()
         .register(
             name,
-            new TileXYUDF(epsg, tileSize, bufferSize),
+            new TileXYUDF(tileSize, bufferSize),
             DataTypes.createArrayType(
                 DataTypes.createStructType(
                     new StructField[] {
@@ -69,7 +67,7 @@ public class TileXYUDF implements UDF3<Integer, Integer, Integer, Row[]>, Serial
   }
 
   @Override
-  public Row[] call(Integer zoom, Integer x, Integer y) {
+  public Row[] call(String epsg, Integer zoom, Integer x, Integer y) {
     List<String> addresses = Lists.newArrayList();
     Double2D globalXY = new Double2D(x, y);
 

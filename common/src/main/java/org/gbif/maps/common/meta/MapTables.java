@@ -17,42 +17,64 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.annotations.VisibleForTesting;
 import lombok.Builder;
 import lombok.Data;
 
 /**
  * The tables used for mapping and when they were generated.
+ * This splits tables into "points", "tiles" (excludes taxonomy) and a set of "tile_tables" keyed on each taxonomy.
  */
-
-
 @Data
 public class MapTables implements Serializable {
   private static final Pattern PIPE = Pattern.compile("\\|");
   private static final Pattern TABLE_TIMESTAMP = Pattern.compile("(20\\d\\d\\d\\d\\d\\d_\\d\\d\\d\\d)$");
-  private final String tileTable;
   private final String pointTable;
-  private final String tileTableDate;
+  private final String tileTable;
+  private final TreeMap<String, String> checklistTileTables; // checklistKey, table
   private final String pointTableDate;
+  private final String tileTableDate;
 
-
-  public static MapTables.MapTablesBuilder builder(MapTables mapTables) {
-    if (mapTables != null) {
-      return new MapTablesBuilder().pointTable(mapTables.pointTable).tileTable(mapTables.tileTable);
-    }
-    return new MapTablesBuilder();
-  }
+  private final Map<String, String> checklistTileTableDates;
 
   @Builder
-  public MapTables(String tileTable, String pointTable) {
-    this.tileTable = tileTable;
+  public MapTables(String pointTable, String tileTable, Map<String, String> checklistTileTables) {
     this.pointTable = pointTable;
-
-    this.tileTableDate = tableDate(tileTable);
+    this.tileTable = tileTable;
+    this.checklistTileTables = new TreeMap<>(checklistTileTables); // consistent sorting
     this.pointTableDate = tableDate(pointTable);
+    this.tileTableDate = tableDate(tileTable);
+
+    checklistTileTableDates = new HashMap<>();
+    for (Map.Entry<String, String> e : checklistTileTables.entrySet()) {
+      checklistTileTableDates.put(e.getKey(), tableDate(e.getValue()));
+    }
   }
+
+  public String getTileTable(String checklistKey) {
+    return checklistTileTables.get(checklistKey);
+  }
+
+  public MapTables copyWithNewPoint(String t) {
+    return new MapTablesBuilder().pointTable(t).tileTable(tileTable).checklistTileTables(checklistTileTables).build();
+  }
+
+  public MapTables copyWithNewTile(String t) {
+    return new MapTablesBuilder().pointTable(pointTable).tileTable(t).checklistTileTables(checklistTileTables).build();
+  }
+  public MapTables copyWithNewChecklistTable(String key, String t) {
+    Map<String, String> copy = new HashMap<>(checklistTileTables);
+    copy.put(key, t);
+    return new MapTablesBuilder().pointTable(pointTable).tileTable(tileTable).checklistTileTables(copy).build();
+  }
+
 
   /**
    * @return the date inferred from the table name or null if it cannot be found
@@ -70,25 +92,64 @@ public class MapTables implements Serializable {
     return null;
   }
 
-  /**
-   * @return a human-readable string (as bytes) for serialization
-   */
   public byte[] serialize() {
-    return (tileTable + "|" + pointTable).getBytes(StandardCharsets.UTF_8);
+    return encode().getBytes(StandardCharsets.UTF_8);
   }
 
-  /**
-   * Builder for deserializing from the byte array.
-   */
+  @VisibleForTesting
+  String encode() {
+    StringBuilder sb = new StringBuilder();
+
+    sb.append(nullSafe(pointTable)).append("|")
+      .append(nullSafe(tileTable));
+
+    if (checklistTileTables != null) {
+      for (Map.Entry<String, String> entry : checklistTileTables.entrySet()) {
+        sb.append("|")
+          .append(nullSafe(entry.getKey()))
+          .append(",")
+          .append(nullSafe(entry.getValue()));
+      }
+    }
+
+    return sb.toString();
+  }
+
   public static MapTables deserialize(byte[] encoded) {
     if (encoded == null || encoded.length == 0) {
-      throw new IllegalArgumentException("Unable to decode into MapTables - no data supplied");
+      throw new IllegalArgumentException("Encoded bytes cannot be null or empty");
     }
-    String s = new String(encoded, StandardCharsets.UTF_8);
-    String[] fields = PIPE.split(s);
-    if (fields.length == 2) {
-      return new MapTables(fields[0], fields[1]);
+
+    String decoded = new String(encoded, StandardCharsets.UTF_8);
+    String[] parts = decoded.split("\\|", -1);
+
+    if (parts.length < 2) {
+      throw new IllegalArgumentException("Invalid encoded MapTables format");
     }
-    throw new IllegalArgumentException("Unable to decode into MapTables:" + new String(encoded));
+
+    String point = emptyToNull(parts[0]);
+    String tile = emptyToNull(parts[1]);
+
+    Map<String, String> checklist = new LinkedHashMap<>();
+
+    for (int i = 2; i < parts.length; i++) {
+      if (!parts[i].isEmpty()) {
+        String[] kv = parts[i].split(",", 2);
+        if (kv.length != 2) {
+          throw new IllegalArgumentException("Invalid key,value pair: " + parts[i]);
+        }
+        checklist.put(emptyToNull(kv[0]), emptyToNull(kv[1]));
+      }
+    }
+
+    return new MapTables(point, tile, checklist);
+  }
+
+  private static String nullSafe(String value) {
+    return value == null ? "" : value;
+  }
+
+  private static String emptyToNull(String value) {
+    return value.isEmpty() ? null : value;
   }
 }
