@@ -5,7 +5,7 @@
   <parent>
     <artifactId>maps-motherpom</artifactId>
     <groupId>org.gbif.maps</groupId>
-    <version>1.1.6-SNAPSHOT</version>
+    <version>1.1.6-events-SNAPSHOT</version>
   </parent>
 
   <artifactId>event-vectortile-server</artifactId>
