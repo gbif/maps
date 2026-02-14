@@ -56,7 +56,7 @@ public class FinaliseBackfill {
   public static void main(String[] args) throws Exception {
     MapConfiguration config = MapConfiguration.build(args[0]);
     config.setTimestamp(args[1]);
-    // loadTable(config); // load HBase (throws exception on error)
+    loadTable(config); // load HBase (throws exception on error)
     updateMeta(config); // update the metastore in ZK
     cleanup(config);
   }
@@ -107,19 +107,34 @@ public class FinaliseBackfill {
       loader.bulkLoad(table, hfiles);
 
     } else {
-
       for (String projection : PROJECTIONS) {
         for (int zoom = 0; zoom <= MAX_ZOOM; zoom++) {
-          Path hfiles =
-              new Path(
-                  config.getFQTargetDirectory(),
-                  new Path("tiles", new Path(projection, "z" + zoom)));
-          log.info(
-              "Zoom[{}] Loading HBase table[{}] from [{}]", zoom, config.getFQTableName(), hfiles);
-          loader.bulkLoad(table, hfiles);
+          if (config.isProcessNonChecklistTiles()) {
+            bulkLoad(config, table, loader, projection, zoom, "nonTaxon");
+          }
+          for (String alias : config.getChecklistsToProcess().keySet()) {
+            bulkLoad(config, table, loader, projection, zoom, "checklist-" + alias);
+          }
         }
       }
     }
+  }
+
+  /** Bulk loads a single zoom/type combination. */
+  private static void bulkLoad(
+      MapConfiguration config,
+      TableName table,
+      BulkLoadHFilesTool loader,
+      String projection,
+      int zoom,
+      String type)
+      throws IOException {
+    Path hfiles =
+        new Path(
+            config.getFQTargetDirectory(),
+            new Path("tiles", new Path(type, new Path(projection, "z" + zoom))));
+    log.info("Zoom[{}] Loading HBase table[{}] from [{}]", zoom, config.getFQTableName(), hfiles);
+    loader.bulkLoad(table, hfiles);
   }
 
   /** Deletes the snapshot and old tables whereby we keep the 2 latest tables only. */

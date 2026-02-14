@@ -45,6 +45,7 @@ public class PrepareBackfill {
 
       // delete the target directory (see https://github.com/gbif/maps/issues/100)
       String subPath = "points".equalsIgnoreCase(config.getMode()) ? "points" : "tiles";
+      // the additional sub path helps safeguard accidental deletion due to bad configuration
       Path targetDirectory = new Path(config.getFQTargetDirectory(), new Path(subPath));
       if (getHdfsFileSystem().exists(targetDirectory)) {
         log.info("Deleting target directory: {}", targetDirectory);
