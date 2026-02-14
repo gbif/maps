@@ -54,9 +54,8 @@ public class FinaliseBackfill {
   private static final int MAX_ZOOM = 16;
 
   public static void main(String[] args) throws Exception {
-    MapConfiguration config = MapConfiguration.build(args[1]);
-    config.setTimestamp(args[2]);
-    config.setMode(args[0]);
+    MapConfiguration config = MapConfiguration.build(args[0]);
+    config.setTimestamp(args[1]);
     // loadTable(config); // load HBase (throws exception on error)
     updateMeta(config); // update the metastore in ZK
     cleanup(config);

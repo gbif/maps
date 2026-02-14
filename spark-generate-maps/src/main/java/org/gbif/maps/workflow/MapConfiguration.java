@@ -15,6 +15,7 @@ package org.gbif.maps.workflow;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,7 +48,7 @@ public class MapConfiguration {
 
   // These only apply when TILES are run
   private boolean processNonChecklistTiles;
-  private Map<String, String> checklistsToProcess;
+  private LinkedHashMap<String, String> checklistsToProcess;
 
   private HBaseConfiguration hbase;
   private HdfsLockConfig hdfsLockConfig;

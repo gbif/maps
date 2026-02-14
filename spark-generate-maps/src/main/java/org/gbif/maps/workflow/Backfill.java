@@ -33,16 +33,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Backfill {
 
-  /** Expects [tiles,points] configFile [airflowProperties] */
+  /** Expects configFile timestamp. */
   public static void main(String[] args) throws Exception {
-    if (args.length != 3 && args.length != 4) {
+    if (args.length != 2) {
       throw new IllegalArgumentException(
-          "Expects [tiles,points] configFile timestamp [airflowProperties]");
+          "Expects configFile timestamp");
     }
 
-    MapConfiguration config = MapConfiguration.build(args[1]);
-    config.setTimestamp(args[2]);
-    config.setMode(args[0]);
+    MapConfiguration config = MapConfiguration.build(args[0]);
+    config.setTimestamp(args[1]);
     String snapshotName = UUID.randomUUID().toString();
     log.info("Creating snapshot {} {}", config.getSnapshotDirectory(), snapshotName);
 
@@ -58,7 +57,7 @@ public class Backfill {
     log.info("Created snapshot, {}", snapshotPath);
 
     try {
-      String mode = args[0].toLowerCase(); // tiles or points
+      String mode = config.getMode(); // tiles or points
       MapBuilder mapBuilder =
           MapBuilder.builder()
               .sourceDir(snapshotSource)
@@ -74,6 +73,8 @@ public class Backfill {
               .maxZoom(config.getMaxZoom())
               .buildPoints(mode.equalsIgnoreCase("points"))
               .buildTiles(mode.equalsIgnoreCase("tiles"))
+              .buildNonTaxonTiles(config.isProcessNonChecklistTiles())
+              .checklistsToTile(config.getChecklistsToProcess())
               .build();
       log.info("Launching map build with config: {}", mapBuilder);
       mapBuilder.run();
