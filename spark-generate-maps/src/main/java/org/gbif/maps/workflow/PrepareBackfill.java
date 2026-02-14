@@ -35,9 +35,8 @@ import lombok.extern.slf4j.Slf4j;
 public class PrepareBackfill {
 
   public static void main(String[] args) throws IOException {
-    MapConfiguration config = MapConfiguration.build(args[1]);
-    config.setTimestamp(args[2]);
-    config.setMode(args[0]);
+    MapConfiguration config = MapConfiguration.build(args[0]);
+    config.setTimestamp(args[1]);
     startSparkWorkflow(config);
   }
 
