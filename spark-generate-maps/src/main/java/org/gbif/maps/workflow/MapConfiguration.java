@@ -16,7 +16,6 @@ package org.gbif.maps.workflow;
 import java.io.IOException;
 import java.net.URL;
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;

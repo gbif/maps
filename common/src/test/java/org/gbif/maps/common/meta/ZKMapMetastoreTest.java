@@ -52,7 +52,11 @@ public class ZKMapMetastoreTest {
   public void testLifeCycle() {
     try {
       MapTables initial = metastore.read();
-      assertNull(initial);
+      assertNotNull(initial);
+      assertNull(initial.getPointTable());
+      assertNull(initial.getTileTable());
+      assertNotNull(initial.getChecklistTileTables());
+      assertTrue(initial.getChecklistTileTables().isEmpty());
 
       MapTables t1 = new MapTables("prod_point", "prod_tile", new HashMap<>());
       metastore.update(t1);

@@ -44,17 +44,23 @@ public class MapTables implements Serializable {
 
   private final Map<String, String> checklistTileTableDates;
 
+  public static MapTables newEmpty() {
+    return new MapTables(null, null, null);
+  }
   @Builder
   public MapTables(String pointTable, String tileTable, Map<String, String> checklistTileTables) {
     this.pointTable = pointTable;
     this.tileTable = tileTable;
-    this.checklistTileTables = new TreeMap<>(checklistTileTables); // consistent sorting
+
+    this.checklistTileTables = checklistTileTables == null ? new TreeMap<>() : new TreeMap<>(checklistTileTables); // consistent sorting
     this.pointTableDate = tableDate(pointTable);
     this.tileTableDate = tableDate(tileTable);
 
     checklistTileTableDates = new HashMap<>();
-    for (Map.Entry<String, String> e : checklistTileTables.entrySet()) {
-      checklistTileTableDates.put(e.getKey(), tableDate(e.getValue()));
+    if (checklistTileTables != null) {
+      for (Map.Entry<String, String> e : checklistTileTables.entrySet()) {
+        checklistTileTableDates.put(e.getKey(), tableDate(e.getValue()));
+      }
     }
   }
 

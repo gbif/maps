@@ -20,7 +20,6 @@ import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import org.apache.hadoop.conf.Configuration;

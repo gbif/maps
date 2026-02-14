@@ -36,8 +36,7 @@ public class Backfill {
   /** Expects configFile timestamp. */
   public static void main(String[] args) throws Exception {
     if (args.length != 2) {
-      throw new IllegalArgumentException(
-          "Expects configFile timestamp");
+      throw new IllegalArgumentException("Expects configFile timestamp");
     }
 
     MapConfiguration config = MapConfiguration.build(args[0]);

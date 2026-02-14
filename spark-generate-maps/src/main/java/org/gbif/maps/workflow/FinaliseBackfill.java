@@ -67,14 +67,15 @@ public class FinaliseBackfill {
     try (MapMetastore metastore =
         Metastores.newZookeeperMapsMeta(
             hbaseConfig.get("hbase.zookeeper.quorum"), 1000, config.getMetadataPath())) {
-
       MapTables existingMeta = metastore.read(); // we update any existing values
+      existingMeta = existingMeta == null ? MapTables.newEmpty() : existingMeta;
       MapTables newMeta = getNewMeta(config, existingMeta);
       log.info("Updating metadata with: " + newMeta);
       metastore.update(newMeta);
     }
   }
 
+  /** Merges the changes we have applied into the existing metadata to write the shared state */
   @NotNull
   private static MapTables getNewMeta(MapConfiguration config, MapTables existingMeta) {
     if ("points".equalsIgnoreCase(config.getMode())) {
