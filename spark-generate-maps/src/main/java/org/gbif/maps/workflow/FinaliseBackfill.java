@@ -132,7 +132,7 @@ public class FinaliseBackfill {
     Path hfiles =
         new Path(
             config.getFQTargetDirectory(),
-            new Path("tiles", new Path(type, new Path(projection, "z" + zoom))));
+            new Path("tiles", new Path(projection, new Path(type, "z" + zoom))));
     log.info("Zoom[{}] Loading HBase table[{}] from [{}]", zoom, config.getFQTableName(), hfiles);
     loader.bulkLoad(table, hfiles);
   }
