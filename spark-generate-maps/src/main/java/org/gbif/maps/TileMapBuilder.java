@@ -111,7 +111,7 @@ class TileMapBuilder implements Serializable {
       for (int z = maxZoom; z >= 0; z--) {
         setDescription(epsg, String.format("z[%d] taxonomy[%s]", z, alias));
         String checklistDir =
-            String.format("%s/EPSG_%s/checklist-%s/z%d", targetDir, code, alias, z);
+            String.format("%s/tiles/EPSG_%s/checklist-%s/z%d", targetDir, code, alias, z);
         generateTiles(epsg, z, checklistTable, checklistDir);
       }
 
@@ -248,7 +248,7 @@ class TileMapBuilder implements Serializable {
                       return new Tuple2<>(key, row);
                     });
     data.saveAsNewAPIHadoopFile(
-        dir + "/tiles", ImmutableBytesWritable.class, KeyValue.class, HFileOutputFormat2.class, hadoopConf);
+        dir, ImmutableBytesWritable.class, KeyValue.class, HFileOutputFormat2.class, hadoopConf);
   }
 
   /** Encodes the source into a dictionary on Integers. */
