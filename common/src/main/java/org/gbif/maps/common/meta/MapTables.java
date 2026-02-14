@@ -117,7 +117,8 @@ public class MapTables implements Serializable {
 
   public static MapTables deserialize(byte[] encoded) {
     if (encoded == null || encoded.length == 0) {
-      throw new IllegalArgumentException("Encoded bytes cannot be null or empty");
+      // expected e.g. on the first run where no ZK entry exists
+      return new MapTables.MapTablesBuilder().build();
     }
 
     String decoded = new String(encoded, StandardCharsets.UTF_8);
