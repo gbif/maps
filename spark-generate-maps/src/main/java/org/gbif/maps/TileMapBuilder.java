@@ -248,7 +248,7 @@ class TileMapBuilder implements Serializable {
                       return new Tuple2<>(key, row);
                     });
     data.saveAsNewAPIHadoopFile(
-        dir, ImmutableBytesWritable.class, KeyValue.class, HFileOutputFormat2.class, hadoopConf);
+        dir + "/tiles", ImmutableBytesWritable.class, KeyValue.class, HFileOutputFormat2.class, hadoopConf);
   }
 
   /** Encodes the source into a dictionary on Integers. */
