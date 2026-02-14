@@ -98,10 +98,10 @@ public class FinaliseBackfill {
   private static void loadTable(MapConfiguration config) throws Exception {
     Configuration conf = HBaseConfiguration.create();
 
-    TableName table = TableName.valueOf(config.getFQTableName());
     BulkLoadHFilesTool loader = new BulkLoadHFilesTool(conf);
 
     if ("points".equalsIgnoreCase(config.getMode())) {
+      TableName table = TableName.valueOf(config.getFQTableName());
       Path hfiles = new Path(config.getFQTargetDirectory(), new Path("points"));
       log.info("Loading HBase table[{}] from [{}]", config.getFQTableName(), hfiles);
       loader.bulkLoad(table, hfiles);
@@ -110,9 +110,11 @@ public class FinaliseBackfill {
       for (String projection : PROJECTIONS) {
         for (int zoom = 0; zoom <= MAX_ZOOM; zoom++) {
           if (config.isProcessNonChecklistTiles()) {
+            TableName table = TableName.valueOf(config.getFQTableName());
             bulkLoad(config, table, loader, projection, zoom, "nonTaxon");
           }
           for (String alias : config.getChecklistsToProcess().keySet()) {
+            TableName table = TableName.valueOf(config.getFQChecklistTableName(alias));
             bulkLoad(config, table, loader, projection, zoom, "checklist-" + alias);
           }
         }
