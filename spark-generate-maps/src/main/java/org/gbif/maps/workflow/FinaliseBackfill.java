@@ -58,7 +58,7 @@ public class FinaliseBackfill {
     config.setTimestamp(args[1]);
     loadTable(config); // load HBase (throws exception on error)
     updateMeta(config); // update the metastore in ZK
-    cleanup(config);
+    //cleanup(config); TODO
   }
 
   private static void updateMeta(MapConfiguration config) throws Exception {
@@ -175,6 +175,7 @@ public class FinaliseBackfill {
 
           // Defensive coding: don't delete anything that is the intended target, or currently in
           // use
+          // TODO: these can throw NPE
           if (!config.getFQTableName().equalsIgnoreCase(tables[i].getNameAsString())
               && !meta.getPointTable().equalsIgnoreCase(tables[i].getNameAsString())
               && !meta.getTileTable().equalsIgnoreCase(tables[i].getNameAsString())) {

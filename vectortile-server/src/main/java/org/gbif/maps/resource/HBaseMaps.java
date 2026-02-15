@@ -92,7 +92,7 @@ public class HBaseMaps {
       LOG.error("No point metadata exists");
       throw new IllegalStateException("Unable to read point metadata to locate table");
     }
-    return TableName.valueOf(meta.getPointTable());
+    return meta.getPointTable() != null ? TableName.valueOf(meta.getPointTable()) : null;
   }
 
   private TableName tileTable() throws Exception {
@@ -101,7 +101,8 @@ public class HBaseMaps {
       LOG.error("No tile metadata exists");
       throw new IllegalStateException("Unable to read tile metadata to locate table");
     }
-    return TableName.valueOf(meta.getTileTable());
+
+    return meta.getTileTable() != null ? TableName.valueOf(meta.getTileTable()) : null;
   }
 
   private TableName tileTableForChecklist(String checklistKey) throws Exception {
@@ -110,7 +111,7 @@ public class HBaseMaps {
       LOG.error("No tile metadata exists");
       throw new IllegalStateException("Unable to read tile metadata to locate table");
     }
-    return TableName.valueOf(meta.getTileTable(checklistKey));
+    return meta.getTileTable(checklistKey) != null ? TableName.valueOf(meta.getTileTable(checklistKey)) : null;
   }
 
 
@@ -122,7 +123,9 @@ public class HBaseMaps {
       .loader(
         rowKey -> {
           LOG.info("Table {}", metastore.read().getPointTable());
-          try (Table table = connection.getTable(pointTable())) {
+          TableName name = pointTable();
+          if (name == null) return Optional.empty();
+          try (Table table = connection.getTable(name)) {
             LOG.info(saltPoints.saltToString(rowKey));
             byte[] saltedKey = saltPoints.salt(rowKey);
             Get get = new Get(saltedKey);
@@ -155,8 +158,9 @@ public class HBaseMaps {
       .name("tileCache")
       .loader(
         rowCell -> {
-
-          try (Table table = connection.getTable(tileTableName(rowCell.rowKey))) {
+          TableName name = tileTableName(rowCell.rowKey);
+          if (name == null) return Optional.empty();
+          try (Table table = connection.getTable(name)) {
             String unsalted = rowCell.rowKey + ":" + rowCell.zxy();
             byte[] saltedKey = saltTiles.salt(unsalted);
             Get get = new Get(saltedKey);
