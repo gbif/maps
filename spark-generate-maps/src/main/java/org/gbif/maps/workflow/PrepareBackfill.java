@@ -56,11 +56,12 @@ public class PrepareBackfill {
       try (Connection connection = ConnectionFactory.createConnection(HBaseConfiguration.create());
           Admin admin = connection.getAdmin()) {
 
-        createHBasetTable(config, admin, config.getFQTableName()); // the tile or point table
+        createHBaseTable(config, admin, config.getFQTableName()); // the tile or point table
+
         if ("tiles".equalsIgnoreCase(config.getMode())) {
           for (String alias : config.getChecklistsToProcess().keySet()) {
             String name = config.getFQChecklistTableName(alias);
-            createHBasetTable(config, admin, name); // table per checklist
+            createHBaseTable(config, admin, name); // table per checklist
           }
         }
       }
@@ -68,12 +69,12 @@ public class PrepareBackfill {
     } catch (TableExistsException e) {
       log.info("Ignoring non-existing table");
     } catch (IOException e) {
-      log.error("Unable to prepare the tables for backfilling");
+      log.error("Unable to prepare the tables for back-filling");
       throw e; // deliberate log and throw to keep logs together
     }
   }
 
-  private static void createHBasetTable(MapConfiguration config, Admin admin, String name)
+  private static void createHBaseTable(MapConfiguration config, Admin admin, String name)
       throws IOException {
     TableDescriptorBuilder target = TableDescriptorBuilder.newBuilder(TableName.valueOf(name));
     target.setMaxFileSize(config.getHbase().getMaxFileSize());
@@ -87,7 +88,7 @@ public class PrepareBackfill {
         ("tiles".equalsIgnoreCase(config.getMode()))
             ? new ModulusSalt(config.getHbase().getKeySaltModulusTiles())
             : new ModulusSalt(config.getHbase().getKeySaltModulusPoints());
-    log.info("Creating {}", config.getFQTableName());
+    log.info("Creating {}", name);
     admin.createTable(target.build(), salt.getTableRegions());
   }
 
