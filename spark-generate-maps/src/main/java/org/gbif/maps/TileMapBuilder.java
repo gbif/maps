@@ -88,7 +88,7 @@ class TileMapBuilder implements Serializable {
 
         // Non-taxonomic maps
         setDescription(epsg, String.format("z[%d] non-taxonomic", z));
-        String nonTaxonDir = String.format("%s/EPSG_%s/nonTaxon/z%d", targetDir, code, z);
+        String nonTaxonDir = String.format("%s/tiles/EPSG_%s/nonTaxon/z%d", targetDir, code, z);
         generateTiles(epsg, z, nonTaxonTable, nonTaxonDir);
       }
 
