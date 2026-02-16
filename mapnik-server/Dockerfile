@@ -2,7 +2,7 @@ FROM node:8 AS builder
 
 COPY src/main/node /usr/src/mapnik-server
 WORKDIR /usr/src/mapnik-server
-RUN npm install --registry https://repository.gbif.org/content/repositories/npmjs/
+RUN npm install --registry https://repository-mirror.gbif.org/repository/npmjs/
 
 FROM node:8
 LABEL maintainers="Matthew Blissett <mblissett@gbif.org>"
