@@ -32,6 +32,13 @@ server:
     mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript,text/css,image/jpeg,application/x-protobuf,application/gzip
     excluded-user-agents:
 spring:
+  config:
+    import: "optional:zookeeper:"
+  cloud:
+    zookeeper:
+      enabled: false
+      discovery:
+        enabled: false
   resources:
     static-locations: classpath:/static/
   liquibase:

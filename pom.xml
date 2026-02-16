@@ -93,7 +93,6 @@
     <!-- Spring versions -->
     <spring-boot.version>3.5.7</spring-boot.version>
     <spring-boot-starter-cache.version>3.5.7</spring-boot-starter-cache.version>
-    <spring-cloud-bootstrap.version>4.3.0</spring-cloud-bootstrap.version>
     <spring-cloud-zookeeper.version>4.3.0</spring-cloud-zookeeper.version>
     <spring-cloud-openfeign.version>4.3.0</spring-cloud-openfeign.version>
     <spring-boot-admin.version>3.5.6</spring-boot-admin.version>
@@ -732,11 +731,6 @@
         <version>${spring-boot.version}</version>
         <type>pom</type>
         <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework.cloud</groupId>
-        <artifactId>spring-cloud-starter-bootstrap</artifactId>
-        <version>${spring-cloud-bootstrap.version}</version>
       </dependency>
       <dependency>
         <groupId>org.springframework.cloud</groupId>

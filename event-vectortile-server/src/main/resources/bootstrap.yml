@@ -1,7 +1,0 @@
-# Add default properties here
-spring:
-  cloud:
-    zookeeper:
-      enabled: false
-      discovery:
-        enabled: false
