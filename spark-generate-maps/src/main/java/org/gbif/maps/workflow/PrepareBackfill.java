@@ -78,6 +78,8 @@ public class PrepareBackfill {
       throws IOException {
     TableDescriptorBuilder target = TableDescriptorBuilder.newBuilder(TableName.valueOf(name));
     target.setMaxFileSize(config.getHbase().getMaxFileSize());
+    target.setSplitEnabled(false);
+    target.setMergeEnabled(false);
     appendColumnFamily(target, "EPSG_4326"); // points and tiles both have this CF
     if ("tiles".equalsIgnoreCase(config.getMode())) {
       appendColumnFamily(target, "EPSG_3857");
