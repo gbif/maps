@@ -56,9 +56,14 @@ public class PrepareBackfill {
       try (Connection connection = ConnectionFactory.createConnection(HBaseConfiguration.create());
           Admin admin = connection.getAdmin()) {
 
-        createHBaseTable(config, admin, config.getFQTableName()); // the tile or point table
+        if ("points".equalsIgnoreCase(config.getMode())) {
+          createHBaseTable(config, admin, config.getFQTableName());
+        }
 
         if ("tiles".equalsIgnoreCase(config.getMode())) {
+          if (config.isProcessNonChecklistTiles()) {
+            createHBaseTable(config, admin, config.getFQTableName());
+          }
           for (String alias : config.getChecklistsToProcess().keySet()) {
             String name = config.getFQChecklistTableName(alias);
             createHBaseTable(config, admin, name); // table per checklist
