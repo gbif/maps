@@ -13,7 +13,6 @@
  */
 package org.gbif.maps.common.filter;
 
-import lombok.extern.slf4j.Slf4j;
 import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.Long2D;
 import org.gbif.maps.common.projection.TileSchema;
@@ -26,6 +25,8 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
+
+import lombok.extern.slf4j.Slf4j;
 import no.ecc.vectortile.VectorTileDecoder;
 import no.ecc.vectortile.VectorTileEncoder;
 

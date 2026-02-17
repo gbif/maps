@@ -14,7 +14,6 @@
 package org.gbif.maps;
 
 import org.gbif.maps.config.Config;
-import org.gbif.occurrence.search.es.EsConfig;
 
 import lombok.Data;
 

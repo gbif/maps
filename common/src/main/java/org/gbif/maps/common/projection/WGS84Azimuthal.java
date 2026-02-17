@@ -16,11 +16,11 @@ package org.gbif.maps.common.projection;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 
+import org.geotools.api.referencing.operation.MathTransform;
 import org.geotools.geometry.jts.JTS;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
-import org.geotools.api.referencing.operation.MathTransform;
 
 /**
  * Base class handling azimuthal projections.

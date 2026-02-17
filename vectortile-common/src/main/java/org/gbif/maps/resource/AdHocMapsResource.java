@@ -13,32 +13,6 @@
  */
 package org.gbif.maps.resource;
 
-import static org.gbif.maps.resource.Params.BIN_MODE_HEX;
-import static org.gbif.maps.resource.Params.BIN_MODE_SQUARE;
-import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
-import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
-import static org.gbif.maps.resource.Params.HEX_TILE_SIZE;
-import static org.gbif.maps.resource.Params.SQUARE_TILE_SIZE;
-import static org.gbif.maps.resource.Params.enableCORS;
-
-import com.codahale.metrics.annotation.Timed;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import io.swagger.v3.oas.annotations.Hidden;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import javax.validation.Valid;
-import no.ecc.vectortile.VectorTileEncoder;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
 import org.gbif.api.model.predicate.Predicate;
 import org.gbif.maps.common.bin.HexBin;
 import org.gbif.maps.common.bin.SquareBin;
@@ -53,6 +27,20 @@ import org.gbif.search.heatmap.HeatmapRequest;
 import org.gbif.search.heatmap.HeatmapRequestProvider;
 import org.gbif.search.heatmap.HeatmapService;
 import org.gbif.search.heatmap.es.EsHeatmapResponse;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import javax.validation.Valid;
+
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -68,6 +56,23 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import com.codahale.metrics.annotation.Timed;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+
+import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import no.ecc.vectortile.VectorTileEncoder;
+
+import static org.gbif.maps.resource.Params.BIN_MODE_HEX;
+import static org.gbif.maps.resource.Params.BIN_MODE_SQUARE;
+import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
+import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
+import static org.gbif.maps.resource.Params.HEX_TILE_SIZE;
+import static org.gbif.maps.resource.Params.SQUARE_TILE_SIZE;
+import static org.gbif.maps.resource.Params.enableCORS;
 
 /**
  * ElasticSearch as a vector tile service.

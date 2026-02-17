@@ -13,17 +13,31 @@
  */
 package org.gbif.maps;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.base.Strings;
-import io.micrometer.core.instrument.MeterRegistry;
+import org.gbif.api.model.common.search.SearchParameter;
+import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
+import org.gbif.maps.common.meta.MapMetastore;
+import org.gbif.maps.common.meta.Metastores;
+import org.gbif.maps.config.Config;
+import org.gbif.maps.io.PointFeature;
+import org.gbif.maps.resource.HBaseMaps;
+import org.gbif.occurrence.search.es.EsConfig;
+import org.gbif.rest.client.species.NameUsageMatchingService;
+import org.gbif.search.es.occurrence.OccurrenceEsField;
+import org.gbif.search.heatmap.es.occurrence.OccurrenceEsHeatmapRequestBuilder;
+import org.gbif.search.heatmap.es.occurrence.OccurrenceHeatmapsEsService;
+import org.gbif.vocabulary.client.ConceptClient;
+import org.gbif.ws.client.ClientBuilder;
+import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
+import org.gbif.ws.server.processor.ParamNameProcessor;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Optional;
+
 import javax.validation.constraints.NotNull;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.http.HttpHost;
@@ -35,22 +49,6 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.sniff.SniffOnFailureListener;
 import org.elasticsearch.client.sniff.Sniffer;
-import org.gbif.api.model.common.search.SearchParameter;
-import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
-import org.gbif.maps.common.meta.MapMetastore;
-import org.gbif.maps.common.meta.Metastores;
-import org.gbif.maps.config.Config;
-import org.gbif.maps.resource.HBaseMaps;
-import org.gbif.maps.io.PointFeature;
-import org.gbif.occurrence.search.es.EsConfig;
-import org.gbif.rest.client.species.NameUsageMatchingService;
-import org.gbif.search.es.occurrence.OccurrenceEsField;
-import org.gbif.search.heatmap.es.occurrence.OccurrenceEsHeatmapRequestBuilder;
-import org.gbif.search.heatmap.es.occurrence.OccurrenceHeatmapsEsService;
-import org.gbif.vocabulary.client.ConceptClient;
-import org.gbif.ws.client.ClientBuilder;
-import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
-import org.gbif.ws.server.processor.ParamNameProcessor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -68,6 +66,13 @@ import org.springframework.http.converter.json.AbstractJackson2HttpMessageConver
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.base.Strings;
+
+import io.micrometer.core.instrument.MeterRegistry;
 
 /**
  * The main entry point for running the member node.

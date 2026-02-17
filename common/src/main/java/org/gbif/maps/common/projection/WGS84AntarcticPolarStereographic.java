@@ -15,9 +15,9 @@ package org.gbif.maps.common.projection;
 
 import java.awt.geom.AffineTransform;
 
-import org.geotools.referencing.CRS;
 import org.geotools.api.referencing.FactoryException;
 import org.geotools.api.referencing.operation.MathTransform;
+import org.geotools.referencing.CRS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

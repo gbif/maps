@@ -13,7 +13,6 @@
  */
 package org.gbif.maps.utils;
 
-import org.cache2k.config.Cache2kConfig;
 import org.gbif.maps.resource.HBaseMaps;
 import org.gbif.maps.resource.Params;
 
@@ -25,6 +24,7 @@ import java.util.stream.Collectors;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.extra.spring.SpringCache2kCacheManager;
 
 import com.google.common.io.Files;

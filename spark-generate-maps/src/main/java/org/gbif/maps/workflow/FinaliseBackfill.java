@@ -58,7 +58,7 @@ public class FinaliseBackfill {
     config.setTimestamp(args[1]);
     loadTable(config); // load HBase (throws exception on error)
     updateMeta(config); // update the metastore in ZK
-    //cleanup(config); TODO
+    // cleanup(config); TODO
   }
 
   private static void updateMeta(MapConfiguration config) throws Exception {

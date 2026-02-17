@@ -13,10 +13,25 @@
  */
 package org.gbif.maps.resource;
 
-import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
-import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
+import org.gbif.maps.TileServerConfiguration;
+import org.gbif.maps.docs.CommonOpenAPI;
+import org.gbif.maps.docs.OpenAPIDocs;
+import org.gbif.occurrence.search.cache.PredicateCacheService;
+import org.gbif.search.heatmap.HeatmapRequest;
+import org.gbif.search.heatmap.occurrence.OccurrenceHeatmapRequest;
+import org.gbif.search.heatmap.occurrence.OccurrenceHeatmapRequestProvider;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.codahale.metrics.annotation.Timed;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -26,21 +41,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.gbif.maps.TileServerConfiguration;
-import org.gbif.maps.docs.CommonOpenAPI;
-import org.gbif.maps.docs.OpenAPIDocs;
-import org.gbif.occurrence.search.cache.PredicateCacheService;
-import org.gbif.search.heatmap.HeatmapRequest;
-import org.gbif.search.heatmap.occurrence.OccurrenceHeatmapRequest;
-import org.gbif.search.heatmap.occurrence.OccurrenceHeatmapRequestProvider;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import static org.gbif.maps.resource.Params.DEFAULT_HEX_PER_TILE;
+import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
 
 /**
  * ElasticSearch as a vector tile service. Note to developers: This class could benefit from some

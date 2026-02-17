@@ -13,18 +13,21 @@
  */
 package org.gbif.maps.resource;
 
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
 import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
 import org.gbif.api.model.occurrence.search.OccurrenceSearchRequest;
 import org.gbif.api.util.SearchTypeValidator;
 import org.gbif.maps.common.filter.Range;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Utilities for dealing with the parameters and mappings.

@@ -13,21 +13,23 @@
  */
 package org.gbif.maps;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.micrometer.core.instrument.MeterRegistry;
-import org.cache2k.Cache;
-import org.cache2k.config.Cache2kConfig;
-import org.cache2k.extra.spring.SpringCache2kCacheManager;
 import org.gbif.api.model.predicate.Predicate;
 import org.gbif.maps.config.ConfigUtils;
 import org.gbif.occurrence.search.cache.DefaultInMemoryPredicateCacheService;
 import org.gbif.occurrence.search.cache.PredicateCacheService;
+
+import org.cache2k.Cache;
+import org.cache2k.config.Cache2kConfig;
+import org.cache2k.extra.spring.SpringCache2kCacheManager;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.micrometer.core.instrument.MeterRegistry;
 
 @Configuration
 @EnableCaching

@@ -47,7 +47,9 @@ public class MapConfiguration {
 
   // These only apply when TILES are run
   private boolean processNonChecklistTiles;
-  private LinkedHashMap<String, String> checklistsToProcess;
+
+  @Builder.Default
+  private LinkedHashMap<String, String> checklistsToProcess = new LinkedHashMap<>();
 
   private HBaseConfiguration hbase;
   private HdfsLockConfig hdfsLockConfig;

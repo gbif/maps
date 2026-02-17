@@ -22,7 +22,6 @@ import org.gbif.maps.common.projection.Tiles;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
-
 import org.junit.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;

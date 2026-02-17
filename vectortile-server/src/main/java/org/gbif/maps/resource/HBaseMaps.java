@@ -13,9 +13,6 @@
  */
 package org.gbif.maps.resource;
 
-import org.cache2k.config.Cache2kConfig;
-
-import org.gbif.maps.CacheConfiguration;
 import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.common.meta.MapMetastore;
 import org.gbif.maps.common.meta.MapTables;
@@ -36,6 +33,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.cache2k.Cache;
+import org.cache2k.config.Cache2kConfig;
 import org.cache2k.extra.spring.SpringCache2kCacheManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

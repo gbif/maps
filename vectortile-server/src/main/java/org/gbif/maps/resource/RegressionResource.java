@@ -18,6 +18,10 @@ import org.gbif.api.model.occurrence.search.OccurrenceSearchRequest;
 import org.gbif.api.vocabulary.BasisOfRecord;
 import org.gbif.maps.TileServerConfiguration;
 import org.gbif.maps.common.projection.Long2D;
+import org.gbif.occurrence.search.es.OccurrenceEsSearchRequestBuilder;
+import org.gbif.rest.client.species.NameUsageMatchingService;
+import org.gbif.search.es.occurrence.OccurrenceEsField;
+import org.gbif.vocabulary.client.ConceptClient;
 
 import java.io.IOException;
 import java.util.List;
@@ -27,25 +31,15 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
-
-import org.gbif.occurrence.search.es.OccurrenceEsSearchRequestBuilder;
-import org.gbif.rest.client.species.NameUsageMatchingService;
-import org.gbif.search.es.occurrence.OccurrenceEsField;
-import org.gbif.vocabulary.client.ConceptClient;
-
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Polygon;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +63,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import no.ecc.vectortile.VectorTileDecoder;
 import no.ecc.vectortile.VectorTileEncoder;
 

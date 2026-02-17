@@ -13,10 +13,10 @@
  */
 package org.gbif.maps.common.meta;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 /**
  * Suppliers of the MapMetastore implementations.
