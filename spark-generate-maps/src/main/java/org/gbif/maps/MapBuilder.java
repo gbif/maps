@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import org.apache.hadoop.conf.Configuration;
@@ -98,7 +99,11 @@ public class MapBuilder implements Serializable {
     spark.sparkContext().conf().set("hive.exec.compress.output", "true");
 
     // Read the source Avro files and prepare them as performant tables
-    final String inputTable = String.format("maps_input_%s", hiveInputSuffix);
+    final String inputTable = String.format(
+      "maps_input_%s_%d_%d",
+      hiveInputSuffix,
+      ThreadLocalRandom.current().nextInt(1_000_000) // collisions highly unlikely
+    );
     readAvroSource(spark, inputTable);
 
     // Determine the mapKeys of maps that require a tile pyramid
@@ -133,6 +138,9 @@ public class MapBuilder implements Serializable {
           .build()
           .generate();
     }
+
+    // tidy up since we create a table per run
+    spark.sql(String.format("DROP TABLE IF EXISTS %s PURGE", inputTable));
   }
 
   /**

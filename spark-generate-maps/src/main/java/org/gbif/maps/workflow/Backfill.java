@@ -61,7 +61,7 @@ public class Backfill {
           MapBuilder.builder()
               .sourceDir(snapshotSource)
               .hiveDB(config.getHiveDB())
-              .hiveInputSuffix(mode)
+              .hiveInputSuffix(mode + "_" + config.getTimestamp())
               .hbaseTable(config.getFQTableName())
               .targetDir(config.getFQTargetDirectory())
               .moduloPoints(config.getHbase().getKeySaltModulusPoints())

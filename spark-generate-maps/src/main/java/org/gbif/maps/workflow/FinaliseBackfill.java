@@ -58,7 +58,7 @@ public class FinaliseBackfill {
     config.setTimestamp(args[1]);
     loadTable(config); // load HBase (throws exception on error)
     updateMeta(config); // update the metastore in ZK
-    // cleanup(config); TODO
+    cleanup(config); // delete old tables, maintaining only previous one disabled
   }
 
   private static void updateMeta(MapConfiguration config) throws Exception {
@@ -141,6 +141,7 @@ public class FinaliseBackfill {
 
   /** Deletes the snapshot and old tables whereby we keep the 2 latest tables only. */
   private static void cleanup(MapConfiguration config) throws Exception {
+    // remove all but the last 2 tables, disable all but the last 1 table.
     Configuration hbaseConfig = HBaseConfiguration.create();
     try {
       log.info("Connecting to HBase");
@@ -151,45 +152,22 @@ public class FinaliseBackfill {
               Metastores.newZookeeperMapsMeta(
                   hbaseConfig.get("hbase.zookeeper.quorum"), 1000, config.getMetadataPath())) {
 
-        // remove all but the last 2 tables, disable all but the last 1 table.
+        if (config.getMode().equalsIgnoreCase("points")) {
+          String tablesPattern =
+            config.getHbase().getTableName() + "_points_\\d{8}_\\d{4}";
+            removeOldTables(config, admin, metastore, tablesPattern);
+        } else if (config.getMode().equalsIgnoreCase("tiles")) {
 
-        // table names are suffixed with a timestamp e.g. prod_d_maps_points_20180616_1320
-        String tablesPattern =
-            config.getHbase().getTableName() + "_" + config.getMode() + "_\\d{8}_\\d{4}";
+          if (config.isProcessNonChecklistTiles()) {
+            String tablesPattern =
+              config.getHbase().getTableName() + "_tiles_\\d{8}_\\d{4}";
+            removeOldTables(config, admin, metastore, tablesPattern);
+          }
 
-        TableName[] tables = admin.listTableNames(tablesPattern);
-        // TableName does not order lexigraphically by default
-        Arrays.sort(tables, Comparator.comparing(TableName::getNameAsString));
-
-        log.info(
-            "Table list: {}",
-            Arrays.stream(tables).map(TableName::getNameAsString).collect(Collectors.joining(",")));
-
-        MapTables meta = metastore.read();
-        log.info("Current live tables[{}]", meta);
-
-        for (int i = 0; i < tables.length - 1; i++) {
-          // Defensive coding: read the metastore each time to minimise possible misuse resulting in
-          // race conditions
-          meta = metastore.read();
-
-          // Defensive coding: don't delete anything that is the intended target, or currently in
-          // use
-          // TODO: these can throw NPE
-          if (!config.getFQTableName().equalsIgnoreCase(tables[i].getNameAsString())
-              && !meta.getPointTable().equalsIgnoreCase(tables[i].getNameAsString())
-              && !meta.getTileTable().equalsIgnoreCase(tables[i].getNameAsString())) {
-
-            log.info("Disabling HBase table[{}]", tables[i].getNameAsString());
-            if (!admin.isTableDisabled(tables[i])) {
-              admin.disableTable(tables[i]);
-            }
-
-            // Delete all but the previous table
-            if (i < tables.length - 2) {
-              log.info("Deleting HBase table[{}]", tables[i].getNameAsString());
-              admin.deleteTable(tables[i]);
-            }
+          for (String alias : config.getChecklistsToProcess().keySet()) {
+            String tablesPattern =
+              config.getHbase().getTableName() + "_tiles_" + alias + "_\\d{8}_\\d{4}";
+            removeOldTables(config, admin, metastore, tablesPattern);
           }
         }
       }
@@ -197,25 +175,43 @@ public class FinaliseBackfill {
       log.error("Unable to clean HBase tables", e);
       throw e; // deliberate log and throw to keep logs together
     }
+  }
 
-    // Cleanup the working directory if in hdfs://nameserver/tmp/* to avoid many small files
-    String regex = "hdfs://[-_a-zA-Z0-9]+/tmp/.+"; // defensive, cleaning only /tmp in hdfs
-    if (config.getFQTargetDirectory().matches(regex)) {
-      try (FileSystem hdfs = getHdfsFileSystem()) {
-        String dir =
-            config.getTargetDirectory().substring(config.getFQTargetDirectory().indexOf("/tmp"));
-        log.info(
-            "Deleting working directory [{}] which translates to [-rm -r -skipTrash {}]",
-            config.getFQTargetDirectory(),
-            dir);
-        hdfs.deleteOnExit(new Path(dir));
-      } catch (Exception e) {
-        throw new IOException("Unable to delete the working directory", e);
+  private static void removeOldTables(MapConfiguration config, Admin admin, MapMetastore metastore, String tablesPattern) throws Exception {
+    TableName[] tables = admin.listTableNames(tablesPattern);
+    // TableName does not order lexigraphically by default
+    Arrays.sort(tables, Comparator.comparing(TableName::getNameAsString));
+
+    log.info(
+        "Table list: {}",
+        Arrays.stream(tables).map(TableName::getNameAsString).collect(Collectors.joining(",")));
+
+    MapTables meta = metastore.read();
+    log.info("Current live tables[{}]", meta);
+
+    for (int i = 0; i < tables.length - 1; i++) {
+      // Defensive coding: read the metastore each time to minimise possible misuse resulting in
+      // race conditions
+      meta = metastore.read();
+
+      // Defensive coding: don't delete anything that is the intended target, or currently in
+      // use
+      // TODO: these can throw NPE
+      if (!config.getFQTableName().equalsIgnoreCase(tables[i].getNameAsString())
+          && !meta.getPointTable().equalsIgnoreCase(tables[i].getNameAsString())
+          && !meta.getTileTable().equalsIgnoreCase(tables[i].getNameAsString())) {
+
+        log.info("Disabling HBase table[{}]", tables[i].getNameAsString());
+        if (!admin.isTableDisabled(tables[i])) {
+          admin.disableTable(tables[i]);
+        }
+
+        // Delete all but the previous table
+        if (i < tables.length - 2) {
+          log.info("Deleting HBase table[{}]", tables[i].getNameAsString());
+          admin.deleteTable(tables[i]);
+        }
       }
-    } else {
-      log.info(
-          "Working directory [{}] will not be removed automatically - only /tmp/* working directories will be cleaned",
-          config.getFQTargetDirectory());
     }
   }
 
