@@ -195,15 +195,6 @@ public class MapKeysUDF {
           keys, datasetKey, publishingOrgKey, countryCode, publishingCountry, networkKeys);
       return keys.stream().map(dictionary::get).filter(Objects::nonNull).toArray(Integer[]::new);
     }
-
-    public static void appendNonNull(Set<String> target, String prefix, Object l) {
-      if (l != null) {
-        Integer type = MAPS_TYPES.get(prefix);
-        if (type != null) {
-          target.add(type + ":" + l);
-        }
-      }
-    }
   }
 
   /** Generate encoded map keys and add them to target if the provided values are not null. */

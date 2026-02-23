@@ -82,8 +82,11 @@ public class FinaliseBackfill {
       return existingMeta.copyWithNewPoint(config.getFQTableName());
 
     } else {
-      // replace all tables generated in our configuration
-      MapTables newMeta = existingMeta.copyWithNewTile(config.getFQTableName());
+      // replace non checklist table, if defined in configuration
+      MapTables newMeta = config.isProcessNonChecklistTiles() ?
+        existingMeta.copyWithNewTile(config.getFQTableName()) : existingMeta;
+
+      // replace each checklist table defined in the configuration
       for (Map.Entry<String, String> e : config.getChecklistsToProcess().entrySet()) {
         // keyed on UUID to make it easy to integrate with the HTTP param (&checklistKey=<uuid>)
         // alias in the HBase table name to make it easier for HBase admins
