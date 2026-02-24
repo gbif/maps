@@ -158,19 +158,19 @@ public class FinaliseBackfill {
         if (config.getMode().equalsIgnoreCase("points")) {
           String tablesPattern =
             config.getHbase().getTableName() + "_points_\\d{8}_\\d{4}";
-            removeOldTables(config, admin, metastore, tablesPattern);
+            removeOldTables(admin, metastore, tablesPattern, config.getFQTableName());
         } else if (config.getMode().equalsIgnoreCase("tiles")) {
 
           if (config.isProcessNonChecklistTiles()) {
             String tablesPattern =
               config.getHbase().getTableName() + "_tiles_\\d{8}_\\d{4}";
-            removeOldTables(config, admin, metastore, tablesPattern);
+            removeOldTables(admin, metastore, tablesPattern, config.getFQTableName());
           }
 
           for (String alias : config.getChecklistsToProcess().keySet()) {
             String tablesPattern =
               config.getHbase().getTableName() + "_tiles_" + alias + "_\\d{8}_\\d{4}";
-            removeOldTables(config, admin, metastore, tablesPattern);
+            removeOldTables(admin, metastore, tablesPattern, config.getFQChecklistTableName(alias));
           }
         }
       }
@@ -180,7 +180,7 @@ public class FinaliseBackfill {
     }
   }
 
-  private static void removeOldTables(MapConfiguration config, Admin admin, MapMetastore metastore, String tablesPattern) throws Exception {
+  private static void removeOldTables(Admin admin, MapMetastore metastore, String tablesPattern, String newTable) throws Exception {
     TableName[] tables = admin.listTableNames(tablesPattern);
     // TableName does not order lexigraphically by default
     Arrays.sort(tables, Comparator.comparing(TableName::getNameAsString));
@@ -193,16 +193,8 @@ public class FinaliseBackfill {
     log.info("Current live tables[{}]", meta);
 
     for (int i = 0; i < tables.length - 1; i++) {
-      // Defensive coding: read the metastore each time to minimise possible misuse resulting in
-      // race conditions
-      meta = metastore.read();
-
-      // Defensive coding: don't delete anything that is the intended target, or currently in
-      // use
-      // TODO: these can throw NPE
-      if (!config.getFQTableName().equalsIgnoreCase(tables[i].getNameAsString())
-          && !meta.getPointTable().equalsIgnoreCase(tables[i].getNameAsString())
-          && !meta.getTileTable().equalsIgnoreCase(tables[i].getNameAsString())) {
+      // Defensive coding: do not delete the new table we just created
+      if (!newTable.equalsIgnoreCase(tables[i].getNameAsString())) {
 
         log.info("Disabling HBase table[{}]", tables[i].getNameAsString());
         if (!admin.isTableDisabled(tables[i])) {
@@ -216,6 +208,10 @@ public class FinaliseBackfill {
         }
       }
     }
+  }
+
+  private static boolean equalsIgnoreCase(String a, String b) {
+    return a != null && b != null && a.equalsIgnoreCase(b);
   }
 
   @SneakyThrows
