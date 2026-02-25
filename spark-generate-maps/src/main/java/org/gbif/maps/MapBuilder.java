@@ -99,11 +99,12 @@ public class MapBuilder implements Serializable {
     spark.sparkContext().conf().set("hive.exec.compress.output", "true");
 
     // Read the source Avro files and prepare them as performant tables
-    final String inputTable = String.format(
-      "maps_input_%s_%d",
-      hiveInputSuffix,
-      ThreadLocalRandom.current().nextInt(1_000_000) // collisions highly unlikely
-    );
+    final String inputTable =
+        String.format(
+            "maps_input_%s_%d",
+            hiveInputSuffix,
+            ThreadLocalRandom.current().nextInt(1_000_000) // collisions highly unlikely
+            );
     readAvroSource(spark, inputTable);
 
     // Determine the mapKeys of maps that require a tile pyramid

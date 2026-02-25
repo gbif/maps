@@ -62,6 +62,11 @@ public class FinaliseBackfill {
   }
 
   private static void updateMeta(MapConfiguration config) throws Exception {
+    if (config.isSkipUpdatingZK()) {
+      log.info("Skipping update to the ZK meta (see config)");
+      return;
+    }
+
     // 1 sec retries
     Configuration hbaseConfig = HBaseConfiguration.create();
     try (MapMetastore metastore =
@@ -83,8 +88,10 @@ public class FinaliseBackfill {
 
     } else {
       // replace non checklist table, if defined in configuration
-      MapTables newMeta = config.isProcessNonChecklistTiles() ?
-        existingMeta.copyWithNewTile(config.getFQTableName()) : existingMeta;
+      MapTables newMeta =
+          config.isProcessNonChecklistTiles()
+              ? existingMeta.copyWithNewTile(config.getFQTableName())
+              : existingMeta;
 
       // replace each checklist table defined in the configuration
       for (Map.Entry<String, String> e : config.getChecklistsToProcess().entrySet()) {
@@ -144,6 +151,11 @@ public class FinaliseBackfill {
 
   /** Deletes the snapshot and old tables whereby we keep the 2 latest tables only. */
   private static void cleanup(MapConfiguration config) throws Exception {
+    if (config.isSkipHBaseCleanup()) {
+      log.info("Skipping cleanup of HBase tables (see config)");
+      return;
+    }
+
     // remove all but the last 2 tables, disable all but the last 1 table.
     Configuration hbaseConfig = HBaseConfiguration.create();
     try {
@@ -156,20 +168,18 @@ public class FinaliseBackfill {
                   hbaseConfig.get("hbase.zookeeper.quorum"), 1000, config.getMetadataPath())) {
 
         if (config.getMode().equalsIgnoreCase("points")) {
-          String tablesPattern =
-            config.getHbase().getTableName() + "_points_\\d{8}_\\d{4}";
-            removeOldTables(admin, metastore, tablesPattern, config.getFQTableName());
+          String tablesPattern = config.getHbase().getTableName() + "_points_\\d{8}_\\d{4}";
+          removeOldTables(admin, metastore, tablesPattern, config.getFQTableName());
         } else if (config.getMode().equalsIgnoreCase("tiles")) {
 
           if (config.isProcessNonChecklistTiles()) {
-            String tablesPattern =
-              config.getHbase().getTableName() + "_tiles_\\d{8}_\\d{4}";
+            String tablesPattern = config.getHbase().getTableName() + "_tiles_\\d{8}_\\d{4}";
             removeOldTables(admin, metastore, tablesPattern, config.getFQTableName());
           }
 
           for (String alias : config.getChecklistsToProcess().keySet()) {
             String tablesPattern =
-              config.getHbase().getTableName() + "_tiles_" + alias + "_\\d{8}_\\d{4}";
+                config.getHbase().getTableName() + "_tiles_" + alias + "_\\d{8}_\\d{4}";
             removeOldTables(admin, metastore, tablesPattern, config.getFQChecklistTableName(alias));
           }
         }
@@ -180,7 +190,8 @@ public class FinaliseBackfill {
     }
   }
 
-  private static void removeOldTables(Admin admin, MapMetastore metastore, String tablesPattern, String newTable) throws Exception {
+  private static void removeOldTables(
+      Admin admin, MapMetastore metastore, String tablesPattern, String newTable) throws Exception {
     TableName[] tables = admin.listTableNames(tablesPattern);
     // TableName does not order lexigraphically by default
     Arrays.sort(tables, Comparator.comparing(TableName::getNameAsString));

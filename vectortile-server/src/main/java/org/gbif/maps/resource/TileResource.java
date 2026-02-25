@@ -106,7 +106,7 @@ import static org.gbif.maps.resource.Params.toMinMaxYear;
         "  taxa), **publisher**, **publishing country** or **network**.\n" +
         "  These layers can be filtered by year range, basis of record and country.\n" +
         "  When using a taxon, the GBIF backbone taxonomy is used unless a `checklistKey` parameter is " +
-        "  provided with the UUID of supported checklist (only the Catalogue of Life is supported at the time of writing). " +
+        "  provided with the UUID of a supported checklist (only the Catalogue of Life is supported at the time of writing). " +
         "* Data is returned as points, or “binned” into hexagons or squares.\n" +
         "* Four map projections are supported.\n" +
         "* Tiles are available in vector format for client styling, or raster format with predefined styles.\n" +

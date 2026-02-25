@@ -45,14 +45,17 @@ public class MapConfiguration {
   private int maxZoom;
   private int tileBufferSize;
 
-  // These only apply when TILES are run
+  // Only used when TILES are run
   private boolean processNonChecklistTiles;
 
+  // Only used when TILES are run
   @Builder.Default
   private LinkedHashMap<String, String> checklistsToProcess = new LinkedHashMap<>();
 
   private HBaseConfiguration hbase;
   private HdfsLockConfig hdfsLockConfig;
+  private boolean skipUpdatingZK;
+  private boolean skipHBaseCleanup;
 
   @Data
   @Builder
