@@ -9,7 +9,7 @@ spec:
     stackableVersion: 24.7.0
     repo: stackable-docker.gbif.org/stackable
   mode: cluster
-  mainApplicationFile: hdfs://gbif-hdfs/user/tim/spark-generate-maps-1.1.6-SNAPSHOT.jar
+  mainApplicationFile: hdfs://gbif-hdfs/user/tim/spark-generate-maps-1.1.7-SNAPSHOT.jar
   mainClass: org.gbif.maps.MapBuilder
   vectorAggregatorConfigMapName: gbif-vector-aggregator-discovery
   s3connection:
@@ -73,16 +73,27 @@ spec:
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.checkpoint.mount.path": "/data"
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.checkpoint.options.sizeLimit": "10Gi"
     "spark.local.dir": "/data/spark-1/executor"
-    "spark.default.parallelism": "3000"
+
+
     "spark.executor.cores": "8"
     "spark.executor.memory": "32G"
     "spark.executor.memoryOverhead": "12G"
+
+    #"spark.executor.cores": "16"
+    #"spark.executor.memory": "64G"
+    #"spark.executor.memoryOverhead": "24G"
+    #"spark.executor.cores": "4"
+    #"spark.executor.memory": "16G"
+    #"spark.executor.memoryOverhead": "6G"
+
     #"spark.executor.memoryOverheadFactor": "0.5"
     #"spark.scheduler.mode": "FAIR"
-    "spark.sql.adaptive.enabled": "true"
-    # Deprecated
+
+    #"spark.sql.adaptive.enabled": "true"
     #"spark.sql.adaptive.shuffle.targetPostShuffleInputSize": "128MB"
-    "spark.sql.adaptive.advisoryPartitionSizeInBytes": "128MB"
+    #"spark.sql.adaptive.advisoryPartitionSizeInBytes": "128MB"
+    #"spark.sql.adaptive.skewJoin.enabled": "true"
+    #"spark.sql.autoBroadcastJoinThreshold": "50MB"
 
     # We are doing GROUP BYs into Millions of buckets.
     #"spark.sql.objectHashAggregate.sortBased.fallbackThreshold": "4096"
@@ -93,12 +104,56 @@ spec:
     "spark.shuffle.compress": "true"
     "spark.shuffle.spill.compress": "true"
 
-    # TEST - replaced SNAPPY above
     "spark.io.compression.codec": "lz4"
 
-    "spark.sql.adaptive.skewJoin.enabled": "true"
-    "spark.sql.shuffle.partitions": "10000"
-    "spark.sql.autoBroadcastJoinThreshold": "50MB"
+    "spark.default.parallelism": "2000"
+    "spark.sql.shuffle.partitions": "2000"
+
+    # Waves of 500.
+    # Z16: 5, 23, 1.1, 1.1
+    # Z15: 6, 25, 1.0, 50
+    #"spark.default.parallelism": "500"
+    #"spark.sql.shuffle.partitions": "500"
+
+    # Waves of 1000.
+    # Z16: 5, 16, 37, 54
+    # Z15: 6, 18, 36, 41
+    #"spark.default.parallelism": "1000"
+    #"spark.sql.shuffle.partitions": "1000"
+
+    # 8 cores
+    # Waves of 2000.
+    # Z16: 5, 14, 42, 56
+    # Z15: 6, 15, 35, 42
+    #"spark.default.parallelism": "2000"
+    #"spark.sql.shuffle.partitions": "2000"
+
+    # 16 cores, 64GB!!!
+    # Waves of 2000.
+    # Z16: 7, 13, 39, 52
+    # Z15: 7, 14, 36, 39
+    #"spark.default.parallelism": "2000"
+    #"spark.sql.shuffle.partitions": "2000"
+
+    # 4 cores, 16GB!!!
+    # Waves of 2000.
+    # Z16: 5, 15, 53, 1.1
+    # Z15: 6, 15, 46, 50
+    #"spark.default.parallelism": "2000"
+    #"spark.sql.shuffle.partitions": "2000"
+
+    # Results in waves of 3334
+    # Z16: 4, 13, 36, 60
+    # Z15: 7, 18, 34, 45
+    #"spark.default.parallelism": "3000"
+    #"spark.sql.shuffle.partitions": "10000"
+
+    # Waves of 5000.
+    # Z16: 5, 12, 45,
+    # Z15: , , ,
+    #"spark.default.parallelism": "5000"
+    #"spark.sql.shuffle.partitions": "5000"
+
     "spark.kubernetes.allocation.batch.size": "20"
     "spark.kubernetes.scheduler.maxConcurrentPodCreation": "20"
     "spark.kubernetes.authenticate.driver.serviceAccountName": "cli-account"
@@ -225,14 +280,20 @@ spec:
               requests:
                 cpu: 250m
                 memory: 128Mi
-    replicas: 80
+    replicas: 70
     config:
       resources:
         cpu:
           min: "8"
           max: "8"
+          #min: "16"
+          #max: "16"
+          #min: "4"
+          #max: "4"
         memory:
-          limit: "42Gi"
+          limit: "39Gi"
+          #limit: "80Gi"
+          #limit: "20Gi"
       logging:
         enableVectorAgent: true
         containers:

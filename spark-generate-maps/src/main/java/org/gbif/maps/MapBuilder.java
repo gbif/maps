@@ -87,7 +87,7 @@ public class MapBuilder implements Serializable {
             .targetDir("/tmp/tim-map-tiles/")
             .buildTiles(true)
             .buildNonTaxonTiles(true)
-            .checklistsToTile(checklists)
+            // .checklistsToTile(checklists)
             .build();
     tiles.run();
   }
@@ -209,15 +209,12 @@ public class MapBuilder implements Serializable {
                     + "HAVING count(*)>=%d",
                 source, threshold));
 
-    TreeSet<String> mapsToPyramid = new TreeSet<>();
-    if (!stats.isEmpty()) {
-      List<Row> statsList = stats.collectAsList();
-      mapsToPyramid =
-          statsList.stream()
-              .map(s -> (String) s.getAs("mapKey"))
-              .collect(Collectors.toCollection(TreeSet::new));
-      System.out.printf("Map views that require tile pyramid %d%n", mapsToPyramid.size());
-    }
+    List<Row> statsList = stats.collectAsList();
+    TreeSet<String> mapsToPyramid =
+        statsList.stream()
+            .map(s -> (String) s.getAs("mapKey"))
+            .collect(Collectors.toCollection(TreeSet::new));
+    System.out.printf("Map views that require tile pyramid %d%n", mapsToPyramid.size());
     return mapsToPyramid;
   }
 
