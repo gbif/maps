@@ -100,8 +100,8 @@ public class OpenAPIDocs {
         responseCode = "200",
         description = "Map tile.",
         content = {
-          @Content(mediaType = "application/x-protobuf", examples = @ExampleObject(externalValue = "https://api.gbif.org/v2/map/event/density/2/3/2.mvn?taxonKey=212&country=AU")),
-          @Content(mediaType = "image/png", examples = @ExampleObject(externalValue = "https://api.gbif.org/v2/map/event/density/2/3/2@1x.png?taxonKey=212&country=AU&style=orangeHeat.point"))
+          @Content(mediaType = "application/x-protobuf", examples = @ExampleObject(externalValue = "https://api.gbif.org/v2/map/experimental/event/density/2/3/2.mvn?taxonKey=212&country=AU")),
+          @Content(mediaType = "image/png", examples = @ExampleObject(externalValue = "https://api.gbif.org/v2/map/experimental/event/density/2/3/2@1x.png?taxonKey=212&country=AU&style=orangeHeat.point"))
         }),
       @ApiResponse(
         responseCode = "204",

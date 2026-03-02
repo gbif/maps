@@ -13,6 +13,7 @@
  */
 package org.gbif.maps.resource;
 
+import org.gbif.api.annotation.Experimental;
 import org.gbif.maps.TileServerConfiguration;
 import org.gbif.maps.docs.CommonOpenAPI;
 import org.gbif.maps.docs.OpenAPIDocs;
@@ -48,8 +49,9 @@ import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
  * ElasticSearch as a vector tile service. Note to developers: This class could benefit from some
  * significant refactoring and cleanup.
  */
+@Experimental
 @RestController
-@RequestMapping(value = "/event/adhoc")
+@RequestMapping(value = "/experimental/event/adhoc")
 public final class AdHocEventMapsResource extends AdHocMapsResource<EventHeatmapRequest> {
 
   @Autowired
