@@ -13,6 +13,7 @@
  */
 package org.gbif.maps;
 
+import org.apache.spark.sql.*;
 import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.udf.MapKeysUDF;
 
@@ -28,10 +29,6 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.SnappyCodec;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SaveMode;
-import org.apache.spark.sql.SparkSession;
 
 import lombok.Builder;
 
@@ -151,28 +148,65 @@ public class MapBuilder implements Serializable {
    */
   private void readAvroSource(SparkSession spark, String targetHiveTable) {
     Dataset<Row> source =
-        spark
-            .read()
-            .format("avro")
-            .load(sourceDir)
-            .select(
-                "datasetKey",
-                "publishingOrgKey",
-                "publishingCountry",
-                "networkKey",
-                "countryCode",
-                "classifications",
-                "basisOfRecord",
-                "decimalLatitude",
-                "decimalLongitude",
-                "year",
-                "occurrenceStatus",
-                "hasGeospatialIssues")
-            .filter(
-                "decimalLatitude IS NOT NULL AND "
-                    + "decimalLongitude IS NOT NULL AND "
-                    + "hasGeospatialIssues = false AND "
-                    + "occurrenceStatus='PRESENT' ");
+      spark
+        .read()
+        .format("avro")
+        .load(sourceDir)
+        .select(
+          "datasetKey",
+          "publishingOrgKey",
+          "publishingCountry",
+          "networkKey",
+          "countryCode",
+          "classifications",
+          "classificationDetails", // may be removed later - see below
+          "basisOfRecord",
+          "decimalLatitude",
+          "decimalLongitude",
+          "year",
+          "occurrenceStatus",
+          "hasGeospatialIssues")
+        .filter(
+          "decimalLatitude IS NOT NULL AND " +
+            "decimalLongitude IS NOT NULL AND " +
+            "hasGeospatialIssues = false AND " +
+            "occurrenceStatus = 'PRESENT'")
+        // merge in taxon from the details which may be a synonym
+        // see https://github.com/gbif/maps/issues/107
+        // this may be removed when https://github.com/gbif/pipelines/issues/1293 is in operation
+        .withColumn(
+          "classifications",
+          functions.expr(
+            "map_from_entries(" +
+              "  transform(" +
+              "    map_entries(classifications)," +
+              "    entry -> struct(" +
+              "      entry.key," +
+              "      array_distinct(" +
+              "        concat(" +
+              "          entry.value," +
+              "          CASE " +
+              "            WHEN element_at(classificationDetails, entry.key) IS NOT NULL " +
+              "                 AND element_at(" +
+              "                       element_at(classificationDetails, entry.key)," +
+              "                       'taxonkey'" +
+              "                     ) IS NOT NULL " +
+              "            THEN array(" +
+              "                   element_at(" +
+              "                     element_at(classificationDetails, entry.key)," +
+              "                     'taxonkey'" +
+              "                   )" +
+              "                 ) " +
+              "            ELSE array() " +
+              "          END" +
+              "        )" +
+              "      )" +
+              "    )" +
+              "  )" +
+              ")"
+          )
+        )
+        .drop("classificationDetails"); // may be removed later - see above
 
     // Default of 1200 yields 100MB files from 2.5B input
     int partitions = spark.sparkContext().conf().getInt("spark.sql.shuffle.partitions", 1200);
