@@ -36,7 +36,6 @@ public class Params {
   private static final String GBIF_BACKBONE_UUID = "d7dddbf4-2cf0-4f39-9b2a-bb099caae36c";
   // Patterns used in splitting strings
   static final Pattern COMMA = Pattern.compile(",");
-  static final Pattern PIPE = Pattern.compile("[|]");
 
   // Parameters for dealing with hexagon binning
   public static final String BIN_MODE_HEX = "hex";
@@ -129,6 +128,16 @@ public class Params {
     }
 
     return new String[]{mapKey, countryMaskKey};
+  }
+
+  /**
+   * Extract the encoded checklist key from the map key if it is in the format of 1:<key>|<taxonKey> or else null.
+   */
+  public static String checklistKey(String mapKey) {
+    if (mapKey == null || !mapKey.startsWith("1:")) return null;
+    int pipe = mapKey.indexOf('|');
+    if (pipe < 0) return null;
+    return mapKey.substring(2, pipe);
   }
 
   /**

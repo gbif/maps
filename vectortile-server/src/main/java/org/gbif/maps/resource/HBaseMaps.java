@@ -232,16 +232,27 @@ public class HBaseMaps {
     }
   }
 
-  Optional<String> getTileDate() {
+  Optional<String> getTileDate(String mapKey) {
     try {
-      String date = metastore.read().getTileTableDate();
-      return date != null ? Optional.of(date) : Optional.empty();
+      // get the date from the specific table, noting it may be a checklist table
+      String checklistKey = Params.checklistKey(mapKey);
+      String date;
+      if (checklistKey == null) {
+        date = metastore.read().getTileTableDate();
+      } else {
+        Map<String, String> dates = metastore.read().getChecklistTileTableDates();
+        date = dates == null ? null : dates.get(checklistKey);
+      }
+
+      return Optional.ofNullable(date);
+
     } catch (Exception e) {
       // Unable to read from ZK or the metastore is not configured
       LOG.error("Unable to read the tile table date from ZK", e);
     }
     return Optional.empty();
   }
+
 
   /**
    * Returns the point data from HBase if they exist.

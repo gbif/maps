@@ -637,7 +637,7 @@ public final class TileResource {
     String date;
 
     if (encoded.isPresent()) {
-      date = hbaseMaps.getTileDate().orElse(null);
+      date = hbaseMaps.getTileDate(mapKey).orElse(null);
       LOG.info("Found tile {} {}/{}/{} for key {} with encoded length of {} and date {}", srs, z, x, y, mapKey, encoded.get().length, date);
 
       VectorTileFilters.collectInVectorTile(encoder, LAYER_OCCURRENCE, encoded.get(),
