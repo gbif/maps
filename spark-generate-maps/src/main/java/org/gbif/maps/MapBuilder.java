@@ -34,7 +34,6 @@ import lombok.Builder;
 
 @Builder(toBuilder = true)
 public class MapBuilder implements Serializable {
-  private final String sourceDir;
   private final String hiveDB;
   private final String hiveInputSuffix;
   private final String hbaseTable;
@@ -50,6 +49,33 @@ public class MapBuilder implements Serializable {
   private boolean buildNonTaxonTiles;
   private LinkedHashMap<String, String> checklistsToTile; // alias : uuid
 
+  public static final String SQL_TEXT =
+    "SELECT "
+      + "datasetKey, "
+      + "publishingOrgKey, "
+      + "publishingCountry, "
+      + "networkKey, "
+      + "countryCode, "
+      + "basisOfRecord, "
+      + "decimalLatitude, "
+      + "decimalLongitude, "
+      + "kingdomKey, "
+      + "phylumKey, "
+      + "classKey, "
+      + "orderKey, "
+      + "familyKey, "
+      + "genusKey, "
+      + "speciesKey, "
+      + "taxonKey, "
+      + "year, "
+      + "occurrenceStatus, "
+      + "hasGeospatialIssues "
+      + "FROM occurrence WHERE "
+      + "decimalLatitude IS NOT NULL  "
+      + "AND decimalLongitude IS NOT NULL "
+      + "AND hasGeospatialIssues = false "
+      + "AND occurrenceStatus='PRESENT'";
+
   public static void main(String[] args) {
     LinkedHashMap<String, String> checklists = new LinkedHashMap<>();
     checklists.put("gbif", "d7dddbf4-2cf0-4f39-9b2a-bb099caae36c");
@@ -59,7 +85,6 @@ public class MapBuilder implements Serializable {
     // then generate the HFiles.
     MapBuilder points =
         MapBuilder.builder()
-            .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
             .hiveDB("tim")
             .hbaseTable("tim")
             .moduloPoints(10)
@@ -72,7 +97,6 @@ public class MapBuilder implements Serializable {
 
     MapBuilder tiles =
         MapBuilder.builder()
-            .sourceDir("/data/hdfsview/occurrence/.snapshot/tim-occurrence-map/occurrence/*.avro")
             .hiveDB("tim")
             .hbaseTable("tim")
             .moduloTiles(100)
@@ -90,8 +114,24 @@ public class MapBuilder implements Serializable {
   }
 
   public void run() {
+
     final SparkSession spark =
-        SparkSession.builder().appName("Map Builder").enableHiveSupport().getOrCreate();
+      SparkSession.builder()
+        .enableHiveSupport()
+        .config("spark.sql.warehouse.dir", "hdfs://gbif-hdfs/stackable/warehouse")
+        .config(
+          "spark.jars.packages", "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.6.0")
+        .config("spark.sql.catalog.iceberg", "org.apache.iceberg.spark.SparkCatalog")
+        .config("spark.sql.catalog.iceberg.type", "hive")
+        .config("spark.sql.catalog.local", "org.apache.iceberg.spark.SparkCatalog")
+        .config("spark.sql.catalog.local.type", "hadoop")
+        .config(
+          "spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
+        .config(
+          "spark.hadoop.hive.metastore.uris",
+          "thrift://gbif-hive-metastore-metastore-default-0.gbif-hive-metastore-metastore-default.test.svc.cluster.local:9083")
+        .appName("Map Builder")
+        .getOrCreate();
     spark.sql("use " + hiveDB);
     spark.sparkContext().conf().set("hive.exec.compress.output", "true");
 
@@ -102,7 +142,7 @@ public class MapBuilder implements Serializable {
             hiveInputSuffix,
             ThreadLocalRandom.current().nextInt(1_000_000) // collisions highly unlikely
             );
-    readAvroSource(spark, inputTable);
+    readIcebergSource(spark, inputTable);
 
     // Determine the mapKeys of maps that require a tile pyramid
     final TreeSet<String> largeMapKeys = mapKeyExceedingThreshold(spark, inputTable);
@@ -146,31 +186,9 @@ public class MapBuilder implements Serializable {
    * Hive table to defend against lazy evaluation that may cause the input avro files to be read
    * multiple times.
    */
-  private void readAvroSource(SparkSession spark, String targetHiveTable) {
+  private void readIcebergSource(SparkSession spark, String targetHiveTable) {
     Dataset<Row> source =
-        spark
-            .read()
-            .format("avro")
-            .load(sourceDir)
-            .select(
-                "datasetKey",
-                "publishingOrgKey",
-                "publishingCountry",
-                "networkKey",
-                "countryCode",
-                "classifications",
-                "classificationDetails", // may be removed later - see below
-                "basisOfRecord",
-                "decimalLatitude",
-                "decimalLongitude",
-                "year",
-                "occurrenceStatus",
-                "hasGeospatialIssues")
-            .filter(
-                "decimalLatitude IS NOT NULL AND "
-                    + "decimalLongitude IS NOT NULL AND "
-                    + "hasGeospatialIssues = false AND "
-                    + "occurrenceStatus = 'PRESENT'")
+        spark.sql(SQL_TEXT)
             // merge in taxon from the details which may be a synonym
             // see https://github.com/gbif/maps/issues/107
             // this may be removed when https://github.com/gbif/pipelines/issues/1293 is in
