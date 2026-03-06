@@ -125,6 +125,8 @@ public class MapBuilder implements Serializable {
         .config("spark.sql.catalog.iceberg.type", "hive")
         .config("spark.sql.catalog.local", "org.apache.iceberg.spark.SparkCatalog")
         .config("spark.sql.catalog.local.type", "hadoop")
+        .config("spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
+        .config("spark.sql.defaultCatalog", "iceberg")
         .config(
           "spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
         .config(
