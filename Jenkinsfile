@@ -64,7 +64,7 @@ pipeline {
     }
     stage('Build and publish Docker image') {
       steps {
-        sh 'build/spark-generate-maps-docker-build.sh ${RELEASE} ${VERSION}'
+        sh 'build/spark-generate-maps-docker-build.sh false ${VERSION}'
       }
     }
   }
