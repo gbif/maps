@@ -26,17 +26,13 @@ import org.gbif.vocabulary.client.ConceptClient;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Polygon;
@@ -62,6 +58,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.aggregations.Aggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.DoubleTermsBucket;
+import co.elastic.clients.elasticsearch._types.aggregations.LongTermsBucket;
+import co.elastic.clients.elasticsearch._types.aggregations.StringTermsBucket;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -109,13 +112,13 @@ public final class RegressionResource {
   }
 
   private final TileResource tiles;
-  private final RestHighLevelClient esClient;
+  private final ElasticsearchClient esClient;
   private final String esIndex;
   private final OccurrenceEsSearchRequestBuilder esSearchRequestBuilder;
 
   @Autowired
   public RegressionResource(TileResource tiles,
-                            @Qualifier("esOccurrenceClient") RestHighLevelClient esClient,
+                            @Qualifier("esOccurrenceClient") ElasticsearchClient esClient,
                             TileServerConfiguration configuration,
                             ConceptClient conceptClient,
                             NameUsageMatchingService nameUsageMatchingService,
@@ -244,11 +247,48 @@ public final class RegressionResource {
     searchRequest.addFacets(OccurrenceSearchParameter.YEAR);
     // Default search request handler, no sort order, 1 record (required) and facet support
     SearchRequest esSearchRequest = esSearchRequestBuilder.buildSearchRequest(searchRequest, esIndex);
-    SearchResponse response = esClient.search(esSearchRequest, RequestOptions.DEFAULT);
+    SearchResponse<Object> response = esClient.search(esSearchRequest, Object.class);
 
-    Terms yearAgg = response.getAggregations().get(OccurrenceEsField.YEAR.getSearchFieldName());
-    return yearAgg.getBuckets().stream()
-            .collect(Collectors.toMap(Terms.Bucket::getKeyAsString, Terms.Bucket::getDocCount, (v1, v2) -> v1, TreeMap::new));
+    Aggregate yearAgg = response.aggregations().get(OccurrenceEsField.YEAR.getSearchFieldName());
+    return extractYearCounts(yearAgg);
+  }
+
+  private TreeMap<String, Long> extractYearCounts(Aggregate yearAgg) {
+    if (Objects.isNull(yearAgg)) {
+      return new TreeMap<>();
+    }
+
+    if (yearAgg.isSterms()) {
+      return yearAgg.sterms().buckets().array().stream()
+          .collect(
+              Collectors.toMap(
+                  b -> b.key().stringValue(),
+                  StringTermsBucket::docCount,
+                  (v1, v2) -> v1,
+                  TreeMap::new));
+    }
+
+    if (yearAgg.isLterms()) {
+      return yearAgg.lterms().buckets().array().stream()
+          .collect(
+              Collectors.toMap(
+                  b -> Objects.nonNull(b.keyAsString()) ? b.keyAsString() : String.valueOf(b.key()),
+                  LongTermsBucket::docCount,
+                  (v1, v2) -> v1,
+                  TreeMap::new));
+    }
+
+    if (yearAgg.isDterms()) {
+      return yearAgg.dterms().buckets().array().stream()
+          .collect(
+              Collectors.toMap(
+                  b -> Objects.nonNull(b.keyAsString()) ? b.keyAsString() : String.valueOf((long) b.key()),
+                  DoubleTermsBucket::docCount,
+                  (v1, v2) -> v1,
+                  TreeMap::new));
+    }
+
+    throw new IllegalStateException("Unsupported YEAR aggregation type: " + yearAgg._kind());
   }
 
   /**

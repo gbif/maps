@@ -43,10 +43,11 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.http.HttpHost;
 import org.cache2k.config.Cache2kConfig;
 import org.cache2k.extra.spring.SpringCache2kCacheManager;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import org.elasticsearch.client.NodeSelector;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.sniff.SniffOnFailureListener;
 import org.elasticsearch.client.sniff.Sniffer;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -73,6 +74,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Strings;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
 
 /**
  * The main entry point for running the member node.
@@ -88,6 +90,30 @@ import io.micrometer.core.instrument.MeterRegistry;
   })
 @EnableConfigurationProperties
 public class TileServerApplication {
+
+  private static final class EsClientHolder implements AutoCloseable {
+    private final ElasticsearchClient client;
+    private final RestClientTransport transport;
+    private final Sniffer sniffer;
+
+    private EsClientHolder(ElasticsearchClient client, RestClientTransport transport, Sniffer sniffer) {
+      this.client = client;
+      this.transport = transport;
+      this.sniffer = sniffer;
+    }
+
+    private ElasticsearchClient getClient() {
+      return client;
+    }
+
+    @Override
+    public void close() throws IOException {
+      if (sniffer != null) {
+        sniffer.close();
+      }
+      transport.close();
+    }
+  }
 
   public static void main(String[] args) {
     SpringApplication.run(TileServerApplication.class, args);
@@ -120,10 +146,17 @@ public class TileServerApplication {
       return new TileServerConfiguration();
     }
 
+    @Bean(name = "esOccurrenceClientHolder", destroyMethod = "close")
+    @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
+    public EsClientHolder provideOccurrenceEsClientHolder(TileServerConfiguration tileServerConfiguration) {
+      return provideEsClientHolder(tileServerConfiguration.getEsOccurrenceConfiguration().getElasticsearch());
+    }
+
     @Bean("esOccurrenceClient")
     @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
-    public RestHighLevelClient provideOccurrenceEsClient(TileServerConfiguration tileServerConfiguration) {
-      return provideEsClient(tileServerConfiguration.getEsOccurrenceConfiguration().getElasticsearch());
+    public ElasticsearchClient provideOccurrenceEsClient(
+        @Qualifier("esOccurrenceClientHolder") EsClientHolder esClientHolder) {
+      return esClientHolder.getClient();
     }
 
     /**
@@ -155,7 +188,7 @@ public class TileServerApplication {
       };
     }
 
-    private RestHighLevelClient provideEsClient(EsConfig esConfig) {
+    private EsClientHolder provideEsClientHolder(EsConfig esConfig) {
       HttpHost[] hosts = new HttpHost[esConfig.getHosts().length];
       int i = 0;
       for (String host : esConfig.getHosts()) {
@@ -184,32 +217,26 @@ public class TileServerApplication {
         builder.setFailureListener(sniffOnFailureListener);
       }
 
-      RestHighLevelClient highLevelClient = new RestHighLevelClient(builder);
+      RestClient restClient = builder.build();
+      RestClientTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
+      ElasticsearchClient client = new ElasticsearchClient(transport);
+      Sniffer sniffer = null;
 
       if (esConfig.getSniffInterval() > 0) {
-        Sniffer sniffer = Sniffer.builder(highLevelClient.getLowLevelClient())
+        sniffer = Sniffer.builder(restClient)
           .setSniffIntervalMillis(esConfig.getSniffInterval())
           .setSniffAfterFailureDelayMillis(esConfig.getSniffAfterFailureDelay())
           .build();
         sniffOnFailureListener.setSniffer(sniffer);
-
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-          sniffer.close();
-          try {
-            highLevelClient.close();
-          } catch (IOException e) {
-            throw new IllegalStateException("Couldn't close ES client", e);
-          }
-        }));
       }
 
-      return highLevelClient;
+      return new EsClientHolder(client, transport, sniffer);
     }
 
     @Bean("occurrenceHeatmapsEsService")
     @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
     OccurrenceHeatmapsEsService occurrenceHeatmapsEsService(
-        @Qualifier("esOccurrenceClient") RestHighLevelClient esClient,
+        @Qualifier("esOccurrenceClient") ElasticsearchClient esClient,
         TileServerConfiguration tileServerConfiguration,
         ConceptClient conceptClient,
         NameUsageMatchingService nameUsageMatchingService,

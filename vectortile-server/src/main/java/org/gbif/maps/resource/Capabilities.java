@@ -19,11 +19,12 @@ import org.gbif.maps.common.projection.Int2D;
 import java.io.IOException;
 import java.time.Year;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.locationtech.jts.geom.Point;
 
-import com.carrotsearch.hppc.IntHashSet;
 import com.google.common.annotations.VisibleForTesting;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -155,7 +156,7 @@ public class Capabilities {
     private long total;
     private String generated;
 
-    private IntHashSet longitudes = new IntHashSet();
+    private Set<Integer> longitudes = new HashSet<>();
     private int spreadMultiplier = 512; // Calculate spread after undoing division by tile extent, to avoid rounding issues.
 
     static {
@@ -167,7 +168,7 @@ public class Capabilities {
     }
 
     public Capabilities build() {
-      int[] spread = centredSpread(longitudes.toArray(), 360*spreadMultiplier);
+      int[] spread = centredSpread(longitudes.stream().mapToInt(Integer::intValue).toArray(), 360*spreadMultiplier);
       int offset = Double.isNaN(minLat) ? 0 : (spread[0] > spread[1]) ? 360*spreadMultiplier : 0;
 
       // defensively code for empty tiles
@@ -250,7 +251,7 @@ public class Capabilities {
     // lenient extraction
     private static int extractInt(Map<String, Object> meta, String key, int defaultValue) {
       try {
-        return Integer.valueOf(meta.get(key).toString());
+        return Integer.parseInt(meta.get(key).toString());
       } catch(Exception e) {
         return defaultValue;
       }

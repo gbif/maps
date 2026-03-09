@@ -39,8 +39,6 @@ import java.util.Optional;
 
 import javax.validation.Valid;
 
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -61,6 +59,8 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -91,11 +91,12 @@ public class AdHocMapsResource<HR extends HeatmapRequest> {
 
   private final int tileSize;
   private final int bufferSize;
-  private final HeatmapService<SearchRequest, SearchResponse, HR> searchHeatmapsService;
+  private final HeatmapService<SearchRequest, SearchResponse<Map<String, Object>>, HR> searchHeatmapsService;
   private final PredicateCacheService predicateCacheService;
   private final HeatmapRequestProvider<HR> provider;
 
-  public AdHocMapsResource(HeatmapService<SearchRequest, SearchResponse, HR> searchHeatmapsService,
+  public AdHocMapsResource(
+                           HeatmapService<SearchRequest, SearchResponse<Map<String, Object>>, HR> searchHeatmapsService,
                            HeatmapRequestProvider<HR> provider,
                            int tileSize,
                            int bufferSize) {

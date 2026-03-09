@@ -42,7 +42,7 @@
     <maven.compiler.source>${jdkLevel}</maven.compiler.source>
     <maven.compiler.target>${jdkLevel}</maven.compiler.target>
 
-    <gbif-occurrence.version>1.1.20</gbif-occurrence.version>
+    <gbif-occurrence.version>1.1.21-es-9-SNAPSHOT</gbif-occurrence.version>
     <gbif-api.version>2.4.0</gbif-api.version>
     <gbif-common-ws.version>2.1.1</gbif-common-ws.version>
     <dwc-api.version>2.1.10</dwc-api.version>
@@ -84,7 +84,7 @@
     <zookeeper.version>3.8.1</zookeeper.version>
 
     <!-- es versions -->
-    <elasticsearch.version>7.10.0</elasticsearch.version>
+    <elasticsearch.version>9.3.1</elasticsearch.version>
     <httpclient.version>4.5.2</httpclient.version>
     <httpcore.version>4.4.13</httpcore.version>
     <log4j.version>2.16.0</log4j.version>
@@ -674,23 +674,13 @@
 
       <!-- ES -->
       <dependency>
-        <groupId>org.elasticsearch.client</groupId>
-        <artifactId>elasticsearch-rest-high-level-client</artifactId>
+        <groupId>co.elastic.clients</groupId>
+        <artifactId>elasticsearch-java</artifactId>
         <version>${elasticsearch.version}</version>
       </dependency>
       <dependency>
         <groupId>org.elasticsearch.client</groupId>
         <artifactId>elasticsearch-rest-client</artifactId>
-        <version>${elasticsearch.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.elasticsearch</groupId>
-        <artifactId>elasticsearch-core</artifactId>
-        <version>${elasticsearch.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.elasticsearch</groupId>
-        <artifactId>elasticsearch</artifactId>
         <version>${elasticsearch.version}</version>
       </dependency>
       <dependency>
