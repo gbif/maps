@@ -63,7 +63,7 @@ public class ExportRawTile {
       Configuration conf = HBaseConfiguration.create();
       conf.set("hbase.zookeeper.quorum", zk);
       HBaseMaps maps = null;
-        maps = new HBaseMaps(conf, tableName, saltPoints, saltTiles, new SpringCache2kCacheManager(), new SimpleMeterRegistry(), new Cache2kConfig<>(){}, new Cache2kConfig<>(){});
+        maps = new HBaseMaps(conf, tableName, saltPoints, saltTiles, new SpringCache2kCacheManager(), new SimpleMeterRegistry(), new Cache2kConfig<>(){});
       Optional<byte[]> tile = maps.getTile(mapKey, srs, z, x, y);
       if (tile.isPresent()) {
         Files.write(tile.get(), targetFile);

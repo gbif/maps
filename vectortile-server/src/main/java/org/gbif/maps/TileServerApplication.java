@@ -228,8 +228,7 @@ public class TileServerApplication {
     @Bean
     @Profile("!es-only")
     HBaseMaps hBaseMaps(TileServerConfiguration tileServerConfiguration, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry,
-                        Cache2kConfig<String, Optional<PointFeature.PointFeatures>> pointCacheConfiguration,
-                        Cache2kConfig<HBaseMaps.TileKey, Optional<byte[]>> tileCacheConfiguration) throws Exception {
+                        Cache2kConfig<String, Optional<PointFeature.PointFeatures>> pointCacheConfiguration) throws Exception {
       // Either use Zookeeper or static config to locate tables
       Configuration conf = HBaseConfiguration.create();
       conf.set("hbase.zookeeper.quorum", tileServerConfiguration.getHbase().getZookeeperQuorum());
@@ -241,12 +240,12 @@ public class TileServerApplication {
       if (tileServerConfiguration.getMetastore() != null) {
         MapMetastore meta = Metastores.newZookeeperMapsMeta(tileServerConfiguration.getMetastore().getZookeeperQuorum(), 1000,
           tileServerConfiguration.getMetastore().getPath());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulusPoints(),tileServerConfiguration.getHbase().getSaltModulusTiles(), cacheManager, meterRegistry, pointCacheConfiguration, tileCacheConfiguration);
+        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulusPoints(),tileServerConfiguration.getHbase().getSaltModulusTiles(), cacheManager, meterRegistry, pointCacheConfiguration);
 
       } else {
         Config.HBaseConfiguration hbase = tileServerConfiguration.getHbase();
         MapMetastore meta = Metastores.newStaticMapsMeta(hbase.getPointsTableName(), hbase.getTilesTableName(), hbase.getTaxonomyTilesTableNames());
-        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulusPoints(),tileServerConfiguration.getHbase().getSaltModulusTiles(), cacheManager, meterRegistry, pointCacheConfiguration, tileCacheConfiguration);
+        return new HBaseMaps(conf, meta, tileServerConfiguration.getHbase().getSaltModulusPoints(),tileServerConfiguration.getHbase().getSaltModulusTiles(), cacheManager, meterRegistry, pointCacheConfiguration);
       }
     }
 
