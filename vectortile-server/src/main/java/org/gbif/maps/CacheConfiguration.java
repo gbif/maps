@@ -45,13 +45,6 @@ public class CacheConfiguration {
     return new Cache2kConfig<>();
   }
 
-  @ConfigurationProperties(prefix = "cache.tiles")
-  @Bean
-  public Cache2kConfig<HBaseMaps.TileKey, Optional<byte[]>> tileCache2kConfig() {
-    return new Cache2kConfig<>();
-  }
-
-
   @ConfigurationProperties(prefix = "cache.points")
   @Bean
   public  Cache2kConfig<String, Optional<PointFeature.PointFeatures>> pointsCache2kConfig() {

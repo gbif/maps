@@ -58,11 +58,8 @@ public class HBaseMaps {
   private final ModulusSalt saltPoints;
   private final ModulusSalt saltTiles;
   private final Cache<String, Optional<PointFeature.PointFeatures>> pointCache;
-  private final Cache<TileKey, Optional<byte[]>> tileCache;
-
   public HBaseMaps(Configuration conf, String tableName, int saltModulusPoints, int saltModulusTiles, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry,
-                   Cache2kConfig<String, Optional<PointFeature.PointFeatures>> pointCacheConfiguration,
-                   Cache2kConfig<TileKey, Optional<byte[]>> tileCacheConfiguration) throws Exception {
+                   Cache2kConfig<String, Optional<PointFeature.PointFeatures>> pointCacheConfiguration) throws Exception {
     connection = ConnectionFactory.createConnection(conf);
     // Mounted as backbone to enable diagnostics for the single table use.
     Map<String, String> checklists = new HashMap<>() {{ put(BACKBONE_UUID, tableName);}};
@@ -70,18 +67,15 @@ public class HBaseMaps {
     saltPoints = new ModulusSalt(saltModulusPoints);
     saltTiles = new ModulusSalt(saltModulusTiles);
     pointCache = pointCacheBuilder(cacheManager, meterRegistry, pointCacheConfiguration);
-    tileCache = tileCacheBuilder(cacheManager, meterRegistry, tileCacheConfiguration);
   }
 
   public HBaseMaps(Configuration conf, MapMetastore metastore, int saltModulusPoints, int saltModulusTiles, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry,
-                   Cache2kConfig<String, Optional<PointFeature.PointFeatures>> pointCacheConfiguration,
-                   Cache2kConfig<TileKey, Optional<byte[]>> tileCacheConfiguration) throws Exception {
+                   Cache2kConfig<String, Optional<PointFeature.PointFeatures>> pointCacheConfiguration) throws Exception {
     connection = ConnectionFactory.createConnection(conf);
     this.metastore = metastore;
     saltPoints = new ModulusSalt(saltModulusPoints);
     saltTiles = new ModulusSalt(saltModulusTiles);
     pointCache = pointCacheBuilder(cacheManager, meterRegistry, pointCacheConfiguration);
-    tileCache = tileCacheBuilder(cacheManager, meterRegistry, tileCacheConfiguration);
   }
 
   private TableName pointTable() throws Exception {
@@ -149,37 +143,6 @@ public class HBaseMaps {
     return cache;
   }
 
-  private Cache<TileKey, Optional<byte[]>> tileCacheBuilder(SpringCache2kCacheManager manager, MeterRegistry meterRegistry, Cache2kConfig<TileKey, Optional<byte[]>> tileCacheConfiguration) {
-    manager.addCaches( b ->
-      tileCacheConfiguration.builder()
-      .manager(manager.getNativeCacheManager())
-      .name("tileCache")
-      .loader(
-        rowCell -> {
-          TableName name = tileTableName(rowCell.rowKey);
-          if (name == null) return Optional.empty();
-          try (Table table = connection.getTable(name)) {
-            String unsalted = rowCell.rowKey + ":" + rowCell.zxy();
-            byte[] saltedKey = saltTiles.salt(unsalted);
-            Get get = new Get(saltedKey);
-            String columnFamily = rowCell.srs.replaceAll(":", "_").toUpperCase();
-            get.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("tile"));
-            Result result = table.get(get);
-            if (result != null) {
-              byte[] encoded = result.getValue(Bytes.toBytes(columnFamily), Bytes.toBytes("tile"));
-              return Optional.ofNullable(encoded);
-            } else {
-              return Optional.empty();
-            }
-          }
-        }
-      ));
-
-    Cache<TileKey, Optional<byte[]>> cache = manager.getNativeCacheManager().getCache("tileCache");
-    ConfigUtils.registerCacheMetrics(cache, meterRegistry);
-    return cache;
-  }
-
   /**
    * Returns the default tile table or the one for the checklist.
    */
@@ -197,30 +160,20 @@ public class HBaseMaps {
    */
   public Optional<byte[]> getTile(String mapKey, String srs, int z, long x, long y) {
     try {
-      return tileCache.get(new TileKey(mapKey, srs, z, x, y));
-    } catch (Exception e) {
-      // there is nothing the caller can do.  Swallow this here, logging the error
-      LOG.error("Unexpected error loading tile data from HBase.  Returning no tile.", e);
-      return Optional.empty();
-    }
-  }
+      TileKey rowCell = new TileKey(mapKey, srs, z, x, y);
 
-  /**
-   * For testing.  Does not cache!
-   * Returns a tile from HBase if one exists.
-   */
-  Optional<byte[]> getTileNoCache(String mapKey, String srs, int z, long x, long y) {
-    Stopwatch timer = new Stopwatch().start();
-    try {
-      try (Table table = connection.getTable(tileTableName(mapKey))) {
-        Get get = new Get(Bytes.toBytes(mapKey));
-        String columnFamily = srs.replaceAll(":", "_").toUpperCase();
-        get.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(z + ":" + x + ":" + y));
+      TableName name = tileTableName(rowCell.rowKey);
+      if (name == null) return Optional.empty();
+      try (Table table = connection.getTable(name)) {
+        String unsalted = rowCell.rowKey + ":" + rowCell.zxy();
+        byte[] saltedKey = saltTiles.salt(unsalted);
+        Get get = new Get(saltedKey);
+        String columnFamily = rowCell.srs.replaceAll(":", "_").toUpperCase();
+        get.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes("tile"));
         Result result = table.get(get);
         if (result != null) {
-          byte[] encoded = result.getValue(Bytes.toBytes(columnFamily), Bytes.toBytes(z + ":" + x + ":" + y));
-          LOG.info("HBase lookup of {} returned {}kb and took {}ms", z + ":" + x + ":" + y, encoded.length / 1024, timer.elapsedMillis());
-          return Optional.of(encoded);
+          byte[] encoded = result.getValue(Bytes.toBytes(columnFamily), Bytes.toBytes("tile"));
+          return Optional.ofNullable(encoded);
         } else {
           return Optional.empty();
         }
