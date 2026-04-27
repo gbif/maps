@@ -114,11 +114,12 @@ public class HBaseMaps {
       .name("pointCache")
       .loader(
         rowKey -> {
-          LOG.info("Table {}", metastore.read().getPointTable());
+          MapTables mapTables = metastore.read();
+          LOG.debug("Table {}", mapTables.getPointTable());
           TableName name = pointTable();
           if (name == null) return Optional.empty();
           try (Table table = connection.getTable(name)) {
-            LOG.info(saltPoints.saltToString(rowKey));
+            LOG.debug(saltPoints.saltToString(rowKey));
             byte[] saltedKey = saltPoints.salt(rowKey);
             Get get = new Get(saltedKey);
             get.addColumn(Bytes.toBytes("EPSG_4326"), Bytes.toBytes("features"));
@@ -212,7 +213,7 @@ public class HBaseMaps {
    */
   Optional<PointFeature.PointFeatures> getPoints(String mapKey) {
     try {
-      LOG.info("Getting points");
+      LOG.debug("Getting points");
       return pointCache.get(mapKey);
     } catch (Exception e) {
       // there is nothing the caller can do.  Swallow this here, logging the error
