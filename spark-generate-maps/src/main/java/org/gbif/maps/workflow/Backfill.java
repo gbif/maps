@@ -55,5 +55,4 @@ public class Backfill {
     log.info("Launching map build with config: {}", mapBuilder);
     mapBuilder.run();
   }
-
 }

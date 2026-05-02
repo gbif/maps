@@ -16,6 +16,7 @@ package org.gbif.maps;
 import org.gbif.maps.common.hbase.ModulusSalt;
 import org.gbif.maps.udf.MapKeysUDF;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,33 +51,33 @@ public class MapBuilder implements Serializable {
   private LinkedHashMap<String, String> checklistsToTile; // alias : uuid
 
   public static final String SQL_TEXT =
-    "SELECT "
-      + "datasetKey, "
-      + "publishingOrgKey, "
-      + "publishingCountry, "
-      + "networkKey, "
-      + "countryCode, "
-      + "basisOfRecord, "
-      + "decimalLatitude, "
-      + "decimalLongitude, "
-      + "kingdomKey, "
-      + "phylumKey, "
-      + "classKey, "
-      + "orderKey, "
-      + "familyKey, "
-      + "genusKey, "
-      + "speciesKey, "
-      + "taxonKey, "
-      + "year, "
-      + "occurrenceStatus, "
-      + "hasGeospatialIssues, "
-      + "classifications, "
-      + "classificationDetails "
-      + "FROM occurrence WHERE "
-      + "decimalLatitude IS NOT NULL  "
-      + "AND decimalLongitude IS NOT NULL "
-      + "AND hasGeospatialIssues = false "
-      + "AND occurrenceStatus='PRESENT'";
+      "SELECT "
+          + "datasetKey, "
+          + "publishingOrgKey, "
+          + "publishingCountry, "
+          + "networkKey, "
+          + "countryCode, "
+          + "basisOfRecord, "
+          + "decimalLatitude, "
+          + "decimalLongitude, "
+          + "kingdomKey, "
+          + "phylumKey, "
+          + "classKey, "
+          + "orderKey, "
+          + "familyKey, "
+          + "genusKey, "
+          + "speciesKey, "
+          + "taxonKey, "
+          + "year, "
+          + "occurrenceStatus, "
+          + "hasGeospatialIssues, "
+          + "classifications, "
+          + "classificationDetails "
+          + "FROM occurrence WHERE "
+          + "decimalLatitude IS NOT NULL  "
+          + "AND decimalLongitude IS NOT NULL "
+          + "AND hasGeospatialIssues = false "
+          + "AND occurrenceStatus='PRESENT'";
 
   public static void main(String[] args) {
     LinkedHashMap<String, String> checklists = new LinkedHashMap<>();
@@ -116,73 +117,64 @@ public class MapBuilder implements Serializable {
   }
 
   public void run() {
+    try (SparkSession spark =
+        SparkSession.builder()
+            .appName("Occurrence clustering")
+            .config("spark.sql.warehouse.dir", new File("spark-warehouse").getAbsolutePath())
+            .enableHiveSupport()
+            .config("spark.sql.catalog.iceberg.type", "hive")
+            .config("spark.sql.catalog.iceberg", "org.apache.iceberg.spark.SparkCatalog")
+            .appName("Map Builder")
+            .getOrCreate()) {
 
-    final SparkSession spark =
-      SparkSession.builder()
-        .enableHiveSupport()
-        .config("spark.sql.warehouse.dir", "hdfs://gbif-hdfs/stackable/warehouse")
-        .config(
-          "spark.jars.packages", "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.6.0")
-        .config("spark.sql.catalog.iceberg", "org.apache.iceberg.spark.SparkCatalog")
-        .config("spark.sql.catalog.iceberg.type", "hive")
-        .config("spark.sql.catalog.local", "org.apache.iceberg.spark.SparkCatalog")
-        .config("spark.sql.catalog.local.type", "hadoop")
-        .config("spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
-        .config("spark.sql.defaultCatalog", "iceberg")
-        .config(
-          "spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog")
-        .config(
-          "spark.hadoop.hive.metastore.uris",
-          "thrift://gbif-hive-metastore-metastore-default-0.gbif-hive-metastore-metastore-default.test.svc.cluster.local:9083")
-        .appName("Map Builder")
-        .getOrCreate();
-    spark.sql("use " + hiveDB);
-    spark.sparkContext().conf().set("hive.exec.compress.output", "true");
+      spark.sql("use " + hiveDB);
+      spark.sparkContext().conf().set("hive.exec.compress.output", "true");
 
-    // Read the source Avro files and prepare them as performant tables
-    final String inputTable =
-        String.format(
-            "maps_input_%s_%d",
-            hiveInputSuffix,
-            ThreadLocalRandom.current().nextInt(1_000_000) // collisions highly unlikely
-            );
-    readIcebergSource(spark, inputTable);
+      // Read the source Avro files and prepare them as performant tables
+      final String inputTable =
+          String.format(
+              "maps_input_%s_%d",
+              hiveInputSuffix,
+              ThreadLocalRandom.current().nextInt(1_000_000) // collisions highly unlikely
+              );
+      readIcebergSource(spark, inputTable);
 
-    // Determine the mapKeys of maps that require a tile pyramid
-    final TreeSet<String> largeMapKeys = mapKeyExceedingThreshold(spark, inputTable);
+      // Determine the mapKeys of maps that require a tile pyramid
+      final TreeSet<String> largeMapKeys = mapKeyExceedingThreshold(spark, inputTable);
 
-    if (buildPoints) {
-      PointMapBuilder.builder()
-          .spark(spark)
-          .sourceTable(inputTable)
-          .largeMapKeys(largeMapKeys)
-          .salter(new ModulusSalt(moduloPoints))
-          .targetDir(targetDir)
-          .hadoopConf(hadoopConf())
-          .build()
-          .generate();
+      if (buildPoints) {
+        PointMapBuilder.builder()
+            .spark(spark)
+            .sourceTable(inputTable)
+            .largeMapKeys(largeMapKeys)
+            .salter(new ModulusSalt(moduloPoints))
+            .targetDir(targetDir)
+            .hadoopConf(hadoopConf())
+            .build()
+            .generate();
+      }
+
+      if (buildTiles) {
+
+        TileMapBuilder.builder()
+            .spark(spark)
+            .sourceTable(inputTable)
+            .largeMapKeys(largeMapKeys)
+            .salter(new ModulusSalt(moduloTiles))
+            .tileSize(tileSize)
+            .bufferSize(bufferSize)
+            .maxZoom(maxZoom)
+            .targetDir(targetDir)
+            .hadoopConf(hadoopConf())
+            .nonTaxa(buildNonTaxonTiles)
+            .checklists(checklistsToTile)
+            .build()
+            .generate();
+      }
+
+      // tidy up since we create a table per run
+      spark.sql(String.format("DROP TABLE IF EXISTS %s PURGE", inputTable));
     }
-
-    if (buildTiles) {
-
-      TileMapBuilder.builder()
-          .spark(spark)
-          .sourceTable(inputTable)
-          .largeMapKeys(largeMapKeys)
-          .salter(new ModulusSalt(moduloTiles))
-          .tileSize(tileSize)
-          .bufferSize(bufferSize)
-          .maxZoom(maxZoom)
-          .targetDir(targetDir)
-          .hadoopConf(hadoopConf())
-          .nonTaxa(buildNonTaxonTiles)
-          .checklists(checklistsToTile)
-          .build()
-          .generate();
-    }
-
-    // tidy up since we create a table per run
-    spark.sql(String.format("DROP TABLE IF EXISTS %s PURGE", inputTable));
   }
 
   /**
@@ -192,7 +184,8 @@ public class MapBuilder implements Serializable {
    */
   private void readIcebergSource(SparkSession spark, String targetHiveTable) {
     Dataset<Row> source =
-        spark.sql(SQL_TEXT)
+        spark
+            .sql(SQL_TEXT)
             // merge in taxon from the details which may be a synonym
             // see https://github.com/gbif/maps/issues/107
             // this may be removed when https://github.com/gbif/pipelines/issues/1293 is in
