@@ -17,28 +17,46 @@ import org.gbif.api.model.occurrence.search.OccurrenceSearchParameter;
 import org.gbif.api.model.occurrence.search.OccurrenceSearchRequest;
 import org.gbif.api.vocabulary.BasisOfRecord;
 import org.gbif.maps.TileServerConfiguration;
+import org.gbif.maps.common.bin.HexBin;
+import org.gbif.maps.common.projection.Double2D;
 import org.gbif.maps.common.projection.Long2D;
+import org.gbif.maps.common.projection.TileProjection;
+import org.gbif.maps.common.projection.TileSchema;
+import org.gbif.maps.common.projection.Tiles;
 import org.gbif.occurrence.search.es.OccurrenceEsSearchRequestBuilder;
 import org.gbif.rest.client.species.NameUsageMatchingService;
 import org.gbif.search.es.occurrence.OccurrenceEsField;
 import org.gbif.vocabulary.client.ConceptClient;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.geo.GeoPoint;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.geogrid.GeoGrid;
+import org.elasticsearch.search.aggregations.bucket.geogrid.GeoGridAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.geogrid.ParsedGeoHashGrid;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +64,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -82,7 +99,6 @@ import static org.gbif.maps.resource.Params.mapKeys;
 @RequestMapping(
   value = "/occurrence/regression"
 )
-@Profile("!es-only")
 public final class RegressionResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(RegressionResource.class);
@@ -90,6 +106,14 @@ public final class RegressionResource {
   private static final int TILE_SIZE = 4096;
   private static final int TILE_BUFFER = TILE_SIZE / 4; // a generous buffer for hexagons
   private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
+
+  private static final int YEAR_TERMS_SIZE = 300;   // max distinct years expected (~1753–present)
+  private static final int GEO_GRID_TERMS_SIZE = 65536; // max geohash cells per tile at the highest precision
+
+  // Zoom level to geohash precision mapping, matching the heatmap service
+  private static final int[] PRECISION_LOOKUP =
+      new int[] {2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10};
 
   // Explicitly name BORs of interest to exclude fossils and living specimens
   private static final List<String> SUITABLE_BASIS_OF_RECORDS = ImmutableList.of(
@@ -114,13 +138,13 @@ public final class RegressionResource {
   private final OccurrenceEsSearchRequestBuilder esSearchRequestBuilder;
 
   @Autowired
-  public RegressionResource(TileResource tiles,
+  public RegressionResource(Optional<TileResource> tiles,
                             @Qualifier("esOccurrenceClient") RestHighLevelClient esClient,
                             TileServerConfiguration configuration,
                             ConceptClient conceptClient,
                             NameUsageMatchingService nameUsageMatchingService,
                             @Value("${defaultChecklistKey: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c'}") String defaultChecklistKey) {
-    this.tiles = tiles;
+    this.tiles = tiles.orElse(null);
     this.esClient = esClient;
     this.esIndex = configuration.getEsOccurrenceConfiguration().getElasticsearch().getIndex();
     this.esSearchRequestBuilder =
@@ -164,12 +188,25 @@ public final class RegressionResource {
     HttpServletRequest request
   ) throws Exception {
     enableCORS(response);
-    String[] mapKeys = mapKeys(request);
 
-    DatedVectorTile speciesLayer = tiles.getTile(z, x, y, mapKeys[0], null, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
+    DatedVectorTile speciesLayer;
+    DatedVectorTile higherTaxaLayer;
 
-    mapKeys[0] = Params.MAP_TYPES.get("taxonKey") + ":" + higherTaxonKey;
-    DatedVectorTile higherTaxaLayer = tiles.getTile(z, x, y, mapKeys[0], null, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
+    if (tiles != null) {
+      // HBase path: use pre-calculated tiles
+      String[] mapKeys = mapKeys(request);
+      speciesLayer = tiles.getTile(z, x, y, mapKeys[0], null, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
+      mapKeys[0] = Params.MAP_TYPES.get("taxonKey") + ":" + higherTaxonKey;
+      higherTaxaLayer = tiles.getTile(z, x, y, mapKeys[0], null, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
+    } else {
+      // ES path: build hex tiles with per-year counts on the fly
+      speciesLayer = getEsHexTileWithYears(z, x, y, srs, request, (String) null);
+      if (higherTaxonKey != null) {
+        higherTaxaLayer = getEsHexTileWithYears(z, x, y, srs, request, higherTaxonKey);
+      } else {
+        higherTaxaLayer = new DatedVectorTile(new VectorTileEncoder(TILE_SIZE, TILE_BUFFER, false).encode(), null);
+      }
+    }
 
     // determine the global pixel origin address at the top left of the tile, used for uniquely identifying the hexagons
     Long2D originXY = new Long2D(x * TILE_SIZE, y * TILE_SIZE);
@@ -178,6 +215,121 @@ public final class RegressionResource {
       response.setHeader("ETag", String.format("W/\"%s\"", speciesLayer.date));
     }
     return regression(speciesLayer.tile, higherTaxaLayer.tile, minYears, originXY);
+  }
+
+  /**
+   * Builds a hex-binned vector tile from ES with per-year occurrence counts per hexagon, for use when HBase tiles
+   * are not available. Uses a geohash_grid aggregation with a year terms sub-aggregation to obtain per-cell
+   * year distributions within the tile boundary.
+   *
+   * @param z              The zoom level
+   * @param x              The tile X coordinate
+   * @param y              The tile Y coordinate
+   * @param srs            The spatial reference system
+   * @param request        The HTTP request containing occurrence search parameters
+   * @param overrideTaxonKey If non-null, replaces the taxon key from the HTTP request (used for the higher taxon layer)
+   * @return A hex-binned DatedVectorTile with year counts per hexagon
+   */
+  private DatedVectorTile getEsHexTileWithYears(
+      int z, long x, long y, String srs,
+      HttpServletRequest request, String overrideTaxonKey) throws IOException {
+
+    TileProjection projection = Tiles.fromEPSG(srs, TILE_SIZE);
+    TileSchema schema = TileSchema.fromSRS(srs);
+    Double2D[] boundary = projection.tileBoundary(z, x, y, 0.0);
+
+    // Return an empty tile if the projection boundary is degenerate
+    if (boundary[0].getX() == boundary[1].getX() || boundary[0].getY() == boundary[1].getY()) {
+      return new DatedVectorTile(new VectorTileEncoder(TILE_SIZE, TILE_BUFFER, false).encode(), null);
+    }
+
+    // Build occurrence filter query from HTTP request parameters
+    OccurrenceSearchRequest searchRequest = new OccurrenceSearchRequest();
+    Params.setSearchParams(searchRequest, request);
+
+    // Override taxon key when querying the higher taxon layer
+    if (overrideTaxonKey != null) {
+      searchRequest.getParameters().remove(OccurrenceSearchParameter.TAXON_KEY);
+      searchRequest.addParameter(OccurrenceSearchParameter.TAXON_KEY, overrideTaxonKey);
+    }
+
+    // Force the suitable basis of records (excludes fossils and living specimens)
+    searchRequest.getParameters().remove(OccurrenceSearchParameter.BASIS_OF_RECORD);
+    SUITABLE_BASIS_OF_RECORDS.forEach(bor -> searchRequest.addBasisOfRecordFilter(BasisOfRecord.valueOf(bor)));
+
+    SearchRequest esRequest = esSearchRequestBuilder.buildSearchRequest(searchRequest, esIndex);
+    SearchSourceBuilder source = esRequest.source();
+    source.size(0);
+
+    // Add a geo_bounding_box filter restricting results to this tile's extent
+    String geoField = OccurrenceEsField.COORDINATE_POINT.getSearchFieldName();
+    String geomString = searchGeom(boundary);
+    String[] coords = geomString.split(",");
+    double top    = Double.parseDouble(coords[3]);
+    double left   = Double.parseDouble(coords[0]);
+    double bottom = Double.parseDouble(coords[1]);
+    double right  = Double.parseDouble(coords[2]);
+
+    QueryBuilder baseQuery = source.query();
+    BoolQueryBuilder tileQuery = QueryBuilders.boolQuery()
+        .filter(QueryBuilders.geoBoundingBoxQuery(geoField).setCorners(top, left, bottom, right));
+    if (baseQuery != null) {
+      tileQuery.must(baseQuery);
+    }
+    source.query(tileQuery);
+
+    // Geohash_grid aggregation with year sub-aggregation to get per-cell year counts
+    int precision = PRECISION_LOOKUP[Math.min(z, PRECISION_LOOKUP.length - 1)];
+    String yearField = OccurrenceEsField.YEAR.getSearchFieldName();
+    TermsAggregationBuilder yearSubAgg = AggregationBuilders.terms("years")
+        .field(yearField)
+        .size(YEAR_TERMS_SIZE);
+    GeoGridAggregationBuilder geoGridAgg = AggregationBuilders.geohashGrid("geo_grid")
+        .field(geoField)
+        .precision(precision)
+        .size(GEO_GRID_TERMS_SIZE);
+    geoGridAgg.subAggregation(yearSubAgg);
+    source.aggregation(geoGridAgg);
+
+    SearchResponse esResponse = esClient.search(esRequest, RequestOptions.DEFAULT);
+
+    // Build a point tile with year-count attributes per geohash cell centre
+    VectorTileEncoder encoder = new VectorTileEncoder(TILE_SIZE, TILE_BUFFER, false);
+    ParsedGeoHashGrid geoGrid = esResponse.getAggregations().get("geo_grid");
+    for (GeoGrid.Bucket bucket : geoGrid.getBuckets()) {
+      GeoPoint cellCentre = new GeoPoint();
+      cellCentre.resetFromGeoHash(bucket.getKeyAsString());
+
+      Double2D globalXY = projection.toGlobalPixelXY(cellCentre.getLat(), cellCentre.getLon(), z);
+      Long2D tileXY = Tiles.toTileLocalXY(globalXY, schema, z, x, y, TILE_SIZE, TILE_BUFFER);
+      Point point = GEOMETRY_FACTORY.createPoint(new Coordinate(tileXY.getX(), tileXY.getY()));
+
+      Map<String, Object> attributes = new HashMap<>();
+      Terms yearTerms = bucket.getAggregations().get("years");
+      for (Terms.Bucket yearBucket : yearTerms.getBuckets()) {
+        attributes.put(yearBucket.getKeyAsString(), yearBucket.getDocCount());
+      }
+      encoder.addFeature("occurrence", attributes, point);
+    }
+
+    // Bin the point tile into hexagons
+    byte[] pointTile = encoder.encode();
+    HexBin hexBin = new HexBin(TILE_SIZE, HEX_PER_TILE);
+    try {
+      return new DatedVectorTile(hexBin.bin(pointTile, z, x, y), null);
+    } catch (IllegalArgumentException e) {
+      // Thrown for empty or single-point tiles — return the point tile as-is
+      return new DatedVectorTile(pointTile, null);
+    }
+  }
+
+  /**
+   * Returns a bounding-box search geometry string for the given tile boundary in the format
+   * "x0,y0,x1,y1" where boundary[0] is the SW corner (minLon, minLat) and boundary[1]
+   * is the NE corner (maxLon, maxLat), as expected by the ES heatmap request builders.
+   */
+  private static String searchGeom(Double2D[] boundary) {
+    return boundary[0].getX() + "," + boundary[0].getY() + "," + boundary[1].getX() + "," + boundary[1].getY();
   }
 
   /**
@@ -302,10 +454,8 @@ public final class RegressionResource {
 
       // features can come from different layers in the tile, so we need to merge them in
       if (counts.containsKey(hexagonId)) {
-
-        TreeMap<String, Long> merged =
-          Stream.concat(counts.get(hexagonId).entrySet().stream(), years.entrySet().stream())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, Long::sum, TreeMap::new));
+        final TreeMap<String, Long> existing = counts.get(hexagonId);
+        years.forEach((yr, count) -> existing.merge(yr, count, Long::sum));
       } else {
         counts.put(hexagonId, years);
       }
