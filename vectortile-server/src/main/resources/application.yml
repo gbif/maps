@@ -33,8 +33,9 @@ server:
     excluded-user-agents:
 cache:
   points:
-    entryCapacity: 200      # tune relative to -Xmx; each entry can be tens of MB for large taxa
-    expireAfterWrite: PT25H # force reload after the weekly Spark backfill (25 h > 1 day, < 1 week)
+    entryCapacity: 1_000
+    permitNullValues: true
+    expireAfterWrite: PT10M
 
 spring:
   config:
