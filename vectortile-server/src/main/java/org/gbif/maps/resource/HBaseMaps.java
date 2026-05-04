@@ -67,6 +67,7 @@ public class HBaseMaps {
     saltPoints = new ModulusSalt(saltModulusPoints);
     saltTiles = new ModulusSalt(saltModulusTiles);
     pointCache = pointCacheBuilder(cacheManager, meterRegistry, pointCacheConfiguration);
+    metastore.registerChangeListener(pointCache::clear);
   }
 
   public HBaseMaps(Configuration conf, MapMetastore metastore, int saltModulusPoints, int saltModulusTiles, SpringCache2kCacheManager cacheManager, MeterRegistry meterRegistry,
@@ -76,6 +77,7 @@ public class HBaseMaps {
     saltPoints = new ModulusSalt(saltModulusPoints);
     saltTiles = new ModulusSalt(saltModulusTiles);
     pointCache = pointCacheBuilder(cacheManager, meterRegistry, pointCacheConfiguration);
+    metastore.registerChangeListener(pointCache::clear);
   }
 
   private TableName pointTable() throws Exception {

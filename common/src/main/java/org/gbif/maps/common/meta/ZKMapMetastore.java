@@ -15,6 +15,8 @@ package org.gbif.maps.common.meta;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.annotation.Nullable;
 
@@ -42,6 +44,7 @@ class ZKMapMetastore implements MapMetastore, Closeable {
   private final NodeCache zkNodeCache;
   private final String zkNodePath;
   private MapTables mapTables;
+  private final List<Runnable> changeListeners = new CopyOnWriteArrayList<>();
 
   ZKMapMetastore(String zkEnsemble, int retryIntervalMs, String zkNodePath) throws Exception {
     this.zkNodePath = zkNodePath;
@@ -81,6 +84,11 @@ class ZKMapMetastore implements MapMetastore, Closeable {
   }
 
   @Override
+  public void registerChangeListener(Runnable listener) {
+    changeListeners.add(listener);
+  }
+
+  @Override
   public void close() throws IOException {
     Closeables.close(zkNodeCache, true);
     Closeables.close(client, true);
@@ -95,6 +103,7 @@ class ZKMapMetastore implements MapMetastore, Closeable {
       ChildData child = cache.getCurrentData();
       mapTables = MapTables.deserialize(child.getData());
       LOG.info("MapTables for {} updated {}", zkNodePath, mapTables);
+      changeListeners.forEach(Runnable::run);
     } catch(Exception e) {
       LOG.error("Unable to update MapTables from ZooKeeper (MapMeta may return state data until recovered).", e);
     }

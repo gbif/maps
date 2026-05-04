@@ -33,4 +33,11 @@ public interface MapMetastore extends Closeable {
    * @param meta To create or replace existing values.
    */
   void update(MapTables meta) throws Exception;
+
+  /**
+   * Registers a listener that is called whenever the underlying table metadata changes.
+   * Implementations backed by static data may ignore this.
+   */
+  default void registerChangeListener(Runnable listener) {
+  }
 }
