@@ -121,12 +121,6 @@ public class VectorTileFilters {
         newCounts.forEach((year, count) -> existing.merge(year, count, Long::sum));
         return existing;
       });
-
-// Hotfix: Issue #99, this is broken as it causes duplicate points
-//      if (batch.size() >= featuresBufferSize) {
-//        flushBatchWithCoords(encoder, layerName, batch);
-//        batch.clear();
-//      }
     }
 
     if (!batch.isEmpty()) {
@@ -153,12 +147,6 @@ public class VectorTileFilters {
       long count = getTotalCount(feature, years);
 
       batch.merge(pixel, count, Long::sum);
-
-// Hotfix: Issue #99, this is broken as it causes duplicate points
-//      if (batch.size() >= featuresBufferSize) {
-//        flushSimpleBatchWithCoords(encoder, layerName, batch);
-//        batch.clear();
-//      }
     }
 
     if (!batch.isEmpty()) {
@@ -187,12 +175,6 @@ public class VectorTileFilters {
         newCounts.forEach((year, count) -> existing.merge(year, count, Long::sum));
         return existing;
       });
-
-// Hotfix: Issue #99, this is broken as it causes duplicate points
-//      if (batch.size() >= featuresBufferSize) {
-//        flushBatch(encoder, layerName, batch);
-//        batch.clear();
-//      }
     }
 
     if (!batch.isEmpty()) {
@@ -217,12 +199,6 @@ public class VectorTileFilters {
       long count = getTotalCount(feature, years);
 
       batch.merge(geom, count, Long::sum);
-
-// Hotfix: Issue #99, this is broken as it causes duplicate points
-//      if (batch.size() >= featuresBufferSize) {
-//        flushSimpleBatch(encoder, layerName, batch);
-//        batch.clear();
-//      }
     }
 
     if (!batch.isEmpty()) {
