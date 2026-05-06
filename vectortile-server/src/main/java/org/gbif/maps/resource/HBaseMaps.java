@@ -38,7 +38,6 @@ import org.cache2k.extra.spring.SpringCache2kCacheManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Stopwatch;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import io.micrometer.core.instrument.MeterRegistry;

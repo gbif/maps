@@ -72,7 +72,6 @@ public class MapBuilder implements Serializable {
           + "occurrenceStatus, "
           + "hasGeospatialIssues, "
           + "classifications, "
-          + "classificationDetails "
           + "FROM occurrence WHERE "
           + "decimalLatitude IS NOT NULL  "
           + "AND decimalLongitude IS NOT NULL "
@@ -183,44 +182,7 @@ public class MapBuilder implements Serializable {
    * multiple times.
    */
   private void readIcebergSource(SparkSession spark, String targetHiveTable) {
-    Dataset<Row> source =
-        spark
-            .sql(SQL_TEXT)
-            // merge in taxon from the details which may be a synonym
-            // see https://github.com/gbif/maps/issues/107
-            // this may be removed when https://github.com/gbif/pipelines/issues/1293 is in
-            // operation
-            .withColumn(
-                "classifications",
-                functions.expr(
-                    "map_from_entries("
-                        + "  transform("
-                        + "    map_entries(classifications),"
-                        + "    entry -> struct("
-                        + "      entry.key,"
-                        + "      array_distinct("
-                        + "        concat("
-                        + "          entry.value,"
-                        + "          CASE "
-                        + "            WHEN element_at(classificationDetails, entry.key) IS NOT NULL "
-                        + "                 AND element_at("
-                        + "                       element_at(classificationDetails, entry.key),"
-                        + "                       'taxonkey'"
-                        + "                     ) IS NOT NULL "
-                        + "            THEN array("
-                        + "                   element_at("
-                        + "                     element_at(classificationDetails, entry.key),"
-                        + "                     'taxonkey'"
-                        + "                   )"
-                        + "                 ) "
-                        + "            ELSE array() "
-                        + "          END"
-                        + "        )"
-                        + "      )"
-                        + "    )"
-                        + "  )"
-                        + ")"))
-            .drop("classificationDetails"); // may be removed later - see above
+    Dataset<Row> source = spark.sql(SQL_TEXT);
 
     // Default of 1200 yields 100MB files from 2.5B input
     int partitions = spark.sparkContext().conf().getInt("spark.sql.shuffle.partitions", 1200);
