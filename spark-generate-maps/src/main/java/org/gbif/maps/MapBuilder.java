@@ -71,7 +71,7 @@ public class MapBuilder implements Serializable {
           + "year, "
           + "occurrenceStatus, "
           + "hasGeospatialIssues, "
-          + "classifications, "
+          + "classifications "
           + "FROM occurrence WHERE "
           + "decimalLatitude IS NOT NULL  "
           + "AND decimalLongitude IS NOT NULL "
