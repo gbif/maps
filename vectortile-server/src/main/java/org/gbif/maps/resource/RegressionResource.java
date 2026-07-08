@@ -119,7 +119,8 @@ public final class RegressionResource {
                             TileServerConfiguration configuration,
                             ConceptClient conceptClient,
                             NameUsageMatchingService nameUsageMatchingService,
-                            @Value("${defaultChecklistKey: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c'}") String defaultChecklistKey) {
+                            @Value("${defaultChecklistKey: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c'}") String defaultChecklistKey,
+                            @Value("${esConfiguration.elasticsearch.defaultShardSize:100}") int defaultShardSize) {
     this.tiles = tiles;
     this.esClient = esClient;
     this.esIndex = configuration.getEsOccurrenceConfiguration().getElasticsearch().getIndex();
@@ -128,7 +129,8 @@ public final class RegressionResource {
             OccurrenceEsField.buildFieldMapper(),
             conceptClient,
             nameUsageMatchingService,
-            defaultChecklistKey);
+            defaultChecklistKey,
+            defaultShardSize);
   }
 
   /**

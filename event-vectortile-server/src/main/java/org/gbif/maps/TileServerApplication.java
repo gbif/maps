@@ -199,7 +199,8 @@ public class TileServerApplication {
         TileServerConfiguration tileServerConfiguration,
         ConceptClient conceptClient,
         NameUsageMatchingService nameUsageMatchingService,
-        @Value("${defaultChecklistKey: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c'}") String defaultChecklistKey) {
+        @Value("${defaultChecklistKey: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c'}") String defaultChecklistKey,
+        @Value("${esConfiguration.elasticsearch.defaultShardSize:100}") int defaultShardSize) {
       return new EventHeatmapsEsService(
           esClient,
           tileServerConfiguration.getEsEventConfiguration().getElasticsearch().getIndex(),
@@ -207,7 +208,8 @@ public class TileServerApplication {
               EventEsField.buildFieldMapper(),
               conceptClient,
               nameUsageMatchingService,
-              defaultChecklistKey));
+              defaultChecklistKey,
+              defaultShardSize));
     }
 
     @Primary
