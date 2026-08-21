@@ -32,11 +32,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Polygon;
@@ -62,6 +57,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.aggregations.Aggregate;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -109,13 +108,13 @@ public final class RegressionResource {
   }
 
   private final TileResource tiles;
-  private final RestHighLevelClient esClient;
+  private final ElasticsearchClient esClient;
   private final String esIndex;
   private final OccurrenceEsSearchRequestBuilder esSearchRequestBuilder;
 
   @Autowired
   public RegressionResource(TileResource tiles,
-                            @Qualifier("esOccurrenceClient") RestHighLevelClient esClient,
+                            @Qualifier("esOccurrenceClient") ElasticsearchClient esClient,
                             TileServerConfiguration configuration,
                             ConceptClient conceptClient,
                             NameUsageMatchingService nameUsageMatchingService,
@@ -244,13 +243,28 @@ public final class RegressionResource {
     }
 
     searchRequest.addFacets(OccurrenceSearchParameter.YEAR);
-    // Default search request handler, no sort order, 1 record (required) and facet support
     SearchRequest esSearchRequest = esSearchRequestBuilder.buildSearchRequest(searchRequest, esIndex);
-    SearchResponse response = esClient.search(esSearchRequest, RequestOptions.DEFAULT);
+    SearchResponse<Void> response = esClient.search(esSearchRequest, Void.class);
+    return yearBuckets(response.aggregations().get(OccurrenceEsField.YEAR.getSearchFieldName()));
+  }
 
-    Terms yearAgg = response.getAggregations().get(OccurrenceEsField.YEAR.getSearchFieldName());
-    return yearAgg.getBuckets().stream()
-            .collect(Collectors.toMap(Terms.Bucket::getKeyAsString, Terms.Bucket::getDocCount, (v1, v2) -> v1, TreeMap::new));
+  private static TreeMap<String, Long> yearBuckets(Aggregate yearAgg) {
+    if (yearAgg == null) {
+      return new TreeMap<>();
+    }
+    if (yearAgg.isLterms()) {
+      return yearAgg.lterms().buckets().array().stream()
+          .collect(Collectors.toMap(
+              b -> b.keyAsString() != null ? b.keyAsString() : String.valueOf(b.key()),
+              b -> b.docCount(),
+              (v1, v2) -> v1,
+              TreeMap::new));
+    }
+    if (yearAgg.isSterms()) {
+      return yearAgg.sterms().buckets().array().stream()
+          .collect(Collectors.toMap(b -> b.key().stringValue(), b -> b.docCount(), (v1, v2) -> v1, TreeMap::new));
+    }
+    return new TreeMap<>();
   }
 
   /**

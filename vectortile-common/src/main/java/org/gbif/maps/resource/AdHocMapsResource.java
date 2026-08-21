@@ -39,8 +39,6 @@ import java.util.Optional;
 
 import javax.validation.Valid;
 
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -91,11 +89,11 @@ public class AdHocMapsResource<HR extends HeatmapRequest> {
 
   private final int tileSize;
   private final int bufferSize;
-  private final HeatmapService<SearchRequest, SearchResponse, HR> searchHeatmapsService;
+  private final HeatmapService<?, ?, HR> searchHeatmapsService;
   private final PredicateCacheService predicateCacheService;
   private final HeatmapRequestProvider<HR> provider;
 
-  public AdHocMapsResource(HeatmapService<SearchRequest, SearchResponse, HR> searchHeatmapsService,
+  public AdHocMapsResource(HeatmapService<?, ?, HR> searchHeatmapsService,
                            HeatmapRequestProvider<HR> provider,
                            int tileSize,
                            int bufferSize) {

@@ -30,7 +30,6 @@ import org.gbif.ws.client.ClientBuilder;
 import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
 import org.gbif.ws.server.processor.ParamNameProcessor;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
@@ -46,9 +45,10 @@ import org.cache2k.extra.spring.SpringCache2kCacheManager;
 import org.elasticsearch.client.NodeSelector;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.sniff.SniffOnFailureListener;
 import org.elasticsearch.client.sniff.Sniffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -56,6 +56,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration;
 import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -72,7 +73,12 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Strings;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import co.elastic.clients.transport.ElasticsearchTransport;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
 import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PreDestroy;
 
 /**
  * The main entry point for running the member node.
@@ -84,7 +90,8 @@ import io.micrometer.core.instrument.MeterRegistry;
   },
   exclude = {
     RabbitAutoConfiguration.class,
-    ElasticsearchRestClientAutoConfiguration.class
+    ElasticsearchRestClientAutoConfiguration.class,
+    ElasticsearchClientAutoConfiguration.class
   })
 @EnableConfigurationProperties
 public class TileServerApplication {
@@ -114,6 +121,11 @@ public class TileServerApplication {
   @org.springframework.context.annotation.Configuration
   public static class TileServerSpringConfiguration {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TileServerSpringConfiguration.class);
+
+    private ElasticsearchClient esClient;
+    private Sniffer sniffer;
+
     @ConfigurationProperties
     @Bean
     TileServerConfiguration tileServerConfiguration() {
@@ -122,8 +134,27 @@ public class TileServerApplication {
 
     @Bean("esOccurrenceClient")
     @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
-    public RestHighLevelClient provideOccurrenceEsClient(TileServerConfiguration tileServerConfiguration) {
-      return provideEsClient(tileServerConfiguration.getEsOccurrenceConfiguration().getElasticsearch());
+    public ElasticsearchClient provideOccurrenceEsClient(TileServerConfiguration tileServerConfiguration) {
+      this.esClient = provideEsClient(tileServerConfiguration.getEsOccurrenceConfiguration().getElasticsearch());
+      return this.esClient;
+    }
+
+    @PreDestroy
+    void closeEs() {
+      if (sniffer != null) {
+        try {
+          sniffer.close();
+        } catch (Exception e) {
+          LOG.warn("Couldn't close ES sniffer", e);
+        }
+      }
+      if (esClient != null) {
+        try {
+          esClient.close();
+        } catch (Exception e) {
+          LOG.warn("Couldn't close ES client", e);
+        }
+      }
     }
 
     /**
@@ -155,7 +186,7 @@ public class TileServerApplication {
       };
     }
 
-    private RestHighLevelClient provideEsClient(EsConfig esConfig) {
+    private ElasticsearchClient provideEsClient(EsConfig esConfig) {
       HttpHost[] hosts = new HttpHost[esConfig.getHosts().length];
       int i = 0;
       for (String host : esConfig.getHosts()) {
@@ -184,32 +215,26 @@ public class TileServerApplication {
         builder.setFailureListener(sniffOnFailureListener);
       }
 
-      RestHighLevelClient highLevelClient = new RestHighLevelClient(builder);
+      RestClient restClient = builder.build();
+      ElasticsearchTransport transport =
+        new RestClientTransport(restClient, new JacksonJsonpMapper());
+      ElasticsearchClient client = new ElasticsearchClient(transport);
 
       if (esConfig.getSniffInterval() > 0) {
-        Sniffer sniffer = Sniffer.builder(highLevelClient.getLowLevelClient())
+        this.sniffer = Sniffer.builder(restClient)
           .setSniffIntervalMillis(esConfig.getSniffInterval())
           .setSniffAfterFailureDelayMillis(esConfig.getSniffAfterFailureDelay())
           .build();
-        sniffOnFailureListener.setSniffer(sniffer);
-
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-          sniffer.close();
-          try {
-            highLevelClient.close();
-          } catch (IOException e) {
-            throw new IllegalStateException("Couldn't close ES client", e);
-          }
-        }));
+        sniffOnFailureListener.setSniffer(this.sniffer);
       }
 
-      return highLevelClient;
+      return client;
     }
 
     @Bean("occurrenceHeatmapsEsService")
     @ConditionalOnExpression("${esOccurrenceConfiguration.enabled}")
     OccurrenceHeatmapsEsService occurrenceHeatmapsEsService(
-        @Qualifier("esOccurrenceClient") RestHighLevelClient esClient,
+        @Qualifier("esOccurrenceClient") ElasticsearchClient esClient,
         TileServerConfiguration tileServerConfiguration,
         ConceptClient conceptClient,
         NameUsageMatchingService nameUsageMatchingService,

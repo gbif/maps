@@ -29,7 +29,6 @@ import org.locationtech.jts.geom.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.carrotsearch.hppc.IntHashSet;
 import com.google.common.collect.ImmutableMap;
 
 import no.ecc.vectortile.VectorTileEncoder;
@@ -273,12 +272,12 @@ public class CapabilitiesTest {
   }
 
   private void assertSpread(double[] longitudes, int left, int right) {
-    IntHashSet longitudesSet = new IntHashSet();
+    int[] longitudesSet = new int[longitudes.length];
     for (int i = 0;  i < longitudes.length; i++) {
-      longitudesSet.add((int) Math.round(longitudes[i]));
+      longitudesSet[i] = (int) Math.round(longitudes[i]);
     }
 
-    int[] spread = Capabilities.CapabilitiesBuilder.centredSpread(longitudesSet.toArray(), 360);
+    int[] spread = Capabilities.CapabilitiesBuilder.centredSpread(longitudesSet, 360);
     assertEquals(left, spread[0]);
     assertEquals(right, spread[1]);
 
