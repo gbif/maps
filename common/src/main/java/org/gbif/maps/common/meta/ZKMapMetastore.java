@@ -16,7 +16,7 @@ package org.gbif.maps.common.meta;
 import java.io.Closeable;
 import java.io.IOException;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;

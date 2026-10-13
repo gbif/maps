@@ -15,7 +15,7 @@ package org.gbif.maps.common.meta;
 
 import java.io.Closeable;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 /**
  * Provides the ability to read and write metadata about the maps.

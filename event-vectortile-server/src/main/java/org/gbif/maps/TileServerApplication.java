@@ -29,9 +29,8 @@ import org.gbif.ws.server.processor.ParamNameProcessor;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.time.Duration;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.NodeSelector;

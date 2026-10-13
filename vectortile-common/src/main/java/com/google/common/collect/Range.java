@@ -21,7 +21,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedSet;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.GwtCompatible;
