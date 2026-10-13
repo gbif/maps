@@ -16,6 +16,8 @@ package org.gbif.maps;
 import org.gbif.api.model.common.search.SearchParameter;
 import org.gbif.api.model.event.search.EventSearchParameter;
 import org.gbif.occurrence.search.es.EsConfig;
+import org.gbif.rest.client.RestClientFactory;
+import org.gbif.rest.client.configuration.ClientConfiguration;
 import org.gbif.rest.client.species.NameUsageMatchingService;
 import org.gbif.search.es.event.EventEsField;
 import org.gbif.search.heatmap.es.event.EventEsHeatmapRequestBuilder;
@@ -27,9 +29,8 @@ import org.gbif.ws.server.processor.ParamNameProcessor;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.time.Duration;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.NodeSelector;
@@ -264,12 +265,9 @@ public class TileServerApplication {
         // remove the version from the URL
         apiUrl = apiUrl.substring(0, apiUrl.length() - 3);
       }
-      return new ClientBuilder()
-        .withUrl(apiUrl)
-        .withObjectMapper(JacksonJsonObjectMapperProvider.getObjectMapperWithBuilderSupport())
-        .withFormEncoder()
-        .withExponentialBackoffRetry(Duration.ofMillis(250), 1.0, 3)
-        .build(NameUsageMatchingService.class);
+      ClientConfiguration clientConfiguration =
+          ClientConfiguration.builder().withBaseApiUrl(apiUrl).build();
+      return RestClientFactory.createNameMatchService(clientConfiguration);
     }
   }
 

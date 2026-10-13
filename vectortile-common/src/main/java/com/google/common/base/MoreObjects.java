@@ -15,7 +15,7 @@ package com.google.common.base;
 
 import java.util.Arrays;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 import com.google.common.annotations.GwtCompatible;
 

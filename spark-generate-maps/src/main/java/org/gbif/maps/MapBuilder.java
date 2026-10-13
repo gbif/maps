@@ -76,7 +76,7 @@ public class MapBuilder implements Serializable {
           + "decimalLatitude IS NOT NULL  "
           + "AND decimalLongitude IS NOT NULL "
           + "AND hasGeospatialIssues = false "
-          + "AND occurrenceStatus='PRESENT'";
+          + "AND occurrenceStatus='DETECTED'";
 
   public static void main(String[] args) {
     LinkedHashMap<String, String> checklists = new LinkedHashMap<>();
