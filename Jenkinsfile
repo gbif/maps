@@ -32,6 +32,15 @@ pipeline {
     stage('Set project version') {
       steps {
         script {
+          // Branch and PR builds get a branch-qualified version (workspace only, never committed), so their
+          // artifacts and Docker images don't overwrite the dev snapshots, e.g. 1.1.16-FIX-SECURITY-REVIEW-SNAPSHOT
+          if (env.BRANCH_NAME && env.BRANCH_NAME != 'dev' && env.BRANCH_NAME != 'master' && !params.RELEASE) {
+            def suffix = env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9.-]', '-').toUpperCase()
+            sh """
+              BASE_VERSION=\$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed 's/-SNAPSHOT//')
+              mvn versions:set -DnewVersion=\${BASE_VERSION}-${suffix}-SNAPSHOT -DgenerateBackupPoms=false -DprocessAllModules=true
+            """
+          }
           env.VERSION = """${sh(returnStdout: true, script: './build/get-version.sh ${RELEASE}')}"""
         }
       }
@@ -74,6 +83,9 @@ pipeline {
     }
     failure {
       echo 'Pipeline execution failed!'
+    }
+    cleanup {
+      deleteDir()
     }
   }
 }
