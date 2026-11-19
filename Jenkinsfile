@@ -76,6 +76,21 @@ pipeline {
         sh 'build/spark-generate-maps-docker-build.sh ${RELEASE} ${VERSION}'
       }
     }
+
+
+    stage('Trigger WS deploy dev') {
+      when {
+        allOf {
+          not { expression { params.RELEASE } };
+          branch 'dev';
+        }
+      }
+      steps {
+        build job: "maps-vectortile-server-adhoc-dev-deploy", wait: true, propagate: false
+        build job: "maps-vectortile-server-density-dev-deploy", wait: true, propagate: false
+        build job: "maps-mapnik-server-dev-deploy", wait: true, propagate: false
+      }
+    }
   }
   post {
     success {
