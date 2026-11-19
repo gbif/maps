@@ -27,6 +27,7 @@ import org.gbif.search.heatmap.HeatmapRequest;
 import org.gbif.search.heatmap.HeatmapRequestProvider;
 import org.gbif.search.heatmap.HeatmapService;
 import org.gbif.search.heatmap.es.EsHeatmapResponse;
+import org.gbif.ws.json.JacksonJsonObjectMapperProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,6 +46,7 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -56,6 +58,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 
 import io.swagger.v3.oas.annotations.Hidden;
@@ -81,6 +84,7 @@ public class AdHocMapsResource<HR extends HeatmapRequest> {
   private static final Logger LOG = LoggerFactory.getLogger(AdHocMapsResource.class);
   private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
   private static final String LAYER_NAME = "occurrence";
+  private static final ObjectMapper MAPPER = JacksonJsonObjectMapperProvider.getObjectMapperWithBuilderSupport();
 
   @VisibleForTesting
   protected static final String QUERY_BUFFER_PERCENTAGE = "0.125";  // 1/8th tile buffer all around, similar to the HBase maps
@@ -108,8 +112,17 @@ public class AdHocMapsResource<HR extends HeatmapRequest> {
   @PostMapping(value = "/predicate",
                consumes =  {MediaType.APPLICATION_JSON_VALUE},
                produces = {MediaType.APPLICATION_JSON_VALUE, "application/x-javascript"})
-  public Integer hashPredicate(@Valid @RequestBody Predicate predicate) {
-    return predicateCacheService.put(predicate);
+  public ResponseEntity<Integer> hashPredicate(@Valid @RequestBody Predicate predicate) {
+    int hash = predicateCacheService.put(predicate);
+
+    // The cache key is a 32-bit hash and existing entries are kept, so a different predicate with the same hash
+    // (easily crafted) would otherwise be served to whoever uses this hash.
+    Predicate cached = predicateCacheService.get(hash);
+    if (cached != null && !MAPPER.valueToTree(cached).equals(MAPPER.valueToTree(predicate))) {
+      LOG.warn("Predicate hash collision for {}", hash);
+      return ResponseEntity.status(HttpStatus.CONFLICT).build();
+    }
+    return ResponseEntity.ok(hash);
   }
 
   @Hidden
