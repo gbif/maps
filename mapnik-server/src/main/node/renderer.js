@@ -22,13 +22,20 @@ function renderTile(parameters, vectorTile, callback) {
     return;
   }
 
-  var map = new mapnik.Map(size, size, proj4);
-  map.fromStringSync(styles.getStyle(parameters.style));
+  // Invalid tile data makes Mapnik throw synchronously
+  var map, vt;
+  try {
+    map = new mapnik.Map(size, size, proj4);
+    map.fromStringSync(styles.getStyle(parameters.style));
 
-  // Pretend it's tile 0, 0, since Mapnik validates the address according to the standard Google schema,
-  // and we aren't using it for WGS84.
-  var vt = new mapnik.VectorTile(parameters.z, 0, 0);
-  vt.addDataSync(vectorTile);
+    // Pretend it's tile 0, 0, since Mapnik validates the address according to the standard Google schema,
+    // and we aren't using it for WGS84.
+    vt = new mapnik.VectorTile(parameters.z, 0, 0);
+    vt.addDataSync(vectorTile);
+  } catch (e) {
+    callback(e, null);
+    return;
+  }
 
   //console.time("Render");
   vt.render(map, new mapnik.Image(size, size), {
@@ -56,47 +63,57 @@ function renderTile(parameters, vectorTile, callback) {
   });
 }
 
-function render(parameters, vectorTile, res) {
-  async.map([vectorTile],
-    function(tile, callback) {renderTile(parameters, tile, callback)},
-    function(err, results) {
-      if (err) console.log('One rendered', results, err);
-
-      res.end(results[0].encodeSync('png'));
-    });
+function render(parameters, vectorTile, callback) {
+  renderTile(parameters, vectorTile, function(err, image) {
+    if (err) return callback(err);
+    encode(image, callback);
+  });
 }
 
 /*
  * Render a heat map style, from four vector tiles.
  */
-function heatMapRender(parameters, vectorTiles, res) {
+function heatMapRender(parameters, vectorTiles, callback) {
   // Hard pixel styles are produced at double resolution, then resized.
   var size = 512 * parameters.density;
+  var offsets = [[0, 0], [size, 0], [0, size], [size, size]];
 
   async.map(vectorTiles,
     function(tile, callback) {renderTile(parameters, tile, callback)},
     function(err, results) {
-      if (err) console.log('All rendered', results, err);
+      if (err) return callback(err);
 
       var image = new mapnik.Image(size * 2, size * 2, {premultiplied: true});
 
-      image.composite(results[0], {comp_op: mapnik.compositeOp['multiply'], dx: 0, dy: 0, opacity: 1.0},
-        function(err, result) {
-          image.composite(results[1], {comp_op: mapnik.compositeOp['multiply'], dx: size, dy: 0, opacity: 1.0},
-            function(err, result) {
-              image.composite(results[2], {comp_op: mapnik.compositeOp['multiply'], dx: 0, dy: size, opacity: 1.0},
-                function(err, result) {
-                  image.composite(results[3], {comp_op: mapnik.compositeOp['multiply'], dx: size, dy: size, opacity: 1.0},
-                    function(err, result) {
-
-                      result.premultiply();
-                      image = result.resizeSync(size, size);
-                      res.end(image.encodeSync('png'));
-                    });
-                });
-            });
-        });
+      // Composite each quarter in turn
+      async.eachOfSeries(results, function(result, i, next) {
+        image.composite(result, {comp_op: mapnik.compositeOp['multiply'], dx: offsets[i][0], dy: offsets[i][1], opacity: 1.0},
+          function(err, composited) {
+            if (!err) image = composited;
+            next(err);
+          });
+      }, function(err) {
+        if (err) return callback(err);
+        var resized;
+        try {
+          image.premultiply();
+          resized = image.resizeSync(size, size);
+        } catch (e) {
+          return callback(e);
+        }
+        encode(resized, callback);
+      });
     });
+}
+
+function encode(image, callback) {
+  var png;
+  try {
+    png = image.encodeSync('png');
+  } catch (e) {
+    return callback(e);
+  }
+  callback(null, png);
 }
 
 /* Mapnik renders pixels aligned exactly to the tile grid (i.e. centred *between* the pixels).
@@ -143,10 +160,13 @@ function manipulatePixelStyle(image, density) {
   return image;
 }
 
-module.exports = function(parameters, vectorTile, res) {
+/*
+ * Renders the vector tile (or four tiles for a heat style) to a PNG, calling back with (err, pngBuffer).
+ */
+module.exports = function(parameters, vectorTile, callback) {
   if (Array.isArray(vectorTile)) {
-    heatMapRender(parameters, vectorTile, res);
+    heatMapRender(parameters, vectorTile, callback);
   } else {
-    render(parameters, vectorTile, res);
+    render(parameters, vectorTile, callback);
   }
 }

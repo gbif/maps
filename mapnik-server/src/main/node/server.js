@@ -13,6 +13,8 @@ const async = require('async')
 
 var server;
 
+const BACKEND_ERROR = 'Error from backend (vector tile)';
+
 function createServer(config) {
   var timeout = config.tileServer.timeout;
 
@@ -41,7 +43,7 @@ function createServer(config) {
               if (!error && response.statusCode >= 300) {
                 error = {
                   'code': response.statusCode,
-                  'message': 'Error from backend (vector tile); try '+url+' yourself'
+                  'message': 'Error from backend (vector tile) for '+url
                 };
               }
               console.log(url, "Vector tile has HTTP status", response ? response.statusCode : '-', "and size", body ? body.length : '-');
@@ -51,19 +53,10 @@ function createServer(config) {
           function (err, results) {
             console.log("Retrieved", results.length, "tiles, error", err);
             if (!err && results.length == 4) {
-              writeHeaders(200, results[0].etag, res);
-              try {
-                renderer(parameters, results.map(r => r.body), res);
-              } catch (e) {
-                // something went wrong
-                res.writeHead(500, {'Content-Type': 'image/png', 'Access-Control-Allow-Origin': '*', 'X-Error': e.message});
-                res.end(fs.readFileSync('./public/map/500.png'));
-                console.log(e);
-              }
+              renderAndSend(parameters, results.map(r => r.body), results[0].etag, res);
             } else {
               console.log("Error retrieving four vector tiles", err);
-              res.writeHead(503, {'Content-Type': 'image/png', 'Access-Control-Allow-Origin': '*', 'X-Error': err.message});
-              res.end(fs.readFileSync('./public/map/503.png'));
+              writeError(503, BACKEND_ERROR, res);
             }
           });
         return;
@@ -77,31 +70,21 @@ function createServer(config) {
         if (!error && response.statusCode >= 300) {
           error = {
             'code': response.statusCode,
-            'message': 'Error from backend (vector tile); try '+vectorTileUrl+' yourself'
+            'message': 'Error from backend (vector tile) for '+vectorTileUrl
           };
         }
 
         if (error) {
           // something went wrong
           console.log("Error retrieving vector tile", error);
-          res.writeHead(503, {'Content-Type': 'image/png', 'Access-Control-Allow-Origin': '*', 'X-Error': error.message});
-          res.end(fs.readFileSync('./public/map/503.png'));
+          writeError(503, BACKEND_ERROR, res);
           return;
         }
 
         console.log("Vector tile has HTTP status", response.statusCode, "and size", body.length);
 
         if (response.statusCode == 200 && body.length > 0) {
-          writeHeaders(200, response.headers['etag'], res);
-
-          try {
-            renderer(parameters, body, res);
-          } catch (e) {
-            // something went wrong
-            res.writeHead(500, {'Content-Type': 'image/png', 'Access-Control-Allow-Origin': '*', 'X-Error': e.message});
-            res.end(fs.readFileSync('./public/map/500.png'));
-            console.log(e);
-          }
+          renderAndSend(parameters, body, response.headers['etag'], res);
 
         } else if (response.statusCode == 404 ||   // not found
                    response.statusCode == 204 ||   // no content
@@ -127,6 +110,31 @@ function createServer(config) {
       }
     }
   });
+}
+
+/*
+ * Render the vector tile(s) to a PNG, and only then write the headers, so a rendering failure can still be reported
+ * as an error.
+ */
+function renderAndSend(parameters, vectorTiles, etag, res) {
+  renderer(parameters, vectorTiles, function (err, png) {
+    if (err) {
+      console.log("Error rendering tile", err);
+      writeError(500, 'Unable to render tile', res);
+      return;
+    }
+    writeHeaders(200, etag, res);
+    res.end(png);
+  });
+}
+
+/*
+ * Write an error tile.  The message is sent to the client, so must not include internal details such as backend
+ * hostnames; log those instead.
+ */
+function writeError(status, message, res) {
+  res.writeHead(status, {'Content-Type': 'image/png', 'Access-Control-Allow-Origin': '*', 'X-Error': message});
+  res.end(fs.readFileSync('./public/map/' + status + '.png'));
 }
 
 function writeHeaders(status, etagIn, res) {
