@@ -24,6 +24,7 @@ import org.gbif.search.es.occurrence.OccurrenceEsField;
 import org.gbif.vocabulary.client.ConceptClient;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -169,8 +170,14 @@ public final class RegressionResource {
 
     DatedVectorTile speciesLayer = tiles.getTile(z, x, y, mapKeys[0], null, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
 
-    mapKeys[0] = Params.MAP_TYPES.get("taxonKey") + ":" + higherTaxonKey;
-    DatedVectorTile higherTaxaLayer = tiles.getTile(z, x, y, mapKeys[0], null, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
+    // Build the higher taxon key the same way as for the species, so it includes the checklist
+    Map<String, String[]> higherTaxonParams = new HashMap<>();
+    higherTaxonParams.put("taxonKey", new String[] {higherTaxonKey});
+    if (request.getParameter("checklistKey") != null) {
+      higherTaxonParams.put("checklistKey", new String[] {request.getParameter("checklistKey")});
+    }
+    String higherTaxonMapKey = mapKeys(higherTaxonParams)[0];
+    DatedVectorTile higherTaxaLayer = tiles.getTile(z, x, y, higherTaxonMapKey, null, srs, SUITABLE_BASIS_OF_RECORDS, year, true, "hex", HEX_PER_TILE, HEX_PER_TILE);
 
     // determine the global pixel origin address at the top left of the tile, used for uniquely identifying the hexagons
     Long2D originXY = new Long2D(x * TILE_SIZE, y * TILE_SIZE);
