@@ -1,6 +1,7 @@
 "use strict";
 
 const fs = require('fs')
+    , querystring = require('querystring')
     , url = require('url')
     , config = require('./config')
     , styles = require('./styles');
@@ -284,23 +285,36 @@ function v1ParseUrl(parsedRequest) {
   }
 }
 
+/*
+ * Builds the URL to the vector tile server from scratch, so that nothing but the path and query of the incoming request
+ * is used.  (An absolute-form request target, "GET http://other-host/... HTTP/1.1", would otherwise carry its host,
+ * port and credentials through url.format.)
+ */
+const safePath = /^\/[A-Za-z0-9_.@\/-]*$/;
+function backendUrl(pathname, query) {
+  if (!safePath.test(pathname) || pathname.indexOf('..') != -1 || pathname.indexOf('//') != -1) {
+    throw Error("Invalid path.");
+  }
+  return url.format({
+    protocol: "http:",
+    hostname: config.tileServer.host,
+    port: config.tileServer.port,
+    pathname: config.tileServer.prefix + pathname,
+    search: query
+  });
+}
+
 function vectorRequest(parsedRequest) {
   // reformat the request to the type expected by the VectorTile Server
   // Remove raster parameters, to improve cacheability
-  delete parsedRequest.query.style;
-  delete parsedRequest.query.locale;
-  delete parsedRequest.search; // Must be removed to force regeneration of query string
-  parsedRequest.pathname = parsedRequest.pathname.replace(/@[H0-9]+x\.png/, ".mvt");
-  parsedRequest.hostname = config.tileServer.host;
-  parsedRequest.port = config.tileServer.port;
-  parsedRequest.pathname = config.tileServer.prefix + parsedRequest.pathname;
-  parsedRequest.protocol = "http:";
-  return url.format(parsedRequest);
+  var query = Object.assign({}, parsedRequest.query);
+  delete query.style;
+  delete query.locale;
+  var pathname = parsedRequest.pathname.replace(/@[H0-9]+x\.png/, ".mvt");
+  return backendUrl(pathname, querystring.stringify(query));
 }
 
-function v1VectorRequest(z, x, y, year, key, basisOfRecord, squareSize, parsedRequest) {
-  delete parsedRequest.search; // Must be removed to force regeneration of query string
-
+function v1VectorRequest(z, x, y, year, key, basisOfRecord, squareSize) {
   var params = "srs=EPSG:3857";
 
   if (year) {
@@ -319,14 +333,7 @@ function v1VectorRequest(z, x, y, year, key, basisOfRecord, squareSize, parsedRe
     params += "&bin=square&squareSize=" + squareSize;
   }
 
-  parsedRequest.search = params;
-
-  parsedRequest.pathname = "/map/occurrence/density/"+z+"/"+x+"/"+y+".mvt";
-  parsedRequest.hostname = config.tileServer.host;
-  parsedRequest.port = config.tileServer.port;
-  parsedRequest.pathname = config.tileServer.prefix + parsedRequest.pathname;
-  parsedRequest.protocol = "http:";
-  return url.format(parsedRequest);
+  return backendUrl("/map/occurrence/density/"+z+"/"+x+"/"+y+".mvt", params);
 }
 
 module.exports = function(req, res) {
@@ -360,7 +367,7 @@ module.exports = function(req, res) {
     try {
       console.log("Legacy try");
       parameters = v1ParseUrl(parsedRequest);
-      vectorTileUrl = v1VectorRequest(parameters.z, parameters.x, parameters.y, parameters.year, parameters.key, parameters.basisOfRecord, parameters.squareSize, parsedRequest);
+      vectorTileUrl = v1VectorRequest(parameters.z, parameters.x, parameters.y, parameters.year, parameters.key, parameters.basisOfRecord, parameters.squareSize);
       return {"parameters": parameters, "vectorTileUrl": vectorTileUrl};
     } catch (e) {
       res.writeHead(410, {
@@ -379,7 +386,7 @@ module.exports = function(req, res) {
   try {
     parameters = parseUrl(parsedRequest);
     vectorTileUrl = vectorRequest(parsedRequest);
-    heatVectorTileUrls = heatVectorRequest(parsedRequest, parameters.z, parameters.x, parameters.y);
+    heatVectorTileUrls = heatVectorRequest(vectorTileUrl, parameters.z, parameters.x, parameters.y);
     return {"parameters": parameters, "vectorTileUrl": vectorTileUrl, "heatVectorTileUrls": heatVectorTileUrls};
   } catch (e) {
     res.writeHead(400, {
@@ -397,7 +404,7 @@ module.exports = function(req, res) {
 /*
  * Calculate the URLs for the four tiles one zoom level deeper.
  */
-function heatVectorRequest(vectorRequest, z, x, y) {
+function heatVectorRequest(vectorTileUrl, z, x, y) {
 
   var zxy = z+'/'+x+'/'+y;
 
@@ -409,10 +416,10 @@ function heatVectorRequest(vectorRequest, z, x, y) {
   //console.log(zxy, '→', zxyTl, zxyTr, zxyBl, zxyBr);
 
   var vectorRequests = [];
-  vectorRequests[0] = new url.parse(url.format(vectorRequest));
-  vectorRequests[1] = new url.parse(url.format(vectorRequest));
-  vectorRequests[2] = new url.parse(url.format(vectorRequest));
-  vectorRequests[3] = new url.parse(url.format(vectorRequest));
+  vectorRequests[0] = url.parse(vectorTileUrl);
+  vectorRequests[1] = url.parse(vectorTileUrl);
+  vectorRequests[2] = url.parse(vectorTileUrl);
+  vectorRequests[3] = url.parse(vectorTileUrl);
 
   vectorRequests[0].pathname = vectorRequests[0].pathname.replace(zxy, zxyTl);
   vectorRequests[1].pathname = vectorRequests[1].pathname.replace(zxy, zxyTr);
