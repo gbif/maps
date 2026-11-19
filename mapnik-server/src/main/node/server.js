@@ -37,9 +37,7 @@ function createServer(config) {
       if (styles.isHeatStyle(parameters.style)) {
         async.map(heatVectorTileUrls,
           function (url, callback) {
-            console.time("Heat get "+url);
             request.get({url: url, method: 'GET', encoding: null, gzip: true, timeout: timeout}, function (error, response, body) {
-              console.timeEnd("Heat get "+url);
               if (!error && response.statusCode >= 300) {
                 error = {
                   'code': response.statusCode,
@@ -63,9 +61,7 @@ function createServer(config) {
       }
 
       // issue the request to the vector tile server and render the tile as a PNG using Mapnik
-      console.time("Get "+vectorTileUrl);
       request.get({url: vectorTileUrl, method: 'GET', encoding: null, gzip: true, timeout: timeout}, function (error, response, body) {
-        console.timeEnd("Get "+vectorTileUrl);
 
         if (!error && response.statusCode >= 300) {
           error = {
