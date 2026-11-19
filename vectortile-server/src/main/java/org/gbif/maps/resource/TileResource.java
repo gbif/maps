@@ -567,6 +567,8 @@ public final class TileResource {
   ) throws Exception {
     Preconditions.checkArgument(bin == null || BIN_MODE_HEX.equalsIgnoreCase(bin) || BIN_MODE_SQUARE.equalsIgnoreCase(bin),
                                 "Unsupported bin mode");
+    // The SRS becomes the HBase column family, so reject unknown values before reading
+    Preconditions.checkArgument(TileSchema.fromSRS(srs) != null, "Unsupported SRS");
     LOG.info("MapKey: {} with mask {}", mapKey, countryMaskKey);
 
     Range years = toMinMaxYear(year);
