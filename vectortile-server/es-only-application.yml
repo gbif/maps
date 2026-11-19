@@ -39,4 +39,4 @@ spring:
   profiles.include: es-only
 
 management:
-  endpoints.web.exposure.include: "*"
+  endpoints.web.exposure.include: "health"
