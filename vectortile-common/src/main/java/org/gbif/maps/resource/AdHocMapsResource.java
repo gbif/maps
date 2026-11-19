@@ -57,7 +57,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
@@ -71,6 +70,7 @@ import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
 import static org.gbif.maps.resource.Params.HEX_TILE_SIZE;
 import static org.gbif.maps.resource.Params.SQUARE_TILE_SIZE;
 import static org.gbif.maps.resource.Params.enableCORS;
+import static org.gbif.maps.resource.Params.validateBinning;
 
 /**
  * ElasticSearch as a vector tile service.
@@ -141,9 +141,7 @@ public class AdHocMapsResource<HR extends HeatmapRequest> {
     ) throws Exception {
     enableCORS(response);
 
-    Preconditions.checkArgument(bin == null
-                                || BIN_MODE_HEX.equalsIgnoreCase(bin)
-                                || BIN_MODE_SQUARE.equalsIgnoreCase(bin), "Unsupported bin mode");
+    validateBinning(bin, hexPerTile, squareSize);
 
     TileProjection projection = Tiles.fromEPSG(srs, tileSize);
     TileSchema schema = TileSchema.fromSRS(srs);

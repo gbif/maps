@@ -44,6 +44,9 @@ public class Params {
   public static final int SQUARE_TILE_SIZE = 4096;
   public static final String DEFAULT_HEX_PER_TILE = "51";
   public static final String DEFAULT_SQUARE_SIZE = "16";
+  // The hexagon grid is allocated eagerly and grows quadratically, so the number of hexagons must be bounded
+  public static final int MAX_HEX_PER_TILE = 512;
+  public static final int MAX_SQUARE_SIZE = SQUARE_TILE_SIZE;
 
   // Maps the HTTP parameter for the type to the HBase row key prefix for that map.
   // This aligns with the Spark processing that populates HBase of course, but maps the internal key to the
@@ -67,6 +70,27 @@ public class Params {
   public static void enableCORS(HttpServletResponse response) {
     response.addHeader("Allow-Control-Allow-Methods", "GET,HEAD,OPTIONS");
     response.addHeader("Access-Control-Allow-Origin", "*");
+  }
+
+  /**
+   * Validates the binning parameters for the requested bin mode.
+   * @throws IllegalArgumentException if the bin mode is unknown or the size is out of range
+   */
+  public static void validateBinning(String bin, int hexPerTile, int squareSize) {
+    if (bin == null) {
+      return;
+    }
+    if (BIN_MODE_HEX.equalsIgnoreCase(bin)) {
+      if (hexPerTile < 1 || hexPerTile > MAX_HEX_PER_TILE) {
+        throw new IllegalArgumentException("hexPerTile must be between 1 and " + MAX_HEX_PER_TILE);
+      }
+    } else if (BIN_MODE_SQUARE.equalsIgnoreCase(bin)) {
+      if (squareSize < 1 || squareSize > MAX_SQUARE_SIZE) {
+        throw new IllegalArgumentException("squareSize must be between 1 and " + MAX_SQUARE_SIZE);
+      }
+    } else {
+      throw new IllegalArgumentException("Unsupported bin mode");
+    }
   }
 
   /**

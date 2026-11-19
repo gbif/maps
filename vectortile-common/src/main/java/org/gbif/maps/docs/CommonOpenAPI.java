@@ -146,7 +146,7 @@ public class CommonOpenAPI {
       ),
       @Parameter(
         name = "hexPerTile",
-        description = "With `bin=hex`, sets the number of hexagons horizontally across a tile.",
+        description = "With `bin=hex`, sets the number of hexagons horizontally across a tile (1 to 512).",
         in = ParameterIn.QUERY
       ),
       @Parameter(

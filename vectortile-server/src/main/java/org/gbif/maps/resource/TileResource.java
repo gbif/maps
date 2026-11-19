@@ -75,6 +75,7 @@ import static org.gbif.maps.resource.Params.DEFAULT_SQUARE_SIZE;
 import static org.gbif.maps.resource.Params.HEX_TILE_SIZE;
 import static org.gbif.maps.resource.Params.SQUARE_TILE_SIZE;
 import static org.gbif.maps.resource.Params.enableCORS;
+import static org.gbif.maps.resource.Params.validateBinning;
 import static org.gbif.maps.resource.Params.mapKeys;
 import static org.gbif.maps.resource.Params.toMinMaxYear;
 
@@ -488,6 +489,7 @@ public final class TileResource {
     ) throws Exception {
 
     enableCORS(response);
+    validateBinning(bin, hexPerTile, squareSize);
     String[] mapKeys = mapKeys(request);
     DatedVectorTile datedVectorTile = getTile(z,x,y,mapKeys[0],mapKeys[1],srs,basisOfRecord,year,verbose,bin,hexPerTile,squareSize);
 
