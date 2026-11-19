@@ -43,9 +43,9 @@
     <maven.compiler.target>${jdkLevel}</maven.compiler.target>
 
     <gbif-occurrence.version>1.2.16</gbif-occurrence.version>
-    <gbif-api.version>2.4.30-SNAPSHOT</gbif-api.version>
-    <gbif-common-ws.version>2.1.4-SNAPSHOT</gbif-common-ws.version>
-    <dwc-api.version>2.1.16-SNAPSHOT</dwc-api.version>
+    <gbif-api.version>2.4.30</gbif-api.version>
+    <gbif-common-ws.version>2.1.4</gbif-common-ws.version>
+    <dwc-api.version>2.1.16</dwc-api.version>
     <gbif-predicates.version>2.2.0</gbif-predicates.version>
 
     <javax.mail.version>1.4.7</javax.mail.version>
