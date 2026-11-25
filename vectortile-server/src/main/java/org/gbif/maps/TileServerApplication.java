@@ -35,6 +35,7 @@ import org.gbif.ws.server.processor.ParamNameProcessor;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Optional;
+import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
 
@@ -239,7 +240,7 @@ public class TileServerApplication {
         TileServerConfiguration tileServerConfiguration,
         ConceptClient conceptClient,
         NameUsageMatchingService nameUsageMatchingService,
-        @Value("${defaultChecklistKey: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c'}") String defaultChecklistKey,
+        @Value("${defaultChecklistKey:d7dddbf4-2cf0-4f39-9b2a-bb099caae36c}") UUID defaultChecklistKey,
         @Value("${esConfiguration.elasticsearch.defaultShardSize:100}") int defaultShardSize) {
       return new OccurrenceHeatmapsEsService(
           esClient,

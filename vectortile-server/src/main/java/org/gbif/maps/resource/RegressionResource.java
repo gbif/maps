@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -119,7 +120,7 @@ public final class RegressionResource {
                             TileServerConfiguration configuration,
                             ConceptClient conceptClient,
                             NameUsageMatchingService nameUsageMatchingService,
-                            @Value("${defaultChecklistKey: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c'}") String defaultChecklistKey,
+                            @Value("${defaultChecklistKey:d7dddbf4-2cf0-4f39-9b2a-bb099caae36c}") UUID defaultChecklistKey,
                             @Value("${esConfiguration.elasticsearch.defaultShardSize:100}") int defaultShardSize) {
     this.tiles = tiles;
     this.esClient = esClient;
